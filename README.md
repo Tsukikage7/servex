@@ -149,6 +149,7 @@ servex 内置 [Claude Code Plugin](https://code.claude.com/docs/en/plugins.md)�
 | [messaging/jobqueue/redis](./messaging/jobqueue/redis/) | Redis Store | `NewStore` |
 | [messaging/jobqueue/kafka](./messaging/jobqueue/kafka/) | Kafka Store | `NewStore` |
 | [messaging/jobqueue/rabbitmq](./messaging/jobqueue/rabbitmq/) | RabbitMQ Store | `NewStore` |
+| [messaging/eventbus](./messaging/eventbus/) | 进程内事件总线（同步/异步分发） | - |
 
 ### 领域驱动 (domain/)
 

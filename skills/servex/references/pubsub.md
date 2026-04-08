@@ -221,3 +221,75 @@ w.Start(ctx) // 阻塞，ctx 取消后优雅退出
 | Kafka | `jobqueue/kafka` | `sarama.Client` | topic 作为队列，极高吞吐 |
 | RabbitMQ | `jobqueue/rabbitmq` | `*amqp.Connection` | 原生 dead letter exchange |
 | Database | `jobqueue/database` | `*gorm.DB` | 无额外依赖，乐观锁 dequeue |
+
+## eventbus — 进程内事件总线
+
+**包路径：** `github.com/Tsukikage7/servex/messaging/eventbus`
+
+**何时使用：** 进程内同步/异步事件分发，基于主题的发布订阅。区别于 `bizx/event`（通配符/优先级），eventbus 更轻量，基于 Event 接口的强类型事件。
+
+### 核心接口
+
+```go
+// 所有事件必须实现 Event 接口
+type Event interface {
+    Topic() string
+}
+
+// 事件处理函数
+type Handler func(ctx context.Context, event Event) error
+```
+
+### 构造函数
+
+- `New(opts...)` — 创建事件总线
+- `WithAsyncWorkers(n)` — 异步工作协程数量（默认 4）
+- `WithLogger(l)` — 设置日志记录器
+- `WithErrorHandler(fn)` — 异步错误处理回调
+
+### 示例
+
+```go
+import "github.com/Tsukikage7/servex/messaging/eventbus"
+
+// 定义事件
+type OrderCreated struct {
+    OrderID string
+}
+func (e OrderCreated) Topic() string { return "order.created" }
+
+// 创建事件总线
+bus := eventbus.New(
+    eventbus.WithAsyncWorkers(8),
+    eventbus.WithErrorHandler(func(err error) {
+        log.Printf("事件处理失败: %v", err)
+    }),
+)
+defer bus.Close()
+
+// 订阅事件（返回取消订阅函数）
+unsub := bus.Subscribe("order.created", func(ctx context.Context, event eventbus.Event) error {
+    e := event.(OrderCreated)
+    fmt.Printf("订单创建: %s\n", e.OrderID)
+    return nil
+})
+defer unsub()
+
+// 订阅所有事件（通配符）
+unsubAll := bus.SubscribeAll(func(ctx context.Context, event eventbus.Event) error {
+    fmt.Printf("收到事件: %s\n", event.Topic())
+    return nil
+})
+
+// 同步发布（按顺序调用所有处理器，任一失败立即返回错误）
+err := bus.Publish(ctx, OrderCreated{OrderID: "123"})
+
+// 异步发布（分发给工作协程处理）
+bus.PublishAsync(ctx, OrderCreated{OrderID: "456"})
+```
+
+**关键类型：**
+- `eventbus.Bus` — 事件总线（`Subscribe`, `SubscribeAll`, `Publish`, `PublishAsync`, `Close`）
+- `eventbus.Event` — 事件接口（需实现 `Topic() string`）
+- `eventbus.Handler` — 处理函数 `func(ctx, Event) error`
+- 错误：`ErrBusClosed` — 总线已关闭
