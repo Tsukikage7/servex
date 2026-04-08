@@ -134,6 +134,7 @@ servex 内置 [Claude Code Plugin](https://code.claude.com/docs/en/plugins.md)�
 | [storage/clickhouse](./storage/clickhouse/) | ClickHouse 客户端 | `NewClient` / `MustNewClient` |
 | [storage/redis](./storage/redis/) | Redis 客户端（完整数据类型 + Pipeline + Pub/Sub） | `NewClient` / `MustNewClient` |
 | [storage/minio](./storage/minio/) | MinIO 对象存储客户端（原生 SDK） | `NewClient` / `MustNewClient` |
+| [storage/neo4j](./storage/neo4j/) | Neo4j 图数据库客户端 | `NewClient` / `MustNewClient` |
 
 ### 消息 (messaging/)
 
