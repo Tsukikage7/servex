@@ -21,29 +21,44 @@ var (
 	newModule     string
 	newStandalone bool
 	newWithGRPC   bool
-	newWithDB     bool
-	newWithRedis  bool
+	newInfra      string
 	newWithWire   bool
 )
 
-// newCmd 项目创建命令（默认 monorepo 模式）.
+// newCmd 项目创建命令[默认 monorepo 模式].
+// 未提供 flag 时启动交互式向导；提供 flag 时直接执行[CI 友好].
 var newCmd = &cobra.Command{
-	Use:   "new <project-name>",
-	Short: "创建新的 servex 项目（默认 monorepo 模式）",
-	Long:  "从模板创建 servex 微服务项目。默认创建 monorepo 结构，使用 --standalone 创建独立单服务项目.",
-	Args:  cobra.ExactArgs(1),
+	Use:   "new [project-name]",
+	Short: "创建新的 servex 项目[默认 monorepo 模式]",
+	Long:  "从模板创建 servex 微服务项目。默认创建 monorepo 结构，使用 --standalone 创建独立单服务项目.\n无 flag 时启动交互式向导.",
+	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if newModule == "" {
-			newModule = "github.com/example/" + args[0]
+		var data ProjectData
+
+		if len(args) == 0 && shouldRunWizard(cmd) {
+			// 交互式向导模式
+			var err error
+			data, err = runNewWizard()
+			if err != nil {
+				return err
+			}
+		} else {
+			// flag 模式[CI / 脚本]
+			if len(args) == 0 {
+				return fmt.Errorf("项目名称必填 (请使用 flag 参数，或不带参数启动交互式向导)")
+			}
+			if newModule == "" {
+				newModule = "github.com/example/" + args[0]
+			}
+			data = ProjectData{
+				Name:     args[0],
+				Module:   newModule,
+				WithGRPC: newWithGRPC,
+				WithWire: newWithWire,
+				Infra:    parseInfra(newInfra),
+			}
 		}
-		data := ProjectData{
-			Name:      args[0],
-			Module:    newModule,
-			WithGRPC:  newWithGRPC,
-			WithDB:    newWithDB,
-			WithRedis: newWithRedis,
-			WithWire:  newWithWire,
-		}
+
 		if newStandalone {
 			return generateProject(data)
 		}
@@ -54,24 +69,43 @@ var newCmd = &cobra.Command{
 // --- add 命令组 ---
 
 var (
-	addWithGRPC  bool
-	addWithDB    bool
-	addWithRedis bool
-	addWithWire  bool
+	addWithGRPC    bool
+	addWithGateway bool
+	addInfra       string
+	addObserve     string
+	addAuth        string
+	addDiscovery   string
+	addOther       string
+	addWithWire    bool
 )
 
 // addCmd 添加组件父命令.
 var addCmd = &cobra.Command{
 	Use:   "add",
-	Short: "添加组件（service）",
+	Short: "添加组件[service]",
 }
 
 // addServiceCmd 微服务添加命令.
+// 未提供 flag 时启动交互式向导；提供 flag 时直接执行[CI 友好].
 var addServiceCmd = &cobra.Command{
-	Use:   "service <name>",
+	Use:   "service [name]",
 	Short: "在 monorepo 中添加微服务",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 && shouldRunWizard(cmd) {
+			// 交互式向导模式
+			result, err := runAddServiceWizard()
+			if err != nil {
+				return err
+			}
+			applyAddServiceWizard(result)
+			return runAddService([]string{result.Name})
+		}
+
+		// flag 模式[CI / 脚本]
+		if len(args) == 0 {
+			return fmt.Errorf("服务名称必填 (请使用 flag 参数，或不带参数启动交互式向导)")
+		}
 		return runAddService(args)
 	},
 }
@@ -81,7 +115,7 @@ var addServiceCmd = &cobra.Command{
 // genCmd 代码生成父命令.
 var genCmd = &cobra.Command{
 	Use:   "gen",
-	Short: "生成代码（aggregate/client/entity/valueobject/dockerfile/justfile）",
+	Short: "生成代码[aggregate/client/entity/valueobject/dockerfile/justfile]",
 }
 
 var (
@@ -96,7 +130,7 @@ var (
 // genAggregateCmd DDD 聚合生成命令.
 var genAggregateCmd = &cobra.Command{
 	Use:   "aggregate <name>",
-	Short: "生成 DDD 聚合代码（aggregate/event/repository/command/query/service）",
+	Short: "生成 DDD 聚合代码[aggregate/event/repository/command/query/service]",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		module := genAggModule
@@ -138,7 +172,7 @@ var (
 // genJustfileCmd justfile 生成命令.
 var genJustfileCmd = &cobra.Command{
 	Use:   "justfile",
-	Short: "生成 justfile（build/test/lint/proto/wire/docker）",
+	Short: "生成 justfile[build/test/lint/proto/wire/docker]",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if genJustModule == "" {
 			genJustModule = "github.com/example/" + genJustName
@@ -158,7 +192,7 @@ var (
 // genClientCmd 外部服务客户端适配器生成命令.
 var genClientCmd = &cobra.Command{
 	Use:   "client <target>",
-	Short: "生成外部服务客户端适配器（防腐层 + gRPC client）",
+	Short: "生成外部服务客户端适配器[防腐层 + gRPC client]",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runGenClient(args[0], genClientService, genClientModule, genClientOutput)
@@ -175,7 +209,7 @@ var (
 // genEntityCmd 子实体生成命令.
 var genEntityCmd = &cobra.Command{
 	Use:   "entity <name>",
-	Short: "生成 DDD 子实体（有 ID，可变，属于聚合）",
+	Short: "生成 DDD 子实体[有 ID，可变，属于聚合]",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runGenEntity(args[0], genEntityAggregate, genEntityFields, genEntityModule, genEntityOutput)
@@ -192,7 +226,7 @@ var (
 // genValueObjectCmd 值对象生成命令.
 var genValueObjectCmd = &cobra.Command{
 	Use:   "valueobject <name>",
-	Short: "生成 DDD 值对象（无 ID，不可变，属于聚合）",
+	Short: "生成 DDD 值对象[无 ID，不可变，属于聚合]",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runGenValueObject(args[0], genVOAggregate, genVOFields, genVOModule, genVOOutput)
@@ -204,7 +238,7 @@ var genValueObjectCmd = &cobra.Command{
 // protoCmd Proto 管理父命令.
 var protoCmd = &cobra.Command{
 	Use:   "proto",
-	Short: "Proto 文件管理（add/client/server）",
+	Short: "Proto 文件管理[add/client/server]",
 }
 
 var (
@@ -227,7 +261,7 @@ var protoClientOutput string
 // protoClientCmd Proto 客户端代码生成命令.
 var protoClientCmd = &cobra.Command{
 	Use:   "client <proto-file>",
-	Short: "从 proto 文件生成客户端代码（pb.go/grpc.go/http.go）",
+	Short: "从 proto 文件生成客户端代码[pb.go/grpc.go/http.go]",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runProtoClient(buildProtoClientArgs(args[0], protoClientOutput))
@@ -259,7 +293,7 @@ var (
 // runCmd 运行服务命令.
 var runCmdDef = &cobra.Command{
 	Use:   "run [-- args...]",
-	Short: "运行当前项目（自动检测入口）",
+	Short: "运行当前项目[自动检测入口]",
 	Long: `运行当前项目，自动检测 main 包入口:
   1. ./cmd/server   (优先)
   2. ./cmd/<dirname>
@@ -328,16 +362,19 @@ func buildProtoServerArgs(protoFile, target, service string) []string {
 func init() {
 	// new
 	newCmd.Flags().StringVar(&newModule, "module", "", "Go module 路径 (默认: github.com/example/<project>)")
-	newCmd.Flags().BoolVar(&newStandalone, "standalone", false, "创建独立单服务项目（默认: monorepo 模式）")
+	newCmd.Flags().BoolVar(&newStandalone, "standalone", false, "创建独立单服务项目[默认: monorepo 模式]")
 	newCmd.Flags().BoolVar(&newWithGRPC, "with-grpc", false, "包含 gRPC 服务端")
-	newCmd.Flags().BoolVar(&newWithDB, "with-db", false, "包含数据库 (GORM)")
-	newCmd.Flags().BoolVar(&newWithRedis, "with-redis", false, "包含 Redis")
+	newCmd.Flags().StringVar(&newInfra, "infra", "", "基础设施组件，逗号分隔 (如 mysql,redis,kafka,mongo)")
 	newCmd.Flags().BoolVar(&newWithWire, "with-wire", false, "包含 Wire 依赖注入")
 
 	// add service
 	addServiceCmd.Flags().BoolVar(&addWithGRPC, "with-grpc", false, "包含 gRPC 服务端")
-	addServiceCmd.Flags().BoolVar(&addWithDB, "with-db", false, "包含数据库 (GORM)")
-	addServiceCmd.Flags().BoolVar(&addWithRedis, "with-redis", false, "包含 Redis")
+	addServiceCmd.Flags().BoolVar(&addWithGateway, "with-gateway", false, "包含 API 网关[HTTP+gRPC 双协议]")
+	addServiceCmd.Flags().StringVar(&addInfra, "infra", "", "基础设施: mysql,postgres,sqlite,mongo,es,clickhouse,s3,minio,neo4j,redis,kafka,rabbitmq")
+	addServiceCmd.Flags().StringVar(&addObserve, "observe", "", "可观测性: metrics,tracing,profiling")
+	addServiceCmd.Flags().StringVar(&addAuth, "auth", "", "认证: jwt,rbac")
+	addServiceCmd.Flags().StringVar(&addDiscovery, "discovery", "", "服务发现: consul,etcd,nacos")
+	addServiceCmd.Flags().StringVar(&addOther, "other", "", "其他: scheduler,i18n,tenant")
 	addServiceCmd.Flags().BoolVar(&addWithWire, "with-wire", false, "包含 Wire 依赖注入")
 
 	// add 子命令
@@ -365,18 +402,18 @@ func init() {
 	genCmd.AddCommand(genAggregateCmd, genDockerfileCmd, genJustfileCmd, genClientCmd, genEntityCmd, genValueObjectCmd)
 
 	// gen client
-	genClientCmd.Flags().StringVar(&genClientService, "service", "", "调用方服务名（必填）")
+	genClientCmd.Flags().StringVar(&genClientService, "service", "", "调用方服务名[必填]")
 	genClientCmd.Flags().StringVar(&genClientModule, "module", "", "Go module 路径 (默认: 从 go.mod 读取)")
 	genClientCmd.Flags().StringVar(&genClientOutput, "output", ".", "输出目录")
 
 	// gen entity
-	genEntityCmd.Flags().StringVar(&genEntityAggregate, "aggregate", "", "所属聚合名（必填）")
+	genEntityCmd.Flags().StringVar(&genEntityAggregate, "aggregate", "", "所属聚合名[必填]")
 	genEntityCmd.Flags().StringVar(&genEntityFields, "fields", "", `字段定义 (如 "id:uint64,name:string")`)
 	genEntityCmd.Flags().StringVar(&genEntityModule, "module", "", "Go module 路径")
 	genEntityCmd.Flags().StringVar(&genEntityOutput, "output", ".", "输出目录")
 
 	// gen valueobject
-	genValueObjectCmd.Flags().StringVar(&genVOAggregate, "aggregate", "", "所属聚合名（必填）")
+	genValueObjectCmd.Flags().StringVar(&genVOAggregate, "aggregate", "", "所属聚合名[必填]")
 	genValueObjectCmd.Flags().StringVar(&genVOFields, "fields", "", `字段定义 (如 "street:string,city:string")`)
 	genValueObjectCmd.Flags().StringVar(&genVOModule, "module", "", "Go module 路径")
 	genValueObjectCmd.Flags().StringVar(&genVOOutput, "output", ".", "输出目录")
@@ -390,7 +427,7 @@ func init() {
 
 	// proto server
 	protoServerCmd.Flags().StringVar(&protoServerTarget, "target", "internal/service", "输出目录")
-	protoServerCmd.Flags().StringVar(&protoServerService, "service", "", "目标服务名（monorepo 模式）")
+	protoServerCmd.Flags().StringVar(&protoServerService, "service", "", "目标服务名[monorepo 模式]")
 
 	// proto 子命令
 	protoCmd.AddCommand(protoAddCmd, protoClientCmd, protoServerCmd)

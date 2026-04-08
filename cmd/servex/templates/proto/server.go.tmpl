@@ -3,6 +3,9 @@ package service
 import (
 	"context"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"google.golang.org/grpc"
+
 	pb "{{.Module}}/api/{{.Name}}/v1"
 )
 
@@ -14,6 +17,16 @@ type {{.PascalName}}Service struct {
 // New{{.PascalName}}Service 创建 {{.PascalName}}Service 实例.
 func New{{.PascalName}}Service() *{{.PascalName}}Service {
 	return &{{.PascalName}}Service{}
+}
+
+// RegisterGRPC 注册 gRPC 服务（实现 grpcserver.Registrar 接口）.
+func (s *{{.PascalName}}Service) RegisterGRPC(server *grpc.Server) {
+	pb.Register{{.PascalName}}ServiceServer(server, s)
+}
+
+// RegisterGateway 注册 gRPC-Gateway 处理器（实现 gateway.Registrar 接口）.
+func (s *{{.PascalName}}Service) RegisterGateway(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return pb.Register{{.PascalName}}ServiceHandlerClient(ctx, mux, pb.New{{.PascalName}}ServiceClient(conn))
 }
 {{range .RPCs}}
 // {{.MethodName}} 处理 {{.MethodName}} 请求.

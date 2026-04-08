@@ -1,6 +1,8 @@
 package port
 
 import (
+	"{{.Module}}/services/{{.Name}}-service/internal/service"
+
 	"github.com/Tsukikage7/servex/observability/logger"
 	"github.com/Tsukikage7/servex/transport"
 	"github.com/Tsukikage7/servex/transport/grpcserver"
@@ -16,8 +18,8 @@ func NewGRPC(log logger.Logger) transport.Server {
 		grpcserver.WithLogging(),
 	)
 
-	// TODO: 注册 gRPC 服务
-	// srv.Register(myService)
+	// 注册 gRPC 服务（实现 grpcserver.Registrar 接口）
+	srv.Register(service.New{{.Name | toPascalCase}}Service())
 
 	return srv
 }

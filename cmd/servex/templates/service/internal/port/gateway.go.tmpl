@@ -1,0 +1,26 @@
+package port
+
+import (
+	"{{.Module}}/services/{{.Name}}-service/internal/service"
+
+	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/transport"
+	"github.com/Tsukikage7/servex/transport/gateway"
+)
+
+// NewGateway 创建 API 网关（HTTP + gRPC 双协议）.
+func NewGateway(log logger.Logger) transport.Server {
+	srv := gateway.New(
+		gateway.WithLogger(log),
+		gateway.WithHTTPAddr(":8080"),
+		gateway.WithGRPCAddr(":9090"),
+		gateway.WithRecovery(),
+		gateway.WithLogging(),
+		gateway.WithReflection(true),
+	)
+
+	// 注册服务（同时注册 gRPC + REST 路由）
+	srv.Register(service.New{{.Name | toPascalCase}}Service())
+
+	return srv
+}
