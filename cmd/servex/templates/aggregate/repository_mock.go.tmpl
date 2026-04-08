@@ -1,0 +1,110 @@
+package {{.NameLower}}
+
+import (
+	"context"
+	"sync"
+)
+
+// MockRepository {{.Name}}仓储 Mock 实现.
+type MockRepository struct {
+	mu      sync.RWMutex
+	store   map[{{.IDType}}]*{{.Name}}
+	nextID  {{.IDType}}
+	saveErr error
+	findErr error
+	delErr  error
+}
+
+// NewMockRepository 创建 Mock 仓储.
+func NewMockRepository() *MockRepository {
+	return &MockRepository{store: make(map[{{.IDType}}]*{{.Name}}), nextID: 1}
+}
+
+// SetSaveError 设置 Save 方法的错误.
+func (m *MockRepository) SetSaveError(err error) { m.saveErr = err }
+
+// SetFindError 设置 FindByID 方法的错误.
+func (m *MockRepository) SetFindError(err error) { m.findErr = err }
+
+// SetDeleteError 设置 Delete 方法的错误.
+func (m *MockRepository) SetDeleteError(err error) { m.delErr = err }
+
+// FindByID 按 ID 查找.
+func (m *MockRepository) FindByID(_ context.Context, id {{.IDType}}) (*{{.Name}}, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if m.findErr != nil {
+		return nil, m.findErr
+	}
+	agg, ok := m.store[id]
+	if !ok {
+		return nil, ErrNotFound
+	}
+	return agg, nil
+}
+{{range .UniqueFields}}
+// FindBy{{.Name}} 按{{.Name}}查找.
+func (m *MockRepository) FindBy{{.Name}}(_ context.Context, {{.CamelName}} {{.Type}}) (*{{$.Name}}, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if m.findErr != nil {
+		return nil, m.findErr
+	}
+	for _, agg := range m.store {
+		if agg.{{.Name}}() == {{.CamelName}} {
+			return agg, nil
+		}
+	}
+	return nil, ErrNotFound
+}
+{{end}}
+// List 分页查询.
+func (m *MockRepository) List(_ context.Context, _ {{.Name}}Filter, offset, limit int) ([]*{{.Name}}, int64, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if m.findErr != nil {
+		return nil, 0, m.findErr
+	}
+	var all []*{{.Name}}
+	for _, agg := range m.store {
+		all = append(all, agg)
+	}
+	total := int64(len(all))
+	if offset >= len(all) {
+		return nil, total, nil
+	}
+	end := offset + limit
+	if end > len(all) {
+		end = len(all)
+	}
+	return all[offset:end], total, nil
+}
+
+// Save 保存.
+func (m *MockRepository) Save(_ context.Context, agg *{{.Name}}) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.saveErr != nil {
+		return m.saveErr
+	}
+	m.store[agg.ID()] = agg
+	return nil
+}
+
+// Delete 删除.
+func (m *MockRepository) Delete(_ context.Context, id {{.IDType}}) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.delErr != nil {
+		return m.delErr
+	}
+	delete(m.store, id)
+	return nil
+}
+
+// SavedCount 返回已保存的聚合数量.
+func (m *MockRepository) SavedCount() int {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return len(m.store)
+}

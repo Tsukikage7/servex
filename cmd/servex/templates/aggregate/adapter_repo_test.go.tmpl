@@ -1,0 +1,17 @@
+package persistence
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+// TestNew{{.Name}}Repository 测试仓储创建.
+func TestNew{{.Name}}Repository(t *testing.T) {
+	// TODO: setup test database (SQLite in-memory recommended)
+	// db, _ := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	// db.AutoMigrate(&{{.Name}}PO{})
+	// repo := New{{.Name}}Repository(db)
+	// assert.NotNil(t, repo)
+	assert.True(t, true, "placeholder -- add database setup to enable")
+}

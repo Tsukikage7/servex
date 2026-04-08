@@ -1,0 +1,60 @@
+package {{.NameLower}}
+
+import (
+	"context"
+	"testing"
+{{- if .NeedsTime}}
+	"time"
+{{- end}}
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/Tsukikage7/servex/domain"
+
+	domain{{.Name}} "{{.Module}}/domain/{{.NameLower}}"
+)
+
+func TestService_HandleCreate(t *testing.T) {
+	repo := domain{{.Name}}.NewMockRepository()
+	eventBus := domain.NewEventBus()
+	svc := NewService(repo, eventBus)
+
+	view, err := svc.HandleCreate(context.Background(), domain{{.Name}}.Create{{.Name}}Command{
+{{- range .NonIDFields}}
+		{{.Name}}: {{zeroValue .Type}},
+{{- end}}
+	})
+	require.NoError(t, err)
+	require.NotNil(t, view)
+	assert.Equal(t, 1, repo.SavedCount())
+}
+
+func TestService_HandleGet(t *testing.T) {
+	repo := domain{{.Name}}.NewMockRepository()
+	eventBus := domain.NewEventBus()
+	svc := NewService(repo, eventBus)
+
+	// 先创建
+	_, err := svc.HandleCreate(context.Background(), domain{{.Name}}.Create{{.Name}}Command{})
+	require.NoError(t, err)
+
+	// 查询（ID 0 为 New{{.Name}}(0,...) 传入的默认值）
+	view, err := svc.HandleGet(context.Background(), domain{{.Name}}.Get{{.Name}}Query{ID: 0})
+	require.NoError(t, err)
+	require.NotNil(t, view)
+}
+
+func TestService_HandleDelete(t *testing.T) {
+	repo := domain{{.Name}}.NewMockRepository()
+	eventBus := domain.NewEventBus()
+	svc := NewService(repo, eventBus)
+
+	// 先创建
+	_, err := svc.HandleCreate(context.Background(), domain{{.Name}}.Create{{.Name}}Command{})
+	require.NoError(t, err)
+
+	// 删除
+	err = svc.HandleDelete(context.Background(), domain{{.Name}}.Delete{{.Name}}Command{ID: 0})
+	assert.NoError(t, err)
+}

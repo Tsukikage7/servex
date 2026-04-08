@@ -1,0 +1,37 @@
+package {{.NameLower}}
+
+import (
+	"testing"
+{{- if .NeedsTime}}
+	"time"
+{{- end}}
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestNew{{.Name}}(t *testing.T) {
+	agg := New{{.Name}}(1{{range .NonIDFields}}, {{zeroValue .Type}}{{end}})
+	require.NotNil(t, agg)
+	assert.Len(t, agg.DomainEvents(), 1, "should raise Created event")
+}
+
+func TestReconstruct{{.Name}}(t *testing.T) {
+	agg := Reconstruct{{.Name}}(1{{range .NonIDFields}}, {{zeroValue .Type}}{{end}})
+	require.NotNil(t, agg)
+	assert.Empty(t, agg.DomainEvents(), "reconstruct should not raise events")
+}
+{{- if .HasCommands}}
+{{range .Commands}}
+
+func Test{{$.Name}}_{{.Name}}(t *testing.T) {
+	agg := Reconstruct{{$.Name}}(1{{range $.NonIDFields}}, {{zeroValue .Type}}{{end}})
+
+	agg.{{.Name}}()
+
+	events := agg.DomainEvents()
+	require.Len(t, events, 1)
+	assert.Equal(t, "{{$.Name}}{{.EventName}}", events[0].EventName())
+}
+{{- end}}
+{{- end}}
