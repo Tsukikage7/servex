@@ -1,0 +1,22 @@
+package service
+
+import "context"
+
+// Service 业务逻辑接口.
+type Service interface {
+	// Health 健康检查.
+	Health(ctx context.Context) error
+}
+
+// service 业务逻辑实现.
+type service struct{}
+
+// New 创建业务逻辑实例.
+func New() Service {
+	return &service{}
+}
+
+// Health 健康检查.
+func (s *service) Health(ctx context.Context) error {
+	return nil
+}

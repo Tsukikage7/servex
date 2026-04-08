@@ -1,0 +1,42 @@
+//go:build wireinject
+
+package main
+
+import (
+	"github.com/google/wire"
+
+	"{{.Module}}/internal/server"
+	"github.com/Tsukikage7/servex/app"
+	"github.com/Tsukikage7/servex/observability/logger"
+{{- if .WithDB}}
+	"github.com/Tsukikage7/servex/storage/rdbms"
+{{- end}}
+{{- if .WithRedis}}
+	srvredis "github.com/Tsukikage7/servex/storage/redis"
+{{- end}}
+)
+
+func initApp() (*app.Application, error) {
+	wire.Build(
+		providerSet,
+	)
+	return nil, nil
+}
+
+var providerSet = wire.NewSet(
+	// server providers
+	server.NewHTTP,
+{{- if .WithGRPC}}
+	server.NewGRPC,
+{{- end}}
+	// logger providers
+	logger.MustNewLogger,
+{{- if .WithDB}}
+	// data providers
+	rdbms.NewDatabase,
+{{- end}}
+{{- if .WithRedis}}
+	// redis providers
+	srvredis.NewClient,
+{{- end}}
+)

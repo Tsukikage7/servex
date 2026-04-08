@@ -1,0 +1,36 @@
+# {{.Name}}
+
+基于 [servex](https://github.com/Tsukikage7/servex) 构建的微服务项目.
+
+## 快速开始
+
+```bash
+# 添加服务
+servex add service user --with-grpc --with-db
+
+# 运行服务
+just run user
+
+# 构建全部
+just build-all
+```
+
+## 项目结构
+
+```
+{{.Name}}/
+  go.mod
+  justfile
+  domain/           # 领域层（共享领域模型）
+  application/      # 应用层（共享应用服务）
+  services/         # 各微服务
+    <service>/
+      cmd/          # 服务入口
+      internal/     # 服务内部实现
+      proto/        # Proto 定义
+  api/              # API 定义（共享 proto/openapi）
+  infrastructure/   # 基础设施层
+  deploy/
+    docker/         # Docker 编排
+    k8s/            # Kubernetes 部署清单
+```

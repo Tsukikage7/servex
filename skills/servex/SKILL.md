@@ -60,6 +60,12 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 
 ## 模块索引
 
+### CLI 工具
+
+| 模块 | 包路径 | 描述 | 核心类型/函数 |
+|------|--------|------|--------------|
+| cmd/servex | `cmd/servex` | 脚手架 CLI（项目生成/DDD 聚合生成） | `servex new`, `servex gen aggregate`, `servex version` |
+
 ### 传输层 → 详见 `transport` skill
 
 | 模块 | 包路径 | 描述 | 核心类型/函数 |

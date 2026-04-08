@@ -1,0 +1,48 @@
+# {{.Name}} — servex monorepo justfile
+
+# 列出所有可用配方
+default:
+    @just --list
+
+# 构建指定服务
+build service:
+    go build -o bin/{{"{{service}}"}} ./services/{{"{{service}}"}}/cmd/...
+
+# 构建所有服务
+build-all:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for dir in services/*/cmd; do
+        svc=$(basename $(dirname "$dir"))
+        echo "building $svc..."
+        go build -o "bin/$svc" "./$dir/..."
+    done
+
+# 运行指定服务
+run service:
+    go run ./services/{{"{{service}}"}}/cmd/...
+
+# 测试全部
+test:
+    go test -race -cover ./...
+
+# 测试指定服务
+test-service service:
+    go test -race -cover ./services/{{"{{service}}"}}/...
+
+# 代码检查
+lint:
+    go vet ./...
+    @test -z "$$(gofmt -l .)" || (echo "gofmt check failed:" && gofmt -l . && exit 1)
+
+# 生成指定服务的 proto 代码
+proto service:
+    protoc --go_out=. --go-grpc_out=. services/{{"{{service}}"}}/proto/*.proto
+
+# 构建指定服务的 Docker 镜像
+docker service tag="latest":
+    docker build -t {{"{{service}}"}}:{{"{{tag}}"}} -f services/{{"{{service}}"}}/Dockerfile .
+
+# 清理构建产物
+clean:
+    rm -rf bin/
