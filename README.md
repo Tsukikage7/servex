@@ -88,6 +88,7 @@ servex 内置 [Claude Code Plugin](https://code.claude.com/docs/en/plugins.md)�
 | [middleware/bodylimit](./middleware/bodylimit/) | 请求体大小限制 | - | Y | - |
 | [middleware/signature](./middleware/signature/) | HMAC 请求签名验证（防重放） | - | Y | - |
 | [middleware/trace](./middleware/trace/) | 链路追踪增强（trace-id 传播/日志注入/下游传递） | - | Y | Y |
+| [middleware/gzip](./middleware/gzip/) | gzip 响应压缩 | - | Y | - |
 
 ### 认证 (auth/)
 

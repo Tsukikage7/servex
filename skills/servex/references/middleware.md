@@ -279,6 +279,112 @@ _ = signature.SignRequestWithConfig(req, cfg)
 - `signature.Sign(body, timestamp, secret)` — 计算签名
 - `signature.Verify(body, timestamp, sig, secret)` — 常量时间比较验证
 
+## gzip — 响应 gzip 压缩
+
+```go
+import "github.com/Tsukikage7/servex/middleware/gzip"
+
+// 使用默认配置（压缩级别: DefaultCompression, 最小字节数: 256）
+mw := gzip.New()
+
+// 自定义配置
+mw := gzip.New(
+    gzip.WithLevel(gzip.BestSpeed),                             // 压缩级别（-1 到 9）
+    gzip.WithMinLength(1024),                                   // 触发压缩的最小响应体字节数
+    gzip.WithExcludePaths("/healthz", "/metrics"),              // 排除的路径前缀
+    gzip.WithExcludeContentTypes("image/png", "image/jpeg"),    // 排除的 Content-Type
+)
+
+// 注入 httpserver
+srv := httpserver.New(mux,
+    httpserver.WithMiddlewares(gzip.New()),
+)
+
+// 便捷包装（直接返回 http.Handler）
+handler := gzip.Handler(mux, gzip.WithMinLength(512))
+```
+
+**默认行为：**
+- 检查客户端 `Accept-Encoding` 是否包含 gzip
+- 响应体小于 `MinLength`（默认 256 字节）时不压缩
+- 自动设置 `Content-Encoding: gzip` 和 `Vary: Accept-Encoding`
+- 支持 `http.Flusher` 接口
+- 使用 `sync.Pool` 复用 gzip.Writer，减少 GC 压力
+
+**关键选项：**
+- `WithLevel(level)` — 压缩级别，`gzip.NoCompression`(-1) 到 `gzip.BestCompression`(9)
+- `WithMinLength(n)` — 触发压缩的最小响应体字节数（默认 256）
+- `WithExcludePaths(paths...)` — 排除的路径前缀
+- `WithExcludeContentTypes(types...)` — 排除的 Content-Type
+
+## adaptive — 自适应限流与降级
+
+```go
+import "github.com/Tsukikage7/servex/middleware/adaptive"
+
+// 基于 CPU 使用率限流
+limiter, err := adaptive.New(&adaptive.Config{
+    Strategy:       adaptive.StrategyCPU,
+    CPUThreshold:   0.8,                     // CPU 使用率超 80% 触发
+    WindowSize:     10 * time.Second,        // 指标采集窗口（默认 10s）
+    CooldownPeriod: 5 * time.Second,         // 触发后冷却时间（默认 5s）
+})
+
+// 基于 P99 延迟限流
+limiter, err := adaptive.New(&adaptive.Config{
+    Strategy:         adaptive.StrategyLatency,
+    LatencyThreshold: 500 * time.Millisecond,
+})
+
+// 基于错误率限流
+limiter, err := adaptive.New(&adaptive.Config{
+    Strategy:           adaptive.StrategyErrorRate,
+    ErrorRateThreshold: 0.1,  // 错误率超 10% 触发
+})
+
+// 组合策略（任一条件触发）
+limiter, err := adaptive.New(&adaptive.Config{
+    Strategy:           adaptive.StrategyComposite,
+    CPUThreshold:       0.8,
+    LatencyThreshold:   500 * time.Millisecond,
+    ErrorRateThreshold: 0.1,
+    DegradeHandler:     degradeHandler,  // 降级处理器
+}, adaptive.WithLogger(stdLogger))
+
+// HTTP 中间件（超载返回 503）
+srv := httpserver.New(mux,
+    httpserver.WithMiddlewares(limiter.Middleware()),
+)
+
+// gRPC 拦截器（超载返回 codes.ResourceExhausted）
+grpcServer := grpc.NewServer(
+    grpc.UnaryInterceptor(limiter.GRPCUnaryInterceptor()),
+)
+
+// 手动记录延迟和错误（用于 StrategyLatency/StrategyErrorRate）
+limiter.RecordLatency(200 * time.Millisecond)
+limiter.RecordError()
+limiter.RecordSuccess()
+
+// 获取限流器状态
+status := limiter.Status()
+fmt.Printf("限流中: %v, CPU: %.2f, P99: %v, 错误率: %.2f\n",
+    status.IsLimiting, status.CurrentCPU, status.CurrentLatencyP99, status.CurrentErrorRate)
+```
+
+**策略类型：**
+- `StrategyCPU` — 基于 CPU 使用率（goroutine 数/核估算）
+- `StrategyLatency` — 基于 P99 延迟
+- `StrategyErrorRate` — 基于错误率
+- `StrategyComposite` — 组合多种策略，任一触发即限流
+
+**关键类型：**
+- `adaptive.Limiter` — 自适应限流器（`Allow`, `Middleware`, `GRPCUnaryInterceptor`, `RecordLatency`, `RecordError`, `RecordSuccess`, `Status`）
+- `adaptive.Config` — 配置（`Strategy`, `CPUThreshold`, `LatencyThreshold`, `ErrorRateThreshold`, `WindowSize`, `CooldownPeriod`, `DegradeHandler`）
+- `adaptive.Status` — 当前状态（`IsLimiting`, `CurrentCPU`, `CurrentLatencyP99`, `CurrentErrorRate`, `TotalRequests`, `DroppedRequests`）
+- `adaptive.MetricsCollector` — 指标采集器接口（`OnAllow`, `OnDrop`）
+- `WithLogger(l)` / `WithMetricsCollector(mc)` — 配置选项
+
 ## trace — 链路追踪增强
 
 ```go
