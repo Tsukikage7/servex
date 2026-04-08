@@ -1,0 +1,32 @@
+package server
+
+import (
+	"net/http"
+
+	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/transport"
+	"github.com/Tsukikage7/servex/transport/httpserver"
+)
+
+// NewHTTP 创建 HTTP 服务器.
+func NewHTTP(log logger.Logger) transport.Server {
+	mux := http.NewServeMux()
+
+	// 注册路由
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	})
+
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"service":"{{.Name}}-service","message":"Hello from {{.Name}}-service"}`))
+	})
+
+	return httpserver.New(mux,
+		httpserver.WithLogger(log),
+		httpserver.WithAddr(":8080"),
+		httpserver.WithRecovery(),
+		httpserver.WithLogging(),
+	)
+}

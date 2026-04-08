@@ -1,0 +1,31 @@
+name: {{.Name}}-service
+version: 1.0.0
+
+http:
+  addr: ":8080"
+  read_timeout: 10s
+  write_timeout: 10s
+  idle_timeout: 120s
+{{if .WithGRPC}}
+grpc:
+  addr: ":9090"
+  enable_reflection: true
+{{end}}
+logger:
+  level: info
+  format: console
+  output: console
+{{if .WithDB}}
+database:
+  driver: mysql
+  dsn: "root:password@tcp(127.0.0.1:3306)/{{.Name}}?charset=utf8mb4&parseTime=True&loc=Local"
+  max_open_conns: 20
+  max_idle_conns: 10
+  max_lifetime: 300s
+{{end}}{{if .WithRedis}}
+redis:
+  addr: "127.0.0.1:6379"
+  password: ""
+  db: 0
+  pool_size: 10
+{{end}}
