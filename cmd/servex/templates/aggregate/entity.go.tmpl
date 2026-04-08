@@ -1,0 +1,37 @@
+package {{.AggLower}}
+
+{{- if .NeedsTime}}
+
+import "time"
+{{- end}}
+
+// {{.Name}} 子实体.
+type {{.Name}} struct {
+	id {{.IDType}}
+{{- range .NonIDFields}}
+	{{.CamelName}} {{.Type}}
+{{- end}}
+}
+
+// New{{.Name}} 创建{{.Name}}.
+func New{{.Name}}(id {{.IDType}}{{range .NonIDFields}}, {{.CamelName}} {{.Type}}{{end}}) *{{.Name}} {
+	return &{{.Name}}{
+		id: id,
+{{- range .NonIDFields}}
+		{{.CamelName}}: {{.CamelName}},
+{{- end}}
+	}
+}
+
+// ID 返回实体 ID.
+func (e *{{.Name}}) ID() {{.IDType}} { return e.id }
+{{range .NonIDFields}}
+// {{.Name}} 返回{{.CamelName}}.
+func (e *{{$.Name}}) {{.Name}}() {{.Type}} { return e.{{.CamelName}} }
+{{end}}
+{{- range .NonIDFields}}
+// Set{{.Name}} 修改{{.CamelName}}.
+func (e *{{$.Name}}) Set{{.Name}}({{.CamelName}} {{.Type}}) {
+	e.{{.CamelName}} = {{.CamelName}}
+}
+{{end}}

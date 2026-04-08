@@ -1,0 +1,15 @@
+package {{.CallerName}}
+
+import "context"
+
+// {{.TargetName}}Provider {{.TargetName}}服务防腐层接口.
+type {{.TargetName}}Provider interface {
+	Get{{.TargetName}}(ctx context.Context, id uint64) (*{{.TargetName}}Info, error)
+	// TODO: add more methods as needed
+}
+
+// {{.TargetName}}Info {{.TargetName}}外部服务数据.
+type {{.TargetName}}Info struct {
+	ID uint64
+	// TODO: add fields
+}

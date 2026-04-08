@@ -1,0 +1,26 @@
+package external
+
+import (
+	"context"
+	"fmt"
+
+	"google.golang.org/grpc"
+
+	domain{{.CallerName}} "{{.Module}}/domain/{{.CallerName}}"
+)
+
+// {{.TargetName}}Client {{.TargetName}}服务 gRPC 客户端适配器.
+type {{.TargetName}}Client struct {
+	conn *grpc.ClientConn
+}
+
+// New{{.TargetName}}Client 创建{{.TargetName}}服务客户端.
+func New{{.TargetName}}Client(conn *grpc.ClientConn) *{{.TargetName}}Client {
+	return &{{.TargetName}}Client{conn: conn}
+}
+
+// Get{{.TargetName}} 查询{{.TargetName}}信息.
+func (c *{{.TargetName}}Client) Get{{.TargetName}}(ctx context.Context, id uint64) (*domain{{.CallerName}}.{{.TargetName}}Info, error) {
+	// TODO: implement gRPC call to {{.TargetNameLower}}-service
+	return nil, fmt.Errorf("{{.TargetNameLower}} client: not implemented")
+}

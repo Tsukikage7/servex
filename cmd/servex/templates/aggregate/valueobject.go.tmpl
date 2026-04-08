@@ -1,0 +1,31 @@
+package {{.AggLower}}
+
+{{- if .NeedsTime}}
+
+import "time"
+{{- end}}
+
+// {{.Name}} 值对象（不可变）.
+type {{.Name}} struct {
+{{- range .Fields}}
+	{{.CamelName}} {{.Type}}
+{{- end}}
+}
+
+// New{{.Name}} 创建{{.Name}}值对象.
+func New{{.Name}}({{range $i, $f := .Fields}}{{if $i}}, {{end}}{{$f.CamelName}} {{$f.Type}}{{end}}) {{.Name}} {
+	return {{.Name}}{
+{{- range .Fields}}
+		{{.CamelName}}: {{.CamelName}},
+{{- end}}
+	}
+}
+
+// Equals 判断两个值对象是否相等.
+func (v {{.Name}}) Equals(other {{.Name}}) bool {
+	return v == other
+}
+{{range .Fields}}
+// {{.Name}} 返回{{.CamelName}}.
+func (v {{$.Name}}) {{.Name}}() {{.Type}} { return v.{{.CamelName}} }
+{{end}}
