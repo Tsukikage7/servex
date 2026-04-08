@@ -158,6 +158,59 @@ mgr, err := config.NewManager[AppConfig](
 - 非 properties 格式的命名空间（yaml/json），Apollo 将完整内容存储在 "content" 键下
 - 支持 `Load()` 和 `Watch()`，Watch 基于 Apollo `ChangeListener` 回调
 
+## config/source/k8s — Kubernetes ConfigMap/Secret 配置源
+
+```go
+import k8sSrc "github.com/Tsukikage7/servex/config/source/k8s"
+
+// 方式一：通过 Config 创建（自动构建 clientset）
+src, err := k8sSrc.New(&k8sSrc.Config{
+    KubeconfigPath: "",              // 为空则使用 in-cluster 配置
+    Namespace:      "production",    // Kubernetes 命名空间，默认 "default"
+    Name:           "myapp-config",  // ConfigMap 或 Secret 名称
+    ResourceType:   k8sSrc.ResourceConfigMap, // ResourceConfigMap（默认）或 ResourceSecret
+    Key:            "config.yaml",   // 指定 data 中的键名，为空则返回所有键值对
+    Format:         "yaml",          // 配置格式：json（默认）/ yaml / toml
+})
+if err != nil { ... }
+
+// 方式二：使用已有的 kubernetes.Interface（便于测试）
+src := k8sSrc.NewWithClient(clientset, "myapp-config",
+    k8sSrc.WithNamespace("production"),
+    k8sSrc.WithResourceType(k8sSrc.ResourceConfigMap),
+    k8sSrc.WithKey("config.yaml"),
+    k8sSrc.WithFormat("yaml"),
+)
+
+// 与 config.Manager 配合使用
+mgr, err := config.NewManager[AppConfig](
+    config.WithSource[AppConfig](src),
+    config.WithObserver[AppConfig](func(old, new *AppConfig) {
+        fmt.Println("K8s 配置已变更")
+    }),
+)
+// Watch() 基于 Kubernetes Watch API 实现变更监听
+
+// 从 Secret 读取敏感配置
+secretSrc, err := k8sSrc.New(&k8sSrc.Config{
+    Name:         "myapp-secret",
+    Namespace:    "production",
+    ResourceType: k8sSrc.ResourceSecret,
+    Key:          "credentials.json",
+    Format:       "json",
+})
+```
+
+**关键类型：**
+- `k8sSrc.New(cfg, opts...)` — 通过 Config 创建配置源，返回 `(*Source, error)`
+- `k8sSrc.NewWithClient(clientset, name, opts...)` — 使用已有客户端创建配置源
+- `k8sSrc.Config` — 连接配置（`KubeconfigPath`, `Namespace`, `Name`, `ResourceType`, `Key`, `Format`）
+- `WithFormat(format)` — 指定格式（json/yaml/toml），默认 json
+- `WithNamespace(namespace)` — 指定命名空间，默认 "default"
+- `WithKey(key)` — 指定 data 中的具体键名，为空则返回所有键值对
+- `WithResourceType(rt)` — 指定资源类型（`ResourceConfigMap` 或 `ResourceSecret`）
+- 支持 `Load()` 和 `Watch()`，Watch 基于 Kubernetes Watch API
+
 ## discovery — 服务注册与发现
 
 ```go

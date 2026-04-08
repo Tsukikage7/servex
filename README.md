@@ -108,6 +108,8 @@ servex 内置 [Claude Code Plugin](https://code.claude.com/docs/en/plugins.md)�
 | [observability/tracing](./observability/tracing/) | OpenTelemetry 链路追踪 | Y | Y | Y |
 | [observability/logshipper](./observability/logshipper/) | 日志投递（ES/Kafka sink，异步批量） | - | - | - |
 | [observability/slo](./observability/slo/) | SLO/SLI 追踪（错误预算/燃烧率/告警） | - | - | - |
+| [observability/alerting](./observability/alerting/) | 告警规则引擎（阈值/速率/缺失检测） | - | - | - |
+| [observability/profiling](./observability/profiling/) | 持续性能剖析（CPU/内存/Goroutine 周期采集） | - | - | - |
 
 ### 配置与服务发现
 
@@ -120,6 +122,7 @@ servex 内置 [Claude Code Plugin](https://code.claude.com/docs/en/plugins.md)�
 | [config/source/env](./config/source/env/) | 环境变量配置源 |
 | [config/source/nacos](./config/source/nacos/) | Nacos 配置源（监听变更） |
 | [config/source/apollo](./config/source/apollo/) | Apollo 配置中心（变更监听） |
+| [config/source/k8s](./config/source/k8s/) | Kubernetes ConfigMap/Secret 配置源 |
 | [discovery](./discovery/) | 服务发现（Consul、etcd、Nacos） |
 
 ### 存储 (storage/)

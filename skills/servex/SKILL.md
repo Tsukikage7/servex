@@ -40,8 +40,8 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 | 中间件 | `skills/servex/references/middleware.md` | ratelimit/circuitbreaker/retry/recovery/timeout/cors/requestid/idempotency/semaphore/logging/secure/csrf/bodylimit/signature/trace/gzip/adaptive |
 | 存储 | `skills/servex/references/storage.md` | cache/rdbms/mongodb/elasticsearch/clickhouse/s3/minio/neo4j/lock/sqlx/migration/redis |
 | 认证 | `skills/servex/references/auth.md` | jwt/apikey/rbac |
-| 可观测性 | `skills/servex/references/observability.md` | logger/metrics/tracing/logshipper/slo |
-| 配置 | `skills/servex/references/config.md` | config/source/file/etcd/consul/env/nacos/apollo/discovery |
+| 可观测性 | `skills/servex/references/observability.md` | logger/metrics/tracing/logshipper/slo/alerting/profiling |
+| 配置 | `skills/servex/references/config.md` | config/source/file/etcd/consul/env/nacos/apollo/k8s/discovery |
 | 消息 | `skills/servex/references/pubsub.md` | pubsub/jobqueue (kafka/rabbitmq/redis)/eventbus |
 | 领域驱动 | `skills/servex/references/distributed.md` | cqrs/saga/outbox/eventsourcing |
 | 业务组件 | `skills/servex/references/bizx.md` | counter/leaderboard/sequence/locking/ratelimit/statemachine/pagination/audit/feature/retry/event/captcha/workflow/abtesting |
@@ -136,6 +136,8 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 | observability/logger | `observability/logger` | 结构化日志 | `NewLogger`, `WithLevel`, `WithOutput` |
 | observability/logshipper | `observability/logshipper` | 日志投递（ES/Kafka sink，异步批量） | `New`, `NewElasticsearchSink`, `NewKafkaSink`, `ZapHook`, `AttachToLogger`, `NewLoggerHook` |
 | observability/slo | `observability/slo` | SLO/SLI 追踪（错误预算/告警） | `NewTracker`, `Objective`, `Record`, `Status`, `OnBreach`, `PrometheusCollector` |
+| observability/alerting | `observability/alerting` | 告警规则引擎（阈值/速率/缺失检测） | `New`, `Engine`, `AddRule`, `RemoveRule`, `Start`, `Stop`, `Evaluate`, `ActiveAlerts`, `AlertHistory` |
+| observability/profiling | `observability/profiling` | 持续性能剖析（CPU/内存/Goroutine 周期采集） | `New`, `DefaultConfig`, `Start`, `Stop`, `Collect`, `Handler`, `Status`, `NewFileExporter` |
 
 ### 配置与服务发现 → 详见 `config` skill
 
@@ -148,6 +150,7 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 | config/source/consul | `config/source/consul` | Consul KV 配置源 | `New`, `WithFormat`, `WithDatacenter` |
 | config/source/nacos | `config/source/nacos` | Nacos 配置源 | `New`, `WithFormat`, `WithGroup`, `WithNamespace` |
 | config/source/apollo | `config/source/apollo` | Apollo 配置中心配置源 | `New`, `Config`, `WithFormat`, `WithCluster`, `WithNamespace` |
+| config/source/k8s | `config/source/k8s` | Kubernetes ConfigMap/Secret 配置源 | `New`, `NewWithClient`, `Config`, `WithFormat`, `WithNamespace`, `WithKey`, `WithResourceType` |
 | discovery | `discovery` | 服务注册与发现 | `NewDiscovery`, `NewServiceRegistry`, `Register`, `Discover` |
 
 ### AI → 详见 `ai` skill
