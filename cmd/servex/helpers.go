@@ -73,7 +73,7 @@ func goType(t string) string {
 	}
 }
 
-// zeroValue 返回 Go 类型的零值字面量（用于测试模板）.
+// zeroValue 返回 Go 类型的零值字面量[用于测试模板].
 func zeroValue(typ string) string {
 	switch typ {
 	case "string":

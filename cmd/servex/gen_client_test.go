@@ -221,7 +221,7 @@ func TestGenValueObjectMissingAggregate(t *testing.T) {
 	}
 }
 
-// TestGenValueObjectImmutable 测试值对象不含 setter（不可变性）.
+// TestGenValueObjectImmutable 测试值对象不含 setter[不可变性].
 func TestGenValueObjectImmutable(t *testing.T) {
 	dir := t.TempDir()
 

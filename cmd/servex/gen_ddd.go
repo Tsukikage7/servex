@@ -13,7 +13,7 @@ type EntityData struct {
 	NameLower   string  // camelCase 名称
 	Aggregate   string  // 所属聚合名 (PascalCase)
 	AggLower    string  // 所属聚合名 (camelCase, 包名)
-	Fields      []Field // 所有字段（含 ID）
+	Fields      []Field // 所有字段[含 ID]
 	NonIDFields []Field // 非 ID 字段
 	IDType      string  // ID 字段类型
 	NeedsTime   bool
@@ -32,10 +32,10 @@ type ValueObjectData struct {
 // runGenEntity 执行 servex gen entity 命令.
 func runGenEntity(name, aggregate, fieldsStr, module, outputDir string) error {
 	if name == "" {
-		return fmt.Errorf("entity name is required")
+		return fmt.Errorf("必须指定实体名称")
 	}
 	if aggregate == "" {
-		return fmt.Errorf("aggregate name (--aggregate) is required")
+		return fmt.Errorf("必须指定聚合名 (--aggregate)")
 	}
 
 	fields := parseFields(fieldsStr)
@@ -74,10 +74,10 @@ func generateEntity(data EntityData, outputDir string) error {
 
 	outPath := filepath.Join(outputDir, "domain", data.AggLower, toSnakeCase(data.Name)+".go")
 	if err := renderTemplate(aggregateTemplates, "templates/aggregate/entity.go.tmpl", outPath, data, funcMap); err != nil {
-		return fmt.Errorf("render entity: %w", err)
+		return fmt.Errorf("渲染实体: %w", err)
 	}
 
-	fmt.Printf("Entity %q generated in aggregate %q:\n", data.Name, data.Aggregate)
+	fmt.Printf("实体 %q 已生成，所属聚合 %q:\n", data.Name, data.Aggregate)
 	fmt.Printf("  domain/%s/%s.go\n", data.AggLower, toSnakeCase(data.Name))
 
 	return nil
@@ -86,10 +86,10 @@ func generateEntity(data EntityData, outputDir string) error {
 // runGenValueObject 执行 servex gen valueobject 命令.
 func runGenValueObject(name, aggregate, fieldsStr, module, outputDir string) error {
 	if name == "" {
-		return fmt.Errorf("value object name is required")
+		return fmt.Errorf("必须指定值对象名称")
 	}
 	if aggregate == "" {
-		return fmt.Errorf("aggregate name (--aggregate) is required")
+		return fmt.Errorf("必须指定聚合名 (--aggregate)")
 	}
 
 	fields := parseFields(fieldsStr)
@@ -116,10 +116,10 @@ func generateValueObject(data ValueObjectData, outputDir string) error {
 
 	outPath := filepath.Join(outputDir, "domain", data.AggLower, toSnakeCase(data.Name)+".go")
 	if err := renderTemplate(aggregateTemplates, "templates/aggregate/valueobject.go.tmpl", outPath, data, funcMap); err != nil {
-		return fmt.Errorf("render valueobject: %w", err)
+		return fmt.Errorf("渲染值对象: %w", err)
 	}
 
-	fmt.Printf("Value object %q generated in aggregate %q:\n", data.Name, data.Aggregate)
+	fmt.Printf("值对象 %q 已生成，所属聚合 %q:\n", data.Name, data.Aggregate)
 	fmt.Printf("  domain/%s/%s.go\n", data.AggLower, toSnakeCase(data.Name))
 
 	return nil

@@ -64,7 +64,33 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 
 | 模块 | 包路径 | 描述 | 核心类型/函数 |
 |------|--------|------|--------------|
-| cmd/servex | `cmd/servex` | 脚手架 CLI（项目生成/DDD 聚合生成） | `servex new`, `servex gen aggregate`, `servex version` |
+| cmd/servex | `cmd/servex` | 脚手架 CLI（交互式向导 [charmbracelet/huh, Everforest Dark 主题]、项目生成、DDD 代码生成、Proto 管理） | `servex new`, `servex add service`, `servex gen aggregate/entity/valueobject/client/dockerfile/justfile`, `servex proto add/client/server`, `servex run`, `servex upgrade`, `servex completion` |
+
+**CLI 详情：**
+
+- **交互式向导：** `servex new` / `servex add service` 无参数时自动启动向导（Everforest Dark 主题）
+- **new：** 创建 monorepo（默认）或 `--standalone` 单服务项目，支持 `--with-grpc`、`--infra`、`--with-wire`
+- **add service：** 在 monorepo 中添加微服务，支持 `--with-grpc`、`--with-gateway`、`--infra`、`--observe`、`--auth`、`--discovery`、`--other`、`--with-wire`
+- **gen aggregate：** 生成 DDD 聚合（aggregate/event/repository/command/query/service），支持 `--commands`、`--unique`、`--service`
+- **gen entity：** 生成 DDD 子实体（有 ID，可变，属于聚合），需 `--aggregate`
+- **gen valueobject：** 生成 DDD 值对象（无 ID，不可变，属于聚合），需 `--aggregate`
+- **gen client：** 生成外部服务客户端适配器（防腐层 + gRPC client），需 `--service`
+- **gen dockerfile / justfile：** 生成 Dockerfile / justfile
+- **proto add/client/server：** Proto 模板创建、客户端代码生成、服务端桩代码生成
+- **run：** 运行服务（自动检测入口）
+- **upgrade / completion：** 自升级、Shell 自动补全（bash/zsh/fish）
+
+**可用基础设施 Flag：**
+
+| Flag | 可选值 |
+|------|--------|
+| --infra | mysql, postgres, sqlite, redis, mongo, es, clickhouse, s3, minio, neo4j, kafka, rabbitmq |
+| --observe | metrics, tracing, profiling |
+| --auth | jwt, rbac |
+| --discovery | consul, etcd, nacos |
+| --other | scheduler, i18n, tenant |
+
+**生成的项目结构：** monorepo + 六边形架构（domain/ + application/ + services/ + api/）
 
 ### 传输层 → 详见 `transport` skill
 

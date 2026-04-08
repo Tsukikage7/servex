@@ -47,26 +47,26 @@ type AggregateData struct {
 	NameLower    string       // camelCase 名称 (包名)
 	NameSnake    string       // snake_case 名称
 	Module       string       // Go module 路径
-	Service      string       // 目标服务名（monorepo 模式下生成 adapter 层）
-	Fields       []Field      // 所有字段（含 ID）
+	Service      string       // 目标服务名[monorepo 模式下生成 adapter 层]
+	Fields       []Field      // 所有字段[含 ID]
 	NonIDFields  []Field      // 非 ID 字段
 	IDType       string       // ID 字段类型
 	NeedsTime    bool
 	Commands     []CommandDef // 业务命令列表
-	UniqueFields []Field      // 唯一字段（生成 FindByXxx）
+	UniqueFields []Field      // 唯一字段[生成 FindByXxx]
 	HasCommands  bool         // 是否指定了 --commands
 }
 
 // runGen 执行 servex gen 命令.
 func runGen(args []string) error {
 	if len(args) == 0 {
-		fmt.Println("Usage: servex gen <type> [arguments]")
+		fmt.Println("用法: servex gen <type> [arguments]")
 		fmt.Println()
-		fmt.Println("Types:")
-		fmt.Println("  aggregate    Generate DDD aggregate boilerplate")
-		fmt.Println("  dockerfile   Generate a Dockerfile")
-		fmt.Println("  justfile     Generate a justfile")
-		return fmt.Errorf("gen type is required")
+		fmt.Println("类型:")
+		fmt.Println("  aggregate    生成 DDD 聚合代码")
+		fmt.Println("  dockerfile   生成 Dockerfile")
+		fmt.Println("  justfile     生成 justfile")
+		return fmt.Errorf("必须指定生成类型")
 	}
 
 	switch args[0] {
@@ -77,38 +77,38 @@ func runGen(args []string) error {
 	case "justfile":
 		return runGenJustfile(args[1:])
 	default:
-		return fmt.Errorf("unknown gen type: %s", args[0])
+		return fmt.Errorf("未知生成类型: %s", args[0])
 	}
 }
 
 // runGenAggregate 执行 servex gen aggregate 命令.
 func runGenAggregate(args []string) error {
 	fs := flag.NewFlagSet("gen aggregate", flag.ExitOnError)
-	fieldsStr := fs.String("fields", "", `Field definitions (e.g. "id:uint64,name:string,email:string")`)
-	commandsStr := fs.String("commands", "", `Business commands (e.g. "Place,Cancel,Ship")`)
-	uniqueStr := fs.String("unique", "", `Unique fields for FindByXxx (e.g. "email,username")`)
-	output := fs.String("output", ".", "Output base directory")
+	fieldsStr := fs.String("fields", "", `字段定义 (如 "id:uint64,name:string,email:string")`)
+	commandsStr := fs.String("commands", "", `业务命令 (如 "Place,Cancel,Ship")`)
+	uniqueStr := fs.String("unique", "", `唯一字段，生成 FindByXxx (如 "email,username")`)
+	output := fs.String("output", ".", "输出目录")
 	fs.Usage = func() {
-		fmt.Println("Usage: servex gen aggregate <name> [options]")
+		fmt.Println("用法: servex gen aggregate <name> [options]")
 		fmt.Println()
-		fmt.Println("Generates DDD aggregate files:")
-		fmt.Println("  domain/<name>/aggregate.go         Aggregate root")
-		fmt.Println("  domain/<name>/event.go             Domain events")
-		fmt.Println("  domain/<name>/repository.go        Repository interface (port)")
-		fmt.Println("  domain/<name>/command.go            CQRS commands")
-		fmt.Println("  domain/<name>/query.go              CQRS queries & view")
-		fmt.Println("  domain/<name>/aggregate_test.go    Aggregate unit tests")
-		fmt.Println("  domain/<name>/repository_mock.go   Mock repository for testing")
-		fmt.Println("  application/<name>/service.go      Application service")
-		fmt.Println("  application/<name>/service_test.go Service unit tests")
+		fmt.Println("生成 DDD 聚合文件:")
+		fmt.Println("  domain/<name>/aggregate.go         聚合根")
+		fmt.Println("  domain/<name>/event.go             领域事件")
+		fmt.Println("  domain/<name>/repository.go        仓储接口 (端口)")
+		fmt.Println("  domain/<name>/command.go            CQRS 命令")
+		fmt.Println("  domain/<name>/query.go              CQRS 查询 & 视图")
+		fmt.Println("  domain/<name>/aggregate_test.go    聚合单元测试")
+		fmt.Println("  domain/<name>/repository_mock.go   仓储 Mock")
+		fmt.Println("  application/<name>/service.go      应用服务")
+		fmt.Println("  application/<name>/service_test.go 服务单元测试")
 		fmt.Println()
-		fmt.Println("Options:")
+		fmt.Println("选项:")
 		fs.PrintDefaults()
 	}
 
 	if len(args) == 0 {
 		fs.Usage()
-		return fmt.Errorf("aggregate name is required")
+		return fmt.Errorf("必须指定聚合名称")
 	}
 
 	name := args[0]
@@ -298,18 +298,18 @@ func generateAggregate(data AggregateData, outputDir string) error {
 	for _, af := range aggregateFiles {
 		outPath := filepath.Join(outputDir, af.dir, data.NameLower, af.out)
 		if err := renderTemplate(aggregateTemplates, af.tmpl, outPath, data, funcMap); err != nil {
-			return fmt.Errorf("render %s: %w", af.tmpl, err)
+			return fmt.Errorf("渲染 %s: %w", af.tmpl, err)
 		}
 	}
 
-	fmt.Printf("DDD aggregate %q generated", data.Name)
+	fmt.Printf("DDD 聚合 %q 已生成", data.Name)
 	if isMonorepo() {
-		fmt.Println(" (monorepo detected):")
+		fmt.Println(" (检测到 monorepo):")
 	} else {
 		fmt.Println(":")
 	}
-	fmt.Printf("  domain/%s/      (aggregate, events, repository, commands, queries, tests, mock)\n", data.NameLower)
-	fmt.Printf("  application/%s/ (service, tests)\n", data.NameLower)
+	fmt.Printf("  domain/%s/      (聚合, 事件, 仓储, 命令, 查询, 测试, mock)\n", data.NameLower)
+	fmt.Printf("  application/%s/ (服务, 测试)\n", data.NameLower)
 
 	// 如果指定了 --service，生成 adapter/persistence 层
 	if data.Service != "" {
@@ -317,10 +317,10 @@ func generateAggregate(data AggregateData, outputDir string) error {
 		for _, af := range adapterFiles {
 			outPath := filepath.Join(adapterBase, data.NameSnake+af.out)
 			if err := renderTemplate(aggregateTemplates, af.tmpl, outPath, data, funcMap); err != nil {
-				return fmt.Errorf("render %s: %w", af.tmpl, err)
+				return fmt.Errorf("渲染 %s: %w", af.tmpl, err)
 			}
 		}
-		fmt.Printf("  services/%s-service/internal/adapter/persistence/ (repo, model, tests)\n", data.Service)
+		fmt.Printf("  services/%s-service/internal/adapter/persistence/ (仓储, 模型, 测试)\n", data.Service)
 	}
 
 	return nil
@@ -329,15 +329,15 @@ func generateAggregate(data AggregateData, outputDir string) error {
 // runGenDockerfile 执行 servex gen dockerfile 命令.
 func runGenDockerfile(args []string) error {
 	fs := flag.NewFlagSet("gen dockerfile", flag.ExitOnError)
-	name := fs.String("name", "server", "Service name")
-	port := fs.String("port", "8080", "Exposed port")
-	output := fs.String("output", ".", "Output directory")
+	name := fs.String("name", "server", "服务名称")
+	port := fs.String("port", "8080", "暴露端口")
+	output := fs.String("output", ".", "输出目录")
 	fs.Usage = func() {
-		fmt.Println("Usage: servex gen dockerfile [options]")
+		fmt.Println("用法: servex gen dockerfile [options]")
 		fmt.Println()
-		fmt.Println("Generates a multi-stage Dockerfile for Go services.")
+		fmt.Println("生成 Go 服务多阶段 Dockerfile.")
 		fmt.Println()
-		fmt.Println("Options:")
+		fmt.Println("选项:")
 		fs.PrintDefaults()
 	}
 
@@ -357,25 +357,25 @@ func runGenDockerfile(args []string) error {
 func generateDockerfile(data DockerData, outputDir string) error {
 	outPath := filepath.Join(outputDir, "Dockerfile")
 	if err := renderTemplate(genTemplates, "templates/gen/Dockerfile.tmpl", outPath, data, nil); err != nil {
-		return fmt.Errorf("render Dockerfile: %w", err)
+		return fmt.Errorf("渲染 Dockerfile: %w", err)
 	}
 
-	fmt.Printf("Dockerfile generated: %s\n", outPath)
+	fmt.Printf("Dockerfile 已生成: %s\n", outPath)
 	return nil
 }
 
 // runGenJustfile 执行 servex gen justfile 命令.
 func runGenJustfile(args []string) error {
 	fs := flag.NewFlagSet("gen justfile", flag.ExitOnError)
-	name := fs.String("name", "server", "Service name")
-	module := fs.String("module", "", "Go module path")
-	output := fs.String("output", ".", "Output directory")
+	name := fs.String("name", "server", "服务名称")
+	module := fs.String("module", "", "Go module 路径")
+	output := fs.String("output", ".", "输出目录")
 	fs.Usage = func() {
-		fmt.Println("Usage: servex gen justfile [options]")
+		fmt.Println("用法: servex gen justfile [options]")
 		fmt.Println()
-		fmt.Println("Generates a justfile with build, test, lint, proto, wire, and docker recipes.")
+		fmt.Println("生成 justfile，包含 build/test/lint/proto/wire/docker 等常用任务.")
 		fmt.Println()
-		fmt.Println("Options:")
+		fmt.Println("选项:")
 		fs.PrintDefaults()
 	}
 
@@ -399,9 +399,9 @@ func runGenJustfile(args []string) error {
 func generateJustfile(data JustfileData, outputDir string) error {
 	outPath := filepath.Join(outputDir, "justfile")
 	if err := renderTemplate(genTemplates, "templates/gen/justfile.tmpl", outPath, data, nil); err != nil {
-		return fmt.Errorf("render justfile: %w", err)
+		return fmt.Errorf("渲染 justfile: %w", err)
 	}
 
-	fmt.Printf("justfile generated: %s\n", outPath)
+	fmt.Printf("justfile 已生成: %s\n", outPath)
 	return nil
 }

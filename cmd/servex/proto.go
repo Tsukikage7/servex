@@ -42,7 +42,7 @@ type RPCInfo struct {
 func runProto(args []string) error {
 	if len(args) == 0 {
 		printProtoUsage()
-		return fmt.Errorf("proto subcommand is required")
+		return fmt.Errorf("必须指定 proto 子命令")
 	}
 
 	switch args[0] {
@@ -57,39 +57,39 @@ func runProto(args []string) error {
 		return nil
 	default:
 		printProtoUsage()
-		return fmt.Errorf("unknown proto subcommand: %s", args[0])
+		return fmt.Errorf("未知 proto 子命令: %s", args[0])
 	}
 }
 
 // printProtoUsage 输出 proto 命令帮助信息.
 func printProtoUsage() {
-	fmt.Println(`Usage: servex proto <subcommand> [arguments]
+	fmt.Println(`用法: servex proto <subcommand> [arguments]
 
-Subcommands:
-  add       Create a proto service template
-  client    Generate client code from proto file
-  server    Generate server implementation stubs from proto file
+子命令:
+  add       创建 proto 服务模板
+  client    从 proto 文件生成客户端代码
+  server    从 proto 文件生成服务端桩代码
 
-Run 'servex proto <subcommand> -h' for more information.`)
+运行 'servex proto <subcommand> -h' 查看更多信息.`)
 }
 
 // runProtoAdd 执行 servex proto add 命令.
 func runProtoAdd(args []string) error {
 	fs := flag.NewFlagSet("proto add", flag.ExitOnError)
-	module := fs.String("module", "", "Go module path (default: from go.mod)")
-	output := fs.String("output", ".", "Output base directory")
+	module := fs.String("module", "", "Go module 路径 (默认: 从 go.mod 读取)")
+	output := fs.String("output", ".", "输出目录")
 	fs.Usage = func() {
-		fmt.Println("Usage: servex proto add <name> [options]")
+		fmt.Println("用法: servex proto add <name> [options]")
 		fmt.Println()
-		fmt.Println("Creates api/<name>/v1/<name>.proto with a basic service definition.")
+		fmt.Println("创建 api/<name>/v1/<name>.proto 基础服务定义.")
 		fmt.Println()
-		fmt.Println("Options:")
+		fmt.Println("选项:")
 		fs.PrintDefaults()
 	}
 
 	if len(args) == 0 {
 		fs.Usage()
-		return fmt.Errorf("proto service name is required")
+		return fmt.Errorf("必须指定 proto 服务名称")
 	}
 
 	name := strings.ToLower(args[0])
@@ -100,7 +100,7 @@ func runProtoAdd(args []string) error {
 	if *module == "" {
 		mod, err := detectModule()
 		if err != nil {
-			return fmt.Errorf("detect go module: %w (use --module to specify)", err)
+			return fmt.Errorf("检测 go module 失败: %w (请使用 --module 指定)", err)
 		}
 		*module = mod
 	}
@@ -117,32 +117,32 @@ func runProtoAdd(args []string) error {
 	}
 
 	if err := renderTemplate(protoTemplates, "templates/proto/service.proto.tmpl", outPath, data, funcMap); err != nil {
-		return fmt.Errorf("render proto template: %w", err)
+		return fmt.Errorf("渲染 proto 模板: %w", err)
 	}
 
-	fmt.Printf("Proto file created: %s\n", outPath)
-	fmt.Printf("  service: %sService\n", data.PascalName)
-	fmt.Printf("  package: %s.v1\n", name)
+	fmt.Printf("Proto 文件已创建: %s\n", outPath)
+	fmt.Printf("  服务: %sService\n", data.PascalName)
+	fmt.Printf("  包名: %s.v1\n", name)
 	return nil
 }
 
 // runProtoClient 执行 servex proto client 命令.
 func runProtoClient(args []string) error {
 	fs := flag.NewFlagSet("proto client", flag.ExitOnError)
-	output := fs.String("output", "", "Output directory (default: same as proto file)")
+	output := fs.String("output", "", "输出目录 (默认: proto 文件所在目录)")
 	fs.Usage = func() {
-		fmt.Println("Usage: servex proto client <proto-file> [options]")
+		fmt.Println("用法: servex proto client <proto-file> [options]")
 		fmt.Println()
-		fmt.Println("Generates Go client code from a proto file using protoc.")
-		fmt.Println("Generates: *.pb.go, *_grpc.pb.go, *_http.pb.go")
+		fmt.Println("从 proto 文件使用 protoc 生成 Go 客户端代码.")
+		fmt.Println("生成: *.pb.go, *_grpc.pb.go, *_http.pb.go")
 		fmt.Println()
-		fmt.Println("Options:")
+		fmt.Println("选项:")
 		fs.PrintDefaults()
 	}
 
 	if len(args) == 0 {
 		fs.Usage()
-		return fmt.Errorf("proto file path is required")
+		return fmt.Errorf("必须指定 proto 文件路径")
 	}
 
 	protoFile := args[0]
@@ -151,7 +151,7 @@ func runProtoClient(args []string) error {
 	}
 
 	if _, err := os.Stat(protoFile); os.IsNotExist(err) {
-		return fmt.Errorf("proto file not found: %s", protoFile)
+		return fmt.Errorf("proto 文件不存在: %s", protoFile)
 	}
 
 	outDir := *output
@@ -160,12 +160,12 @@ func runProtoClient(args []string) error {
 	}
 
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
-		return fmt.Errorf("create output directory: %w", err)
+		return fmt.Errorf("创建输出目录: %w", err)
 	}
 
 	protocPath, err := exec.LookPath("protoc")
 	if err != nil {
-		return fmt.Errorf("protoc not found in PATH.\n\nInstall protoc:\n  macOS:   brew install protobuf\n  Linux:   apt install -y protobuf-compiler\n  Manual:  https://github.com/protocolbuffers/protobuf/releases\n\nInstall Go plugins:\n  go install google.golang.org/protobuf/cmd/protoc-gen-go@latest\n  go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest")
+		return fmt.Errorf("未找到 protoc，请先安装:\n\n安装 protoc:\n  macOS:   brew install protobuf\n  Linux:   apt install -y protobuf-compiler\n  手动:    https://github.com/protocolbuffers/protobuf/releases\n\n安装 Go 插件:\n  go install google.golang.org/protobuf/cmd/protoc-gen-go@latest\n  go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest")
 	}
 
 	protoDir := filepath.Dir(protoFile)
@@ -193,10 +193,10 @@ func runProtoClient(args []string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("protoc failed: %w", err)
+		return fmt.Errorf("protoc 执行失败: %w", err)
 	}
 
-	fmt.Printf("Client code generated in: %s\n", outDir)
+	fmt.Printf("客户端代码已生成: %s\n", outDir)
 	return nil
 }
 
@@ -220,20 +220,20 @@ func hasHTTPAnnotations(protoFile string) bool {
 // runProtoServer 执行 servex proto server 命令.
 func runProtoServer(args []string) error {
 	fs := flag.NewFlagSet("proto server", flag.ExitOnError)
-	target := fs.String("target", "internal/service", "Output directory for server stubs")
-	service := fs.String("service", "", "Target service name (monorepo mode)")
+	target := fs.String("target", "internal/service", "输出目录")
+	service := fs.String("service", "", "目标服务名[monorepo 模式]")
 	fs.Usage = func() {
-		fmt.Println("Usage: servex proto server <proto-file> [options]")
+		fmt.Println("用法: servex proto server <proto-file> [options]")
 		fmt.Println()
-		fmt.Println("Generates Go server implementation stubs from a proto file.")
+		fmt.Println("从 proto 文件生成 Go 服务端桩代码.")
 		fmt.Println()
-		fmt.Println("Options:")
+		fmt.Println("选项:")
 		fs.PrintDefaults()
 	}
 
 	if len(args) == 0 {
 		fs.Usage()
-		return fmt.Errorf("proto file path is required")
+		return fmt.Errorf("必须指定 proto 文件路径")
 	}
 
 	protoFile := args[0]
@@ -242,17 +242,17 @@ func runProtoServer(args []string) error {
 	}
 
 	if _, err := os.Stat(protoFile); os.IsNotExist(err) {
-		return fmt.Errorf("proto file not found: %s", protoFile)
+		return fmt.Errorf("proto 文件不存在: %s", protoFile)
 	}
 
 	serviceName, rpcs, err := parseProtoFile(protoFile)
 	if err != nil {
-		return fmt.Errorf("parse proto file: %w", err)
+		return fmt.Errorf("解析 proto 文件: %w", err)
 	}
 
 	modulePath, err := detectModuleFromProto(protoFile)
 	if err != nil {
-		return fmt.Errorf("detect module: %w", err)
+		return fmt.Errorf("检测 module: %w", err)
 	}
 
 	name := strings.ToLower(serviceName)
@@ -275,12 +275,12 @@ func runProtoServer(args []string) error {
 	}
 
 	if err := renderTemplate(protoTemplates, "templates/proto/server.go.tmpl", outPath, data, funcMap); err != nil {
-		return fmt.Errorf("render server template: %w", err)
+		return fmt.Errorf("渲染服务端模板: %w", err)
 	}
 
-	fmt.Printf("Server stub generated: %s\n", outPath)
-	fmt.Printf("  service: %sService\n", data.PascalName)
-	fmt.Printf("  methods: %d\n", len(rpcs))
+	fmt.Printf("服务端桩代码已生成: %s\n", outPath)
+	fmt.Printf("  服务: %sService\n", data.PascalName)
+	fmt.Printf("  方法数: %d\n", len(rpcs))
 	return nil
 }
 
@@ -301,7 +301,7 @@ func parseProtoFile(path string) (string, []RPCInfo, error) {
 
 	serviceMatch := servicePattern.FindStringSubmatch(text)
 	if serviceMatch == nil {
-		return "", nil, fmt.Errorf("no service definition found in %s", path)
+		return "", nil, fmt.Errorf("在 %s 中未找到 service 定义", path)
 	}
 	serviceName := serviceMatch[1]
 
@@ -373,7 +373,7 @@ func findGoModule(dir string) (string, error) {
 					return strings.TrimSpace(m[1]), nil
 				}
 			}
-			return "", fmt.Errorf("module line not found in %s", modPath)
+			return "", fmt.Errorf("在 %s 中未找到 module 行", modPath)
 		}
 
 		parent := filepath.Dir(dir)
@@ -382,5 +382,5 @@ func findGoModule(dir string) (string, error) {
 		}
 		dir = parent
 	}
-	return "", fmt.Errorf("go.mod not found")
+	return "", fmt.Errorf("未找到 go.mod")
 }

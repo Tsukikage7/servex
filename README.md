@@ -40,45 +40,107 @@ servex 内置 [Claude Code Plugin](https://code.claude.com/docs/en/plugins.md)�
 
 ## CLI 工具
 
-servex 提供基于 [cobra](https://github.com/spf13/cobra) 的脚手架 CLI，对标 kratos/goctl：
+servex 提供基于 [cobra](https://github.com/spf13/cobra) 的脚手架 CLI，对标 kratos/goctl，支持交互式向导（[charmbracelet/huh](https://github.com/charmbracelet/huh)，Everforest Dark 主题）。
+
+### 安装
 
 ```bash
-# 安装
 go install github.com/Tsukikage7/servex/cmd/servex@latest
+```
 
+### 交互式向导
+
+```bash
+# 无参数自动启动交互式向导
+servex new
+servex add service
+```
+
+### 命令行模式（CI/脚本）
+
+```bash
 # 创建 monorepo 项目（默认）
 servex new myproject --module github.com/example/myproject
 
 # 创建独立单服务项目
-servex new myservice --module github.com/example/myservice --standalone --with-grpc --with-db --with-redis --with-wire
+servex new myservice --standalone --with-grpc --infra "mysql,redis"
 
-# 在 monorepo 中添加微服务
-cd myproject
-servex add service user --with-grpc --with-db --with-redis
-servex add service order --with-grpc
+# 添加微服务
+servex add service order --with-grpc --with-gateway \
+  --infra "mysql,redis,kafka" \
+  --observe "metrics,tracing" \
+  --auth "jwt" \
+  --discovery "consul"
 
-# 生成 DDD 聚合（自动检测 monorepo）
-servex gen aggregate user --fields "id:uint64,name:string,email:string"
+# 生成 DDD 聚合（业务语义）
+servex gen aggregate order \
+  --fields "id:uint64,user_id:uint64,status:string,total:float64" \
+  --commands "Place,Cancel,Ship" \
+  --unique "user_id" \
+  --service order
 
-# 生成 Dockerfile / justfile
-servex gen dockerfile --name myservice --port 8080
-servex gen justfile --name myservice --module github.com/example/myservice
+# 生成子实体和值对象
+servex gen entity order_item --aggregate order --fields "id:uint64,product_id:uint64,quantity:int"
+servex gen valueobject address --aggregate order --fields "street:string,city:string,zip:string"
+
+# 生成外部服务适配器（防腐层）
+servex gen client user --service order
 
 # Proto 管理
-servex proto add user                           # 创建 api/user/v1/user.proto 模板
-servex proto client api/user/v1/user.proto      # 生成 pb.go/grpc.go/http.go
-servex proto server api/user/v1/user.proto      # 生成服务端实现桩代码
-servex proto server api/user/v1/user.proto --service user  # monorepo 指定服务
+servex proto add order
+servex proto client api/order/v1/order.proto
+servex proto server api/order/v1/order.proto --service order
 
-# 运行服务（自动检测入口）
+# Dockerfile / justfile
+servex gen dockerfile --name myservice --port 8080
+servex gen justfile --name myservice
+
+# 运行 / 升级 / 补全
 servex run
-servex run --entry ./cmd/server --race
-
-# 自升级
 servex upgrade
+servex completion bash/zsh/fish
+```
 
-# Shell 自动补全
-servex completion bash/zsh/fish/powershell
+### 可用基础设施组件
+
+| Flag | 可选值 |
+|------|--------|
+| --infra | mysql, postgres, sqlite, redis, mongo, es, clickhouse, s3, minio, neo4j, kafka, rabbitmq |
+| --observe | metrics, tracing, profiling |
+| --auth | jwt, rbac |
+| --discovery | consul, etcd, nacos |
+| --other | scheduler, i18n, tenant |
+
+### 生成的项目结构（monorepo + 六边形架构）
+
+```
+myproject/
+├── domain/              # 共享领域层
+│   └── order/
+│       ├── aggregate.go  # 聚合根 + Reconstruct
+│       ├── event.go      # 业务事件（OrderPlaced/Cancelled/...）
+│       ├── repository.go # 仓储接口 + Filter
+│       ├── command.go    # CQRS 业务命令
+│       ├── query.go      # 查询 + View
+│       └── ports.go      # 防腐层接口
+├── application/         # 共享应用服务
+│   └── order/service.go # EventBus + DTO 返回
+├── services/
+│   └── order-service/
+│       ├── cmd/server/main.go
+│       ├── internal/
+│       │   ├── port/         # 入站端口
+│       │   │   ├── http.go   # Router + Handle
+│       │   │   ├── grpc.go   # RegisterGRPC
+│       │   │   └── gateway.go # HTTP+gRPC 双协议
+│       │   ├── adapter/      # 出站适配器
+│       │   │   ├── persistence/  # DB 仓储
+│       │   │   └── external/     # 外部服务客户端
+│       │   └── service/      # proto 服务实现
+│       └── configs/config.yaml
+├── api/                 # 共享 Proto
+├── justfile
+└── go.mod
 ```
 
 ## 包概览

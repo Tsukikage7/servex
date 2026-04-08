@@ -11,17 +11,17 @@ var installPath = "github.com/Tsukikage7/servex/cmd/servex@latest"
 
 // runUpgrade 执行 servex upgrade 命令.
 func runUpgrade(args []string) error {
-	fmt.Println("servex: upgrading to latest version...")
+	fmt.Println("servex: 正在升级到最新版本...")
 
 	cmd := exec.Command("go", "install", installPath)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("upgrade failed: %w", err)
+		return fmt.Errorf("升级失败: %w", err)
 	}
 
-	fmt.Println("servex: upgraded successfully")
+	fmt.Println("servex: 升级成功")
 
 	// 显示新版本
 	verCmd := exec.Command("servex", "version")

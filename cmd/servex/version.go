@@ -11,5 +11,5 @@ var (
 
 // runVersion 输出版本信息.
 func runVersion() {
-	fmt.Printf("servex %s\n  commit: %s\n  built:  %s\n", version, gitCommit, buildDate)
+	fmt.Printf("servex %s\n  提交: %s\n  构建: %s\n", version, gitCommit, buildDate)
 }

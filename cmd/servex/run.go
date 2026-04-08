@@ -34,18 +34,18 @@ func detectEntryPoint() string {
 // runRun 执行 servex run 命令.
 func runRun(args []string) error {
 	fs := flag.NewFlagSet("run", flag.ContinueOnError)
-	entry := fs.String("entry", "", "Override entry point (default: auto-detect)")
-	race := fs.Bool("race", false, "Enable race detector (-race)")
+	entry := fs.String("entry", "", "入口路径 (默认: 自动检测)")
+	race := fs.Bool("race", false, "启用竞态检测 (-race)")
 	fs.Usage = func() {
-		fmt.Println("Usage: servex run [options] [-- args...]")
+		fmt.Println("用法: servex run [options] [-- args...]")
 		fmt.Println()
-		fmt.Println("Run the current project with go run.")
-		fmt.Println("Auto-detects the main package entry point:")
-		fmt.Println("  1. ./cmd/server   (if cmd/server/main.go exists)")
-		fmt.Println("  2. ./cmd/<dirname> (if cmd/<dirname>/main.go exists)")
-		fmt.Println("  3. .              (fallback)")
+		fmt.Println("使用 go run 运行当前项目.")
+		fmt.Println("自动检测 main 包入口:")
+		fmt.Println("  1. ./cmd/server   (如果 cmd/server/main.go 存在)")
+		fmt.Println("  2. ./cmd/<dirname> (如果 cmd/<dirname>/main.go 存在)")
+		fmt.Println("  3. .              (回退)")
 		fmt.Println()
-		fmt.Println("Options:")
+		fmt.Println("选项:")
 		fs.PrintDefaults()
 	}
 
@@ -71,7 +71,7 @@ func runRun(args []string) error {
 		entryPoint = detectEntryPoint()
 	}
 
-	fmt.Printf("servex: running %s...\n", entryPoint)
+	fmt.Printf("servex: 正在运行 %s...\n", entryPoint)
 
 	// 构建 go run 命令参数
 	cmdArgs := []string{"run"}
@@ -91,7 +91,7 @@ func runRun(args []string) error {
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
 	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("start: %w", err)
+		return fmt.Errorf("启动失败: %w", err)
 	}
 
 	go func() {
@@ -109,7 +109,7 @@ func runRun(args []string) error {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			os.Exit(exitErr.ExitCode())
 		}
-		return fmt.Errorf("run: %w", err)
+		return fmt.Errorf("运行失败: %w", err)
 	}
 	return nil
 }
