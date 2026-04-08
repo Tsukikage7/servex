@@ -115,7 +115,8 @@ servex 内置 [Claude Code Plugin](https://code.claude.com/docs/en/plugins.md)�
 | [config/source/etcd](./config/source/etcd/) | etcd 配置源 |
 | [config/source/consul](./config/source/consul/) | Consul 配置源 |
 | [config/source/env](./config/source/env/) | 环境变量配置源 |
-| [discovery](./discovery/) | 服务发现（Consul、etcd） |
+| [config/source/nacos](./config/source/nacos/) | Nacos 配置源（监听变更） |
+| [discovery](./discovery/) | 服务发现（Consul、etcd、Nacos） |
 
 ### 存储 (storage/)
 

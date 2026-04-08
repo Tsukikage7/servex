@@ -8,6 +8,9 @@ const TypeConsul = "consul"
 // TypeEtcd 表示 etcd 服务发现类型.
 const TypeEtcd = "etcd"
 
+// TypeNacos 表示 Nacos 服务发现类型.
+const TypeNacos = "nacos"
+
 const (
 	// ProtocolHTTP 表示 HTTP 协议.
 	ProtocolHTTP = "http"
@@ -34,6 +37,11 @@ type Config struct {
 	// etcd 专用配置字段（Type == TypeEtcd 时生效）.
 	EtcdEndpoints   []string      `json:"etcd_endpoints" toml:"etcd_endpoints" yaml:"etcd_endpoints" mapstructure:"etcd_endpoints"`
 	EtcdDialTimeout time.Duration `json:"etcd_dial_timeout" toml:"etcd_dial_timeout" yaml:"etcd_dial_timeout" mapstructure:"etcd_dial_timeout"`
+
+	// Nacos 专用配置字段（Type == TypeNacos 时生效）.
+	NacosEndpoints   []string `json:"nacos_endpoints" toml:"nacos_endpoints" yaml:"nacos_endpoints" mapstructure:"nacos_endpoints"`
+	NacosNamespaceID string   `json:"nacos_namespace_id" toml:"nacos_namespace_id" yaml:"nacos_namespace_id" mapstructure:"nacos_namespace_id"`
+	NacosGroupName   string   `json:"nacos_group_name" toml:"nacos_group_name" yaml:"nacos_group_name" mapstructure:"nacos_group_name"`
 }
 
 // ServiceMetaConfig 表示服务元数据配置.
@@ -57,7 +65,7 @@ func (c *Config) Validate() error {
 	if c.Type == "" {
 		return ErrEmptyType
 	}
-	if c.Type != TypeConsul && c.Type != TypeEtcd {
+	if c.Type != TypeConsul && c.Type != TypeEtcd && c.Type != TypeNacos {
 		return ErrUnsupportedType
 	}
 	return nil

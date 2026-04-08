@@ -37,14 +37,14 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 | 领域 | 文件路径 | 覆盖模块 |
 |------|---------|---------|
 | 传输层 | `skills/servex/references/transport.md` | httpserver/grpcserver/httpclient/grpcclient/gateway/graphql/websocket/sse/grpcx/tls |
-| 中间件 | `skills/servex/references/middleware.md` | ratelimit/circuitbreaker/retry/recovery/timeout/cors/requestid/idempotency/semaphore/logging/secure/csrf/bodylimit/signature/trace |
-| 存储 | `skills/servex/references/storage.md` | cache/rdbms/mongodb/elasticsearch/clickhouse/s3/lock/sqlx/migration/redis |
+| 中间件 | `skills/servex/references/middleware.md` | ratelimit/circuitbreaker/retry/recovery/timeout/cors/requestid/idempotency/semaphore/logging/secure/csrf/bodylimit/signature/trace/gzip/adaptive |
+| 存储 | `skills/servex/references/storage.md` | cache/rdbms/mongodb/elasticsearch/clickhouse/s3/minio/neo4j/lock/sqlx/migration/redis |
 | 认证 | `skills/servex/references/auth.md` | jwt/apikey/rbac |
-| 可观测性 | `skills/servex/references/observability.md` | logger/metrics/tracing/logshipper |
-| 配置 | `skills/servex/references/config.md` | config/source/file/etcd/consul/env/discovery |
-| 消息 | `skills/servex/references/pubsub.md` | pubsub/jobqueue (kafka/rabbitmq/redis) |
+| 可观测性 | `skills/servex/references/observability.md` | logger/metrics/tracing/logshipper/slo |
+| 配置 | `skills/servex/references/config.md` | config/source/file/etcd/consul/env/nacos/apollo/discovery |
+| 消息 | `skills/servex/references/pubsub.md` | pubsub/jobqueue (kafka/rabbitmq/redis)/eventbus |
 | 领域驱动 | `skills/servex/references/distributed.md` | cqrs/saga/outbox/eventsourcing |
-| 业务组件 | `skills/servex/references/bizx.md` | counter/leaderboard/sequence/locking/ratelimit/statemachine/pagination/audit/feature/retry/event/captcha |
+| 业务组件 | `skills/servex/references/bizx.md` | counter/leaderboard/sequence/locking/ratelimit/statemachine/pagination/audit/feature/retry/event/captcha/workflow/abtesting |
 | 通知 | `skills/servex/references/notify.md` | email/sms/push/webhook |
 | OAuth2 | `skills/servex/references/oauth2.md` | github/google/wechat/state |
 | 其他 | `skills/servex/references/errors.md` `skills/servex/references/httpx.md` `skills/servex/references/i18n.md` `skills/servex/references/tenant.md` `skills/servex/references/validation.md` `skills/servex/references/xutil.md` `skills/servex/references/collections.md` `skills/servex/references/testx.md` `skills/servex/references/openapi.md` `skills/servex/references/webhook.md` | 对应模块 |
@@ -99,6 +99,8 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 | bodylimit | `middleware/bodylimit` | 请求体大小限制 | `HTTPMiddleware`, `ParseLimit` |
 | signature | `middleware/signature` | HMAC 请求签名验证 | `HTTPMiddleware`, `DefaultConfig`, `SignRequest`, `Sign`, `Verify` |
 | trace | `middleware/trace` | 链路追踪增强（trace-id 传播/日志注入/下游传递） | `HTTPMiddleware`, `GRPCUnaryInterceptor`, `GRPCStreamInterceptor`, `TraceIDFromContext`, `InjectHTTPHeaders`, `InjectGRPCMetadata` |
+| gzip | `middleware/gzip` | HTTP 响应 gzip 压缩 | `New`, `Handler`, `WithLevel`, `WithMinLength`, `WithExcludePaths`, `WithExcludeContentTypes` |
+| adaptive | `middleware/adaptive` | 自适应限流与降级（CPU/延迟/错误率） | `New`, `Limiter`, `Middleware`, `GRPCUnaryInterceptor`, `RecordLatency`, `RecordError`, `Status` |
 
 ### 认证 → 详见 `auth` skill
 
@@ -122,6 +124,8 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 | storage/migration | `storage/migration` | 数据库迁移（Go DSL） | `NewRegistry`, `Add`, `NewRunner`, `Up`, `Down`, `Status` |
 | storage/clickhouse | `storage/clickhouse` | ClickHouse 客户端 | `NewClient`, `MustNewClient`, `DefaultConfig`, `Exec`, `Query`, `Select`, `PrepareBatch` |
 | storage/redis | `storage/redis` | Redis 客户端（完整数据类型操作） | `NewClient`, `MustNewClient`, `DefaultConfig`, `Set`, `Get`, `PipelineExec`, `Subscribe` |
+| storage/minio | `storage/minio` | MinIO 对象存储 | `NewClient`, `DefaultConfig`, `PutObject`, `GetObject`, `DeleteObject`, `PresignGetObject`, `PresignPutObject` |
+| storage/neo4j | `storage/neo4j` | Neo4j 图数据库 | `NewClient`, `DefaultConfig`, `Run`, `ReadTransaction`, `WriteTransaction`, `Close` |
 
 ### 可观测性 → 详见 `observability` skill
 
@@ -131,6 +135,7 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 | observability/tracing | `observability/tracing` | OpenTelemetry 追踪 | `NewTracer`, `TracingConfig`, `OTLPConfig` |
 | observability/logger | `observability/logger` | 结构化日志 | `NewLogger`, `WithLevel`, `WithOutput` |
 | observability/logshipper | `observability/logshipper` | 日志投递（ES/Kafka sink，异步批量） | `New`, `NewElasticsearchSink`, `NewKafkaSink`, `ZapHook`, `AttachToLogger`, `NewLoggerHook` |
+| observability/slo | `observability/slo` | SLO/SLI 追踪（错误预算/告警） | `NewTracker`, `Objective`, `Record`, `Status`, `OnBreach`, `PrometheusCollector` |
 
 ### 配置与服务发现 → 详见 `config` skill
 
@@ -141,6 +146,8 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 | config/source/etcd | `config/source/etcd` | etcd 配置源 | `New` |
 | config/source/env | `config/source/env` | 环境变量配置源 | `New` |
 | config/source/consul | `config/source/consul` | Consul KV 配置源 | `New`, `WithFormat`, `WithDatacenter` |
+| config/source/nacos | `config/source/nacos` | Nacos 配置源 | `New`, `WithFormat`, `WithGroup`, `WithNamespace` |
+| config/source/apollo | `config/source/apollo` | Apollo 配置中心配置源 | `New`, `Config`, `WithFormat`, `WithCluster`, `WithNamespace` |
 | discovery | `discovery` | 服务注册与发现 | `NewDiscovery`, `NewServiceRegistry`, `Register`, `Discover` |
 
 ### AI → 详见 `ai` skill
@@ -200,6 +207,7 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 | jobqueue/kafka | `messaging/jobqueue/kafka` | Kafka Store | `NewStore` |
 | jobqueue/rabbitmq | `messaging/jobqueue/rabbitmq` | RabbitMQ Store | `NewStore` |
 | jobqueue/database | `messaging/jobqueue/database` | GORM Database Store | `NewStore` |
+| eventbus | `messaging/eventbus` | 进程内事件总线（同步/异步分发） | `New`, `Bus`, `Subscribe`, `SubscribeAll`, `Publish`, `PublishAsync`, `Close` |
 
 ### 通知
 
@@ -277,6 +285,7 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 | xutil/iox | `xutil/iox` | IO 工具 | IO 辅助函数 |
 | xutil/valuex | `xutil/valuex` | 值工具 | `AnyValue` 类型安全取值 |
 | xutil/idgen | `xutil/idgen` | 分布式 ID 生成 | `NewSnowflake`, `NewULID`, `NewNanoID`, `Snowflake`, `ULID`, `NanoID`, `UUID` |
+| xutil/templatex | `xutil/templatex` | 增强模板引擎（text/html 双引擎+内置函数） | `New`, `Engine`, `Render`, `RenderString`, `RenderHTML`, `ParseFile`, `ParseGlob` |
 
 ### 业务组件 → 详见 `bizx` skill
 
@@ -294,6 +303,8 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 | bizx/retry | `bizx/retry` | 异步重试（持久化/指数退避/死信） | `NewScheduler`, `NewGORMStore`, `Register`, `Submit`, `WithMaxRetries` |
 | bizx/event | `bizx/event` | 进程内事件总线（通配符/优先级/异步） | `New`, `Publish`, `Subscribe`, `Unsubscribe`, `WithPriority`, `WithAsync` |
 | bizx/captcha | `bizx/captcha` | 验证码管理（生成/验证/防刷/冷却） | `NewManager`, `NewRedisStore`, `Generate`, `Verify`, `WithCooldown` |
+| bizx/workflow | `bizx/workflow` | 工作流引擎（审批/条件/并行） | `New`, `Engine`, `RegisterDefinition`, `StartWorkflow`, `Execute`, `Approve`, `Reject`, `Cancel` |
+| bizx/abtesting | `bizx/abtesting` | A/B 测试（流量分桶/多变体/曝光追踪） | `New`, `Manager`, `CreateExperiment`, `Assign`, `TrackExposure`, `NewMemoryStore` |
 
 ### 测试工具 → 详见 `testx` skill
 

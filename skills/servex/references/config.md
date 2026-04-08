@@ -90,6 +90,74 @@ mgr, err := config.NewManager[AppConfig](
 - `WithDatacenter(dc)` — 指定 Consul 数据中心
 - 支持 `Load()` 和 `Watch()`，Watch 使用 Consul blocking query 长轮询
 
+## config/source/nacos — Nacos 配置源
+
+```go
+import (
+    nacosSrc "github.com/Tsukikage7/servex/config/source/nacos"
+    "github.com/nacos-group/nacos-sdk-go/v2/clients/config_client"
+)
+
+// 创建 Nacos 配置源（需要已有的 Nacos 客户端）
+src := nacosSrc.New(nacosClient, "myapp.yaml",
+    nacosSrc.WithFormat("yaml"),              // 配置格式：json（默认）/ yaml / toml
+    nacosSrc.WithGroup("DEFAULT_GROUP"),       // Nacos 分组，默认 "DEFAULT_GROUP"
+    nacosSrc.WithNamespace("public"),          // Nacos 命名空间
+)
+
+// 与 config.Manager 配合使用
+mgr, err := config.NewManager[AppConfig](
+    config.WithSource[AppConfig](src),
+    config.WithObserver[AppConfig](func(old, new *AppConfig) {
+        fmt.Println("Nacos 配置已变更")
+    }),
+)
+// Watch() 基于 Nacos ListenConfig 实现变更监听
+```
+
+**关键类型：**
+- `nacosSrc.New(client, dataID, opts...)` — 创建 Nacos 配置源
+- `WithFormat(format)` — 指定格式（json/yaml/toml），默认 json
+- `WithGroup(group)` — 指定 Nacos 分组，默认 "DEFAULT_GROUP"
+- `WithNamespace(namespace)` — 指定 Nacos 命名空间
+- 支持 `Load()` 和 `Watch()`，Watch 基于 Nacos `ListenConfig` 回调
+
+## config/source/apollo — Apollo 配置中心配置源
+
+```go
+import apolloSrc "github.com/Tsukikage7/servex/config/source/apollo"
+
+// 创建 Apollo 配置源（自动启动 Apollo 客户端）
+src, err := apolloSrc.New(&apolloSrc.Config{
+    Addr:      "http://localhost:8080",  // Apollo 配置服务地址
+    AppID:     "myapp",                  // 应用 ID
+    Cluster:   "default",               // 集群名，默认 "default"
+    Namespace: "application",            // 命名空间，默认 "application"
+    Secret:    "",                       // 访问密钥，可选
+},
+    apolloSrc.WithFormat("yaml"),        // 配置格式：json（默认）/ yaml / toml
+)
+if err != nil { ... }
+
+// 与 config.Manager 配合使用
+mgr, err := config.NewManager[AppConfig](
+    config.WithSource[AppConfig](src),
+    config.WithObserver[AppConfig](func(old, new *AppConfig) {
+        fmt.Println("Apollo 配置已变更")
+    }),
+)
+// Watch() 基于 Apollo ChangeListener 实现变更监听
+```
+
+**关键类型：**
+- `apolloSrc.New(cfg, opts...)` — 创建 Apollo 配置源，返回 `(*Source, error)`
+- `apolloSrc.Config` — 连接配置（`Addr`, `AppID`, `Cluster`, `Namespace`, `Secret`）
+- `WithFormat(format)` — 指定格式（json/yaml/toml），默认 json
+- `WithCluster(cluster)` — 指定 Apollo 集群，默认 "default"
+- `WithNamespace(namespace)` — 指定 Apollo 命名空间，默认 "application"
+- 非 properties 格式的命名空间（yaml/json），Apollo 将完整内容存储在 "content" 键下
+- 支持 `Load()` 和 `Watch()`，Watch 基于 Apollo `ChangeListener` 回调
+
 ## discovery — 服务注册与发现
 
 ```go

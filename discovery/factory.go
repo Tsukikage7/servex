@@ -30,6 +30,8 @@ func NewDiscovery(config *Config, log logger.Logger) (Discovery, error) {
 		return newConsulDiscovery(config, log)
 	case TypeEtcd:
 		return newEtcdDiscovery(config, log)
+	case TypeNacos:
+		return newNacosDiscovery(config, log)
 	default:
 		return nil, ErrUnsupportedType
 	}
