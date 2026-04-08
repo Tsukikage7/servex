@@ -241,6 +241,7 @@ servex 内置 [Claude Code Plugin](https://code.claude.com/docs/en/plugins.md)�
 | [tenant](./tenant/) | 多租户（GORM Scope） |
 | [collections](./collections/) | 数据结构（Deque/LRU/TreeMap/PriorityQueue/HashSet 等，12 子包） |
 | [xutil](./xutil/) | 工具包（ptrx/strx/randx/iox/copier/syncx/sorting/pagination/version/crypto/optionx/valuex/idgen） |
+| [xutil/templatex](./xutil/templatex/) | 模板引擎增强（14 个内置函数/多格式） |
 | [validation](./validation/) | 输入校验（go-playground/validator 封装，中英文错误消息） |
 | [testx](./testx/) | 测试工具包（NopLogger/TestLogger/Container/HTTPTest/Fixture） |
 

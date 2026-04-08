@@ -286,6 +286,60 @@ hashed, err := crypto.HashPassword("mypassword")
 err = crypto.VerifyPassword(hashed, "mypassword") // nil = 匹配
 ```
 
+## templatex -- 增强模板引擎
+
+```go
+import "github.com/Tsukikage7/servex/xutil/templatex"
+
+// 创建模板引擎（内置 14 个常用函数）
+engine := templatex.New(
+    templatex.WithBaseDir("./templates"),          // 模板文件基目录
+    templatex.WithDelims("<%", "%>"),              // 自定义定界符
+    templatex.WithFuncMap(template.FuncMap{        // 自定义函数
+        "greet": func(name string) string { return "Hello, " + name },
+    }),
+)
+
+// 解析模板文件
+engine.ParseFile("header.html", "footer.html")
+engine.ParseGlob("*.html")
+
+// 渲染已解析的命名模板（text/template）
+result, err := engine.Render("header.html", data)
+
+// 渲染内联模板字符串
+result, err := engine.RenderString(`Hello, {{ .Name | upper }}!`, map[string]any{"Name": "alice"})
+// → "Hello, ALICE!"
+
+// HTML 安全渲染（html/template，自动转义）
+result, err := engine.RenderHTML("page.html", data)
+```
+
+**内置模板函数：**
+| 函数 | 说明 | 示例 |
+|------|------|------|
+| `upper` | 转大写 | `{{ "hello" \| upper }}` → `HELLO` |
+| `lower` | 转小写 | `{{ "HELLO" \| lower }}` → `hello` |
+| `title` | 转标题格式 | `{{ "hello world" \| title }}` → `Hello World` |
+| `trim` | 去首尾空白 | `{{ " hi " \| trim }}` → `hi` |
+| `contains` | 包含子串 | `{{ contains "lo" "hello" }}` → `true` |
+| `replace` | 替换子串 | `{{ replace "old" "new" .Text }}` |
+| `join` | 连接切片 | `{{ join ", " .Items }}` |
+| `split` | 拆分字符串 | `{{ split "," "a,b,c" }}` |
+| `default` | 零值默认值 | `{{ default "N/A" .Name }}` |
+| `date` | 格式化时间 | `{{ date "2006-01-02" .Time }}` |
+| `toJSON` | 序列化 JSON | `{{ toJSON .Data }}` |
+| `fromJSON` | 反序列化 JSON | `{{ fromJSON .JSONStr }}` |
+| `indent` | 添加缩进 | `{{ indent 4 .Text }}` |
+| `plural` | 单复数 | `{{ plural .Count "item" "items" }}` |
+
+**关键类型：**
+- `templatex.Engine` — 模板引擎（`Render`, `RenderString`, `RenderHTML`, `ParseFile`, `ParseGlob`）
+- `templatex.New(opts...)` — 创建引擎
+- `WithBaseDir(dir)` — 模板文件基目录（相对路径自动拼接）
+- `WithDelims(left, right)` — 自定义定界符
+- `WithFuncMap(fm)` — 追加自定义模板函数（与内置函数合并）
+
 ## idgen -- 分布式 ID 生成
 
 ```go
