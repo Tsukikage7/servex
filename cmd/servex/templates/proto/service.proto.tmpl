@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package {{.Name}}.v1;
+
+option go_package = "{{.Module}}/api/{{.Name}}/v1;{{.Name}}v1";
+
+import "google/api/annotations.proto";
+
+service {{.PascalName}}Service {
+  rpc Create{{.PascalName}} (Create{{.PascalName}}Request) returns (Create{{.PascalName}}Reply) {
+    option (google.api.http) = { post: "/v1/{{.Name}}" body: "*" };
+  }
+  rpc Get{{.PascalName}} (Get{{.PascalName}}Request) returns (Get{{.PascalName}}Reply) {
+    option (google.api.http) = { get: "/v1/{{.Name}}/{id}" };
+  }
+  rpc List{{.PascalName}} (List{{.PascalName}}Request) returns (List{{.PascalName}}Reply) {
+    option (google.api.http) = { get: "/v1/{{.Name}}" };
+  }
+  rpc Update{{.PascalName}} (Update{{.PascalName}}Request) returns (Update{{.PascalName}}Reply) {
+    option (google.api.http) = { put: "/v1/{{.Name}}/{id}" body: "*" };
+  }
+  rpc Delete{{.PascalName}} (Delete{{.PascalName}}Request) returns (Delete{{.PascalName}}Reply) {
+    option (google.api.http) = { delete: "/v1/{{.Name}}/{id}" };
+  }
+}
+
+message Create{{.PascalName}}Request {}
+message Create{{.PascalName}}Reply {}
+
+message Get{{.PascalName}}Request {
+  string id = 1;
+}
+message Get{{.PascalName}}Reply {}
+
+message List{{.PascalName}}Request {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+message List{{.PascalName}}Reply {}
+
+message Update{{.PascalName}}Request {
+  string id = 1;
+}
+message Update{{.PascalName}}Reply {}
+
+message Delete{{.PascalName}}Request {
+  string id = 1;
+}
+message Delete{{.PascalName}}Reply {}

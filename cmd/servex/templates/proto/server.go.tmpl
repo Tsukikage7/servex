@@ -1,0 +1,24 @@
+package service
+
+import (
+	"context"
+
+	pb "{{.Module}}/api/{{.Name}}/v1"
+)
+
+// {{.PascalName}}Service {{.PascalName}} 服务实现.
+type {{.PascalName}}Service struct {
+	pb.Unimplemented{{.PascalName}}ServiceServer
+}
+
+// New{{.PascalName}}Service 创建 {{.PascalName}}Service 实例.
+func New{{.PascalName}}Service() *{{.PascalName}}Service {
+	return &{{.PascalName}}Service{}
+}
+{{range .RPCs}}
+// {{.MethodName}} 处理 {{.MethodName}} 请求.
+func (s *{{$.PascalName}}Service) {{.MethodName}}(ctx context.Context, req *pb.{{.RequestType}}) (*pb.{{.ReplyType}}, error) {
+	// TODO: implement
+	return &pb.{{.ReplyType}}{}, nil
+}
+{{end}}
