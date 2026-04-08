@@ -38,6 +38,49 @@ servex 内置 [Claude Code Plugin](https://code.claude.com/docs/en/plugins.md)�
 
 安装后 Claude 会根据上下文自动触发，也可手动调用 `/servex:servex` 或 `/servex:llm`。子模块详细文档由主 skill 按需读取，不会污染 skill 列表。
 
+## CLI 工具
+
+servex 提供基于 [cobra](https://github.com/spf13/cobra) 的脚手架 CLI，对标 kratos/goctl：
+
+```bash
+# 安装
+go install github.com/Tsukikage7/servex/cmd/servex@latest
+
+# 创建 monorepo 项目（默认）
+servex new myproject --module github.com/example/myproject
+
+# 创建独立单服务项目
+servex new myservice --module github.com/example/myservice --standalone --with-grpc --with-db --with-redis --with-wire
+
+# 在 monorepo 中添加微服务
+cd myproject
+servex add service user --with-grpc --with-db --with-redis
+servex add service order --with-grpc
+
+# 生成 DDD 聚合（自动检测 monorepo）
+servex gen aggregate user --fields "id:uint64,name:string,email:string"
+
+# 生成 Dockerfile / justfile
+servex gen dockerfile --name myservice --port 8080
+servex gen justfile --name myservice --module github.com/example/myservice
+
+# Proto 管理
+servex proto add user                           # 创建 api/user/v1/user.proto 模板
+servex proto client api/user/v1/user.proto      # 生成 pb.go/grpc.go/http.go
+servex proto server api/user/v1/user.proto      # 生成服务端实现桩代码
+servex proto server api/user/v1/user.proto --service user  # monorepo 指定服务
+
+# 运行服务（自动检测入口）
+servex run
+servex run --entry ./cmd/server --race
+
+# 自升级
+servex upgrade
+
+# Shell 自动补全
+servex completion bash/zsh/fish/powershell
+```
+
 ## 包概览
 
 ### 核心
