@@ -151,3 +151,65 @@ hooked.Infof("用户登录: %s", userID)
 - `WithDropOnFull(true)` — 缓冲满时丢弃而非阻塞（默认 true）
 - `WithErrorHandler(fn)` — 投递失败回调（默认 nop）
 - `s.Flush(ctx)` — 主动阻塞刷新缓冲区
+
+## observability/slo — SLO/SLI 追踪
+
+```go
+import "github.com/Tsukikage7/servex/observability/slo"
+
+// 定义 SLO 目标
+objectives := []*slo.Objective{
+    {Name: "api_availability", Target: 0.999, Window: 30 * 24 * time.Hour, Description: "API 可用性 99.9%"},
+    {Name: "latency_p99",     Target: 0.99,  Window: 7 * 24 * time.Hour,  Description: "P99 延迟达标率 99%"},
+}
+
+// 创建追踪器
+tracker, err := slo.NewTracker(objectives,
+    slo.WithCheckInterval(time.Minute),          // SLO 检查间隔（默认 1 分钟）
+    slo.WithPrometheusNamespace("myapp"),         // Prometheus 指标命名空间（默认 "app"）
+    slo.WithLogger(log.Printf),                  // 日志记录器
+)
+if err != nil { ... }
+
+// 记录事件
+tracker.Record(ctx, "api_availability", true)  // 好事件
+tracker.Record(ctx, "api_availability", false) // 坏事件
+
+// 查看状态
+status, _ := tracker.Status("api_availability")
+fmt.Printf("SLI: %.4f, 目标: %.3f, 错误预算剩余: %.2f%%, 消耗速率: %.2f, 违反: %v\n",
+    status.SLIValue, status.Objective.Target,
+    status.ErrorBudgetRemaining*100, status.BurnRate, status.IsBreaching)
+
+// 获取所有目标状态
+allStatuses := tracker.AllStatuses()
+
+// 快速检查是否违反 SLO
+if tracker.IsBreaching("api_availability") {
+    alert("SLO 违反！")
+}
+
+// 注册 SLO 违反回调
+tracker.OnBreach(func(status *slo.Status) {
+    log.Printf("SLO 违反: %s, SLI=%.4f, 目标=%.3f",
+        status.Objective.Name, status.SLIValue, status.Objective.Target)
+})
+
+// Prometheus 集成
+prometheus.MustRegister(tracker.PrometheusCollector())
+```
+
+**关键类型：**
+- `slo.Tracker` — SLO 追踪器（`Record`, `Status`, `AllStatuses`, `IsBreaching`, `OnBreach`, `PrometheusCollector`）
+- `slo.Objective` — SLO 目标定义（`Name`, `Target`, `Window`, `Description`）
+- `slo.Status` — 状态（`TotalEvents`, `GoodEvents`, `BadEvents`, `SLIValue`, `ErrorBudget`, `ErrorBudgetRemaining`, `BurnRate`, `IsBreaching`）
+- `slo.NewTracker(objectives, opts...)` — 创建追踪器
+- `WithCheckInterval(d)` — 检查间隔（默认 1 分钟）
+- `WithPrometheusNamespace(ns)` — Prometheus 命名空间（默认 "app"）
+- `WithLogger(printf)` — 日志记录器
+- 错误：`ErrObjectiveNotFound`, `ErrInvalidTarget`, `ErrNilObjective`
+
+**Prometheus 指标：**
+- `{namespace}_slo_events_total{name, result}` — 总事件计数器
+- `{namespace}_slo_error_budget_remaining{name}` — 剩余错误预算
+- `{namespace}_slo_burn_rate{name}` — 错误预算消耗速率

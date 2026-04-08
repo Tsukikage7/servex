@@ -107,6 +107,7 @@ servex 内置 [Claude Code Plugin](https://code.claude.com/docs/en/plugins.md)�
 | [observability/metrics](./observability/metrics/) | Prometheus 指标收集 | Y | Y | Y |
 | [observability/tracing](./observability/tracing/) | OpenTelemetry 链路追踪 | Y | Y | Y |
 | [observability/logshipper](./observability/logshipper/) | 日志投递（ES/Kafka sink，异步批量） | - | - | - |
+| [observability/slo](./observability/slo/) | SLO/SLI 追踪（错误预算/燃烧率/告警） | - | - | - |
 
 ### 配置与服务发现
 
