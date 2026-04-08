@@ -1,0 +1,38 @@
+package persistence
+
+import (
+	"time"
+
+	"gorm.io/gorm"
+
+	domain{{.Name}} "{{.Module}}/domain/{{.NameLower}}"
+)
+
+// {{.Name}}PO {{.Name}}持久化对象.
+type {{.Name}}PO struct {
+	ID {{.IDType}} `gorm:"primaryKey;autoIncrement"`
+{{- range .NonIDFields}}
+	{{.Name}} {{.Type}} `gorm:"column:{{.JSONTag}}"`
+{{- end}}
+	CreatedAt time.Time      `gorm:"autoCreateTime"`
+	UpdatedAt time.Time      `gorm:"autoUpdateTime"`
+	DeletedAt gorm.DeletedAt `gorm:"index"`
+}
+
+// TableName 指定表名.
+func ({{.Name}}PO) TableName() string { return "{{.NameSnake}}s" }
+
+// ToAggregate 将持久化对象转换为聚合根.
+func (po *{{.Name}}PO) ToAggregate() *domain{{.Name}}.{{.Name}} {
+	return domain{{.Name}}.New{{.Name}}(po.ID{{range .NonIDFields}}, po.{{.Name}}{{end}})
+}
+
+// {{.Name}}POFromAggregate 将聚合根转换为持久化对象.
+func {{.Name}}POFromAggregate(agg *domain{{.Name}}.{{.Name}}) *{{.Name}}PO {
+	return &{{.Name}}PO{
+		ID: agg.ID(),
+{{- range .NonIDFields}}
+		{{.Name}}: agg.{{.Name}}(),
+{{- end}}
+	}
+}

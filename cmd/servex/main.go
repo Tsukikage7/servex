@@ -85,9 +85,10 @@ var genCmd = &cobra.Command{
 }
 
 var (
-	genAggFields string
-	genAggOutput string
-	genAggModule string
+	genAggFields  string
+	genAggOutput  string
+	genAggModule  string
+	genAggService string
 )
 
 // genAggregateCmd DDD 聚合生成命令.
@@ -106,6 +107,7 @@ var genAggregateCmd = &cobra.Command{
 		}
 		fields := parseFields(genAggFields)
 		data := buildAggregateData(args[0], module, fields)
+		data.Service = genAggService
 		return generateAggregate(data, genAggOutput)
 	},
 }
@@ -291,6 +293,7 @@ func init() {
 	genAggregateCmd.Flags().StringVar(&genAggFields, "fields", "", `字段定义 (如 "id:uint64,name:string,email:string")`)
 	genAggregateCmd.Flags().StringVar(&genAggOutput, "output", ".", "输出目录")
 	genAggregateCmd.Flags().StringVar(&genAggModule, "module", "", "Go module 路径 (默认: 从 go.mod 读取)")
+	genAggregateCmd.Flags().StringVar(&genAggService, "service", "", "目标服务名，生成 adapter/persistence 层到对应服务")
 
 	// gen dockerfile
 	genDockerfileCmd.Flags().StringVar(&genDockerName, "name", "server", "服务名称")

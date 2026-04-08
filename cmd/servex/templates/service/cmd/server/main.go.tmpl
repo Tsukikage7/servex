@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"{{.Module}}/services/{{.Name}}-service/internal/server"
+	"{{.Module}}/services/{{.Name}}-service/internal/port"
 {{if .WithDB}}
 	"github.com/Tsukikage7/servex/storage/rdbms"
 {{end}}{{if .WithRedis}}
@@ -42,7 +42,7 @@ func main() {
 	defer rdb.Close()
 {{end}}
 	// 创建 HTTP 服务器
-	httpSrv := server.NewHTTP(log)
+	httpSrv := port.NewHTTP(log)
 
 	// 创建应用
 	application := app.New(
@@ -52,7 +52,7 @@ func main() {
 	application.Use(httpSrv)
 {{if .WithGRPC}}
 	// 创建 gRPC 服务器
-	grpcSrv := server.NewGRPC(log)
+	grpcSrv := port.NewGRPC(log)
 	application.Use(grpcSrv)
 {{end}}
 	if err := application.Run(); err != nil {

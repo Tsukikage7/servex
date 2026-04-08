@@ -27,8 +27,8 @@ var serviceTemplateFiles = []struct {
 	out  string // 输出路径（相对于服务根目录）
 }{
 	{"templates/service/cmd/server/main.go.tmpl", "cmd/server/main.go"},
-	{"templates/service/internal/server/http.go.tmpl", "internal/server/http.go"},
-	{"templates/service/internal/data/data.go.tmpl", "internal/data/data.go"},
+	{"templates/service/internal/port/http.go.tmpl", "internal/port/http.go"},
+	{"templates/service/internal/adapter/persistence/persistence.go.tmpl", "internal/adapter/persistence/persistence.go"},
 	{"templates/service/configs/config.yaml.tmpl", "configs/config.yaml"},
 }
 
@@ -37,7 +37,7 @@ var serviceGRPCTemplateFile = struct {
 	tmpl string
 	out  string
 }{
-	"templates/service/internal/server/grpc.go.tmpl", "internal/server/grpc.go",
+	"templates/service/internal/port/grpc.go.tmpl", "internal/port/grpc.go",
 }
 
 // isMonorepo 检查当前目录是否为 monorepo 项目.

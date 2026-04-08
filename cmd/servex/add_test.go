@@ -29,8 +29,8 @@ func TestAddService(t *testing.T) {
 
 	expectedFiles := []string{
 		"services/user-service/cmd/server/main.go",
-		"services/user-service/internal/server/http.go",
-		"services/user-service/internal/data/data.go",
+		"services/user-service/internal/port/http.go",
+		"services/user-service/internal/adapter/persistence/persistence.go",
 		"services/user-service/configs/config.yaml",
 	}
 
@@ -47,7 +47,7 @@ func TestAddService(t *testing.T) {
 		t.Fatalf("read main.go: %v", err)
 	}
 	got := string(content)
-	if !contains(got, "github.com/example/monorepo/services/user-service/internal/server") {
+	if !contains(got, "github.com/example/monorepo/services/user-service/internal/port") {
 		t.Error("main.go should reference monorepo service import path")
 	}
 	if !contains(got, `app.WithName("user-service")`) {
@@ -55,7 +55,7 @@ func TestAddService(t *testing.T) {
 	}
 
 	// grpc.go 不应存在
-	grpcPath := filepath.Join(dir, "services/user-service/internal/server/grpc.go")
+	grpcPath := filepath.Join(dir, "services/user-service/internal/port/grpc.go")
 	if _, err := os.Stat(grpcPath); !os.IsNotExist(err) {
 		t.Error("grpc.go should not exist when --with-grpc is false")
 	}
@@ -86,7 +86,7 @@ func TestAddServiceWithGRPC(t *testing.T) {
 	}
 
 	// grpc.go 应存在
-	grpcPath := filepath.Join(dir, "services/order-service/internal/server/grpc.go")
+	grpcPath := filepath.Join(dir, "services/order-service/internal/port/grpc.go")
 	if _, err := os.Stat(grpcPath); os.IsNotExist(err) {
 		t.Error("grpc.go should exist when --with-grpc is true")
 	}
@@ -103,7 +103,7 @@ func TestAddServiceWithGRPC(t *testing.T) {
 	if !contains(got, "srvredis.NewClient") {
 		t.Error("main.go should contain redis setup when --with-redis is true")
 	}
-	if !contains(got, "server.NewGRPC") {
+	if !contains(got, "port.NewGRPC") {
 		t.Error("main.go should contain gRPC server setup when --with-grpc is true")
 	}
 

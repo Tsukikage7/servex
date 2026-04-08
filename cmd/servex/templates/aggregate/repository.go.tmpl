@@ -1,6 +1,12 @@
 package {{.NameLower}}
 
-import "context"
+import (
+	"context"
+	"errors"
+)
+
+// ErrNotFound {{.Name}}未找到.
+var ErrNotFound = errors.New("{{.NameLower}}: not found")
 
 // Repository {{.Name}}仓储接口.
 type Repository interface {

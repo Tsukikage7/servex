@@ -41,6 +41,7 @@ type AggregateData struct {
 	NameLower   string  // camelCase 名称 (包名)
 	NameSnake   string  // snake_case 名称
 	Module      string  // Go module 路径
+	Service     string  // 目标服务名（monorepo 模式下生成 adapter 层）
 	Fields      []Field // 所有字段（含 ID）
 	NonIDFields []Field // 非 ID 字段
 	IDType      string  // ID 字段类型
@@ -179,6 +180,15 @@ var aggregateFiles = []struct {
 	{"application", "templates/aggregate/service.go.tmpl", "service.go"},
 }
 
+// adapterFiles adapter 层模板文件映射.
+var adapterFiles = []struct {
+	tmpl string // 模板路径
+	out  string // 输出文件名
+}{
+	{"templates/aggregate/adapter_repo.go.tmpl", "_repo.go"},
+	{"templates/aggregate/adapter_model.go.tmpl", "_model.go"},
+}
+
 // generateAggregate 根据模板数据生成 DDD 聚合文件.
 func generateAggregate(data AggregateData, outputDir string) error {
 	funcMap := template.FuncMap{
@@ -202,6 +212,19 @@ func generateAggregate(data AggregateData, outputDir string) error {
 	}
 	fmt.Printf("  domain/%s/      (aggregate, events, repository, commands, queries)\n", data.NameLower)
 	fmt.Printf("  application/%s/ (service)\n", data.NameLower)
+
+	// 如果指定了 --service，生成 adapter/persistence 层
+	if data.Service != "" {
+		adapterBase := filepath.Join(outputDir, "services", data.Service+"-service", "internal", "adapter", "persistence")
+		for _, af := range adapterFiles {
+			outPath := filepath.Join(adapterBase, data.NameSnake+af.out)
+			if err := renderTemplate(aggregateTemplates, af.tmpl, outPath, data, funcMap); err != nil {
+				return fmt.Errorf("render %s: %w", af.tmpl, err)
+			}
+		}
+		fmt.Printf("  services/%s-service/internal/adapter/persistence/ (repo, model)\n", data.Service)
+	}
+
 	return nil
 }
 

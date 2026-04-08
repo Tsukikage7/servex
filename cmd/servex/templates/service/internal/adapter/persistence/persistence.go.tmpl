@@ -1,0 +1,16 @@
+package persistence
+
+import "gorm.io/gorm"
+
+// Persistence 持久化层，管理数据库连接.
+type Persistence struct {
+	db *gorm.DB
+}
+
+// New 创建持久化层.
+func New(db *gorm.DB) *Persistence {
+	return &Persistence{db: db}
+}
+
+// DB 返回 GORM 数据库实例.
+func (p *Persistence) DB() *gorm.DB { return p.db }

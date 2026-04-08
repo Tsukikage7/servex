@@ -1,0 +1,46 @@
+package persistence
+
+import (
+	"context"
+	"errors"
+{{- if .NeedsTime}}
+	"time"
+{{- end}}
+
+	"gorm.io/gorm"
+
+	domain{{.Name}} "{{.Module}}/domain/{{.NameLower}}"
+)
+
+// {{.Name}}Repository {{.Name}}仓储 GORM 实现.
+type {{.Name}}Repository struct {
+	db *gorm.DB
+}
+
+// New{{.Name}}Repository 创建{{.Name}}仓储.
+func New{{.Name}}Repository(db *gorm.DB) *{{.Name}}Repository {
+	return &{{.Name}}Repository{db: db}
+}
+
+// FindByID 按 ID 查询{{.Name}}.
+func (r *{{.Name}}Repository) FindByID(ctx context.Context, id {{.IDType}}) (*domain{{.Name}}.{{.Name}}, error) {
+	var po {{.Name}}PO
+	if err := r.db.WithContext(ctx).First(&po, id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, domain{{.Name}}.ErrNotFound
+		}
+		return nil, err
+	}
+	return po.ToAggregate(), nil
+}
+
+// Save 保存{{.Name}}聚合.
+func (r *{{.Name}}Repository) Save(ctx context.Context, agg *domain{{.Name}}.{{.Name}}) error {
+	po := {{.Name}}POFromAggregate(agg)
+	return r.db.WithContext(ctx).Save(&po).Error
+}
+
+// Delete 删除{{.Name}}.
+func (r *{{.Name}}Repository) Delete(ctx context.Context, id {{.IDType}}) error {
+	return r.db.WithContext(ctx).Delete(&{{.Name}}PO{}, id).Error
+}
