@@ -1,0 +1,29 @@
+# 电商微服务示例 justfile
+
+# 默认命令
+default:
+    @just --list
+
+# 启动基础设施
+infra-up:
+    docker compose -f deploy/docker-compose.yaml up -d
+
+# 停止基础设施
+infra-down:
+    docker compose -f deploy/docker-compose.yaml down
+
+# 编译全部服务
+build:
+    go build ./...
+
+# 启动用户服务
+run-user:
+    go run ./services/user-service/cmd/server/
+
+# 启动订单服务
+run-order:
+    go run ./services/order-service/cmd/server/
+
+# 同步依赖
+tidy:
+    go mod tidy

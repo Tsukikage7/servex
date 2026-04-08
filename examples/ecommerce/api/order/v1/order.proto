@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package api.order.v1;
+
+option go_package = "github.com/Tsukikage7/servex/examples/ecommerce/api/order/v1;orderv1";
+
+// OrderService 订单服务.
+service OrderService {
+  // PlaceOrder 下单.
+  rpc PlaceOrder(PlaceOrderRequest) returns (PlaceOrderResponse);
+
+  // GetOrder 查询订单.
+  rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
+
+  // CancelOrder 取消订单.
+  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse);
+
+  // ShipOrder 发货.
+  rpc ShipOrder(ShipOrderRequest) returns (ShipOrderResponse);
+}
+
+message OrderItem {
+  uint64 product_id = 1;
+  string product_name = 2;
+  int32 quantity = 3;
+  double unit_price = 4;
+}
+
+message PlaceOrderRequest {
+  uint64 user_id = 1;
+  repeated OrderItem items = 2;
+}
+
+message PlaceOrderResponse {
+  uint64 id = 1;
+  uint64 user_id = 2;
+  string status = 3;
+  repeated OrderItem items = 4;
+  double total_amount = 5;
+}
+
+message GetOrderRequest {
+  uint64 id = 1;
+}
+
+message GetOrderResponse {
+  uint64 id = 1;
+  uint64 user_id = 2;
+  string status = 3;
+  repeated OrderItem items = 4;
+  double total_amount = 5;
+  string created_at = 6;
+  string updated_at = 7;
+}
+
+message CancelOrderRequest {
+  uint64 id = 1;
+}
+
+message CancelOrderResponse {
+  uint64 id = 1;
+  string status = 2;
+}
+
+message ShipOrderRequest {
+  uint64 id = 1;
+}
+
+message ShipOrderResponse {
+  uint64 id = 1;
+  string status = 2;
+}
