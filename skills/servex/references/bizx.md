@@ -579,6 +579,214 @@ case errors.Is(err, captcha.ErrTooManyAttempts): return errors.New("尝试次数
 
 ---
 
+## bizx/workflow — 工作流引擎
+
+**包路径：** `github.com/Tsukikage7/servex/bizx/workflow`
+
+**何时使用：** 审批流、多步骤流程编排，需要任务节点、审批节点、条件分支、并行执行的场景。
+
+### 核心类型
+
+```go
+// 节点类型
+type NodeType string
+const (
+    NodeTypeTask      NodeType = "task"       // 任务节点
+    NodeTypeApproval  NodeType = "approval"   // 审批节点
+    NodeTypeCondition NodeType = "condition"  // 条件分支
+    NodeTypeParallel  NodeType = "parallel"   // 并行执行
+    NodeTypeEnd       NodeType = "end"        // 结束节点
+)
+
+// 工作流实例状态
+type Status string
+const (
+    StatusPending          Status = "pending"
+    StatusRunning          Status = "running"
+    StatusCompleted        Status = "completed"
+    StatusFailed           Status = "failed"
+    StatusCancelled        Status = "cancelled"
+    StatusWaitingApproval  Status = "waiting_approval"
+)
+```
+
+### 接口
+
+```go
+type Store interface {
+    SaveInstance(ctx, instance *Instance) error
+    GetInstance(ctx, id string) (*Instance, error)
+    UpdateInstance(ctx, instance *Instance) error
+    ListInstancesByStatus(ctx, status Status) ([]*Instance, error)
+}
+```
+
+### 构造函数
+
+- `New(store, opts...)` — 创建工作流引擎
+- `WithLogger(logger)` — 设置日志记录器
+- `WithMaxParallel(n)` — 最大并行执行数（默认 5）
+- `NewMemoryStore()` — 内存存储（测试用）
+
+### 示例
+
+```go
+store := workflow.NewMemoryStore()
+engine := workflow.New(store, workflow.WithMaxParallel(10))
+
+// 定义工作流
+def := &workflow.Definition{
+    ID:          "leave_request",
+    Name:        "请假审批",
+    Version:     "1.0",
+    StartNodeID: "submit",
+    Nodes: map[string]*workflow.Node{
+        "submit": {
+            ID: "submit", Name: "提交申请", Type: workflow.NodeTypeTask,
+            Handler: func(ctx context.Context, inst *workflow.Instance) error {
+                fmt.Println("申请已提交:", inst.Data["reason"])
+                return nil
+            },
+            NextNodes: []string{"approve"},
+        },
+        "approve": {
+            ID: "approve", Name: "主管审批", Type: workflow.NodeTypeApproval,
+            NextNodes: []string{"check_days"},
+        },
+        "check_days": {
+            ID: "check_days", Name: "检查天数", Type: workflow.NodeTypeCondition,
+            Condition: func(ctx context.Context, inst *workflow.Instance) (string, error) {
+                days := inst.Data["days"].(int)
+                if days > 3 {
+                    return "hr_approve", nil
+                }
+                return "done", nil
+            },
+        },
+        "hr_approve": {
+            ID: "hr_approve", Name: "HR 审批", Type: workflow.NodeTypeApproval,
+            NextNodes: []string{"done"},
+        },
+        "done": {ID: "done", Name: "结束", Type: workflow.NodeTypeEnd},
+    },
+}
+engine.RegisterDefinition(def)
+
+// 启动工作流
+inst, _ := engine.StartWorkflow(ctx, "leave_request", map[string]any{"reason": "年假", "days": 5})
+
+// 推进执行（遇到审批节点会暂停）
+engine.Execute(ctx, inst.ID)
+
+// 审批通过/拒绝
+engine.Approve(ctx, inst.ID, "manager_001")
+engine.Reject(ctx, inst.ID, "manager_001", "时间冲突")
+
+// 取消工作流
+engine.Cancel(ctx, inst.ID)
+```
+
+**错误：** `ErrDefinitionNotFound`, `ErrInstanceNotFound`, `ErrInvalidNode`, `ErrWorkflowCompleted`, `ErrApprovalRequired`
+
+---
+
+## bizx/abtesting — A/B 测试
+
+**包路径：** `github.com/Tsukikage7/servex/bizx/abtesting`
+
+**何时使用：** 需要流量分桶实验、多变体对比、确定性用户分组分配和曝光追踪的场景。区别于 `bizx/feature`（简单开关/百分比），abtesting 支持多变体权重分配和实验管理。
+
+### 核心类型
+
+```go
+type Variant struct {
+    ID       string         // 变体 ID
+    Name     string         // 变体名称
+    Weight   int            // 权重（所有变体总和必须为 100）
+    Metadata map[string]any // 元数据
+}
+
+type Experiment struct {
+    ID        string    // 实验 ID
+    Name      string    // 实验名称
+    Enabled   bool      // 是否启用
+    Variants  []Variant // 变体列表
+    Salt      string    // 哈希盐值（保证不同实验分桶独立）
+    StartTime time.Time // 开始时间
+    EndTime   time.Time // 结束时间
+}
+
+type Assignment struct {
+    ExperimentID string    // 实验 ID
+    VariantID    string    // 分配的变体 ID
+    UserID       string    // 用户 ID
+    AssignedAt   time.Time // 分配时间
+}
+```
+
+### 接口
+
+```go
+type Store interface {
+    SaveExperiment(ctx, exp *Experiment) error
+    GetExperiment(ctx, id string) (*Experiment, error)
+    ListExperiments(ctx) ([]*Experiment, error)
+    UpdateExperiment(ctx, exp *Experiment) error
+    SaveAssignment(ctx, assignment *Assignment) error
+    GetAssignment(ctx, experimentID, userID string) (*Assignment, error)
+    SaveExposure(ctx, event *ExposureEvent) error
+}
+```
+
+### 构造函数
+
+- `New(store, opts...)` — 创建 A/B 测试管理器
+- `WithLogger(logger)` — 设置日志记录器
+- `NewMemoryStore()` — 内存存储（测试用）
+
+### 示例
+
+```go
+store := abtesting.NewMemoryStore()
+mgr := abtesting.New(store)
+
+// 创建实验（变体权重总和必须为 100）
+err := mgr.CreateExperiment(ctx, &abtesting.Experiment{
+    ID:      "button_color",
+    Name:    "按钮颜色实验",
+    Enabled: true,
+    Salt:    "random_salt_123",
+    Variants: []abtesting.Variant{
+        {ID: "control", Name: "蓝色（对照组）", Weight: 50},
+        {ID: "variant_a", Name: "绿色", Weight: 30},
+        {ID: "variant_b", Name: "红色", Weight: 20},
+    },
+})
+
+// 分配用户到变体（确定性哈希，同一用户始终分到同一变体）
+assignment, err := mgr.Assign(ctx, "button_color", userID)
+fmt.Printf("用户 %s 分配到变体: %s\n", userID, assignment.VariantID)
+
+// 记录曝光事件
+mgr.TrackExposure(ctx, &abtesting.ExposureEvent{
+    ExperimentID: "button_color",
+    VariantID:    assignment.VariantID,
+    UserID:       userID,
+    Timestamp:    time.Now(),
+})
+
+// 获取已有分配
+existing, err := mgr.GetAssignment(ctx, "button_color", userID)
+
+// 列出/禁用实验
+experiments, _ := mgr.ListExperiments(ctx)
+mgr.DisableExperiment(ctx, "button_color")
+```
+
+**错误：** `ErrExperimentNotFound`, `ErrExperimentDisabled`, `ErrNoVariants`, `ErrInvalidWeight`
+
+---
+
 ## 选择指南
 
 | 需求 | 推荐模块 |
@@ -596,3 +804,5 @@ case errors.Is(err, captcha.ErrTooManyAttempts): return errors.New("尝试次数
 | 第三方 API 调用失败后自动重试 | `bizx/retry` |
 | 模块间解耦事件通知 | `bizx/event` |
 | 短信/邮件验证码 | `bizx/captcha` |
+| 审批流/多步骤流程编排 | `bizx/workflow` |
+| 流量分桶实验/多变体对比 | `bizx/abtesting` |
