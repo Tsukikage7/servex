@@ -132,6 +132,7 @@ servex 内置 [Claude Code Plugin](https://code.claude.com/docs/en/plugins.md)�
 | [storage/migration](./storage/migration/) | 数据库迁移（Go DSL） | `NewRegistry` / `NewRunner` |
 | [storage/clickhouse](./storage/clickhouse/) | ClickHouse 客户端 | `NewClient` / `MustNewClient` |
 | [storage/redis](./storage/redis/) | Redis 客户端（完整数据类型 + Pipeline + Pub/Sub） | `NewClient` / `MustNewClient` |
+| [storage/minio](./storage/minio/) | MinIO 对象存储客户端（原生 SDK） | `NewClient` / `MustNewClient` |
 
 ### 消息 (messaging/)
 

@@ -353,6 +353,116 @@ if err := client.Ping(ctx); err != nil { ... }
 - `clickhouse.NewClient(config, log)` — 返回 `(Client, error)`
 - `clickhouse.MustNewClient(config, log)` — 失败时 panic
 
+## storage/minio — MinIO 对象存储
+
+```go
+import "github.com/Tsukikage7/servex/storage/minio"
+
+// 创建 MinIO 客户端
+client, err := minio.NewClient(&minio.Config{
+    Endpoint:  "localhost:9000",
+    AccessKey: "minioadmin",
+    SecretKey: "minioadmin",
+    Bucket:    "my-bucket",
+    UseSSL:    false,
+    Region:    "us-east-1",       // 默认 "us-east-1"
+}, minio.WithLogger(log))
+if err != nil { ... }
+
+// 上传对象
+info, err := client.PutObject(ctx, "path/to/file.txt", reader, size, "application/octet-stream")
+
+// 下载对象
+obj, err := client.GetObject(ctx, "path/to/file.txt")
+
+// 删除对象
+err = client.DeleteObject(ctx, "path/to/file.txt")
+
+// 列出对象
+for objInfo := range client.ListObjects(ctx, "prefix/", true) {
+    fmt.Println(objInfo.Key, objInfo.Size)
+}
+
+// 获取对象元信息
+info, err := client.StatObject(ctx, "path/to/file.txt")
+
+// 预签名 URL（下载/上传）
+downloadURL, err := client.PresignGetObject(ctx, "path/to/file.txt", 1*time.Hour)
+uploadURL, err := client.PresignPutObject(ctx, "path/to/file.txt", 15*time.Minute)
+
+// 复制对象
+client.CopyObject(ctx, "src/file.txt", "dst/file.txt")
+
+// 文件级别操作
+client.FPutObject(ctx, "remote/key", "/local/path", "text/plain")
+client.FGetObject(ctx, "remote/key", "/local/path")
+
+// 桶操作
+exists, _ := client.BucketExists(ctx)
+client.MakeBucket(ctx)
+```
+
+**关键类型：**
+- `minio.Client` — MinIO 客户端（`PutObject`, `GetObject`, `DeleteObject`, `ListObjects`, `StatObject`, `PresignGetObject`, `PresignPutObject`, `CopyObject`, `FPutObject`, `FGetObject`, `BucketExists`, `MakeBucket`）
+- `minio.Config` — 配置（`Endpoint`, `AccessKey`, `SecretKey`, `Bucket`, `UseSSL`, `Region`, `ConnectTimeout`）
+- `minio.DefaultConfig()` — 默认配置（Region: us-east-1, ConnectTimeout: 10s）
+- `minio.WithLogger(log)` — 设置日志记录器
+- 错误：`ErrNilConfig`, `ErrEmptyEndpoint`, `ErrEmptyBucket`, `ErrEmptyKey`, `ErrObjectNotFound`
+
+## storage/neo4j — Neo4j 图数据库
+
+```go
+import "github.com/Tsukikage7/servex/storage/neo4j"
+
+// 创建客户端（自动验证连通性）
+client, err := neo4j.NewClient(&neo4j.Config{
+    URI:                         "neo4j://localhost:7687",
+    Username:                    "neo4j",
+    Password:                    "password",
+    Database:                    "neo4j",       // 默认 "neo4j"
+    MaxConnectionPoolSize:       100,           // 默认 100
+    ConnectionAcquisitionTimeout: 60 * time.Second,
+    MaxTransactionRetryTime:     30 * time.Second,
+}, neo4j.WithLogger(log))
+if err != nil { ... }
+defer client.Close(ctx)
+
+// 执行 Cypher 查询
+records, err := client.Run(ctx, "MATCH (n:Person) WHERE n.age > $age RETURN n.name", map[string]any{"age": 25})
+for _, rec := range records {
+    name, _ := rec.Get("n.name")
+    fmt.Println(name)
+}
+
+// 写事务
+_, err = client.WriteTransaction(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+    _, err := tx.Run(ctx, "CREATE (n:Person {name: $name, age: $age})", map[string]any{
+        "name": "Alice", "age": 30,
+    })
+    return nil, err
+})
+
+// 读事务
+result, err := client.ReadTransaction(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+    res, err := tx.Run(ctx, "MATCH (n:Person {name: $name}) RETURN n", map[string]any{"name": "Alice"})
+    if err != nil { return nil, err }
+    // 处理结果...
+    return records, nil
+})
+
+// 获取原生驱动或会话
+driver := client.Driver()
+session := client.Session(ctx, neo4j.AccessModeRead)
+```
+
+**关键类型：**
+- `neo4j.Client` — 客户端（`Run`, `ReadTransaction`, `WriteTransaction`, `Session`, `Driver`, `Close`）
+- `neo4j.Config` — 配置（`URI`, `Username`, `Password`, `Database`, `MaxConnectionPoolSize`, `ConnectionAcquisitionTimeout`, `MaxTransactionRetryTime`, `Encrypted`）
+- `neo4j.DefaultConfig()` — 默认配置（Database: neo4j, 连接池 100, 获取超时 60s, 重试 30s）
+- `neo4j.Record` — 查询结果记录（`Get(key)`, `GetByIndex(i)`, `Keys`, `Values`）
+- `neo4j.WithLogger(log)` — 设置日志记录器
+- 错误：`ErrNilConfig`, `ErrEmptyURI`, `ErrEmptyDatabase`, `ErrNotConnected`
+
 ## storage/redis — Redis 客户端
 
 ```go
