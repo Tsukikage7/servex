@@ -289,6 +289,99 @@ func TestEndpointHandler(t *testing.T) {
 	})
 }
 
+// mockHTTPRegistrar 测试用 mock registrar.
+type mockHTTPRegistrar struct {
+	registered bool
+	path       string
+}
+
+func (m *mockHTTPRegistrar) RegisterHTTP(router *Router) {
+	m.registered = true
+	router.GET(m.path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("mock"))
+	}))
+}
+
+func TestServer_Register(t *testing.T) {
+	t.Run("使用Router时注册服务", func(t *testing.T) {
+		router := NewRouter()
+		srv := New(router, WithLogger(testx.NopLogger()))
+
+		reg1 := &mockHTTPRegistrar{path: "/mock1"}
+		reg2 := &mockHTTPRegistrar{path: "/mock2"}
+
+		result := srv.Register(reg1, reg2)
+
+		// 验证链式调用返回自身
+		if result != srv {
+			t.Error("Register should return server for chaining")
+		}
+
+		// 验证 registrar 被调用
+		if !reg1.registered {
+			t.Error("registrar 1 should be registered")
+		}
+		if !reg2.registered {
+			t.Error("registrar 2 should be registered")
+		}
+
+		// 验证注册的路由可访问
+		req := httptest.NewRequest(http.MethodGet, "/mock1", nil)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+
+		if rec.Body.String() != "mock" {
+			t.Errorf("expected 'mock', got %q", rec.Body.String())
+		}
+	})
+
+	t.Run("使用非Router handler时自动创建Router", func(t *testing.T) {
+		mux := http.NewServeMux()
+		srv := New(mux, WithLogger(testx.NopLogger()))
+
+		reg := &mockHTTPRegistrar{path: "/test-reg"}
+		result := srv.Register(reg)
+
+		if result != srv {
+			t.Error("Register should return server for chaining")
+		}
+		if !reg.registered {
+			t.Error("registrar should be registered")
+		}
+		// router 应该已被创建
+		if srv.router == nil {
+			t.Error("router should be created when handler is not a Router")
+		}
+	})
+
+	t.Run("多次调用Register", func(t *testing.T) {
+		router := NewRouter()
+		srv := New(router, WithLogger(testx.NopLogger()))
+
+		reg1 := &mockHTTPRegistrar{path: "/multi1"}
+		reg2 := &mockHTTPRegistrar{path: "/multi2"}
+
+		srv.Register(reg1).Register(reg2)
+
+		if !reg1.registered {
+			t.Error("registrar 1 should be registered")
+		}
+		if !reg2.registered {
+			t.Error("registrar 2 should be registered")
+		}
+	})
+
+	t.Run("空registrars不影响服务器", func(t *testing.T) {
+		router := NewRouter()
+		srv := New(router, WithLogger(testx.NopLogger()))
+
+		result := srv.Register()
+		if result != srv {
+			t.Error("Register with no args should return server")
+		}
+	})
+}
+
 func TestRouter(t *testing.T) {
 	t.Run("basic routing", func(t *testing.T) {
 		router := NewRouter()

@@ -24,6 +24,7 @@ import (
 // Server HTTP 服务器.
 type Server struct {
 	opts    *options
+	router  *Router // 原始路由器引用，用于 Register 注册服务
 	handler http.Handler
 	server  *http.Server
 	health  *health.Health
@@ -54,6 +55,12 @@ func New(handler http.Handler, opts ...Option) *Server {
 	healthOpts := []health.Option{health.WithTimeout(o.healthTimeout)}
 	healthOpts = append(healthOpts, o.healthOptions...)
 	h := health.New(healthOpts...)
+
+	// 保存原始 Router 引用（如果传入的是 Router），用于后续 Register 调用
+	var router *Router
+	if r, ok := handler.(*Router); ok {
+		router = r
+	}
 
 	// 应用用户自定义中间件（按声明顺序执行，最先声明的最先被请求触达）
 	for _, mw := range slices.Backward(o.middlewares) {
@@ -94,7 +101,7 @@ func New(handler http.Handler, opts ...Option) *Server {
 		wrapped = wrapProfiling(wrapped, o.profiling, o.profilingAuth)
 	}
 
-	return &Server{opts: o, handler: wrapped, health: h}
+	return &Server{opts: o, router: router, handler: wrapped, health: h}
 }
 
 func wrapProfiling(next http.Handler, prefix string, authFn func(*http.Request) bool) http.Handler {
@@ -447,6 +454,31 @@ func buildPathSkipper(paths []string) auth.Skipper {
 		}
 		return false
 	}
+}
+
+// Registrar HTTP 服务注册器接口.
+type Registrar interface {
+	RegisterHTTP(router *Router)
+}
+
+// Register 注册 HTTP 服务，支持链式调用.
+//
+// 如果 New 传入的 handler 是 *Router，则直接使用该 Router 注册路由.
+// 否则 Register 会创建新 Router 并将原 handler 作为兜底路由挂载.
+//
+// 示例:
+//
+//	router := httpserver.NewRouter()
+//	srv := httpserver.New(router, httpserver.WithLogger(log))
+//	srv.Register(userService, orderService)
+func (s *Server) Register(registrars ...Registrar) *Server {
+	if s.router == nil {
+		s.router = NewRouter()
+	}
+	for _, r := range registrars {
+		r.RegisterHTTP(s.router)
+	}
+	return s
 }
 
 var _ transport.HealthCheckable = (*Server)(nil)

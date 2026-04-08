@@ -13,8 +13,10 @@ import (
 	"github.com/Tsukikage7/servex/auth"
 	"github.com/Tsukikage7/servex/httpx/clientip"
 	"github.com/Tsukikage7/servex/middleware/logging"
+	"github.com/Tsukikage7/servex/middleware/ratelimit"
 	"github.com/Tsukikage7/servex/middleware/recovery"
 	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/observability/metrics"
 	"github.com/Tsukikage7/servex/tenant"
 	"github.com/Tsukikage7/servex/transport"
 	"github.com/Tsukikage7/servex/transport/health"
@@ -196,6 +198,30 @@ func (s *Server) buildServerOptions() []grpc.ServerOption {
 	// 构建拦截器链
 	unaryInterceptors := s.opts.unaryInterceptors
 	streamInterceptors := s.opts.streamInterceptors
+
+	// 如果启用指标收集，添加 metrics 拦截器
+	if s.opts.metricsCollector != nil {
+		unaryInterceptors = append(
+			unaryInterceptors,
+			metrics.UnaryServerInterceptor(s.opts.metricsCollector),
+		)
+		streamInterceptors = append(
+			streamInterceptors,
+			metrics.StreamServerInterceptor(s.opts.metricsCollector),
+		)
+	}
+
+	// 如果启用限流，添加 ratelimit 拦截器
+	if s.opts.rateLimiter != nil {
+		unaryInterceptors = append(
+			unaryInterceptors,
+			ratelimit.UnaryServerInterceptor(s.opts.rateLimiter),
+		)
+		streamInterceptors = append(
+			streamInterceptors,
+			ratelimit.StreamServerInterceptor(s.opts.rateLimiter),
+		)
+	}
 
 	// 如果启用客户端 IP 提取，添加 clientip 拦截器
 	if s.opts.enableClientIP {

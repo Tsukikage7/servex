@@ -9,6 +9,8 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/Tsukikage7/servex/middleware/ratelimit"
+	"github.com/Tsukikage7/servex/observability/metrics"
 	"github.com/Tsukikage7/servex/testx"
 )
 
@@ -294,6 +296,36 @@ func TestServerOptions_Extended(t *testing.T) {
 		}
 		if ep.Addr != ":9090" {
 			t.Errorf("expected default addr, got %s", ep.Addr)
+		}
+	})
+
+	t.Run("WithMetrics", func(t *testing.T) {
+		collector, err := metrics.NewPrometheus(&metrics.Config{
+			Namespace: "test",
+		})
+		if err != nil {
+			t.Fatalf("failed to create metrics collector: %v", err)
+		}
+		srv := New(
+			WithLogger(testx.NopLogger()),
+			WithMetrics(collector),
+		)
+		if srv.opts.metricsCollector == nil {
+			t.Error("metrics collector should be set")
+		}
+		if srv.opts.metricsCollector != collector {
+			t.Error("metrics collector should match the provided collector")
+		}
+	})
+
+	t.Run("WithRateLimit", func(t *testing.T) {
+		limiter := ratelimit.NewTokenBucket(100, 200)
+		srv := New(
+			WithLogger(testx.NopLogger()),
+			WithRateLimit(limiter),
+		)
+		if srv.opts.rateLimiter == nil {
+			t.Error("rate limiter should be set")
 		}
 	})
 }

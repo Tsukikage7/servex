@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -604,22 +603,12 @@ func applyAuthInterceptors(o *options) {
 
 // buildCombinedSkipper 构建组合跳过器（手动配置 + 自动发现）.
 func buildCombinedSkipper(o *options) auth.Skipper {
-	// 解析手动配置的公开方法
-	exact := make(map[string]bool)
-	prefixes := make([]string, 0)
-
-	for _, m := range o.publicMethods {
-		if strings.HasSuffix(m, "/*") {
-			prefixes = append(prefixes, strings.TrimSuffix(m, "*"))
-		} else {
-			exact[m] = true
-		}
-	}
-
 	// 如果没有任何配置，返回 nil
-	if len(exact) == 0 && len(prefixes) == 0 && !o.enableAutoDiscovery {
+	if len(o.publicMethods) == 0 && !o.enableAutoDiscovery {
 		return nil
 	}
+
+	skip := transport.BuildMethodSkipper(o.publicMethods)
 
 	return func(ctx context.Context, _ any) bool {
 		method, ok := grpc.Method(ctx)
@@ -627,19 +616,12 @@ func buildCombinedSkipper(o *options) auth.Skipper {
 			return false
 		}
 
-		// 1. 检查手动配置的精确匹配
-		if exact[method] {
+		// 1. 检查手动配置的方法（精确匹配 + 前缀匹配）
+		if skip(method) {
 			return true
 		}
 
-		// 2. 检查手动配置的前缀匹配
-		for _, prefix := range prefixes {
-			if strings.HasPrefix(method, prefix) {
-				return true
-			}
-		}
-
-		// 3. 检查自动发现的方法（延迟填充）
+		// 2. 检查自动发现的方法（延迟填充）
 		if o.discoveredMethods != nil && o.discoveredMethods[method] {
 			return true
 		}
@@ -650,34 +632,12 @@ func buildCombinedSkipper(o *options) auth.Skipper {
 
 // buildMethodSkipper 构建方法跳过器.
 func buildMethodSkipper(publicMethods []string) auth.Skipper {
-	// 分离精确匹配和通配符
-	exact := make(map[string]bool)
-	prefixes := make([]string, 0)
-
-	for _, m := range publicMethods {
-		if strings.HasSuffix(m, "/*") {
-			// 服务级别通配: "/api.user.v1.AuthService/*" -> "/api.user.v1.AuthService/"
-			prefixes = append(prefixes, strings.TrimSuffix(m, "*"))
-		} else {
-			exact[m] = true
-		}
-	}
-
+	skip := transport.BuildMethodSkipper(publicMethods)
 	return func(ctx context.Context, _ any) bool {
 		method, ok := grpc.Method(ctx)
 		if !ok {
 			return false
 		}
-		// 精确匹配
-		if exact[method] {
-			return true
-		}
-		// 前缀匹配
-		for _, prefix := range prefixes {
-			if strings.HasPrefix(method, prefix) {
-				return true
-			}
-		}
-		return false
+		return skip(method)
 	}
 }
