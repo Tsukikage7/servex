@@ -263,6 +263,7 @@ servex 内置 [Claude Code Plugin](https://code.claude.com/docs/en/plugins.md)�
 | [bizx/event](./bizx/event/) | 进程内事件总线（通配符/优先级/异步） |
 | [bizx/captcha](./bizx/captcha/) | 验证码管理（生成/验证/防刷/冷却） |
 | [bizx/workflow](./bizx/workflow/) | 工作流引擎（审批/条件分支/并行执行） |
+| [bizx/abtesting](./bizx/abtesting/) | A/B 测试（流量分桶/多变体/曝光追踪） |
 
 ## 设计原则
 
