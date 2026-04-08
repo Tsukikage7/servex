@@ -45,6 +45,20 @@ func ExampleNewManager() {
 	// 8080
 }
 
+func ExampleGetConfigType() {
+	fmt.Println(config.GetConfigType("app.yaml"))
+	fmt.Println(config.GetConfigType("config.json"))
+	fmt.Println(config.GetConfigType("settings.toml"))
+	fmt.Println(config.GetConfigType("app.ini"))
+	fmt.Println(config.GetConfigType("unknown.txt"))
+	// Output:
+	// yaml
+	// json
+	// toml
+	// ini
+	//
+}
+
 func ExampleNewManager_withObserver() {
 	src := &exampleSource{
 		data:   []byte(`{"name":"v1","port":3000}`),
