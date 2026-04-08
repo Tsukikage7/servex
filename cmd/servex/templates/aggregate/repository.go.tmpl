@@ -1,0 +1,10 @@
+package {{.NameLower}}
+
+import "context"
+
+// Repository {{.Name}}仓储接口.
+type Repository interface {
+	FindByID(ctx context.Context, id {{.IDType}}) (*{{.Name}}, error)
+	Save(ctx context.Context, aggregate *{{.Name}}) error
+	Delete(ctx context.Context, id {{.IDType}}) error
+}

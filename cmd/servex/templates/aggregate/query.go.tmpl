@@ -1,0 +1,24 @@
+package {{.NameLower}}
+{{- if .NeedsTime}}
+
+import "time"
+{{- end}}
+
+// Get{{.Name}}Query 查询{{.Name}}.
+type Get{{.Name}}Query struct {
+	ID {{.IDType}}
+}
+
+// List{{.Name}}Query 列出{{.Name}}.
+type List{{.Name}}Query struct {
+	Page     int
+	PageSize int
+}
+
+// {{.Name}}View 查询结果视图.
+type {{.Name}}View struct {
+	ID {{.IDType}}
+{{- range .NonIDFields}}
+	{{.Name}} {{.Type}}
+{{- end}}
+}

@@ -1,0 +1,43 @@
+# {{.Name}} — justfile
+
+version := `git describe --tags --always --dirty 2>/dev/null || echo "dev"`
+commit  := `git rev-parse --short HEAD 2>/dev/null || echo "unknown"`
+date    := `date -u +%Y-%m-%dT%H:%M:%SZ`
+ldflags := "-s -w -X main.version=" + version + " -X main.gitCommit=" + commit + " -X main.buildDate=" + date
+
+# 列出所有可用配方
+default:
+    @just --list
+
+# 构建服务
+build:
+    go build -ldflags "{{"{{"}}ldflags{{"}}"}}" -o bin/{{.Name}} ./cmd/server/...
+
+# 运行服务
+run:
+    go run ./cmd/server/...
+
+# 运行测试
+test:
+    go test -race -cover ./...
+
+# 代码检查
+lint:
+    go vet ./...
+    @test -z "$$(gofmt -l .)" || (echo "gofmt check failed:" && gofmt -l . && exit 1)
+
+# 生成 proto 代码
+proto:
+    protoc --go_out=. --go-grpc_out=. proto/*.proto
+
+# 运行 Wire 依赖注入
+wire:
+    cd cmd/server && wire
+
+# 构建 Docker 镜像
+docker:
+    docker build -t {{.Name}}:{{"{{"}}version{{"}}"}} .
+
+# 清理构建产物
+clean:
+    rm -rf bin/

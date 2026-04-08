@@ -1,0 +1,26 @@
+package {{.NameLower}}
+
+import (
+{{- if .NeedsTime}}
+	"time"
+{{- end}}
+
+	"github.com/Tsukikage7/servex/domain"
+)
+
+// {{.Name}}CreatedEvent {{.Name}}创建事件.
+type {{.Name}}CreatedEvent struct {
+	domain.BaseEvent
+	ID {{.IDType}}
+{{- range .NonIDFields}}
+	{{.Name}} {{.Type}}
+{{- end}}
+}
+{{range .NonIDFields}}
+// {{$.Name}}{{.Name}}ChangedEvent {{$.Name}}{{.Name}}变更事件.
+type {{$.Name}}{{.Name}}ChangedEvent struct {
+	domain.BaseEvent
+	ID      {{$.IDType}}
+	New{{.Name}} {{.Type}}
+}
+{{end}}

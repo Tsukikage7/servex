@@ -1,0 +1,50 @@
+package {{.NameLower}}
+
+import (
+{{- if .NeedsTime}}
+	"time"
+{{- end}}
+
+	"github.com/Tsukikage7/servex/domain"
+)
+
+// {{.Name}} 聚合根.
+type {{.Name}} struct {
+	domain.AggregateRoot[{{.IDType}}]
+{{- range .NonIDFields}}
+	{{.CamelName}} {{.Type}}
+{{- end}}
+}
+
+// New{{.Name}} 创建{{.Name}}聚合.
+func New{{.Name}}(id {{.IDType}}{{range .NonIDFields}}, {{.CamelName}} {{.Type}}{{end}}) *{{.Name}} {
+	o := &{{.Name}}{
+		AggregateRoot: domain.NewAggregateRoot[{{.IDType}}](id),
+{{- range .NonIDFields}}
+		{{.CamelName}}: {{.CamelName}},
+{{- end}}
+	}
+	o.RaiseEvent(&{{.Name}}CreatedEvent{
+		BaseEvent: domain.NewBaseEvent("{{.Name}}Created"),
+		ID:        id,
+{{- range .NonIDFields}}
+		{{.Name}}: {{.CamelName}},
+{{- end}}
+	})
+	return o
+}
+{{range .NonIDFields}}
+// {{.Name}} 返回{{.CamelName}}.
+func (o *{{$.Name}}) {{.Name}}() {{.Type}} { return o.{{.CamelName}} }
+{{end}}
+{{- range .NonIDFields}}
+// Change{{.Name}} 修改{{.CamelName}}.
+func (o *{{$.Name}}) Change{{.Name}}({{.CamelName}} {{.Type}}) {
+	o.{{.CamelName}} = {{.CamelName}}
+	o.RaiseEvent(&{{$.Name}}{{.Name}}ChangedEvent{
+		BaseEvent: domain.NewBaseEvent("{{$.Name}}{{.Name}}Changed"),
+		ID:        o.ID(),
+		New{{.Name}}: {{.CamelName}},
+	})
+}
+{{end}}

@@ -1,0 +1,64 @@
+package {{.NameLower}}
+
+import (
+	"context"
+	"fmt"
+
+	domain{{.Name}} "{{.Module}}/domain/{{.NameLower}}"
+)
+
+// Service {{.Name}}应用服务.
+type Service struct {
+	repo domain{{.Name}}.Repository
+}
+
+// NewService 创建{{.Name}}应用服务.
+func NewService(repo domain{{.Name}}.Repository) *Service {
+	return &Service{repo: repo}
+}
+
+// HandleCreate 处理创建命令.
+func (s *Service) HandleCreate(ctx context.Context, cmd domain{{.Name}}.Create{{.Name}}Command) (*domain{{.Name}}.{{.Name}}, error) {
+	agg := domain{{.Name}}.New{{.Name}}(0{{range .NonIDFields}}, cmd.{{.Name}}{{end}})
+	if err := s.repo.Save(ctx, agg); err != nil {
+		return nil, fmt.Errorf("save {{.NameLower}}: %w", err)
+	}
+	return agg, nil
+}
+
+// HandleUpdate 处理更新命令.
+func (s *Service) HandleUpdate(ctx context.Context, cmd domain{{.Name}}.Update{{.Name}}Command) (*domain{{.Name}}.{{.Name}}, error) {
+	agg, err := s.repo.FindByID(ctx, cmd.ID)
+	if err != nil {
+		return nil, fmt.Errorf("find {{.NameLower}}: %w", err)
+	}
+{{- range .NonIDFields}}
+	agg.Change{{.Name}}(cmd.{{.Name}})
+{{- end}}
+	if err := s.repo.Save(ctx, agg); err != nil {
+		return nil, fmt.Errorf("save {{.NameLower}}: %w", err)
+	}
+	return agg, nil
+}
+
+// HandleDelete 处理删除命令.
+func (s *Service) HandleDelete(ctx context.Context, cmd domain{{.Name}}.Delete{{.Name}}Command) error {
+	if err := s.repo.Delete(ctx, cmd.ID); err != nil {
+		return fmt.Errorf("delete {{.NameLower}}: %w", err)
+	}
+	return nil
+}
+
+// HandleGet 处理查询.
+func (s *Service) HandleGet(ctx context.Context, query domain{{.Name}}.Get{{.Name}}Query) (*domain{{.Name}}.{{.Name}}View, error) {
+	agg, err := s.repo.FindByID(ctx, query.ID)
+	if err != nil {
+		return nil, fmt.Errorf("find {{.NameLower}}: %w", err)
+	}
+	return &domain{{.Name}}.{{.Name}}View{
+		ID: agg.ID(),
+{{- range .NonIDFields}}
+		{{.Name}}: agg.{{.Name}}(),
+{{- end}}
+	}, nil
+}

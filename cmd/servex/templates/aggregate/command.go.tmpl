@@ -1,0 +1,25 @@
+package {{.NameLower}}
+{{- if .NeedsTime}}
+
+import "time"
+{{- end}}
+
+// Create{{.Name}}Command 创建{{.Name}}命令.
+type Create{{.Name}}Command struct {
+{{- range .NonIDFields}}
+	{{.Name}} {{.Type}}
+{{- end}}
+}
+
+// Update{{.Name}}Command 更新{{.Name}}命令.
+type Update{{.Name}}Command struct {
+	ID {{.IDType}}
+{{- range .NonIDFields}}
+	{{.Name}} {{.Type}}
+{{- end}}
+}
+
+// Delete{{.Name}}Command 删除{{.Name}}命令.
+type Delete{{.Name}}Command struct {
+	ID {{.IDType}}
+}
