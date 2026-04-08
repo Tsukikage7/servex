@@ -23,6 +23,12 @@ type Field struct {
 	CamelName string // camelCase 字段名
 }
 
+// CommandDef 业务命令定义.
+type CommandDef struct {
+	Name      string // PascalCase: "Place", "Cancel", "Ship"
+	EventName string // "Placed", "Cancelled", "Shipped" (past tense)
+}
+
 // DockerData Dockerfile 模板数据.
 type DockerData struct {
 	Name string // 服务名称
@@ -37,15 +43,18 @@ type JustfileData struct {
 
 // AggregateData 聚合模板数据.
 type AggregateData struct {
-	Name        string  // PascalCase 名称
-	NameLower   string  // camelCase 名称 (包名)
-	NameSnake   string  // snake_case 名称
-	Module      string  // Go module 路径
-	Service     string  // 目标服务名（monorepo 模式下生成 adapter 层）
-	Fields      []Field // 所有字段（含 ID）
-	NonIDFields []Field // 非 ID 字段
-	IDType      string  // ID 字段类型
-	NeedsTime   bool
+	Name         string       // PascalCase 名称
+	NameLower    string       // camelCase 名称 (包名)
+	NameSnake    string       // snake_case 名称
+	Module       string       // Go module 路径
+	Service      string       // 目标服务名（monorepo 模式下生成 adapter 层）
+	Fields       []Field      // 所有字段（含 ID）
+	NonIDFields  []Field      // 非 ID 字段
+	IDType       string       // ID 字段类型
+	NeedsTime    bool
+	Commands     []CommandDef // 业务命令列表
+	UniqueFields []Field      // 唯一字段（生成 FindByXxx）
+	HasCommands  bool         // 是否指定了 --commands
 }
 
 // runGen 执行 servex gen 命令.
@@ -76,17 +85,22 @@ func runGen(args []string) error {
 func runGenAggregate(args []string) error {
 	fs := flag.NewFlagSet("gen aggregate", flag.ExitOnError)
 	fieldsStr := fs.String("fields", "", `Field definitions (e.g. "id:uint64,name:string,email:string")`)
+	commandsStr := fs.String("commands", "", `Business commands (e.g. "Place,Cancel,Ship")`)
+	uniqueStr := fs.String("unique", "", `Unique fields for FindByXxx (e.g. "email,username")`)
 	output := fs.String("output", ".", "Output base directory")
 	fs.Usage = func() {
 		fmt.Println("Usage: servex gen aggregate <name> [options]")
 		fmt.Println()
 		fmt.Println("Generates DDD aggregate files:")
-		fmt.Println("  domain/<name>/aggregate.go    Aggregate root")
-		fmt.Println("  domain/<name>/event.go        Domain events")
-		fmt.Println("  domain/<name>/repository.go   Repository interface (port)")
-		fmt.Println("  domain/<name>/command.go       CQRS commands")
-		fmt.Println("  domain/<name>/query.go         CQRS queries & view")
-		fmt.Println("  application/<name>/service.go  Application service")
+		fmt.Println("  domain/<name>/aggregate.go         Aggregate root")
+		fmt.Println("  domain/<name>/event.go             Domain events")
+		fmt.Println("  domain/<name>/repository.go        Repository interface (port)")
+		fmt.Println("  domain/<name>/command.go            CQRS commands")
+		fmt.Println("  domain/<name>/query.go              CQRS queries & view")
+		fmt.Println("  domain/<name>/aggregate_test.go    Aggregate unit tests")
+		fmt.Println("  domain/<name>/repository_mock.go   Mock repository for testing")
+		fmt.Println("  application/<name>/service.go      Application service")
+		fmt.Println("  application/<name>/service_test.go Service unit tests")
 		fmt.Println()
 		fmt.Println("Options:")
 		fs.PrintDefaults()
@@ -107,7 +121,7 @@ func runGenAggregate(args []string) error {
 	if m, err := detectModule(); err == nil {
 		module = m
 	}
-	data := buildAggregateData(name, module, fields)
+	data := buildAggregateData(name, module, fields, *commandsStr, *uniqueStr)
 
 	return generateAggregate(data, *output)
 }
@@ -140,8 +154,81 @@ func parseFields(s string) []Field {
 	return fields
 }
 
+// parseCommands 解析业务命令定义字符串.
+func parseCommands(s string) []CommandDef {
+	if s == "" {
+		return nil
+	}
+
+	var cmds []CommandDef
+	for _, part := range strings.Split(s, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		name := toPascalCase(part)
+		cmds = append(cmds, CommandDef{
+			Name:      name,
+			EventName: toPastTense(name),
+		})
+	}
+	return cmds
+}
+
+// toPastTense 将动词转为过去式.
+// Place→Placed, Cancel→Cancelled, Ship→Shipped.
+func toPastTense(s string) string {
+	if s == "" {
+		return s
+	}
+	lower := strings.ToLower(s)
+	if strings.HasSuffix(lower, "e") {
+		return s + "d"
+	}
+	// 双写末尾辅音 + ed 的常见模式：以单元音+单辅音结尾的短音节
+	n := len(lower)
+	if n >= 2 && isConsonant(lower[n-1]) && isVowel(lower[n-2]) {
+		return s + string(s[len(s)-1]) + "ed"
+	}
+	return s + "ed"
+}
+
+func isVowel(c byte) bool {
+	return c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u'
+}
+
+func isConsonant(c byte) bool {
+	return c >= 'a' && c <= 'z' && !isVowel(c)
+}
+
+// parseUniqueFields 从字段名匹配已有字段列表.
+func parseUniqueFields(s string, allFields []Field) []Field {
+	if s == "" {
+		return nil
+	}
+
+	lookup := make(map[string]Field)
+	for _, f := range allFields {
+		lookup[strings.ToLower(f.Name)] = f
+		lookup[strings.ToLower(f.CamelName)] = f
+		lookup[strings.ToLower(f.JSONTag)] = f
+	}
+
+	var result []Field
+	for _, part := range strings.Split(s, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		if f, ok := lookup[strings.ToLower(part)]; ok {
+			result = append(result, f)
+		}
+	}
+	return result
+}
+
 // buildAggregateData 从字段列表构建聚合模板数据.
-func buildAggregateData(name, module string, fields []Field) AggregateData {
+func buildAggregateData(name, module string, fields []Field, commandsStr, uniqueStr string) AggregateData {
 	idType := "uint64" // 默认 ID 类型
 	var nonIDFields []Field
 
@@ -153,15 +240,21 @@ func buildAggregateData(name, module string, fields []Field) AggregateData {
 		}
 	}
 
+	commands := parseCommands(commandsStr)
+	uniqueFields := parseUniqueFields(uniqueStr, nonIDFields)
+
 	return AggregateData{
-		Name:        toPascalCase(name),
-		NameLower:   strings.ToLower(toPascalCase(name)),
-		NameSnake:   toSnakeCase(name),
-		Module:      module,
-		Fields:      fields,
-		NonIDFields: nonIDFields,
-		IDType:      idType,
-		NeedsTime:   needsTimeImport(fields),
+		Name:         toPascalCase(name),
+		NameLower:    strings.ToLower(toPascalCase(name)),
+		NameSnake:    toSnakeCase(name),
+		Module:       module,
+		Fields:       fields,
+		NonIDFields:  nonIDFields,
+		IDType:       idType,
+		NeedsTime:    needsTimeImport(fields),
+		Commands:     commands,
+		UniqueFields: uniqueFields,
+		HasCommands:  len(commands) > 0,
 	}
 }
 
@@ -177,7 +270,10 @@ var aggregateFiles = []struct {
 	{"domain", "templates/aggregate/repository.go.tmpl", "repository.go"},
 	{"domain", "templates/aggregate/command.go.tmpl", "command.go"},
 	{"domain", "templates/aggregate/query.go.tmpl", "query.go"},
+	{"domain", "templates/aggregate/aggregate_test.go.tmpl", "aggregate_test.go"},
+	{"domain", "templates/aggregate/repository_mock.go.tmpl", "repository_mock.go"},
 	{"application", "templates/aggregate/service.go.tmpl", "service.go"},
+	{"application", "templates/aggregate/service_test.go.tmpl", "service_test.go"},
 }
 
 // adapterFiles adapter 层模板文件映射.
@@ -187,6 +283,7 @@ var adapterFiles = []struct {
 }{
 	{"templates/aggregate/adapter_repo.go.tmpl", "_repo.go"},
 	{"templates/aggregate/adapter_model.go.tmpl", "_model.go"},
+	{"templates/aggregate/adapter_repo_test.go.tmpl", "_repo_test.go"},
 }
 
 // generateAggregate 根据模板数据生成 DDD 聚合文件.
@@ -195,6 +292,7 @@ func generateAggregate(data AggregateData, outputDir string) error {
 		"toPascalCase": toPascalCase,
 		"toCamelCase":  toCamelCase,
 		"toSnakeCase":  toSnakeCase,
+		"zeroValue":    zeroValue,
 	}
 
 	for _, af := range aggregateFiles {
@@ -210,8 +308,8 @@ func generateAggregate(data AggregateData, outputDir string) error {
 	} else {
 		fmt.Println(":")
 	}
-	fmt.Printf("  domain/%s/      (aggregate, events, repository, commands, queries)\n", data.NameLower)
-	fmt.Printf("  application/%s/ (service)\n", data.NameLower)
+	fmt.Printf("  domain/%s/      (aggregate, events, repository, commands, queries, tests, mock)\n", data.NameLower)
+	fmt.Printf("  application/%s/ (service, tests)\n", data.NameLower)
 
 	// 如果指定了 --service，生成 adapter/persistence 层
 	if data.Service != "" {
@@ -222,7 +320,7 @@ func generateAggregate(data AggregateData, outputDir string) error {
 				return fmt.Errorf("render %s: %w", af.tmpl, err)
 			}
 		}
-		fmt.Printf("  services/%s-service/internal/adapter/persistence/ (repo, model)\n", data.Service)
+		fmt.Printf("  services/%s-service/internal/adapter/persistence/ (repo, model, tests)\n", data.Service)
 	}
 
 	return nil

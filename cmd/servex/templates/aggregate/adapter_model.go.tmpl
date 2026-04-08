@@ -22,9 +22,9 @@ type {{.Name}}PO struct {
 // TableName 指定表名.
 func ({{.Name}}PO) TableName() string { return "{{.NameSnake}}s" }
 
-// ToAggregate 将持久化对象转换为聚合根.
+// ToAggregate 将持久化对象转换为聚合根（不触发事件）.
 func (po *{{.Name}}PO) ToAggregate() *domain{{.Name}}.{{.Name}} {
-	return domain{{.Name}}.New{{.Name}}(po.ID{{range .NonIDFields}}, po.{{.Name}}{{end}})
+	return domain{{.Name}}.Reconstruct{{.Name}}(po.ID{{range .NonIDFields}}, po.{{.Name}}{{end}})
 }
 
 // {{.Name}}POFromAggregate 将聚合根转换为持久化对象.

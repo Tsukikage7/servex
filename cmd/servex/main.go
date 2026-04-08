@@ -81,14 +81,16 @@ var addServiceCmd = &cobra.Command{
 // genCmd 代码生成父命令.
 var genCmd = &cobra.Command{
 	Use:   "gen",
-	Short: "生成代码（aggregate/dockerfile/justfile）",
+	Short: "生成代码（aggregate/client/entity/valueobject/dockerfile/justfile）",
 }
 
 var (
-	genAggFields  string
-	genAggOutput  string
-	genAggModule  string
-	genAggService string
+	genAggFields   string
+	genAggOutput   string
+	genAggModule   string
+	genAggService  string
+	genAggCommands string
+	genAggUnique   string
 )
 
 // genAggregateCmd DDD 聚合生成命令.
@@ -106,7 +108,7 @@ var genAggregateCmd = &cobra.Command{
 			module = m
 		}
 		fields := parseFields(genAggFields)
-		data := buildAggregateData(args[0], module, fields)
+		data := buildAggregateData(args[0], module, fields, genAggCommands, genAggUnique)
 		data.Service = genAggService
 		return generateAggregate(data, genAggOutput)
 	},
@@ -142,6 +144,58 @@ var genJustfileCmd = &cobra.Command{
 			genJustModule = "github.com/example/" + genJustName
 		}
 		return generateJustfile(JustfileData{Name: genJustName, Module: genJustModule}, genJustOut)
+	},
+}
+
+// --- gen client/entity/valueobject 命令 ---
+
+var (
+	genClientService string
+	genClientModule  string
+	genClientOutput  string
+)
+
+// genClientCmd 外部服务客户端适配器生成命令.
+var genClientCmd = &cobra.Command{
+	Use:   "client <target>",
+	Short: "生成外部服务客户端适配器（防腐层 + gRPC client）",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return runGenClient(args[0], genClientService, genClientModule, genClientOutput)
+	},
+}
+
+var (
+	genEntityAggregate string
+	genEntityFields    string
+	genEntityModule    string
+	genEntityOutput    string
+)
+
+// genEntityCmd 子实体生成命令.
+var genEntityCmd = &cobra.Command{
+	Use:   "entity <name>",
+	Short: "生成 DDD 子实体（有 ID，可变，属于聚合）",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return runGenEntity(args[0], genEntityAggregate, genEntityFields, genEntityModule, genEntityOutput)
+	},
+}
+
+var (
+	genVOAggregate string
+	genVOFields    string
+	genVOModule    string
+	genVOOutput    string
+)
+
+// genValueObjectCmd 值对象生成命令.
+var genValueObjectCmd = &cobra.Command{
+	Use:   "valueobject <name>",
+	Short: "生成 DDD 值对象（无 ID，不可变，属于聚合）",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return runGenValueObject(args[0], genVOAggregate, genVOFields, genVOModule, genVOOutput)
 	},
 }
 
@@ -294,6 +348,8 @@ func init() {
 	genAggregateCmd.Flags().StringVar(&genAggOutput, "output", ".", "输出目录")
 	genAggregateCmd.Flags().StringVar(&genAggModule, "module", "", "Go module 路径 (默认: 从 go.mod 读取)")
 	genAggregateCmd.Flags().StringVar(&genAggService, "service", "", "目标服务名，生成 adapter/persistence 层到对应服务")
+	genAggregateCmd.Flags().StringVar(&genAggCommands, "commands", "", `业务命令 (如 "Place,Cancel,Ship")`)
+	genAggregateCmd.Flags().StringVar(&genAggUnique, "unique", "", `唯一字段，生成 FindByXxx (如 "email,username")`)
 
 	// gen dockerfile
 	genDockerfileCmd.Flags().StringVar(&genDockerName, "name", "server", "服务名称")
@@ -306,7 +362,24 @@ func init() {
 	genJustfileCmd.Flags().StringVar(&genJustOut, "output", ".", "输出目录")
 
 	// gen 子命令
-	genCmd.AddCommand(genAggregateCmd, genDockerfileCmd, genJustfileCmd)
+	genCmd.AddCommand(genAggregateCmd, genDockerfileCmd, genJustfileCmd, genClientCmd, genEntityCmd, genValueObjectCmd)
+
+	// gen client
+	genClientCmd.Flags().StringVar(&genClientService, "service", "", "调用方服务名（必填）")
+	genClientCmd.Flags().StringVar(&genClientModule, "module", "", "Go module 路径 (默认: 从 go.mod 读取)")
+	genClientCmd.Flags().StringVar(&genClientOutput, "output", ".", "输出目录")
+
+	// gen entity
+	genEntityCmd.Flags().StringVar(&genEntityAggregate, "aggregate", "", "所属聚合名（必填）")
+	genEntityCmd.Flags().StringVar(&genEntityFields, "fields", "", `字段定义 (如 "id:uint64,name:string")`)
+	genEntityCmd.Flags().StringVar(&genEntityModule, "module", "", "Go module 路径")
+	genEntityCmd.Flags().StringVar(&genEntityOutput, "output", ".", "输出目录")
+
+	// gen valueobject
+	genValueObjectCmd.Flags().StringVar(&genVOAggregate, "aggregate", "", "所属聚合名（必填）")
+	genValueObjectCmd.Flags().StringVar(&genVOFields, "fields", "", `字段定义 (如 "street:string,city:string")`)
+	genValueObjectCmd.Flags().StringVar(&genVOModule, "module", "", "Go module 路径")
+	genValueObjectCmd.Flags().StringVar(&genVOOutput, "output", ".", "输出目录")
 
 	// proto add
 	protoAddCmd.Flags().StringVar(&protoAddModule, "module", "", "Go module 路径 (默认: 从 go.mod 读取)")

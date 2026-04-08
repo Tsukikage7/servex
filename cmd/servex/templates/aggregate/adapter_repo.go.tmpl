@@ -33,6 +33,43 @@ func (r *{{.Name}}Repository) FindByID(ctx context.Context, id {{.IDType}}) (*do
 	}
 	return po.ToAggregate(), nil
 }
+{{range .UniqueFields}}
+// FindBy{{.Name}} 按{{.Name}}查询{{$.Name}}.
+func (r *{{$.Name}}Repository) FindBy{{.Name}}(ctx context.Context, {{.CamelName}} {{.Type}}) (*domain{{$.Name}}.{{$.Name}}, error) {
+	var po {{$.Name}}PO
+	if err := r.db.WithContext(ctx).Where("{{.JSONTag}} = ?", {{.CamelName}}).First(&po).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, domain{{$.Name}}.ErrNotFound
+		}
+		return nil, err
+	}
+	return po.ToAggregate(), nil
+}
+{{end}}
+// List 分页查询{{.Name}}列表.
+func (r *{{.Name}}Repository) List(ctx context.Context, filter domain{{.Name}}.{{.Name}}Filter, offset, limit int) ([]*domain{{.Name}}.{{.Name}}, int64, error) {
+	var total int64
+	q := r.db.WithContext(ctx).Model(&{{.Name}}PO{})
+{{- range .NonIDFields}}
+	if filter.{{.Name}} != nil {
+		q = q.Where("{{.JSONTag}} = ?", *filter.{{.Name}})
+	}
+{{- end}}
+	if err := q.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	var pos []{{.Name}}PO
+	if err := q.Offset(offset).Limit(limit).Find(&pos).Error; err != nil {
+		return nil, 0, err
+	}
+
+	result := make([]*domain{{.Name}}.{{.Name}}, len(pos))
+	for i := range pos {
+		result[i] = pos[i].ToAggregate()
+	}
+	return result, total, nil
+}
 
 // Save 保存{{.Name}}聚合.
 func (r *{{.Name}}Repository) Save(ctx context.Context, agg *domain{{.Name}}.{{.Name}}) error {

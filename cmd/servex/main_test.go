@@ -113,10 +113,33 @@ func TestNeedsTimeImport(t *testing.T) {
 	}
 }
 
+// TestZeroValue 测试零值字面量生成.
+func TestZeroValue(t *testing.T) {
+	tests := []struct {
+		typ  string
+		want string
+	}{
+		{"string", `""`},
+		{"int", "0"},
+		{"int64", "0"},
+		{"uint64", "0"},
+		{"float64", "0"},
+		{"bool", "false"},
+		{"time.Time", "time.Time{}"},
+		{"CustomType", `""`},
+	}
+	for _, tt := range tests {
+		got := zeroValue(tt.typ)
+		if got != tt.want {
+			t.Errorf("zeroValue(%q) = %q, want %q", tt.typ, got, tt.want)
+		}
+	}
+}
+
 // TestBuildAggregateData 测试聚合数据构建.
 func TestBuildAggregateData(t *testing.T) {
 	fields := parseFields("id:uint64,name:string,email:string")
-	data := buildAggregateData("user", "github.com/example/myservice", fields)
+	data := buildAggregateData("user", "github.com/example/myservice", fields, "", "")
 
 	if data.Name != "User" {
 		t.Errorf("Name = %q, want %q", data.Name, "User")
@@ -135,7 +158,7 @@ func TestBuildAggregateData(t *testing.T) {
 // TestBuildAggregateDataDefaultID 测试无 ID 字段时的默认值.
 func TestBuildAggregateDataDefaultID(t *testing.T) {
 	fields := parseFields("name:string,email:string")
-	data := buildAggregateData("user", "github.com/example/myservice", fields)
+	data := buildAggregateData("user", "github.com/example/myservice", fields, "", "")
 
 	if data.IDType != "uint64" {
 		t.Errorf("IDType = %q, want default %q", data.IDType, "uint64")
@@ -223,7 +246,7 @@ func TestGenerateAggregate(t *testing.T) {
 	dir := t.TempDir()
 
 	fields := parseFields("id:uint64,name:string,email:string")
-	data := buildAggregateData("user", "github.com/example/myservice", fields)
+	data := buildAggregateData("user", "github.com/example/myservice", fields, "", "")
 
 	if err := generateAggregate(data, dir); err != nil {
 		t.Fatalf("generateAggregate: %v", err)
@@ -235,7 +258,10 @@ func TestGenerateAggregate(t *testing.T) {
 		"domain/user/repository.go",
 		"domain/user/command.go",
 		"domain/user/query.go",
+		"domain/user/aggregate_test.go",
+		"domain/user/repository_mock.go",
 		"application/user/service.go",
+		"application/user/service_test.go",
 	}
 
 	for _, f := range expectedFiles {
@@ -245,7 +271,7 @@ func TestGenerateAggregate(t *testing.T) {
 		}
 	}
 
-	// 验证 aggregate.go 包含 AggregateRoot
+	// 验证 aggregate.go 包含 AggregateRoot 和 Reconstruct
 	content, err := os.ReadFile(filepath.Join(dir, "domain/user/aggregate.go"))
 	if err != nil {
 		t.Fatalf("read aggregate.go: %v", err)
@@ -256,6 +282,9 @@ func TestGenerateAggregate(t *testing.T) {
 	}
 	if !contains(aggStr, "NewUser") {
 		t.Error("aggregate.go should contain NewUser constructor")
+	}
+	if !contains(aggStr, "ReconstructUser") {
+		t.Error("aggregate.go should contain ReconstructUser")
 	}
 	if !contains(aggStr, "RaiseEvent") {
 		t.Error("aggregate.go should contain RaiseEvent call")
@@ -274,7 +303,7 @@ func TestGenerateAggregate(t *testing.T) {
 		t.Error("event.go should contain domain.BaseEvent")
 	}
 
-	// 验证 repository.go 包含仓储接口
+	// 验证 repository.go 包含仓储接口（含 List 和 Filter）
 	content, err = os.ReadFile(filepath.Join(dir, "domain/user/repository.go"))
 	if err != nil {
 		t.Fatalf("read repository.go: %v", err)
@@ -286,8 +315,14 @@ func TestGenerateAggregate(t *testing.T) {
 	if !contains(repoStr, "FindByID") {
 		t.Error("repository.go should contain FindByID method")
 	}
+	if !contains(repoStr, "List(") {
+		t.Error("repository.go should contain List method")
+	}
+	if !contains(repoStr, "UserFilter") {
+		t.Error("repository.go should contain UserFilter struct")
+	}
 
-	// 验证 command.go 包含 CQRS 命令
+	// 验证 command.go 包含 CQRS 命令 (fallback 模式含 UpdateCommand)
 	content, err = os.ReadFile(filepath.Join(dir, "domain/user/command.go"))
 	if err != nil {
 		t.Fatalf("read command.go: %v", err)
@@ -298,6 +333,9 @@ func TestGenerateAggregate(t *testing.T) {
 	}
 	if !contains(cmdStr, "DeleteUserCommand") {
 		t.Error("command.go should contain DeleteUserCommand")
+	}
+	if !contains(cmdStr, "UpdateUserCommand") {
+		t.Error("command.go should contain UpdateUserCommand in fallback mode")
 	}
 
 	// 验证 query.go 包含 CQRS 查询
@@ -313,7 +351,7 @@ func TestGenerateAggregate(t *testing.T) {
 		t.Error("query.go should contain UserView")
 	}
 
-	// 验证 service.go 包含应用服务
+	// 验证 service.go 包含应用服务 (fallback 模式含 HandleUpdate)
 	content, err = os.ReadFile(filepath.Join(dir, "application/user/service.go"))
 	if err != nil {
 		t.Fatalf("read service.go: %v", err)
@@ -323,10 +361,67 @@ func TestGenerateAggregate(t *testing.T) {
 		t.Error("service.go should contain HandleCreate")
 	}
 	if !contains(svcStr, "HandleUpdate") {
-		t.Error("service.go should contain HandleUpdate")
+		t.Error("service.go should contain HandleUpdate in fallback mode")
 	}
 	if !contains(svcStr, "HandleDelete") {
 		t.Error("service.go should contain HandleDelete")
+	}
+	if !contains(svcStr, "HandleList") {
+		t.Error("service.go should contain HandleList")
+	}
+	if !contains(svcStr, "eventBus") {
+		t.Error("service.go should contain eventBus dependency")
+	}
+
+	// 验证 aggregate_test.go 包含聚合测试骨架
+	content, err = os.ReadFile(filepath.Join(dir, "domain/user/aggregate_test.go"))
+	if err != nil {
+		t.Fatalf("read aggregate_test.go: %v", err)
+	}
+	aggTestStr := string(content)
+	if !contains(aggTestStr, "TestNewUser") {
+		t.Error("aggregate_test.go should contain TestNewUser")
+	}
+	if !contains(aggTestStr, "TestReconstructUser") {
+		t.Error("aggregate_test.go should contain TestReconstructUser")
+	}
+	if !contains(aggTestStr, "stretchr/testify") {
+		t.Error("aggregate_test.go should import testify")
+	}
+
+	// 验证 repository_mock.go 包含 Mock 仓储（含 List）
+	content, err = os.ReadFile(filepath.Join(dir, "domain/user/repository_mock.go"))
+	if err != nil {
+		t.Fatalf("read repository_mock.go: %v", err)
+	}
+	mockStr := string(content)
+	if !contains(mockStr, "MockRepository") {
+		t.Error("repository_mock.go should contain MockRepository")
+	}
+	if !contains(mockStr, "NewMockRepository") {
+		t.Error("repository_mock.go should contain NewMockRepository")
+	}
+	if !contains(mockStr, "FindByID") {
+		t.Error("repository_mock.go should contain FindByID")
+	}
+	if !contains(mockStr, "func (m *MockRepository) List(") {
+		t.Error("repository_mock.go should contain List method")
+	}
+
+	// 验证 service_test.go 包含服务测试骨架
+	content, err = os.ReadFile(filepath.Join(dir, "application/user/service_test.go"))
+	if err != nil {
+		t.Fatalf("read service_test.go: %v", err)
+	}
+	svcTestStr := string(content)
+	if !contains(svcTestStr, "TestService_HandleCreate") {
+		t.Error("service_test.go should contain TestService_HandleCreate")
+	}
+	if !contains(svcTestStr, "NewMockRepository") {
+		t.Error("service_test.go should use NewMockRepository")
+	}
+	if !contains(svcTestStr, "NewEventBus") {
+		t.Error("service_test.go should use NewEventBus")
 	}
 }
 
@@ -335,7 +430,7 @@ func TestGenerateAggregateWithTimeField(t *testing.T) {
 	dir := t.TempDir()
 
 	fields := parseFields("id:uint64,name:string,created_at:time.Time")
-	data := buildAggregateData("order", "github.com/example/myservice", fields)
+	data := buildAggregateData("order", "github.com/example/myservice", fields, "", "")
 
 	if err := generateAggregate(data, dir); err != nil {
 		t.Fatalf("generateAggregate: %v", err)
@@ -347,6 +442,214 @@ func TestGenerateAggregateWithTimeField(t *testing.T) {
 	}
 	if !contains(string(content), "time.Time") {
 		t.Error("query.go with time.Time field should contain time.Time type")
+	}
+}
+
+// TestParseCommands 测试业务命令解析.
+func TestParseCommands(t *testing.T) {
+	tests := []struct {
+		input string
+		want  int
+	}{
+		{"", 0},
+		{"Place,Cancel,Ship", 3},
+		{"Place", 1},
+		{"Place, Cancel, Ship", 3},
+	}
+	for _, tt := range tests {
+		got := parseCommands(tt.input)
+		if len(got) != tt.want {
+			t.Errorf("parseCommands(%q) returned %d commands, want %d", tt.input, len(got), tt.want)
+		}
+	}
+
+	// 验证命令详情
+	cmds := parseCommands("Place,Cancel,Ship")
+	if cmds[0].Name != "Place" {
+		t.Errorf("cmds[0].Name = %q, want %q", cmds[0].Name, "Place")
+	}
+	if cmds[0].EventName != "Placed" {
+		t.Errorf("cmds[0].EventName = %q, want %q", cmds[0].EventName, "Placed")
+	}
+	if cmds[1].Name != "Cancel" {
+		t.Errorf("cmds[1].Name = %q, want %q", cmds[1].Name, "Cancel")
+	}
+	if cmds[1].EventName != "Cancelled" {
+		t.Errorf("cmds[1].EventName = %q, want %q", cmds[1].EventName, "Cancelled")
+	}
+	if cmds[2].Name != "Ship" {
+		t.Errorf("cmds[2].Name = %q, want %q", cmds[2].Name, "Ship")
+	}
+	if cmds[2].EventName != "Shipped" {
+		t.Errorf("cmds[2].EventName = %q, want %q", cmds[2].EventName, "Shipped")
+	}
+}
+
+// TestToPastTense 测试过去式转换.
+func TestToPastTense(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"Place", "Placed"},
+		{"Cancel", "Cancelled"},
+		{"Ship", "Shipped"},
+		{"Create", "Created"},
+		{"", ""},
+	}
+	for _, tt := range tests {
+		got := toPastTense(tt.input)
+		if got != tt.want {
+			t.Errorf("toPastTense(%q) = %q, want %q", tt.input, got, tt.want)
+		}
+	}
+}
+
+// TestParseUniqueFields 测试唯一字段解析.
+func TestParseUniqueFields(t *testing.T) {
+	fields := parseFields("name:string,email:string,age:int")
+	// 去掉 ID
+	var nonID []Field
+	for _, f := range fields {
+		nonID = append(nonID, f)
+	}
+
+	// 匹配 by PascalCase
+	result := parseUniqueFields("Name,Email", nonID)
+	if len(result) != 2 {
+		t.Fatalf("parseUniqueFields returned %d fields, want 2", len(result))
+	}
+	if result[0].Name != "Name" {
+		t.Errorf("result[0].Name = %q, want %q", result[0].Name, "Name")
+	}
+	if result[1].Name != "Email" {
+		t.Errorf("result[1].Name = %q, want %q", result[1].Name, "Email")
+	}
+
+	// 空值
+	result = parseUniqueFields("", nonID)
+	if len(result) != 0 {
+		t.Errorf("parseUniqueFields with empty string should return 0, got %d", len(result))
+	}
+
+	// 不匹配
+	result = parseUniqueFields("nonexistent", nonID)
+	if len(result) != 0 {
+		t.Errorf("parseUniqueFields with nonexistent field should return 0, got %d", len(result))
+	}
+}
+
+// TestBuildAggregateDataWithCommands 测试带命令的聚合数据构建.
+func TestBuildAggregateDataWithCommands(t *testing.T) {
+	fields := parseFields("id:uint64,name:string,email:string")
+	data := buildAggregateData("order", "github.com/example/myservice", fields, "Place,Cancel,Ship", "email")
+
+	if !data.HasCommands {
+		t.Error("HasCommands should be true")
+	}
+	if len(data.Commands) != 3 {
+		t.Errorf("Commands count = %d, want 3", len(data.Commands))
+	}
+	if len(data.UniqueFields) != 1 {
+		t.Errorf("UniqueFields count = %d, want 1", len(data.UniqueFields))
+	}
+	if data.UniqueFields[0].Name != "Email" {
+		t.Errorf("UniqueFields[0].Name = %q, want %q", data.UniqueFields[0].Name, "Email")
+	}
+}
+
+// TestGenerateAggregateWithCommands 测试带业务命令的聚合生成.
+func TestGenerateAggregateWithCommands(t *testing.T) {
+	dir := t.TempDir()
+
+	fields := parseFields("id:uint64,name:string,email:string")
+	data := buildAggregateData("order", "github.com/example/myservice", fields, "Place,Cancel,Ship", "email")
+
+	if err := generateAggregate(data, dir); err != nil {
+		t.Fatalf("generateAggregate: %v", err)
+	}
+
+	// 验证 aggregate.go 包含业务命令方法
+	content, err := os.ReadFile(filepath.Join(dir, "domain/order/aggregate.go"))
+	if err != nil {
+		t.Fatalf("read aggregate.go: %v", err)
+	}
+	aggStr := string(content)
+	if !contains(aggStr, "func (o *Order) Place()") {
+		t.Error("aggregate.go should contain Place() method")
+	}
+	if !contains(aggStr, "func (o *Order) Cancel()") {
+		t.Error("aggregate.go should contain Cancel() method")
+	}
+	if !contains(aggStr, "func (o *Order) Ship()") {
+		t.Error("aggregate.go should contain Ship() method")
+	}
+	if !contains(aggStr, "ReconstructOrder") {
+		t.Error("aggregate.go should contain ReconstructOrder")
+	}
+
+	// 验证 event.go 包含业务事件
+	content, err = os.ReadFile(filepath.Join(dir, "domain/order/event.go"))
+	if err != nil {
+		t.Fatalf("read event.go: %v", err)
+	}
+	evtStr := string(content)
+	if !contains(evtStr, "OrderPlacedEvent") {
+		t.Error("event.go should contain OrderPlacedEvent")
+	}
+	if !contains(evtStr, "OrderCancelledEvent") {
+		t.Error("event.go should contain OrderCancelledEvent")
+	}
+	if !contains(evtStr, "OrderShippedEvent") {
+		t.Error("event.go should contain OrderShippedEvent")
+	}
+
+	// 验证 command.go 包含业务命令（非 UpdateCommand）
+	content, err = os.ReadFile(filepath.Join(dir, "domain/order/command.go"))
+	if err != nil {
+		t.Fatalf("read command.go: %v", err)
+	}
+	cmdStr := string(content)
+	if !contains(cmdStr, "PlaceOrderCommand") {
+		t.Error("command.go should contain PlaceOrderCommand")
+	}
+	if !contains(cmdStr, "CancelOrderCommand") {
+		t.Error("command.go should contain CancelOrderCommand")
+	}
+	if !contains(cmdStr, "ShipOrderCommand") {
+		t.Error("command.go should contain ShipOrderCommand")
+	}
+	if contains(cmdStr, "UpdateOrderCommand") {
+		t.Error("command.go should NOT contain UpdateOrderCommand when commands are specified")
+	}
+
+	// 验证 repository.go 包含 FindByEmail
+	content, err = os.ReadFile(filepath.Join(dir, "domain/order/repository.go"))
+	if err != nil {
+		t.Fatalf("read repository.go: %v", err)
+	}
+	repoStr := string(content)
+	if !contains(repoStr, "FindByEmail") {
+		t.Error("repository.go should contain FindByEmail for unique field")
+	}
+
+	// 验证 service.go 包含业务命令处理器（非 HandleUpdate）
+	content, err = os.ReadFile(filepath.Join(dir, "application/order/service.go"))
+	if err != nil {
+		t.Fatalf("read service.go: %v", err)
+	}
+	svcStr := string(content)
+	if !contains(svcStr, "HandlePlace") {
+		t.Error("service.go should contain HandlePlace")
+	}
+	if !contains(svcStr, "HandleCancel") {
+		t.Error("service.go should contain HandleCancel")
+	}
+	if !contains(svcStr, "HandleShip") {
+		t.Error("service.go should contain HandleShip")
+	}
+	if contains(svcStr, "HandleUpdate") {
+		t.Error("service.go should NOT contain HandleUpdate when commands are specified")
 	}
 }
 
@@ -574,7 +877,7 @@ func TestGenAggregateInMonorepo(t *testing.T) {
 	}
 
 	fields := parseFields("id:uint64,name:string")
-	data := buildAggregateData("order", "github.com/example/monorepo", fields)
+	data := buildAggregateData("order", "github.com/example/monorepo", fields, "", "")
 
 	if err := generateAggregate(data, dir); err != nil {
 		t.Fatalf("generateAggregate: %v", err)

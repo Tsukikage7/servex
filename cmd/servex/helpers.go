@@ -73,6 +73,26 @@ func goType(t string) string {
 	}
 }
 
+// zeroValue 返回 Go 类型的零值字面量（用于测试模板）.
+func zeroValue(typ string) string {
+	switch typ {
+	case "string":
+		return `""`
+	case "int", "int8", "int16", "int32", "int64":
+		return "0"
+	case "uint", "uint8", "uint16", "uint32", "uint64":
+		return "0"
+	case "float32", "float64":
+		return "0"
+	case "bool":
+		return "false"
+	case "time.Time":
+		return "time.Time{}"
+	default:
+		return `""`
+	}
+}
+
 // needsTimeImport 检查字段列表是否包含 time.Time 类型.
 func needsTimeImport(fields []Field) bool {
 	for _, f := range fields {

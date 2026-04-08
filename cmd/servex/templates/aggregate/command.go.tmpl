@@ -11,6 +11,21 @@ type Create{{.Name}}Command struct {
 {{- end}}
 }
 
+// Delete{{.Name}}Command 删除{{.Name}}命令.
+type Delete{{.Name}}Command struct {
+	ID {{.IDType}}
+}
+{{- if .HasCommands}}
+{{range .Commands}}
+
+// {{.Name}}{{$.Name}}Command {{.Name}}{{$.Name}}命令.
+type {{.Name}}{{$.Name}}Command struct {
+	ID {{$.IDType}}
+	// TODO: add command-specific fields
+}
+{{- end}}
+{{- else}}
+
 // Update{{.Name}}Command 更新{{.Name}}命令.
 type Update{{.Name}}Command struct {
 	ID {{.IDType}}
@@ -18,8 +33,4 @@ type Update{{.Name}}Command struct {
 	{{.Name}} {{.Type}}
 {{- end}}
 }
-
-// Delete{{.Name}}Command 删除{{.Name}}命令.
-type Delete{{.Name}}Command struct {
-	ID {{.IDType}}
-}
+{{- end}}

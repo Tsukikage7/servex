@@ -11,6 +11,17 @@ var ErrNotFound = errors.New("{{.NameLower}}: not found")
 // Repository {{.Name}}仓储接口.
 type Repository interface {
 	FindByID(ctx context.Context, id {{.IDType}}) (*{{.Name}}, error)
+{{- range .UniqueFields}}
+	FindBy{{.Name}}(ctx context.Context, {{.CamelName}} {{.Type}}) (*{{.Name}}, error)
+{{- end}}
+	List(ctx context.Context, filter {{.Name}}Filter, offset, limit int) ([]*{{.Name}}, int64, error)
 	Save(ctx context.Context, aggregate *{{.Name}}) error
 	Delete(ctx context.Context, id {{.IDType}}) error
+}
+
+// {{.Name}}Filter 查询过滤条件.
+type {{.Name}}Filter struct {
+{{- range .NonIDFields}}
+	{{.Name}} *{{.Type}} // nil 表示不过滤
+{{- end}}
 }

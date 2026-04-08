@@ -16,11 +16,13 @@ type {{.Name}}CreatedEvent struct {
 	{{.Name}} {{.Type}}
 {{- end}}
 }
-{{range .NonIDFields}}
-// {{$.Name}}{{.Name}}ChangedEvent {{$.Name}}{{.Name}}变更事件.
-type {{$.Name}}{{.Name}}ChangedEvent struct {
+{{- if .HasCommands}}
+{{range .Commands}}
+
+// {{$.Name}}{{.EventName}}Event {{$.Name}}{{.EventName}}事件.
+type {{$.Name}}{{.EventName}}Event struct {
 	domain.BaseEvent
-	ID      {{$.IDType}}
-	New{{.Name}} {{.Type}}
+	ID {{$.IDType}}
 }
-{{end}}
+{{- end}}
+{{- end}}

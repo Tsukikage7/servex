@@ -33,18 +33,32 @@ func New{{.Name}}(id {{.IDType}}{{range .NonIDFields}}, {{.CamelName}} {{.Type}}
 	})
 	return o
 }
+
+// Reconstruct{{.Name}} 从持久化数据恢复聚合根（不触发事件）.
+func Reconstruct{{.Name}}(id {{.IDType}}{{range .NonIDFields}}, {{.CamelName}} {{.Type}}{{end}}) *{{.Name}} {
+	return &{{.Name}}{
+		AggregateRoot: domain.NewAggregateRoot[{{.IDType}}](id),
+{{- range .NonIDFields}}
+		{{.CamelName}}: {{.CamelName}},
+{{- end}}
+	}
+}
+
+// --- Getters ---
 {{range .NonIDFields}}
 // {{.Name}} 返回{{.CamelName}}.
 func (o *{{$.Name}}) {{.Name}}() {{.Type}} { return o.{{.CamelName}} }
 {{end}}
-{{- range .NonIDFields}}
-// Change{{.Name}} 修改{{.CamelName}}.
-func (o *{{$.Name}}) Change{{.Name}}({{.CamelName}} {{.Type}}) {
-	o.{{.CamelName}} = {{.CamelName}}
-	o.RaiseEvent(&{{$.Name}}{{.Name}}ChangedEvent{
-		BaseEvent: domain.NewBaseEvent("{{$.Name}}{{.Name}}Changed"),
+{{- if .HasCommands}}
+// --- 业务方法 ---
+{{range .Commands}}
+// {{.Name}} 执行{{.Name}}操作.
+func (o *{{$.Name}}) {{.Name}}() {
+	// TODO: implement business logic
+	o.RaiseEvent(&{{$.Name}}{{.EventName}}Event{
+		BaseEvent: domain.NewBaseEvent("{{$.Name}}{{.EventName}}"),
 		ID:        o.ID(),
-		New{{.Name}}: {{.CamelName}},
 	})
 }
 {{end}}
+{{- end}}
