@@ -213,3 +213,163 @@ prometheus.MustRegister(tracker.PrometheusCollector())
 - `{namespace}_slo_events_total{name, result}` — 总事件计数器
 - `{namespace}_slo_error_budget_remaining{name}` — 剩余错误预算
 - `{namespace}_slo_burn_rate{name}` — 错误预算消耗速率
+
+## observability/alerting — 告警规则引擎
+
+```go
+import "github.com/Tsukikage7/servex/observability/alerting"
+
+// 创建指标提供者（实现 MetricProvider 接口）
+type myProvider struct{}
+func (p *myProvider) Query(ctx context.Context, metric string) (float64, error) {
+    // 从 Prometheus/自定义数据源查询指标值
+    return getCurrentValue(metric)
+}
+
+// 创建告警引擎
+engine := alerting.New(&myProvider{},
+    alerting.WithDefaultEvalInterval(15*time.Second),  // 默认评估间隔
+    alerting.WithNotifier(myNotifier),                  // 告警通知器
+    alerting.WithHistorySize(1000),                     // 历史记录容量
+    alerting.WithLogger(log.Printf),                    // 日志记录器
+)
+
+// 添加阈值告警规则
+engine.AddRule(&alerting.Rule{
+    ID:   "high-cpu",
+    Name: "CPU 使用率过高",
+    Type: alerting.RuleThreshold,
+    Condition: alerting.Condition{
+        Metric:    "cpu_usage_percent",
+        Operator:  alerting.OpGT,
+        Threshold: 80,
+    },
+    For:          5 * time.Minute, // Pending 持续 5 分钟后 Firing
+    EvalInterval: 15 * time.Second,
+    Labels:       map[string]string{"severity": "critical", "team": "infra"},
+    Annotations:  map[string]string{"summary": "CPU 使用率超过 80%"},
+})
+
+// 添加速率告警规则
+engine.AddRule(&alerting.Rule{
+    ID:   "high-error-rate",
+    Name: "错误率过高",
+    Type: alerting.RuleRate,
+    Condition: alerting.Condition{
+        Metric:    "http_error_rate",
+        Operator:  alerting.OpGT,
+        Threshold: 0.05,
+    },
+    For: 2 * time.Minute,
+})
+
+// 添加缺失检测规则
+engine.AddRule(&alerting.Rule{
+    ID:   "heartbeat-missing",
+    Name: "心跳缺失",
+    Type: alerting.RuleAbsence,
+    Condition: alerting.Condition{
+        Metric:   "service_heartbeat",
+        Operator: alerting.OpGT,
+        Threshold: 0,
+    },
+    For: time.Minute,
+})
+
+// 启动评估循环
+engine.Start(ctx)
+defer engine.Stop(ctx)
+
+// 一次性评估（用于测试或手动触发）
+alerts, err := engine.Evaluate(ctx)
+
+// 查看活跃告警
+active := engine.ActiveAlerts()
+
+// 查看告警历史
+history := engine.AlertHistory(50)
+
+// 规则 CRUD
+rules := engine.ListRules()
+rule, _ := engine.GetRule("high-cpu")
+engine.RemoveRule("high-cpu")
+```
+
+**关键类型：**
+- `alerting.Engine` — 告警引擎（`AddRule`, `RemoveRule`, `GetRule`, `ListRules`, `Start`, `Stop`, `Evaluate`, `ActiveAlerts`, `AlertHistory`）
+- `alerting.Rule` — 规则定义（`ID`, `Name`, `Type`, `Condition`, `Labels`, `Annotations`, `EvalInterval`, `For`）
+- `alerting.Alert` — 告警实例（`ID`, `RuleID`, `State`, `Value`, `Labels`, `Annotations`, `StartsAt`, `EndsAt`, `UpdatedAt`）
+- `alerting.Condition` — 告警条件（`Metric`, `Operator`, `Threshold`, `Duration`）
+- `alerting.MetricProvider` — 指标提供者接口（`Query(ctx, metric) (float64, error)`）
+- `alerting.Notifier` — 通知接口（`Notify(ctx, alert) error`）
+- `alerting.New(provider, opts...)` — 创建引擎
+
+**告警状态：** `StateOK`, `StatePending`, `StateFiring`, `StateResolved`
+
+**规则类型：** `RuleThreshold`（阈值）, `RuleRate`（速率）, `RuleAbsence`（缺失检测）
+
+**运算符：** `OpGT`, `OpGTE`, `OpLT`, `OpLTE`, `OpEQ`, `OpNEQ`
+
+**选项：**
+- `WithLogger(printf)` — 日志记录器
+- `WithNotifier(n)` — 告警通知器
+- `WithDefaultEvalInterval(d)` — 默认评估间隔（默认 15s）
+- `WithHistorySize(n)` — 历史记录容量（默认 1000）
+
+**错误：** `ErrNilProvider`, `ErrRuleNotFound`, `ErrDuplicateRule`, `ErrInvalidCondition`, `ErrAlreadyRunning`, `ErrNotRunning`
+
+**状态转换：** OK → Pending（条件满足）→ Firing（超过 `For` 时间）→ Resolved（条件恢复）；Pending → OK（条件不再满足，回退）
+
+## observability/profiling — 持续性能剖析
+
+```go
+import "github.com/Tsukikage7/servex/observability/profiling"
+
+// 默认配置（CPU/Heap/Goroutine，60s 间隔，10s CPU 采样时长）
+cfg := profiling.DefaultConfig()
+cfg.Labels = map[string]string{"service": "my-service", "env": "prod"}
+
+// 创建剖析器
+p, err := profiling.New(cfg,
+    profiling.WithLogger(log.Printf),
+    profiling.WithExporter(profiling.NewFileExporter("./profiles")),  // 保存到本地
+    profiling.WithHTTPPrefix("/debug/pprof"),                        // pprof HTTP 前缀
+)
+if err != nil { ... }
+
+// 启动周期采集
+if err := p.Start(ctx); err != nil { ... }
+defer p.Stop(ctx)
+
+// 单次采集
+prof, err := p.Collect(ctx, profiling.ProfileHeap)
+fmt.Printf("type=%s, size=%d bytes\n", prof.Type, len(prof.Data))
+
+// 挂载 pprof HTTP 端点
+mux.Handle("/debug/pprof/", p.Handler())
+
+// 查看状态
+status := p.Status()
+fmt.Printf("running=%v, collected=%d, errors=%d\n",
+    status.Running, status.CollectedCount, status.ErrorCount)
+```
+
+**关键类型：**
+- `profiling.Profiler` — 剖析器（`Start`, `Stop`, `Collect`, `Handler`, `Status`）
+- `profiling.Config` — 配置（`Enabled`, `Types`, `Interval`, `Duration`, `OutputDir`, `Labels`）
+- `profiling.Profile` — 采集结果（`Type`, `Data`, `Timestamp`, `Duration`, `Labels`）
+- `profiling.Status` — 运行状态（`Running`, `LastCollected`, `CollectedCount`, `ErrorCount`, `ActiveProfiles`）
+- `profiling.Exporter` — 导出接口（`Export(ctx, *Profile) error`）
+- `profiling.FileExporter` — 文件导出器（保存为 `{type}_{timestamp}.pprof`）
+- `profiling.DefaultConfig()` — 默认配置
+
+**剖析类型：**
+- `ProfileCPU` / `ProfileHeap` / `ProfileGoroutine` / `ProfileBlock` / `ProfileMutex` / `ProfileAllocs` / `ProfileThreadCreate`
+
+**选项：**
+- `WithLogger(printf)` — 日志记录器
+- `WithExporter(e)` — 自定义导出后端
+- `WithHTTPPrefix(prefix)` — pprof HTTP 路径前缀（默认 "/debug/pprof"）
+
+**错误：**
+- `ErrNilConfig`, `ErrAlreadyRunning`, `ErrNotRunning`, `ErrInvalidProfileType`
