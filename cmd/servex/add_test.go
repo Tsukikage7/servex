@@ -19,8 +19,7 @@ func TestAddService(t *testing.T) {
 
 	// 设置 flags
 	addWithGRPC = false
-	addWithDB = false
-	addWithRedis = false
+	addInfra = ""
 	addWithWire = false
 
 	if err := runAddService([]string{"user"}); err != nil {
@@ -72,13 +71,11 @@ func TestAddServiceWithGRPC(t *testing.T) {
 	os.WriteFile("go.mod", []byte("module github.com/example/monorepo\n\ngo 1.22\n"), 0o644)
 
 	addWithGRPC = true
-	addWithDB = true
-	addWithRedis = true
+	addInfra = "mysql,redis"
 	addWithWire = false
 	defer func() {
 		addWithGRPC = false
-		addWithDB = false
-		addWithRedis = false
+		addInfra = ""
 	}()
 
 	if err := runAddService([]string{"order"}); err != nil {
@@ -98,10 +95,10 @@ func TestAddServiceWithGRPC(t *testing.T) {
 	}
 	got := string(content)
 	if !contains(got, "rdbms.NewDatabase") {
-		t.Error("main.go should contain database setup when --with-db is true")
+		t.Error("main.go should contain database setup when --infra mysql is set")
 	}
 	if !contains(got, "srvredis.NewClient") {
-		t.Error("main.go should contain redis setup when --with-redis is true")
+		t.Error("main.go should contain redis setup when --infra redis is set")
 	}
 	if !contains(got, "port.NewGRPC") {
 		t.Error("main.go should contain gRPC server setup when --with-grpc is true")
@@ -117,10 +114,10 @@ func TestAddServiceWithGRPC(t *testing.T) {
 		t.Error("config.yaml should contain grpc section when --with-grpc is true")
 	}
 	if !contains(cfgStr, "database:") {
-		t.Error("config.yaml should contain database section when --with-db is true")
+		t.Error("config.yaml should contain database section when --infra mysql is set")
 	}
 	if !contains(cfgStr, "redis:") {
-		t.Error("config.yaml should contain redis section when --with-redis is true")
+		t.Error("config.yaml should contain redis section when --infra redis is set")
 	}
 }
 
@@ -152,8 +149,7 @@ func TestAddServiceDuplicate(t *testing.T) {
 	os.WriteFile("go.mod", []byte("module github.com/example/monorepo\n\ngo 1.22\n"), 0o644)
 
 	addWithGRPC = false
-	addWithDB = false
-	addWithRedis = false
+	addInfra = ""
 	addWithWire = false
 
 	// 第一次添加应成功

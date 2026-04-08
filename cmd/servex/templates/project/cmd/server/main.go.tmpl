@@ -2,13 +2,17 @@ package main
 
 import (
 	"os"
-
-	"{{.Module}}/internal/server"
-{{if .WithDB}}
-	"github.com/Tsukikage7/servex/storage/rdbms"
-{{end}}{{if .WithRedis}}
-	srvredis "github.com/Tsukikage7/servex/storage/redis"
+{{- range $imp := extraImports .Infra}}
+	"{{$imp}}"
+{{- end}}
+{{range .Infra}}{{if .Alias}}
+	{{.Alias}} "{{.Import}}"
+{{- else}}
+	"{{.Import}}"
+{{- end}}
 {{end}}
+	"{{.Module}}/internal/server"
+
 	"github.com/Tsukikage7/servex/app"
 	"github.com/Tsukikage7/servex/observability/logger"
 )
@@ -21,25 +25,8 @@ func main() {
 		Output: "console",
 	})
 	defer log.Sync()
-{{if .WithDB}}
-	// 初始化数据库
-	db, err := rdbms.NewDatabase(&rdbms.Config{
-		Driver: rdbms.DriverMySQL,
-		DSN:    envOr("DB_DSN", "root:password@tcp(127.0.0.1:3306)/{{.Name}}?charset=utf8mb4&parseTime=True&loc=Local"),
-	}, log)
-	if err != nil {
-		log.Fatalf("init database: %v", err)
-	}
-	_ = db
-{{end}}{{if .WithRedis}}
-	// 初始化 Redis
-	rdb, err := srvredis.NewClient(&srvredis.Config{
-		Addr: envOr("REDIS_ADDR", "127.0.0.1:6379"),
-	}, log)
-	if err != nil {
-		log.Fatalf("init redis: %v", err)
-	}
-	defer rdb.Close()
+{{range .Infra}}
+	{{.InitCode}}
 {{end}}
 	// 创建 HTTP 服务器
 	httpSrv := server.NewHTTP(log)

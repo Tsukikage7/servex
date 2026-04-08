@@ -179,8 +179,7 @@ func TestGenerateProject(t *testing.T) {
 		Name:      "testproject",
 		Module:    "github.com/example/testproject",
 		WithGRPC:  true,
-		WithDB:    true,
-		WithRedis: true,
+		Infra:     parseInfra("mysql,redis"),
 	}
 
 	if err := generateProject(data); err != nil {
@@ -303,7 +302,7 @@ func TestGenerateAggregate(t *testing.T) {
 		t.Error("event.go should contain domain.BaseEvent")
 	}
 
-	// 验证 repository.go 包含仓储接口（含 List 和 Filter）
+	// 验证 repository.go 包含仓储接口[含 List 和 Filter]
 	content, err = os.ReadFile(filepath.Join(dir, "domain/user/repository.go"))
 	if err != nil {
 		t.Fatalf("read repository.go: %v", err)
@@ -389,7 +388,7 @@ func TestGenerateAggregate(t *testing.T) {
 		t.Error("aggregate_test.go should import testify")
 	}
 
-	// 验证 repository_mock.go 包含 Mock 仓储（含 List）
+	// 验证 repository_mock.go 包含 Mock 仓储[含 List]
 	content, err = os.ReadFile(filepath.Join(dir, "domain/user/repository_mock.go"))
 	if err != nil {
 		t.Fatalf("read repository_mock.go: %v", err)
@@ -604,7 +603,7 @@ func TestGenerateAggregateWithCommands(t *testing.T) {
 		t.Error("event.go should contain OrderShippedEvent")
 	}
 
-	// 验证 command.go 包含业务命令（非 UpdateCommand）
+	// 验证 command.go 包含业务命令[非 UpdateCommand]
 	content, err = os.ReadFile(filepath.Join(dir, "domain/order/command.go"))
 	if err != nil {
 		t.Fatalf("read command.go: %v", err)
@@ -633,7 +632,7 @@ func TestGenerateAggregateWithCommands(t *testing.T) {
 		t.Error("repository.go should contain FindByEmail for unique field")
 	}
 
-	// 验证 service.go 包含业务命令处理器（非 HandleUpdate）
+	// 验证 service.go 包含业务命令处理器[非 HandleUpdate]
 	content, err = os.ReadFile(filepath.Join(dir, "application/order/service.go"))
 	if err != nil {
 		t.Fatalf("read service.go: %v", err)
@@ -672,7 +671,7 @@ func TestTemplateRendering(t *testing.T) {
 			name: "full",
 			data: ProjectData{
 				Name: "full", Module: "github.com/test/full",
-				WithGRPC: true, WithDB: true, WithRedis: true,
+				WithGRPC: true, Infra: parseInfra("mysql,redis"),
 			},
 		},
 	}
@@ -784,8 +783,7 @@ func TestNewProjectWithWire(t *testing.T) {
 		Module:   "github.com/example/wireproject",
 		WithWire: true,
 		WithGRPC: true,
-		WithDB:   true,
-		WithRedis: true,
+		Infra:    parseInfra("mysql,redis"),
 	}
 
 	if err := generateProject(data); err != nil {
@@ -817,7 +815,7 @@ func TestNewProjectWithWire(t *testing.T) {
 		t.Error("wire.go should contain server.NewGRPC provider when WithGRPC is true")
 	}
 	if !contains(got, "rdbms.NewDatabase") {
-		t.Error("wire.go should contain rdbms.NewDatabase provider when WithDB is true")
+		t.Error("wire.go should contain rdbms.NewDatabase provider when infra includes mysql")
 	}
 }
 
@@ -986,8 +984,7 @@ func TestNewStandalone(t *testing.T) {
 		Name:      "myservice",
 		Module:    "github.com/example/myservice",
 		WithGRPC:  true,
-		WithDB:    true,
-		WithRedis: true,
+		Infra:     parseInfra("mysql,redis"),
 	}
 
 	if err := generateProject(data); err != nil {

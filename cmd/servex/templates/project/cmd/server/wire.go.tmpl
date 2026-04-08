@@ -8,12 +8,11 @@ import (
 	"{{.Module}}/internal/server"
 	"github.com/Tsukikage7/servex/app"
 	"github.com/Tsukikage7/servex/observability/logger"
-{{- if .WithDB}}
-	"github.com/Tsukikage7/servex/storage/rdbms"
-{{- end}}
-{{- if .WithRedis}}
-	srvredis "github.com/Tsukikage7/servex/storage/redis"
-{{- end}}
+{{- range .Infra}}{{if .Alias}}
+	{{.Alias}} "{{.Import}}"
+{{- else}}
+	"{{.Import}}"
+{{- end}}{{end}}
 )
 
 func initApp() (*app.Application, error) {
@@ -31,12 +30,24 @@ var providerSet = wire.NewSet(
 {{- end}}
 	// logger providers
 	logger.MustNewLogger,
-{{- if .WithDB}}
-	// data providers
+{{- range .Infra}}
+	// {{.DisplayName}} providers
+{{- if eq .Key "mysql"}}
 	rdbms.NewDatabase,
-{{- end}}
-{{- if .WithRedis}}
-	// redis providers
+{{- else if eq .Key "postgres"}}
+	rdbms.NewDatabase,
+{{- else if eq .Key "sqlite"}}
+	rdbms.NewDatabase,
+{{- else if eq .Key "redis"}}
 	srvredis.NewClient,
+{{- else if eq .Key "mongo"}}
+	mongodb.NewClient,
+{{- else if eq .Key "es"}}
+	elasticsearch.NewClient,
+{{- else if eq .Key "clickhouse"}}
+	clickhouse.NewClient,
+{{- else if eq .Key "neo4j"}}
+	srvneo4j.NewClient,
+{{- end}}
 {{- end}}
 )
