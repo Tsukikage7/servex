@@ -59,6 +59,84 @@ if err := srv.Start(ctx); err != nil {
 - `WithClientIP()` — 提取客户端真实 IP，写入 context
 - `NewFromConfig(handler, cfg, log, additionalOpts...)` — Config 驱动工厂，Config 字段自动转换为选项
 
+### Router + Handle — 类型安全路由
+
+```go
+router := httpserver.NewRouter()
+
+// 公开路由
+router.POST("/login", httpserver.Handle(loginHandler))
+
+// 带认证的 API 分组（继承 router 的所有中间件）
+api := router.Group("/api/v1", jwtMiddleware)
+api.GET("/users/{id}", httpserver.HandleWith(decodeID, getUser))
+api.POST("/users", httpserver.Handle(createUser))
+
+// 嵌套分组 + 额外中间件
+admin := api.Group("/admin", adminOnlyMiddleware)
+admin.DELETE("/users/{id}", httpserver.HandleWith(decodeID, deleteUser))
+
+srv := httpserver.New(router,
+    httpserver.WithLogger(log),
+    httpserver.WithRecovery(),
+)
+```
+
+- `NewRouter(mws...)` — 创建根路由器，可选传入全局中间件
+- `router.Group(prefix, mws...)` — 创建子路由分组，继承父级中间件链
+- `router.Use(mws...)` — 追加中间件（影响后续注册的路由）
+- `router.GET/POST/PUT/PATCH/DELETE(path, handler, routeMws...)` — 注册路由
+
+**Handle / HandleWith — 类型安全端点适配器：**
+
+```go
+// Handle：请求参数从请求体自动解码（适用于 POST/PUT/PATCH）
+router.POST("/users", httpserver.Handle(
+    func(ctx context.Context, req CreateUserReq) (*UserResp, error) {
+        return svc.CreateUser(ctx, req)
+        // 返回：{"code":0,"message":"成功","data":{"id":1,"name":"Alice"}}
+    },
+))
+
+// HandleWith：自定义解码器（适用于 GET/DELETE，需从路径参数、查询字符串提取数据）
+router.GET("/users/{id}", httpserver.HandleWith(
+    func(ctx context.Context, r *http.Request) (GetUserReq, error) {
+        return GetUserReq{ID: r.PathValue("id")}, nil
+    },
+    func(ctx context.Context, req GetUserReq) (*UserResp, error) {
+        return svc.GetUser(ctx, req.ID)
+    },
+))
+```
+
+### Registrar — 服务注册模式
+
+```go
+// Registrar 接口
+type Registrar interface {
+    RegisterHTTP(router *Router)
+}
+
+// 实现 Registrar 接口
+type UserRoutes struct { svc *UserService }
+
+func (r *UserRoutes) RegisterHTTP(router *httpserver.Router) {
+    api := router.Group("/api/v1/users")
+    api.POST("/", httpserver.Handle(r.svc.Create))
+    api.GET("/{id}", httpserver.HandleWith(decodeID, r.svc.Get))
+}
+
+// 通过 Register 方法链式注册多个服务
+router := httpserver.NewRouter()
+srv := httpserver.New(router,
+    httpserver.WithLogger(log),
+    httpserver.WithRecovery(),
+)
+srv.Register(&UserRoutes{svc: userSvc}, &OrderRoutes{svc: orderSvc})
+```
+
+- `srv.Register(registrars...)` — 链式注册多个 `Registrar` 实现，路由自动注册到 Router 上
+
 ## httpclient — 带负载均衡的 HTTP 客户端
 
 ```go
@@ -96,6 +174,25 @@ srv := grpcserver.New(
 pb.RegisterMyServiceServer(srv.Server(), &myServiceImpl{})
 srv.Start(ctx)
 ```
+
+### Metrics 与限流
+
+```go
+collector, _ := metrics.New(metricsCfg)
+limiter := ratelimit.NewTokenBucket(100, 200) // 令牌桶：100 QPS，峰值 200
+
+srv := grpcserver.New(
+    grpcserver.WithLogger(log),
+    grpcserver.WithAddr(":9090"),
+    grpcserver.WithRecovery(),
+    grpcserver.WithTrace("my-service"),
+    grpcserver.WithMetrics(collector),    // Prometheus 指标收集（方法名、状态码、耗时）
+    grpcserver.WithRateLimit(limiter),    // 限流，超限返回 ResourceExhausted
+)
+```
+
+- `WithMetrics(collector *metrics.PrometheusCollector)` — 启用 Prometheus 指标收集，gRPC 端记录方法名、状态码和耗时
+- `WithRateLimit(limiter ratelimit.Limiter)` — 启用限流，超限时返回 `codes.ResourceExhausted` 错误
 
 ## ginserver / echoserver / hertzserver — 框架适配（片段）
 
@@ -510,6 +607,26 @@ combined := gqlserver.ChainMiddleware(
 - Schema 定义使用 `github.com/graphql-go/graphql`，servex 提供服务器适配层
 - `WithMiddleware` 为全局中间件（所有 resolve），`WrapResolve` 为字段级中间件
 - `DefaultConfig()` 默认启用 Playground，路径为 `/graphql`
+
+## transport 工具
+
+### BuildMethodSkipper — 方法跳过器
+
+```go
+// 构建方法跳过器，支持精确匹配和前缀通配
+skipper := transport.BuildMethodSkipper([]string{
+    "/health",                           // 精确匹配
+    "/api/public/*",                     // 前缀通配
+    "/grpc.health.v1.Health/Check",      // gRPC 健康检查
+    "/api.auth.v1.AuthService/*",        // gRPC 服务级通配
+})
+
+ok := skipper("/api/public/docs")       // true
+ok = skipper("/api/private/users")      // false
+```
+
+- `transport.BuildMethodSkipper(methods) MethodSkipper` — 返回 `func(method string) bool`，用于中间件跳过指定路径/方法
+- 内部被 `grpcserver.WithPublicMethods`、`gateway.WithPublicMethods` 等选项使用
 
 ## transport/tls — TLS 配置工具（tlsx）
 
