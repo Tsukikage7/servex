@@ -17,11 +17,11 @@ var monorepoTemplates embed.FS
 
 // ProjectData 项目模板数据.
 type ProjectData struct {
-	Name     string
-	Module   string
-	WithGRPC bool
-	WithWire bool
-	Infra    []InfraDef // 基础设施组件列表
+	Name          string
+	Module        string
+	WithGRPC      bool
+	Infra         []ComponentDef // 基础设施组件列表
+	AllComponents []ComponentDef // 合并后的全部组件[模板用]
 }
 
 // runNew 执行 servex new 命令.
@@ -31,7 +31,6 @@ func runNew(args []string) error {
 	standalone := fs.Bool("standalone", false, "创建独立单服务项目[默认: monorepo 模式]")
 	withGRPC := fs.Bool("with-grpc", false, "包含 gRPC 服务端")
 	infra := fs.String("infra", "", "基础设施组件，逗号分隔 (如 mysql,redis,kafka)")
-	withWire := fs.Bool("with-wire", false, "包含 Wire 依赖注入")
 	fs.Usage = func() {
 		fmt.Println("用法: servex new <project-name> [options]")
 		fmt.Println()
@@ -53,12 +52,13 @@ func runNew(args []string) error {
 		*module = "github.com/example/" + projectName
 	}
 
+	infraDefs := parseInfra(*infra)
 	data := ProjectData{
-		Name:     projectName,
-		Module:   *module,
-		WithGRPC: *withGRPC,
-		WithWire: *withWire,
-		Infra:    parseInfra(*infra),
+		Name:          projectName,
+		Module:        *module,
+		WithGRPC:      *withGRPC,
+		Infra:         infraDefs,
+		AllComponents: infraDefs,
 	}
 
 	if *standalone {
@@ -79,6 +79,9 @@ var templateFiles = []struct {
 	{"templates/project/Dockerfile.tmpl", "Dockerfile"},
 	{"templates/project/.gitignore.tmpl", ".gitignore"},
 	{"templates/project/cmd/server/main.go.tmpl", "cmd/server/main.go"},
+	{"templates/project/cmd/server/wire.go.tmpl", "cmd/server/wire.go"},
+	{"templates/project/cmd/server/provider.go.tmpl", "cmd/server/provider.go"},
+	{"templates/project/cmd/server/config.go.tmpl", "cmd/server/config.go"},
 	{"templates/project/internal/server/http.go.tmpl", "internal/server/http.go"},
 	{"templates/project/internal/service/service.go.tmpl", "internal/service/service.go"},
 }
@@ -89,14 +92,6 @@ var grpcTemplateFile = struct {
 	out  string
 }{
 	"templates/project/internal/server/grpc.go.tmpl", "internal/server/grpc.go",
-}
-
-// wireTemplateFile Wire DI 可选模板.
-var wireTemplateFile = struct {
-	tmpl string
-	out  string
-}{
-	"templates/project/cmd/server/wire.go.tmpl", "cmd/server/wire.go",
 }
 
 // generateProject 根据模板数据生成独立项目文件.
@@ -118,14 +113,6 @@ func generateProject(data ProjectData) error {
 	// 生成 gRPC 模板[可选]
 	if data.WithGRPC {
 		tf := grpcTemplateFile
-		if err := renderTemplate(projectTemplates, tf.tmpl, filepath.Join(data.Name, tf.out), data, funcMap); err != nil {
-			return fmt.Errorf("渲染 %s: %w", tf.tmpl, err)
-		}
-	}
-
-	// 生成 Wire 模板[可选]
-	if data.WithWire {
-		tf := wireTemplateFile
 		if err := renderTemplate(projectTemplates, tf.tmpl, filepath.Join(data.Name, tf.out), data, funcMap); err != nil {
 			return fmt.Errorf("渲染 %s: %w", tf.tmpl, err)
 		}

@@ -175,11 +175,13 @@ func TestGenerateProject(t *testing.T) {
 	defer os.Chdir(origDir)
 	os.Chdir(dir)
 
+	infraDefs := parseInfra("mysql,redis")
 	data := ProjectData{
-		Name:      "testproject",
-		Module:    "github.com/example/testproject",
-		WithGRPC:  true,
-		Infra:     parseInfra("mysql,redis"),
+		Name:          "testproject",
+		Module:        "github.com/example/testproject",
+		WithGRPC:      true,
+		Infra:         infraDefs,
+		AllComponents: infraDefs,
 	}
 
 	if err := generateProject(data); err != nil {
@@ -195,6 +197,9 @@ func TestGenerateProject(t *testing.T) {
 		"testproject/Dockerfile",
 		"testproject/.gitignore",
 		"testproject/cmd/server/main.go",
+		"testproject/cmd/server/wire.go",
+		"testproject/cmd/server/provider.go",
+		"testproject/cmd/server/config.go",
 		"testproject/internal/server/http.go",
 		"testproject/internal/server/grpc.go",
 		"testproject/internal/service/service.go",
@@ -669,10 +674,13 @@ func TestTemplateRendering(t *testing.T) {
 		},
 		{
 			name: "full",
-			data: ProjectData{
-				Name: "full", Module: "github.com/test/full",
-				WithGRPC: true, Infra: parseInfra("mysql,redis"),
-			},
+			data: func() ProjectData {
+				infraDefs := parseInfra("mysql,redis")
+				return ProjectData{
+					Name: "full", Module: "github.com/test/full",
+					WithGRPC: true, Infra: infraDefs, AllComponents: infraDefs,
+				}
+			}(),
 		},
 	}
 
@@ -771,29 +779,30 @@ func TestGenerateJustfile(t *testing.T) {
 	}
 }
 
-// TestNewProjectWithWire 测试包含 Wire DI 的项目生成.
+// TestNewProjectWithWire 测试项目始终生成 Wire DI 文件.
 func TestNewProjectWithWire(t *testing.T) {
 	dir := t.TempDir()
 	origDir, _ := os.Getwd()
 	defer os.Chdir(origDir)
 	os.Chdir(dir)
 
+	infraDefs := parseInfra("mysql,redis")
 	data := ProjectData{
-		Name:     "wireproject",
-		Module:   "github.com/example/wireproject",
-		WithWire: true,
-		WithGRPC: true,
-		Infra:    parseInfra("mysql,redis"),
+		Name:          "wireproject",
+		Module:        "github.com/example/wireproject",
+		WithGRPC:      true,
+		Infra:         infraDefs,
+		AllComponents: infraDefs,
 	}
 
 	if err := generateProject(data); err != nil {
 		t.Fatalf("generateProject: %v", err)
 	}
 
-	// 验证 wire.go 文件存在
+	// 验证 wire.go 文件存在[Wire 始终开启]
 	wirePath := filepath.Join(dir, "wireproject/cmd/server/wire.go")
 	if _, err := os.Stat(wirePath); os.IsNotExist(err) {
-		t.Fatal("wire.go should exist when WithWire is true")
+		t.Fatal("wire.go should always exist")
 	}
 
 	content, err := os.ReadFile(wirePath)
@@ -814,13 +823,22 @@ func TestNewProjectWithWire(t *testing.T) {
 	if !contains(got, "server.NewGRPC") {
 		t.Error("wire.go should contain server.NewGRPC provider when WithGRPC is true")
 	}
-	if !contains(got, "rdbms.NewDatabase") {
-		t.Error("wire.go should contain rdbms.NewDatabase provider when infra includes mysql")
+
+	// 验证 provider.go 存在
+	providerPath := filepath.Join(dir, "wireproject/cmd/server/provider.go")
+	if _, err := os.Stat(providerPath); os.IsNotExist(err) {
+		t.Fatal("provider.go should exist")
+	}
+
+	// 验证 config.go 存在
+	configPath := filepath.Join(dir, "wireproject/cmd/server/config.go")
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		t.Fatal("config.go should exist")
 	}
 }
 
-// TestNewProjectWithoutWire 测试不含 Wire DI 时 wire.go 不生成.
-func TestNewProjectWithoutWire(t *testing.T) {
+// TestNewProjectMinimal 测试无 infra 的最小项目也生成 Wire 文件.
+func TestNewProjectMinimal(t *testing.T) {
 	dir := t.TempDir()
 	origDir, _ := os.Getwd()
 	defer os.Chdir(origDir)
@@ -835,9 +853,10 @@ func TestNewProjectWithoutWire(t *testing.T) {
 		t.Fatalf("generateProject: %v", err)
 	}
 
+	// Wire 始终生成，即使无 infra
 	wirePath := filepath.Join(dir, "nowireproject/cmd/server/wire.go")
-	if _, err := os.Stat(wirePath); !os.IsNotExist(err) {
-		t.Error("wire.go should not exist when WithWire is false")
+	if _, err := os.Stat(wirePath); os.IsNotExist(err) {
+		t.Error("wire.go should always exist (Wire is always on)")
 	}
 }
 
@@ -980,11 +999,13 @@ func TestNewStandalone(t *testing.T) {
 	defer os.Chdir(origDir)
 	os.Chdir(dir)
 
+	infraDefs := parseInfra("mysql,redis")
 	data := ProjectData{
-		Name:      "myservice",
-		Module:    "github.com/example/myservice",
-		WithGRPC:  true,
-		Infra:     parseInfra("mysql,redis"),
+		Name:          "myservice",
+		Module:        "github.com/example/myservice",
+		WithGRPC:      true,
+		Infra:         infraDefs,
+		AllComponents: infraDefs,
 	}
 
 	if err := generateProject(data); err != nil {
@@ -999,6 +1020,9 @@ func TestNewStandalone(t *testing.T) {
 		"myservice/.gitignore",
 		"myservice/config.yaml",
 		"myservice/cmd/server/main.go",
+		"myservice/cmd/server/wire.go",
+		"myservice/cmd/server/provider.go",
+		"myservice/cmd/server/config.go",
 		"myservice/internal/server/http.go",
 		"myservice/internal/server/grpc.go",
 		"myservice/internal/service/service.go",

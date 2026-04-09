@@ -13,17 +13,16 @@ var serviceTemplates embed.FS
 
 // ServiceData 服务模板数据.
 type ServiceData struct {
-	Name        string
-	Module      string
-	WithGRPC    bool
-	WithGateway bool
-	WithWire    bool
-	Infra       []InfraDef // 基础设施[存储/缓存/消息]
-	Observe     []InfraDef // 可观测性
-	Auth        []InfraDef // 认证
-	Discovery   []InfraDef // 服务发现
-	Other       []InfraDef // 其他
-	AllInfra    []InfraDef // 合并后的全部组件[模板用]
+	Name          string
+	Module        string
+	WithGRPC      bool
+	WithGateway   bool
+	Infra         []ComponentDef // 基础设施[存储/缓存/消息]
+	Observe       []ComponentDef // 可观测性
+	Auth          []ComponentDef // 认证
+	Discovery     []ComponentDef // 服务发现
+	Other         []ComponentDef // 其他
+	AllComponents []ComponentDef // 合并后的全部组件[模板用]
 }
 
 // serviceTemplateFiles 定义服务模板文件与输出路径的映射.
@@ -32,6 +31,9 @@ var serviceTemplateFiles = []struct {
 	out  string // 输出路径[相对于服务根目录]
 }{
 	{"templates/service/cmd/server/main.go.tmpl", "cmd/server/main.go"},
+	{"templates/service/cmd/server/wire.go.tmpl", "cmd/server/wire.go"},
+	{"templates/service/cmd/server/provider.go.tmpl", "cmd/server/provider.go"},
+	{"templates/service/cmd/server/config.go.tmpl", "cmd/server/config.go"},
 	{"templates/service/internal/port/http.go.tmpl", "internal/port/http.go"},
 	{"templates/service/internal/adapter/persistence/persistence.go.tmpl", "internal/adapter/persistence/persistence.go"},
 	{"templates/service/configs/config.yaml.tmpl", "configs/config.yaml"},
@@ -95,25 +97,24 @@ func runAddService(args []string) error {
 	disc := parseDiscovery(addDiscovery)
 	other := parseOther(addOther)
 
-	var allInfra []InfraDef
-	allInfra = append(allInfra, infra...)
-	allInfra = append(allInfra, observe...)
-	allInfra = append(allInfra, auth...)
-	allInfra = append(allInfra, disc...)
-	allInfra = append(allInfra, other...)
+	var allComponents []ComponentDef
+	allComponents = append(allComponents, infra...)
+	allComponents = append(allComponents, observe...)
+	allComponents = append(allComponents, auth...)
+	allComponents = append(allComponents, disc...)
+	allComponents = append(allComponents, other...)
 
 	data := ServiceData{
-		Name:        name,
-		Module:      module,
-		WithGRPC:    addWithGRPC,
-		WithGateway: addWithGateway,
-		WithWire:    addWithWire,
-		Infra:       infra,
-		Observe:     observe,
-		Auth:        auth,
-		Discovery:   disc,
-		Other:       other,
-		AllInfra:    allInfra,
+		Name:          name,
+		Module:        module,
+		WithGRPC:      addWithGRPC,
+		WithGateway:   addWithGateway,
+		Infra:         infra,
+		Observe:       observe,
+		Auth:          auth,
+		Discovery:     disc,
+		Other:         other,
+		AllComponents: allComponents,
 	}
 
 	funcMap := template.FuncMap{

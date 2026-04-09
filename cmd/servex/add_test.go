@@ -20,7 +20,6 @@ func TestAddService(t *testing.T) {
 	// 设置 flags
 	addWithGRPC = false
 	addInfra = ""
-	addWithWire = false
 
 	if err := runAddService([]string{"user"}); err != nil {
 		t.Fatalf("runAddService: %v", err)
@@ -28,6 +27,9 @@ func TestAddService(t *testing.T) {
 
 	expectedFiles := []string{
 		"services/user-service/cmd/server/main.go",
+		"services/user-service/cmd/server/wire.go",
+		"services/user-service/cmd/server/provider.go",
+		"services/user-service/cmd/server/config.go",
 		"services/user-service/internal/port/http.go",
 		"services/user-service/internal/adapter/persistence/persistence.go",
 		"services/user-service/configs/config.yaml",
@@ -40,17 +42,14 @@ func TestAddService(t *testing.T) {
 		}
 	}
 
-	// 验证 main.go 引用正确的 module 路径
+	// 验证 main.go 是简洁的 Wire 入口
 	content, err := os.ReadFile(filepath.Join(dir, "services/user-service/cmd/server/main.go"))
 	if err != nil {
 		t.Fatalf("read main.go: %v", err)
 	}
 	got := string(content)
-	if !contains(got, "github.com/example/monorepo/services/user-service/internal/port") {
-		t.Error("main.go should reference monorepo service import path")
-	}
-	if !contains(got, `app.WithName("user-service")`) {
-		t.Error("main.go should contain service name")
+	if !contains(got, "initApp()") {
+		t.Error("main.go should call initApp()")
 	}
 
 	// grpc.go 不应存在
@@ -72,7 +71,6 @@ func TestAddServiceWithGRPC(t *testing.T) {
 
 	addWithGRPC = true
 	addInfra = "mysql,redis"
-	addWithWire = false
 	defer func() {
 		addWithGRPC = false
 		addInfra = ""
@@ -88,20 +86,20 @@ func TestAddServiceWithGRPC(t *testing.T) {
 		t.Error("grpc.go should exist when --with-grpc is true")
 	}
 
-	// 验证 main.go 包含 DB 和 Redis 初始化
-	content, err := os.ReadFile(filepath.Join(dir, "services/order-service/cmd/server/main.go"))
+	// 验证 wire.go 包含 provider 引用
+	wireContent, err := os.ReadFile(filepath.Join(dir, "services/order-service/cmd/server/wire.go"))
 	if err != nil {
-		t.Fatalf("read main.go: %v", err)
+		t.Fatalf("read wire.go: %v", err)
 	}
-	got := string(content)
-	if !contains(got, "rdbms.NewDatabase") {
-		t.Error("main.go should contain database setup when --infra mysql is set")
+	wireStr := string(wireContent)
+	if !contains(wireStr, "provideMySQL") {
+		t.Error("wire.go should contain provideMySQL when --infra mysql is set")
 	}
-	if !contains(got, "srvredis.NewClient") {
-		t.Error("main.go should contain redis setup when --infra redis is set")
+	if !contains(wireStr, "provideRedis") {
+		t.Error("wire.go should contain provideRedis when --infra redis is set")
 	}
-	if !contains(got, "port.NewGRPC") {
-		t.Error("main.go should contain gRPC server setup when --with-grpc is true")
+	if !contains(wireStr, "port.NewGRPC") {
+		t.Error("wire.go should contain port.NewGRPC when --with-grpc is true")
 	}
 
 	// 验证 config.yaml 包含 grpc/db/redis 配置
@@ -150,7 +148,6 @@ func TestAddServiceDuplicate(t *testing.T) {
 
 	addWithGRPC = false
 	addInfra = ""
-	addWithWire = false
 
 	// 第一次添加应成功
 	if err := runAddService([]string{"user"}); err != nil {

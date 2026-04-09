@@ -1,55 +1,20 @@
 package main
 
 import (
+	"fmt"
 	"os"
-{{- range $imp := extraImports .AllInfra}}
-	"{{$imp}}"
-{{- end}}
-{{range .AllInfra}}{{if .Alias}}
-	{{.Alias}} "{{.Import}}"
-{{- else}}
-	"{{.Import}}"
-{{- end}}
-{{end}}
-	"{{.Module}}/services/{{.Name}}-service/internal/port"
-
-	"github.com/Tsukikage7/servex/app"
-	"github.com/Tsukikage7/servex/observability/logger"
 )
 
 func main() {
-	// 初始化日志
-	log := logger.MustNewLogger(&logger.Config{
-		Level:  "info",
-		Format: "console",
-		Output: "console",
-	})
-	defer log.Sync()
-{{range .AllInfra}}
-	{{.InitCode}}
-{{end}}
-	// 创建 HTTP 服务器
-	httpSrv := port.NewHTTP(log)
-
-	// 创建应用
-	application := app.New(
-		app.WithLogger(log),
-		app.WithName("{{.Name}}-service"),
-	)
-	application.Use(httpSrv)
-{{if .WithGRPC}}
-	// 创建 gRPC 服务器
-	grpcSrv := port.NewGRPC(log)
-	application.Use(grpcSrv)
-{{end}}
-	if err := application.Run(); err != nil {
-		log.Fatalf("application error: %v", err)
+	app, cleanup, err := initApp()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "初始化失败: %v\n", err)
+		os.Exit(1)
 	}
-}
+	defer cleanup()
 
-func envOr(key, fallback string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
+	if err := app.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "应用运行错误: %v\n", err)
+		os.Exit(1)
 	}
-	return fallback
 }

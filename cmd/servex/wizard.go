@@ -77,7 +77,6 @@ func runNewWizard() (ProjectData, error) {
 		auth        []string
 		discovery   string
 		other       []string
-		withWire    bool
 	)
 
 	form := huh.NewForm(
@@ -178,7 +177,7 @@ func runNewWizard() (ProjectData, error) {
 				Value(&discovery),
 		).Title("服务发现"),
 
-		// 其他组件 + Wire
+		// 其他组件
 		huh.NewGroup(
 			huh.NewMultiSelect[string]().
 				Title("其他组件").
@@ -188,9 +187,6 @@ func runNewWizard() (ProjectData, error) {
 					huh.NewOption("多租户 (Tenant)", "tenant"),
 				).
 				Value(&other),
-			huh.NewConfirm().
-				Title("使用 Wire 依赖注入?").
-				Value(&withWire),
 		).Title("其他"),
 	).WithTheme(themeEverforest())
 
@@ -212,13 +208,15 @@ func runNewWizard() (ProjectData, error) {
 		}
 	}
 
+	infraDefs := parseInfra(strings.Join(infra, ","))
+
 	// 构建 ProjectData
 	data := ProjectData{
-		Name:     projectName,
-		Module:   modulePath,
-		WithGRPC: withGRPC,
-		WithWire: withWire,
-		Infra:    parseInfra(strings.Join(infra, ",")),
+		Name:          projectName,
+		Module:        modulePath,
+		WithGRPC:      withGRPC,
+		Infra:         infraDefs,
+		AllComponents: infraDefs,
 	}
 
 	// 记录模式供调用方判断
@@ -231,14 +229,13 @@ func runNewWizard() (ProjectData, error) {
 
 // addServiceWizardResult 保存 add service 向导结果.
 type addServiceWizardResult struct {
-	Name        string
-	Transport   []string
-	Infra       []string
-	Observe     []string
-	Auth        []string
-	Discovery   string
-	Other       []string
-	WithWire    bool
+	Name      string
+	Transport []string
+	Infra     []string
+	Observe   []string
+	Auth      []string
+	Discovery string
+	Other     []string
 }
 
 // runAddServiceWizard 运行 servex add service 交互式向导.
@@ -327,7 +324,7 @@ func runAddServiceWizard() (addServiceWizardResult, error) {
 				Value(&result.Discovery),
 		).Title("服务发现"),
 
-		// 其他组件 + Wire
+		// 其他组件
 		huh.NewGroup(
 			huh.NewMultiSelect[string]().
 				Title("其他组件").
@@ -337,9 +334,6 @@ func runAddServiceWizard() (addServiceWizardResult, error) {
 					huh.NewOption("多租户 (Tenant)", "tenant"),
 				).
 				Value(&result.Other),
-			huh.NewConfirm().
-				Title("使用 Wire 依赖注入?").
-				Value(&result.WithWire),
 		).Title("其他"),
 	).WithTheme(themeEverforest())
 
@@ -367,5 +361,4 @@ func applyAddServiceWizard(r addServiceWizardResult) {
 		addDiscovery = r.Discovery
 	}
 	addOther = strings.Join(r.Other, ",")
-	addWithWire = r.WithWire
 }

@@ -5,7 +5,7 @@ package main
 import (
 	"github.com/google/wire"
 
-	"{{.Module}}/internal/server"
+	"{{.Module}}/services/{{.Name}}-service/internal/port"
 	"github.com/Tsukikage7/servex/app"
 	"github.com/Tsukikage7/servex/observability/logger"
 {{- range .AllComponents}}{{if .Alias}}
@@ -25,9 +25,12 @@ var providerSet = wire.NewSet(
 {{- range .AllComponents}}
 	{{.ProviderFunc}},
 {{- end}}
-	server.NewHTTP,
+	port.NewHTTP,
 {{- if .WithGRPC}}
-	server.NewGRPC,
+	port.NewGRPC,
+{{- end}}
+{{- if .WithGateway}}
+	port.NewGateway,
 {{- end}}
 	provideApp,
 )

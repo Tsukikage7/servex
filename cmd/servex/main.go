@@ -22,7 +22,6 @@ var (
 	newStandalone bool
 	newWithGRPC   bool
 	newInfra      string
-	newWithWire   bool
 )
 
 // newCmd 项目创建命令[默认 monorepo 模式].
@@ -50,12 +49,13 @@ var newCmd = &cobra.Command{
 			if newModule == "" {
 				newModule = "github.com/example/" + args[0]
 			}
+			infraDefs := parseInfra(newInfra)
 			data = ProjectData{
-				Name:     args[0],
-				Module:   newModule,
-				WithGRPC: newWithGRPC,
-				WithWire: newWithWire,
-				Infra:    parseInfra(newInfra),
+				Name:          args[0],
+				Module:        newModule,
+				WithGRPC:      newWithGRPC,
+				Infra:         infraDefs,
+				AllComponents: infraDefs,
 			}
 		}
 
@@ -76,7 +76,6 @@ var (
 	addAuth        string
 	addDiscovery   string
 	addOther       string
-	addWithWire    bool
 )
 
 // addCmd 添加组件父命令.
@@ -438,7 +437,6 @@ func init() {
 	newCmd.Flags().BoolVar(&newStandalone, "standalone", false, "创建独立单服务项目[默认: monorepo 模式]")
 	newCmd.Flags().BoolVar(&newWithGRPC, "with-grpc", false, "包含 gRPC 服务端")
 	newCmd.Flags().StringVar(&newInfra, "infra", "", "基础设施组件，逗号分隔 (如 mysql,redis,kafka,mongo)")
-	newCmd.Flags().BoolVar(&newWithWire, "with-wire", false, "包含 Wire 依赖注入")
 
 	// add service
 	addServiceCmd.Flags().BoolVar(&addWithGRPC, "with-grpc", false, "包含 gRPC 服务端")
@@ -448,7 +446,6 @@ func init() {
 	addServiceCmd.Flags().StringVar(&addAuth, "auth", "", "认证: jwt,rbac")
 	addServiceCmd.Flags().StringVar(&addDiscovery, "discovery", "", "服务发现: consul,etcd,nacos")
 	addServiceCmd.Flags().StringVar(&addOther, "other", "", "其他: scheduler,i18n,tenant")
-	addServiceCmd.Flags().BoolVar(&addWithWire, "with-wire", false, "包含 Wire 依赖注入")
 
 	// add aggregate
 	addAggregateCmd.Flags().StringVar(&addAggFields, "fields", "", `字段定义 (如 "id:uint64,name:string")`)

@@ -1,0 +1,49 @@
+package main
+
+import (
+	"context"
+{{- range $imp := extraImports .AllComponents}}
+	"{{$imp}}"
+{{- end}}
+{{- range .AllComponents}}{{if .Alias}}
+	{{.Alias}} "{{.Import}}"
+{{- else}}
+	"{{.Import}}"
+{{- end}}{{end}}
+
+	"{{.Module}}/services/{{.Name}}-service/internal/port"
+	"github.com/Tsukikage7/servex/app"
+	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/transport"
+)
+
+// provideConfig 加载配置.
+func provideConfig() (*Config, error) {
+	// TODO: 从 config.yaml 或环境变量加载
+	return &Config{
+		Name: "{{.Name}}-service",
+	}, nil
+}
+
+// provideLogger 创建日志.
+func provideLogger(cfg *Config) (logger.Logger, func()) {
+	log := logger.MustNewLogger(&cfg.Logger)
+	return log, func() { log.Sync() }
+}
+
+{{range .AllComponents}}
+{{.ProviderCode}}
+{{end}}
+
+// provideApp 创建应用.
+func provideApp(cfg *Config, log logger.Logger, httpSrv transport.Server) *app.Application {
+	application := app.New(
+		app.WithLogger(log),
+		app.WithName(cfg.Name),
+	)
+	application.Use(httpSrv)
+	return application
+}
+
+// ensure port package is referenced.
+var _ = port.NewHTTP
