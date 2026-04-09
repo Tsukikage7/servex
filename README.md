@@ -73,7 +73,7 @@ servex add service order --with-grpc --with-gateway \
   --discovery "consul"
 
 # 生成 DDD 聚合（业务语义）
-servex gen aggregate order \
+servex add aggregate order \
   --fields "id:uint64,user_id:uint64,status:string,total:float64" \
   --commands "Place,Cancel,Ship" \
   --unique "user_id" \

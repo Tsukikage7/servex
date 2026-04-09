@@ -69,9 +69,11 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 **CLI 详情：**
 
 - **交互式向导：** `servex new` / `servex add service` 无参数时自动启动向导（Everforest Dark 主题）
-- **new：** 创建 monorepo（默认）或 `--standalone` 单服务项目，支持 `--with-grpc`、`--infra`、`--with-wire`
-- **add service：** 在 monorepo 中添加微服务，支持 `--with-grpc`、`--with-gateway`、`--infra`、`--observe`、`--auth`、`--discovery`、`--other`、`--with-wire`
-- **gen aggregate：** 生成 DDD 聚合（aggregate/event/repository/command/query/service），支持 `--commands`、`--unique`、`--service`
+- **new：** 创建 monorepo[默认]或 `--standalone` 单服务项目，支持 `--with-grpc`、`--infra`（Wire DI 强制启用）
+- **add service：** 在 monorepo 中添加微服务，支持 `--with-grpc`、`--with-gateway`、`--infra`、`--observe`、`--auth`、`--discovery`、`--other`
+- **add aggregate：** 生成 DDD 聚合[domain + application + adapter]，支持 `--commands`、`--unique`、`--service`
+- **add proto：** 添加 proto 服务定义并生成服务端桩代码，支持 `--service`
+- **gen aggregate：** 同 `add aggregate`，兼容旧用法
 - **gen entity：** 生成 DDD 子实体（有 ID，可变，属于聚合），需 `--aggregate`
 - **gen valueobject：** 生成 DDD 值对象（无 ID，不可变，属于聚合），需 `--aggregate`
 - **gen client：** 生成外部服务客户端适配器（防腐层 + gRPC client），需 `--service`
