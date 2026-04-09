@@ -82,7 +82,7 @@ var (
 // addCmd 添加组件父命令.
 var addCmd = &cobra.Command{
 	Use:   "add",
-	Short: "添加组件[service]",
+	Short: "添加组件[service/aggregate/proto]",
 }
 
 // addServiceCmd 微服务添加命令.
@@ -107,6 +107,79 @@ var addServiceCmd = &cobra.Command{
 			return fmt.Errorf("服务名称必填 (请使用 flag 参数，或不带参数启动交互式向导)")
 		}
 		return runAddService(args)
+	},
+}
+
+// --- add aggregate 命令 ---
+
+var (
+	addAggFields   string
+	addAggCommands string
+	addAggUnique   string
+	addAggService  string
+	addAggModule   string
+)
+
+// addAggregateCmd 在 monorepo 中添加 DDD 聚合.
+var addAggregateCmd = &cobra.Command{
+	Use:   "aggregate <name>",
+	Short: "添加 DDD 聚合[domain + application + adapter]",
+	Long:  "在 monorepo 中生成完整的 DDD 聚合代码，包括领域层、应用层和持久化层.",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		module := addAggModule
+		if module == "" {
+			m, err := detectModule()
+			if err != nil {
+				return fmt.Errorf("请指定 --module 或在 go.mod 目录下运行: %w", err)
+			}
+			module = m
+		}
+		fields := parseFields(addAggFields)
+		data := buildAggregateData(args[0], module, fields, addAggCommands, addAggUnique)
+		data.Service = addAggService
+		return generateAggregate(data, ".")
+	},
+}
+
+// --- add proto 命令 ---
+
+var (
+	addProtoService string
+	addProtoModule  string
+)
+
+// addProtoCmd 在 monorepo 中添加 proto 服务.
+var addProtoCmd = &cobra.Command{
+	Use:   "proto <name>",
+	Short: "添加 proto 服务定义并生成服务端桩代码",
+	Long:  "创建 api/<name>/v1/<name>.proto 并在指定服务中生成 RegisterGRPC/RegisterGateway 桩代码.",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		name := args[0]
+		module := addProtoModule
+		if module == "" {
+			m, err := detectModule()
+			if err != nil {
+				return fmt.Errorf("请指定 --module 或在 go.mod 目录下运行: %w", err)
+			}
+			module = m
+		}
+
+		// 1. 生成 proto 文件
+		if err := runProtoAdd([]string{name, "-module", module}); err != nil {
+			return err
+		}
+
+		// 2. 如果指定了 --service，生成 server stub
+		if addProtoService != "" {
+			protoFile := fmt.Sprintf("api/%s/v1/%s.proto", name, name)
+			if err := runProtoServer([]string{protoFile, "-service", addProtoService}); err != nil {
+				return err
+			}
+		}
+
+		return nil
 	},
 }
 
@@ -377,8 +450,19 @@ func init() {
 	addServiceCmd.Flags().StringVar(&addOther, "other", "", "其他: scheduler,i18n,tenant")
 	addServiceCmd.Flags().BoolVar(&addWithWire, "with-wire", false, "包含 Wire 依赖注入")
 
+	// add aggregate
+	addAggregateCmd.Flags().StringVar(&addAggFields, "fields", "", `字段定义 (如 "id:uint64,name:string")`)
+	addAggregateCmd.Flags().StringVar(&addAggCommands, "commands", "", `业务命令 (如 "Place,Cancel,Ship")`)
+	addAggregateCmd.Flags().StringVar(&addAggUnique, "unique", "", `唯一字段 (如 "email,username")`)
+	addAggregateCmd.Flags().StringVar(&addAggService, "service", "", "目标服务名，生成 adapter 层")
+	addAggregateCmd.Flags().StringVar(&addAggModule, "module", "", "Go module 路径")
+
+	// add proto
+	addProtoCmd.Flags().StringVar(&addProtoService, "service", "", "目标服务名，生成 server stub")
+	addProtoCmd.Flags().StringVar(&addProtoModule, "module", "", "Go module 路径")
+
 	// add 子命令
-	addCmd.AddCommand(addServiceCmd)
+	addCmd.AddCommand(addServiceCmd, addAggregateCmd, addProtoCmd)
 
 	// gen aggregate
 	genAggregateCmd.Flags().StringVar(&genAggFields, "fields", "", `字段定义 (如 "id:uint64,name:string,email:string")`)
