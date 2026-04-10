@@ -112,6 +112,8 @@ func (r *Redis) TryLock(ctx context.Context, key string, ttl time.Duration) (boo
 // Lock 获取锁（阻塞）.
 func (r *Redis) Lock(ctx context.Context, key string, ttl time.Duration) error {
 	retries := 0
+	timer := time.NewTimer(r.retryWait)
+	defer timer.Stop()
 
 	for {
 		acquired, err := r.TryLock(ctx, key, ttl)
@@ -127,10 +129,11 @@ func (r *Redis) Lock(ctx context.Context, key string, ttl time.Duration) error {
 			return ErrLockNotAcquired
 		}
 
+		timer.Reset(r.retryWait)
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case <-time.After(r.retryWait):
+		case <-timer.C:
 			// 重试
 		}
 	}
@@ -178,24 +181,16 @@ func (r *Redis) Extend(ctx context.Context, key string, ttl time.Duration) error
 
 	fullKey := r.keyPrefix + key
 
-	// 检查锁是否还存在且属于当前持有者
-	val, err := r.cache.Get(ctx, fullKey)
+	// 原子地验证持有者并延长过期时间
+	extended, err := r.cache.ExtendLock(ctx, fullKey, r.ownerID, ttl)
 	if err != nil {
+		return err
+	}
+	if !extended {
 		r.heldMu.Lock()
 		delete(r.held, key)
 		r.heldMu.Unlock()
 		return ErrLockExpired
-	}
-	if val != r.ownerID {
-		r.heldMu.Lock()
-		delete(r.held, key)
-		r.heldMu.Unlock()
-		return ErrLockNotHeld
-	}
-
-	// 延长过期时间
-	if err := r.cache.Expire(ctx, fullKey, ttl); err != nil {
-		return err
 	}
 
 	return nil

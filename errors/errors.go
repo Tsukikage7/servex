@@ -50,16 +50,18 @@ func (e *Error) Is(target error) bool {
 	return e.Code == t.Code
 }
 
-// WithHTTP 绑定 HTTP 状态码.
+// WithHTTP 绑定 HTTP 状态码，返回新实例.
 func (e *Error) WithHTTP(status int) *Error {
-	e.HTTP = status
-	return e
+	cp := e.clone()
+	cp.HTTP = status
+	return cp
 }
 
-// WithGRPC 绑定 gRPC Code.
+// WithGRPC 绑定 gRPC Code，返回新实例.
 func (e *Error) WithGRPC(code codes.Code) *Error {
-	e.GRPC = code
-	return e
+	cp := e.clone()
+	cp.GRPC = code
+	return cp
 }
 
 // clone 返回浅拷贝，保护包级变量原始定义.

@@ -36,11 +36,11 @@ import (
 
 var (
 	// ErrRoleNotFound 角色未找到错误.
-	ErrRoleNotFound = errors.New("rbac: role not found")
+	ErrRoleNotFound = errors.New("rbac: 角色未找到")
 	// ErrRoleExists 角色已存在错误.
-	ErrRoleExists = errors.New("rbac: role already exists")
+	ErrRoleExists = errors.New("rbac: 角色已存在")
 	// ErrPermissionDenied 权限被拒绝错误.
-	ErrPermissionDenied = errors.New("rbac: permission denied")
+	ErrPermissionDenied = errors.New("rbac: 权限被拒绝")
 )
 
 // Role 角色.
@@ -297,13 +297,13 @@ func HTTPMiddleware(rbac RBAC, resource, action string) func(http.Handler) http.
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			principal, ok := auth.FromContext(r.Context())
 			if !ok {
-				http.Error(w, "unauthorized", http.StatusUnauthorized)
+				http.Error(w, "未认证", http.StatusUnauthorized)
 				return
 			}
 
 			has, err := rbac.HasPermission(r.Context(), principal.ID, resource, action)
 			if err != nil {
-				http.Error(w, fmt.Sprintf("rbac check error: %v", err), http.StatusInternalServerError)
+				http.Error(w, fmt.Sprintf("rbac: 权限检查错误: %v", err), http.StatusInternalServerError)
 				return
 			}
 			if !has {

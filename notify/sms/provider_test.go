@@ -2,7 +2,10 @@
 package sms
 
 import (
+	"errors"
 	"testing"
+
+	"github.com/Tsukikage7/servex/notify"
 )
 
 func TestAliyunProvider_ImplementsInterface(t *testing.T) { var _ Provider = (*AliyunProvider)(nil) }
@@ -16,12 +19,9 @@ func TestAliyunProvider_Name(t *testing.T) {
 
 func TestAliyunProvider_Send_Stub(t *testing.T) {
 	p := NewAliyunProvider(AliyunConfig{AccessKeyID: "ak", AccessKeySecret: "sk"})
-	id, err := p.Send(t.Context(), &SendRequest{Phone: "13800138000", TemplateCode: "SMS_001"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if id == "" {
-		t.Error("expected non-empty stub message ID")
+	_, err := p.Send(t.Context(), &SendRequest{Phone: "13800138000", TemplateCode: "SMS_001"})
+	if !errors.Is(err, notify.ErrNotImplemented) {
+		t.Errorf("got %v, want ErrNotImplemented", err)
 	}
 }
 
@@ -36,11 +36,8 @@ func TestTencentProvider_Name(t *testing.T) {
 
 func TestTencentProvider_Send_Stub(t *testing.T) {
 	p := NewTencentProvider(TencentConfig{SecretID: "sid", SecretKey: "skey", AppID: "app"})
-	id, err := p.Send(t.Context(), &SendRequest{Phone: "13800138000", TemplateCode: "T_001"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if id == "" {
-		t.Error("expected non-empty stub message ID")
+	_, err := p.Send(t.Context(), &SendRequest{Phone: "13800138000", TemplateCode: "T_001"})
+	if !errors.Is(err, notify.ErrNotImplemented) {
+		t.Errorf("got %v, want ErrNotImplemented", err)
 	}
 }

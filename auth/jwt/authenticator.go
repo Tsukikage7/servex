@@ -68,7 +68,7 @@ func (a *Authenticator) Authenticate(ctx context.Context, creds auth.Credentials
 	}
 
 	// 验证 JWT
-	claims, err := a.jwt.Validate(creds.Token)
+	claims, err := a.jwt.Validate(ctx, creds.Token)
 	if err != nil {
 		return nil, auth.ErrInvalidCredentials
 	}

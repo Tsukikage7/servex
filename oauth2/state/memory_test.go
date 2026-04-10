@@ -3,12 +3,14 @@ package state
 
 import (
 	"testing"
+	"time"
 
 	"github.com/Tsukikage7/servex/oauth2"
 )
 
 func TestMemoryStore_GenerateAndValidate(t *testing.T) {
 	s := NewMemoryStore()
+	defer s.Close()
 	ctx := t.Context()
 
 	state, err := s.Generate(ctx)
@@ -36,6 +38,7 @@ func TestMemoryStore_GenerateAndValidate(t *testing.T) {
 
 func TestMemoryStore_InvalidState(t *testing.T) {
 	s := NewMemoryStore()
+	defer s.Close()
 	ok, err := s.Validate(t.Context(), "nonexistent")
 	if err != nil {
 		t.Fatal(err)
@@ -50,8 +53,8 @@ func TestMemoryStore_ImplementsInterface(t *testing.T) {
 }
 
 func TestMemoryStore_ExpiredState(t *testing.T) {
-	s := NewMemoryStore()
-	s.ttl = 0 // states expire immediately
+	s := NewMemoryStore(WithMemoryTTL(0))
+	defer s.Close()
 	ctx := t.Context()
 
 	state, err := s.Generate(ctx)
@@ -71,6 +74,7 @@ func TestMemoryStore_ExpiredState(t *testing.T) {
 
 func TestMemoryStore_DoubleValidate(t *testing.T) {
 	s := NewMemoryStore()
+	defer s.Close()
 	ctx := t.Context()
 
 	state, _ := s.Generate(ctx)
@@ -87,6 +91,7 @@ func TestMemoryStore_DoubleValidate(t *testing.T) {
 
 func TestMemoryStore_MultipleStates(t *testing.T) {
 	s := NewMemoryStore()
+	defer s.Close()
 	ctx := t.Context()
 
 	s1, _ := s.Generate(ctx)
@@ -101,5 +106,60 @@ func TestMemoryStore_MultipleStates(t *testing.T) {
 
 	if !ok1 || !ok2 {
 		t.Error("both states should be valid")
+	}
+}
+
+func TestMemoryStore_Close(t *testing.T) {
+	s := NewMemoryStore()
+	// Close should return without blocking.
+	s.Close()
+}
+
+func TestMemoryStore_CleanupRemovesExpired(t *testing.T) {
+	s := NewMemoryStore(
+		WithMemoryTTL(10*time.Millisecond),
+		WithCleanupInterval(20*time.Millisecond),
+	)
+	defer s.Close()
+	ctx := t.Context()
+
+	state, _ := s.Generate(ctx)
+	// Wait for state to expire and cleanup to run.
+	time.Sleep(50 * time.Millisecond)
+
+	// State should have been cleaned up.
+	s.mu.Lock()
+	_, exists := s.states[state]
+	s.mu.Unlock()
+	if exists {
+		t.Error("expired state should have been cleaned up")
+	}
+}
+
+func TestMemoryStore_WithCleanupInterval(t *testing.T) {
+	s := NewMemoryStore(WithCleanupInterval(1 * time.Hour))
+	defer s.Close()
+	if s.cleanupInterval != 1*time.Hour {
+		t.Errorf("cleanupInterval = %v, want 1h", s.cleanupInterval)
+	}
+}
+
+func TestMemoryStore_CodeVerifier(t *testing.T) {
+	s := NewMemoryStore()
+	defer s.Close()
+	ctx := t.Context()
+
+	state, _ := s.Generate(ctx)
+	s.SetCodeVerifier(state, "test-verifier")
+
+	v := s.ConsumeCodeVerifier(state)
+	if v != "test-verifier" {
+		t.Errorf("code_verifier = %q, want test-verifier", v)
+	}
+
+	// Second consume should return empty.
+	v2 := s.ConsumeCodeVerifier(state)
+	if v2 != "" {
+		t.Errorf("second consume should be empty, got %q", v2)
 	}
 }

@@ -3,7 +3,7 @@ package sms
 import (
 	"context"
 
-	"github.com/google/uuid"
+	"github.com/Tsukikage7/servex/notify"
 )
 
 // TencentConfig 腾讯云短信服务配置.
@@ -26,5 +26,5 @@ func (p *TencentProvider) Name() string { return "tencent" }
 
 // Send 桩实现。TODO: 接入腾讯云 SMS SDK.
 func (p *TencentProvider) Send(_ context.Context, _ *SendRequest) (string, error) {
-	return "tencent-stub-" + uuid.New().String(), nil
+	return "", notify.ErrNotImplemented
 }

@@ -3,7 +3,7 @@ package push
 import (
 	"context"
 
-	"github.com/google/uuid"
+	"github.com/Tsukikage7/servex/notify"
 )
 
 // FCMConfig Firebase Cloud Messaging 连接配置.
@@ -23,5 +23,5 @@ func (p *FCMProvider) Name() string { return "fcm" }
 
 // Send 桩实现。TODO: 接入 Firebase Admin SDK.
 func (p *FCMProvider) Send(_ context.Context, _ string, _ *Payload) (string, error) {
-	return "fcm-stub-" + uuid.New().String(), nil
+	return "", notify.ErrNotImplemented
 }

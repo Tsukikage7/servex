@@ -9,6 +9,7 @@ import (
 
 func ExampleNewMemoryStore() {
 	store := state.NewMemoryStore()
+	defer store.Close()
 	token, err := store.Generate(context.Background())
 	fmt.Println(err)
 	fmt.Println(len(token) > 0)

@@ -2,6 +2,7 @@
 package cors
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -91,6 +92,12 @@ func HTTPMiddleware(opts ...Option) func(http.Handler) http.Handler {
 	o := defaultOptions()
 	for _, opt := range opts {
 		opt(&o)
+	}
+
+	// 安全警告：AllowOrigins 为 ["*"] 允许任意来源跨域访问，
+	// 在生产环境应明确指定允许的来源列表.
+	if isAllOrigins(o.AllowOrigins) {
+		log.Println("cors: WARNING AllowOrigins is set to wildcard \"*\", all origins are allowed. Consider setting explicit origins for production use.")
 	}
 
 	return func(next http.Handler) http.Handler {

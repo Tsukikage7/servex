@@ -3,6 +3,7 @@ package apikey
 
 import (
 	"context"
+	"crypto/subtle"
 	"time"
 
 	"github.com/Tsukikage7/servex/auth"
@@ -61,13 +62,15 @@ func (a *Authenticator) Authenticate(ctx context.Context, creds auth.Credentials
 // StaticValidator 静态 API Key 验证器.
 //
 // 适合 Key 数量固定、部署时确定的场景.
+// 使用常量时间比较防止时序攻击.
 func StaticValidator(keys map[string]*auth.Principal) Validator {
 	return func(_ context.Context, key string) (*auth.Principal, error) {
-		principal, ok := keys[key]
-		if !ok {
-			return nil, auth.ErrInvalidCredentials
+		for k, principal := range keys {
+			if subtle.ConstantTimeCompare([]byte(k), []byte(key)) == 1 {
+				return principal, nil
+			}
 		}
-		return principal, nil
+		return nil, auth.ErrInvalidCredentials
 	}
 }
 

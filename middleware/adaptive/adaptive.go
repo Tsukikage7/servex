@@ -127,6 +127,10 @@ type Limiter struct {
 	metricsCollector MetricsCollector
 
 	nowFunc func() time.Time // 方便测试
+
+	// 后台 CPU 采样控制
+	stopCPUSampler chan struct{}
+	cpuSamplerDone chan struct{}
 }
 
 // New 创建自适应限流器.
@@ -155,14 +159,17 @@ func New(cfg *Config, opts ...Option) (*Limiter, error) {
 		latencyTracker:   newLatencyTracker(windowSize),
 		errorRateTracker: newErrorRateTracker(windowSize),
 		nowFunc:          time.Now,
+		stopCPUSampler:   make(chan struct{}),
+		cpuSamplerDone:   make(chan struct{}),
 	}
 
 	for _, opt := range opts {
 		opt(l)
 	}
 
-	// 初始化 CPU 采样
+	// 初始化 CPU 采样并启动后台定时采样
 	l.sampleCPU()
+	go l.cpuSamplerLoop()
 
 	return l, nil
 }
@@ -201,6 +208,27 @@ func validateConfig(cfg *Config) error {
 		return ErrInvalidThreshold
 	}
 	return nil
+}
+
+// cpuSamplerLoop 后台定时采样 CPU 使用率，每秒采样一次.
+func (l *Limiter) cpuSamplerLoop() {
+	defer close(l.cpuSamplerDone)
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-l.stopCPUSampler:
+			return
+		case <-ticker.C:
+			l.sampleCPU()
+		}
+	}
+}
+
+// Close 停止后台 CPU 采样 goroutine，释放资源.
+func (l *Limiter) Close() {
+	close(l.stopCPUSampler)
+	<-l.cpuSamplerDone
 }
 
 // Allow 检查当前系统负载是否允许请求通过.
@@ -292,7 +320,6 @@ func (l *Limiter) sampleCPU() {
 func (l *Limiter) Middleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			l.sampleCPU()
 			if !l.Allow() {
 				if l.cfg.DegradeHandler != nil {
 					l.cfg.DegradeHandler.ServeHTTP(w, r)
@@ -314,7 +341,6 @@ func (l *Limiter) GRPCUnaryInterceptor() grpc.UnaryServerInterceptor {
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (any, error) {
-		l.sampleCPU()
 		if !l.Allow() {
 			return nil, status.Error(codes.ResourceExhausted, "服务过载，请稍后重试")
 		}
@@ -339,7 +365,6 @@ func (l *Limiter) RecordSuccess() {
 
 // Status 获取限流器当前状态.
 func (l *Limiter) Status() *Status {
-	l.sampleCPU()
 	return &Status{
 		IsLimiting:        l.limiting.Load(),
 		CurrentCPU:        l.cpuLoad(),

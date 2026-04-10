@@ -58,22 +58,25 @@ func (s *StrategyTestSuite) TestFixedStrategy_ZeroRetries() {
 func (s *StrategyTestSuite) TestExponentialStrategy_Backoff() {
 	st := NewExponentialStrategy(100*time.Millisecond, 10*time.Second, 5)
 
-	// attempt 0: 100ms
+	// attempt 0: [0, 100ms] (full jitter)
 	delay, ok := st.Next()
 	s.True(ok)
-	s.Equal(100*time.Millisecond, delay)
+	s.LessOrEqual(delay, 100*time.Millisecond)
+	s.GreaterOrEqual(delay, time.Duration(0))
 
-	// attempt 1: 200ms
+	// attempt 1: [0, 200ms]
 	st = st.Report(errors.New("err"))
 	delay, ok = st.Next()
 	s.True(ok)
-	s.Equal(200*time.Millisecond, delay)
+	s.LessOrEqual(delay, 200*time.Millisecond)
+	s.GreaterOrEqual(delay, time.Duration(0))
 
-	// attempt 2: 400ms
+	// attempt 2: [0, 400ms]
 	st = st.Report(errors.New("err"))
 	delay, ok = st.Next()
 	s.True(ok)
-	s.Equal(400*time.Millisecond, delay)
+	s.LessOrEqual(delay, 400*time.Millisecond)
+	s.GreaterOrEqual(delay, time.Duration(0))
 }
 
 func (s *StrategyTestSuite) TestExponentialStrategy_MaxDelayCap() {
@@ -105,8 +108,9 @@ func (s *StrategyTestSuite) TestExponentialStrategy_Immutable() {
 	d1, _ := st.Next()
 	d2, _ := st2.Next()
 
-	s.Equal(100*time.Millisecond, d1)
-	s.Equal(200*time.Millisecond, d2)
+	// attempt 0: [0, 100ms], attempt 1: [0, 200ms] (full jitter)
+	s.LessOrEqual(d1, 100*time.Millisecond)
+	s.LessOrEqual(d2, 200*time.Millisecond)
 }
 
 func (s *StrategyTestSuite) TestAdaptiveStrategy_StopsOnThreshold() {

@@ -21,9 +21,10 @@ type memoryCache struct {
 
 // cacheItem 缓存项.
 type cacheItem struct {
-	value    string
-	expireAt time.Time
-	noExpire bool
+	value        string
+	expireAt     time.Time
+	noExpire     bool
+	lastAccessed time.Time
 }
 
 // isExpired 检查是否过期.
@@ -99,9 +100,10 @@ func (m *memoryCache) Set(ctx context.Context, key string, value any, ttl time.D
 		m.evictOne()
 	}
 
-	item := &cacheItem{value: data}
+	now := time.Now()
+	item := &cacheItem{value: data, lastAccessed: now}
 	if ttl > 0 {
-		item.expireAt = time.Now().Add(ttl)
+		item.expireAt = now.Add(ttl)
 	} else {
 		item.noExpire = true
 	}
@@ -120,29 +122,39 @@ func (m *memoryCache) evictOne() {
 		}
 	}
 
-	// 删除第一个找到的项
-	for key := range m.data {
-		delete(m.data, key)
-		return
+	// 淘汰最久未访问的项（LRU）
+	var oldestKey string
+	var oldestTime time.Time
+	first := true
+	for key, item := range m.data {
+		if first || item.lastAccessed.Before(oldestTime) {
+			oldestKey = key
+			oldestTime = item.lastAccessed
+			first = false
+		}
+	}
+	if !first {
+		delete(m.data, oldestKey)
 	}
 }
 
 // Get 获取值.
 func (m *memoryCache) Get(ctx context.Context, key string) (string, error) {
-	m.mu.RLock()
+	m.mu.Lock()
 	item, ok := m.data[key]
-	m.mu.RUnlock()
-
 	if !ok {
+		m.mu.Unlock()
 		return "", ErrNotFound
 	}
 
 	if item.isExpired() {
-		m.mu.Lock()
 		delete(m.data, key)
 		m.mu.Unlock()
 		return "", ErrNotFound
 	}
+
+	item.lastAccessed = time.Now()
+	m.mu.Unlock()
 
 	return item.value, nil
 }
@@ -192,9 +204,10 @@ func (m *memoryCache) SetNX(ctx context.Context, key string, value any, ttl time
 		return false, err
 	}
 
-	item := &cacheItem{value: data}
+	now := time.Now()
+	item := &cacheItem{value: data, lastAccessed: now}
 	if ttl > 0 {
-		item.expireAt = time.Now().Add(ttl)
+		item.expireAt = now.Add(ttl)
 	} else {
 		item.noExpire = true
 	}
@@ -223,8 +236,9 @@ func (m *memoryCache) IncrementBy(ctx context.Context, key string, value int64) 
 
 	current += value
 	m.data[key] = &cacheItem{
-		value:    fmt.Sprintf("%d", current),
-		noExpire: true,
+		value:        fmt.Sprintf("%d", current),
+		noExpire:     true,
+		lastAccessed: time.Now(),
 	}
 
 	return current, nil
@@ -282,6 +296,30 @@ func (m *memoryCache) TryLock(ctx context.Context, key string, value string, ttl
 	return m.SetNX(ctx, key, value, ttl)
 }
 
+// ExtendLock 原子地验证锁持有者并延长过期时间.
+func (m *memoryCache) ExtendLock(ctx context.Context, key string, value string, ttl time.Duration) (bool, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	item, ok := m.data[key]
+	if !ok || item.isExpired() {
+		return false, nil
+	}
+
+	if item.value != value {
+		return false, nil
+	}
+
+	if ttl > 0 {
+		item.expireAt = time.Now().Add(ttl)
+		item.noExpire = false
+	} else {
+		item.noExpire = true
+	}
+
+	return true, nil
+}
+
 // Unlock 释放锁.
 func (m *memoryCache) Unlock(ctx context.Context, key string, value string) error {
 	m.mu.Lock()
@@ -319,15 +357,16 @@ func (m *memoryCache) MSet(ctx context.Context, pairs map[string]any, ttl time.D
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	now := time.Now()
 	for key, value := range pairs {
 		data, err := m.serialize(value)
 		if err != nil {
 			return err
 		}
 
-		item := &cacheItem{value: data}
+		item := &cacheItem{value: data, lastAccessed: now}
 		if ttl > 0 {
-			item.expireAt = time.Now().Add(ttl)
+			item.expireAt = now.Add(ttl)
 		} else {
 			item.noExpire = true
 		}

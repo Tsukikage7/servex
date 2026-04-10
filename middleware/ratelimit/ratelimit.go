@@ -104,10 +104,12 @@ func (tb *TokenBucket) WaitN(ctx context.Context, n int) error {
 			waitTime = time.Millisecond
 		}
 
+		timer := time.NewTimer(waitTime)
 		select {
 		case <-ctx.Done():
+			timer.Stop()
 			return ctx.Err()
-		case <-time.After(waitTime):
+		case <-timer.C:
 			// 继续尝试
 		}
 	}
@@ -195,10 +197,12 @@ func (sw *SlidingWindow) WaitN(ctx context.Context, n int) error {
 			waitTime = time.Millisecond
 		}
 
+		timer := time.NewTimer(waitTime)
 		select {
 		case <-ctx.Done():
+			timer.Stop()
 			return ctx.Err()
-		case <-time.After(waitTime):
+		case <-timer.C:
 			// 继续尝试
 		}
 	}
@@ -213,6 +217,12 @@ func (sw *SlidingWindow) cleanup(now time.Time) {
 	}
 	if i > 0 {
 		sw.timestamps = sw.timestamps[i:]
+		// 当底层数组容量远大于实际长度时，复制到新切片以释放旧内存
+		if cap(sw.timestamps) > 2*len(sw.timestamps)+1 {
+			trimmed := make([]time.Time, len(sw.timestamps))
+			copy(trimmed, sw.timestamps)
+			sw.timestamps = trimmed
+		}
 	}
 }
 
@@ -281,10 +291,12 @@ func (fw *FixedWindow) WaitN(ctx context.Context, n int) error {
 			waitTime = time.Millisecond
 		}
 
+		timer := time.NewTimer(waitTime)
 		select {
 		case <-ctx.Done():
+			timer.Stop()
 			return ctx.Err()
-		case <-time.After(waitTime):
+		case <-timer.C:
 			// 继续尝试
 		}
 	}

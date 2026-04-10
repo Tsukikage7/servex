@@ -50,24 +50,24 @@ func UnaryServerInterceptor(authenticator Authenticator, opts ...Option) grpc.Un
 		creds, err := o.credentialsExtractor(ctx, req)
 		if err != nil {
 			if o.logger != nil {
-				o.logger.WithContext(ctx).Debug("[Auth] gRPC凭据提取失败",
+				logger.FromContext(ctx).Debug("[Auth] gRPC凭据提取失败",
 					logger.String("method", info.FullMethod),
 					logger.Err(err),
 				)
 			}
-			return nil, status.Error(codes.Unauthenticated, "credentials not found")
+			return nil, status.Error(codes.Unauthenticated, "凭据未找到")
 		}
 
 		// 认证
 		principal, err := authenticator.Authenticate(ctx, *creds)
 		if err != nil {
 			if o.logger != nil {
-				o.logger.WithContext(ctx).Warn("[Auth] gRPC认证失败",
+				logger.FromContext(ctx).Warn("[Auth] gRPC认证失败",
 					logger.String("method", info.FullMethod),
 					logger.Err(err),
 				)
 			}
-			return nil, status.Error(codes.Unauthenticated, "authentication failed")
+			return nil, status.Error(codes.Unauthenticated, "认证失败")
 		}
 
 		// 将主体存入 context
@@ -77,13 +77,13 @@ func UnaryServerInterceptor(authenticator Authenticator, opts ...Option) grpc.Un
 		if o.authorizer != nil {
 			if err := o.authorizer.Authorize(ctx, principal, "", info.FullMethod); err != nil {
 				if o.logger != nil {
-					o.logger.WithContext(ctx).Warn("[Auth] gRPC授权失败",
+					logger.FromContext(ctx).Warn("[Auth] gRPC授权失败",
 						logger.String("principal_id", principal.ID),
 						logger.String("method", info.FullMethod),
 						logger.Err(err),
 					)
 				}
-				return nil, status.Error(codes.PermissionDenied, "permission denied")
+				return nil, status.Error(codes.PermissionDenied, "权限被拒绝")
 			}
 		}
 
@@ -123,24 +123,24 @@ func StreamServerInterceptor(authenticator Authenticator, opts ...Option) grpc.S
 		creds, err := o.credentialsExtractor(ctx, nil)
 		if err != nil {
 			if o.logger != nil {
-				o.logger.WithContext(ctx).Debug("[Auth] gRPC流凭据提取失败",
+				logger.FromContext(ctx).Debug("[Auth] gRPC流凭据提取失败",
 					logger.String("method", info.FullMethod),
 					logger.Err(err),
 				)
 			}
-			return status.Error(codes.Unauthenticated, "credentials not found")
+			return status.Error(codes.Unauthenticated, "凭据未找到")
 		}
 
 		// 认证
 		principal, err := authenticator.Authenticate(ctx, *creds)
 		if err != nil {
 			if o.logger != nil {
-				o.logger.WithContext(ctx).Warn("[Auth] gRPC流认证失败",
+				logger.FromContext(ctx).Warn("[Auth] gRPC流认证失败",
 					logger.String("method", info.FullMethod),
 					logger.Err(err),
 				)
 			}
-			return status.Error(codes.Unauthenticated, "authentication failed")
+			return status.Error(codes.Unauthenticated, "认证失败")
 		}
 
 		// 将主体存入 context
@@ -150,13 +150,13 @@ func StreamServerInterceptor(authenticator Authenticator, opts ...Option) grpc.S
 		if o.authorizer != nil {
 			if err := o.authorizer.Authorize(ctx, principal, "", info.FullMethod); err != nil {
 				if o.logger != nil {
-					o.logger.WithContext(ctx).Warn("[Auth] gRPC流授权失败",
+					logger.FromContext(ctx).Warn("[Auth] gRPC流授权失败",
 						logger.String("principal_id", principal.ID),
 						logger.String("method", info.FullMethod),
 						logger.Err(err),
 					)
 				}
-				return status.Error(codes.PermissionDenied, "permission denied")
+				return status.Error(codes.PermissionDenied, "权限被拒绝")
 			}
 		}
 

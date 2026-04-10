@@ -130,7 +130,7 @@ func TestServerCallbacks(t *testing.T) {
 }
 
 func TestClientMetadata(t *testing.T) {
-	c := newClient(16)
+	c := newClient(16, context.Background())
 	defer c.Close()
 
 	c.SetMetadata("key", "value")
@@ -145,7 +145,7 @@ func TestClientMetadata(t *testing.T) {
 }
 
 func TestClientSendAndClose(t *testing.T) {
-	c := newClient(2)
+	c := newClient(2, context.Background())
 
 	err := c.Send(&Event{Data: []byte("msg1")})
 	if err != nil {
@@ -392,7 +392,7 @@ func TestServerErrors(t *testing.T) {
 // --- Client context ---
 
 func TestClientContext(t *testing.T) {
-	c := newClient(4)
+	c := newClient(4, context.Background())
 	defer c.Close()
 	ctx := c.Context()
 	if ctx == nil {
@@ -401,7 +401,7 @@ func TestClientContext(t *testing.T) {
 }
 
 func TestClientSendBufferFull(t *testing.T) {
-	c := newClient(1) // buffer size 1
+	c := newClient(1, context.Background()) // buffer size 1
 	defer c.Close()
 
 	// Fill buffer.

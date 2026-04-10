@@ -23,10 +23,12 @@
 package sse
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -58,23 +60,31 @@ type Event struct {
 
 // Bytes 将事件序列化为 SSE 格式.
 func (e *Event) Bytes() []byte {
-	var buf []byte
+	var buf bytes.Buffer
 
 	if e.ID != "" {
-		buf = append(buf, fmt.Sprintf("id: %s\n", e.ID)...)
+		buf.WriteString("id: ")
+		buf.WriteString(e.ID)
+		buf.WriteByte('\n')
 	}
 	if e.Event != "" {
-		buf = append(buf, fmt.Sprintf("event: %s\n", e.Event)...)
+		buf.WriteString("event: ")
+		buf.WriteString(e.Event)
+		buf.WriteByte('\n')
 	}
 	if e.Retry > 0 {
-		buf = append(buf, fmt.Sprintf("retry: %d\n", e.Retry)...)
+		buf.WriteString("retry: ")
+		buf.WriteString(strconv.Itoa(e.Retry))
+		buf.WriteByte('\n')
 	}
 	if len(e.Data) > 0 {
-		buf = append(buf, fmt.Sprintf("data: %s\n", e.Data)...)
+		buf.WriteString("data: ")
+		buf.Write(e.Data)
+		buf.WriteByte('\n')
 	}
-	buf = append(buf, '\n')
+	buf.WriteByte('\n')
 
-	return buf
+	return buf.Bytes()
 }
 
 // Config SSE 配置.
@@ -153,8 +163,8 @@ type sseClient struct {
 }
 
 // newClient 创建客户端.
-func newClient(bufferSize int) *sseClient {
-	ctx, cancel := context.WithCancel(context.Background())
+func newClient(bufferSize int, reqCtx context.Context) *sseClient {
+	ctx, cancel := context.WithCancel(reqCtx)
 	return &sseClient{
 		id:       uuid.New().String(),
 		events:   make(chan *Event, bufferSize),
@@ -302,11 +312,8 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set(k, v)
 	}
 
-	// 创建客户端
-	client := newClient(s.config.BufferSize)
-
-	// 从请求上下文继承
-	client.ctx = r.Context()
+	// 创建客户端（从请求上下文派生）
+	client := newClient(s.config.BufferSize, r.Context())
 
 	// 注册客户端
 	s.register <- client
@@ -324,9 +331,6 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// 事件循环
 	for {
 		select {
-		case <-r.Context().Done():
-			s.unregister <- client
-			return
 		case <-client.ctx.Done():
 			s.unregister <- client
 			return

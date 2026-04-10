@@ -3,6 +3,7 @@ package retry
 import (
 	"context"
 	"math"
+	"math/rand/v2"
 	"time"
 )
 
@@ -66,6 +67,8 @@ func (s *exponentialStrategy) Next() (time.Duration, bool) {
 	if delay > s.maxDelay {
 		delay = s.maxDelay
 	}
+	// Full jitter: 随机化延迟到 [0, delay] 范围内，避免多客户端同步重试风暴
+	delay = time.Duration(rand.Int64N(int64(delay) + 1))
 	return delay, true
 }
 

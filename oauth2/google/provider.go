@@ -3,6 +3,9 @@ package google
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Tsukikage7/servex/oauth2"
@@ -19,6 +23,9 @@ const (
 	defaultAuthURL     = "https://accounts.google.com/o/oauth2/v2/auth"
 	defaultTokenURL    = "https://oauth2.googleapis.com/token"
 	defaultUserInfoURL = "https://www.googleapis.com/oauth2/v2/userinfo"
+
+	// maxResponseBody 限制响应体最大读取大小 (1MB).
+	maxResponseBody = 1 << 20
 )
 
 // Provider 实现 Google OAuth2 登录.
@@ -27,6 +34,9 @@ type Provider struct {
 	authBaseURL string
 	tokenURL    string
 	userInfoURL string
+
+	mu        sync.Mutex
+	verifiers map[string]string // state -> code_verifier
 }
 
 // NewProvider 创建 Google OAuth2 Provider 实例.
@@ -43,10 +53,11 @@ func NewProvider(opts ...Option) *Provider {
 		authBaseURL: defaultAuthURL,
 		tokenURL:    defaultTokenURL,
 		userInfoURL: defaultUserInfoURL,
+		verifiers:   make(map[string]string),
 	}
 }
 
-// AuthURL 生成 Google OAuth2 授权跳转链接.
+// AuthURL 生成 Google OAuth2 授权跳转链接（含 PKCE）.
 func (p *Provider) AuthURL(state string, opts ...oauth2.AuthURLOption) string {
 	extra := oauth2.ApplyAuthURLOptions(opts)
 	params := url.Values{
@@ -61,11 +72,27 @@ func (p *Provider) AuthURL(state string, opts ...oauth2.AuthURLOption) string {
 	if extra.Prompt != "" {
 		params.Set("prompt", extra.Prompt)
 	}
+
+	// PKCE: 生成 code_verifier 和 code_challenge
+	verifier := generateCodeVerifier()
+	challenge := computeCodeChallenge(verifier)
+	params.Set("code_challenge", challenge)
+	params.Set("code_challenge_method", "S256")
+
+	p.mu.Lock()
+	p.verifiers[state] = verifier
+	p.mu.Unlock()
+
 	return p.authBaseURL + "?" + params.Encode()
 }
 
 // Exchange 使用授权码换取访问令牌.
 func (p *Provider) Exchange(ctx context.Context, code string) (*oauth2.Token, error) {
+	return p.ExchangeWithState(ctx, code, "")
+}
+
+// ExchangeWithState 使用授权码和 state 换取访问令牌（含 PKCE code_verifier）.
+func (p *Provider) ExchangeWithState(ctx context.Context, code, state string) (*oauth2.Token, error) {
 	if code == "" {
 		return nil, oauth2.ErrInvalidCode
 	}
@@ -76,6 +103,17 @@ func (p *Provider) Exchange(ctx context.Context, code string) (*oauth2.Token, er
 		"redirect_uri":  {p.opts.redirectURL},
 		"grant_type":    {"authorization_code"},
 	}
+
+	// PKCE: 如果有对应 state 的 code_verifier 则附加到请求中
+	if state != "" {
+		p.mu.Lock()
+		if verifier, ok := p.verifiers[state]; ok {
+			data.Set("code_verifier", verifier)
+			delete(p.verifiers, state)
+		}
+		p.mu.Unlock()
+	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.tokenURL, strings.NewReader(data.Encode()))
 	if err != nil {
 		return nil, err
@@ -87,7 +125,10 @@ func (p *Provider) Exchange(ctx context.Context, code string) (*oauth2.Token, er
 		return nil, errors.Join(oauth2.ErrExchangeFailed, err)
 	}
 	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBody))
+	if err != nil {
+		return nil, errors.Join(oauth2.ErrExchangeFailed, err)
+	}
 
 	var result map[string]any
 	if err := json.Unmarshal(body, &result); err != nil {
@@ -187,4 +228,19 @@ func (p *Provider) UserInfo(ctx context.Context, token *oauth2.Token) (*oauth2.U
 func getString(m map[string]any, key string) string {
 	v, _ := m[key].(string)
 	return v
+}
+
+// generateCodeVerifier 生成 PKCE code_verifier（43-128 字符，URL-safe）.
+func generateCodeVerifier() string {
+	b := make([]byte, 32) // 32 bytes -> 43 chars base64url
+	if _, err := rand.Read(b); err != nil {
+		panic("oauth2/google: failed to generate random bytes: " + err.Error())
+	}
+	return base64.RawURLEncoding.EncodeToString(b)
+}
+
+// computeCodeChallenge 计算 PKCE code_challenge = base64url(sha256(verifier)).
+func computeCodeChallenge(verifier string) string {
+	h := sha256.Sum256([]byte(verifier))
+	return base64.RawURLEncoding.EncodeToString(h[:])
 }

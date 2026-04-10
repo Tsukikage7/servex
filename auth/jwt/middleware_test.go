@@ -41,7 +41,7 @@ func generateTestToken(j *JWT, subject string) string {
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
-	token, _ := j.Generate(claims)
+	token, _ := j.Generate(context.Background(), claims)
 	return token
 }
 
@@ -81,7 +81,7 @@ func TestNewSigner(t *testing.T) {
 		assert.NotEmpty(t, capturedToken)
 
 		// 验证生成的令牌可以被解析
-		validatedClaims, err := j.Validate(capturedToken)
+		validatedClaims, err := j.Validate(t.Context(), capturedToken)
 		assert.NoError(t, err)
 		subject, _ := validatedClaims.GetSubject()
 		assert.Equal(t, "user-123", subject)
@@ -180,7 +180,7 @@ func TestNewParser(t *testing.T) {
 				IssuedAt:  jwt.NewNumericDate(time.Now().Add(-2 * time.Hour)),
 			},
 		}
-		token, _ := j.Generate(claims)
+		token, _ := j.Generate(t.Context(), claims)
 
 		endpoint := func(ctx context.Context, req any) (any, error) {
 			return "success", nil
@@ -214,7 +214,7 @@ func TestNewParserWithClaims(t *testing.T) {
 			UserID:   "456",
 			Username: "testuser",
 		}
-		token, err := j.Generate(customClaims)
+		token, err := j.Generate(t.Context(), customClaims)
 		require.NoError(t, err)
 
 		endpoint := func(ctx context.Context, req any) (any, error) {
@@ -535,23 +535,23 @@ func TestJWT_GenerateValidateRefresh(t *testing.T) {
 			},
 		}
 
-		token, err := j.Generate(claims)
+		token, err := j.Generate(t.Context(), claims)
 		require.NoError(t, err)
 		assert.NotEmpty(t, token)
 
-		validated, err := j.Validate(token)
+		validated, err := j.Validate(t.Context(), token)
 		require.NoError(t, err)
 		sub, _ := validated.GetSubject()
 		assert.Equal(t, "user-100", sub)
 	})
 
 	t.Run("validate empty token", func(t *testing.T) {
-		_, err := j.Validate("")
+		_, err := j.Validate(t.Context(), "")
 		assert.ErrorIs(t, err, ErrTokenEmpty)
 	})
 
 	t.Run("validate invalid token", func(t *testing.T) {
-		_, err := j.Validate("Bearer invalid.token.here")
+		_, err := j.Validate(t.Context(), "Bearer invalid.token.here")
 		assert.Error(t, err)
 	})
 
@@ -564,7 +564,7 @@ func TestJWT_GenerateValidateRefresh(t *testing.T) {
 				IssuedAt:  jwt.NewNumericDate(time.Now()),
 			},
 		}
-		token, err := j.Generate(oldClaims)
+		token, err := j.Generate(t.Context(), oldClaims)
 		require.NoError(t, err)
 
 		newClaims := &StandardClaims{
@@ -575,7 +575,7 @@ func TestJWT_GenerateValidateRefresh(t *testing.T) {
 				IssuedAt:  jwt.NewNumericDate(time.Now()),
 			},
 		}
-		newToken, err := j.Refresh(token, newClaims)
+		newToken, err := j.Refresh(t.Context(), token, newClaims)
 		require.NoError(t, err)
 		assert.NotEmpty(t, newToken)
 		assert.NotEqual(t, token, newToken)
@@ -616,7 +616,7 @@ func TestWhitelist(t *testing.T) {
 	})
 
 	t.Run("custom internal service header", func(t *testing.T) {
-		w := NewWhitelist().SetInternalServiceHeader("x-internal")
+		w := NewWhitelist().SetInternalServiceHeader("x-internal").SetInternalServiceSecret("service-a")
 		ctx := metadata.NewIncomingContext(t.Context(),
 			metadata.Pairs("x-internal", "service-a"))
 		assert.True(t, w.IsWhitelisted(ctx, nil))

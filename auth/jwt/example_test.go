@@ -1,6 +1,7 @@
 package jwt_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -47,7 +48,7 @@ func ExampleJWT_Generate() {
 		},
 	}
 
-	token, err := j.Generate(claims)
+	token, err := j.Generate(context.Background(), claims)
 	if err != nil {
 		fmt.Println("error:", err)
 		return
@@ -55,7 +56,7 @@ func ExampleJWT_Generate() {
 	fmt.Println("token generated:", token != "")
 
 	// 验证令牌.
-	parsed, err := j.Validate(token)
+	parsed, err := j.Validate(context.Background(), token)
 	if err != nil {
 		fmt.Println("error:", err)
 		return

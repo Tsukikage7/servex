@@ -57,6 +57,10 @@ type Cache interface {
 	TryLock(ctx context.Context, key string, value string, ttl time.Duration) (bool, error)
 	// Unlock 释放分布式锁.
 	Unlock(ctx context.Context, key string, value string) error
+	// ExtendLock 原子地验证锁持有者并延长过期时间.
+	//
+	// 只有当 key 的值等于 value 时才延长过期时间，避免 GET+EXPIRE 的 TOCTOU 竞态.
+	ExtendLock(ctx context.Context, key string, value string, ttl time.Duration) (bool, error)
 
 	// MGet 批量获取.
 	MGet(ctx context.Context, keys ...string) ([]string, error)

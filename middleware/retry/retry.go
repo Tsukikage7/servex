@@ -67,10 +67,12 @@ func (r *Retry) Run() error {
 
 		// 如果不是最后一次尝试，则等待重试延迟
 		if attempt < r.maxAttempts-1 {
+			timer := time.NewTimer(r.delay)
 			select {
-			case <-time.After(r.delay):
+			case <-timer.C:
 				continue
 			case <-r.ctx.Done():
+				timer.Stop()
 				return r.ctx.Err()
 			}
 		}

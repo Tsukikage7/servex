@@ -221,52 +221,58 @@ func (m *redisQuotaManager) Check(ctx context.Context, quota Quota) (*Usage, err
 	}, nil
 }
 
+// consumeScript 原子检查并增加配额的 Lua 脚本.
+// KEYS[1]: 配额键
+// ARGV[1]: 增加量 n
+// ARGV[2]: 配额上限 limit
+// ARGV[3]: TTL 秒数
+// 返回: {new_value, 0} 成功, {current_value, 1} 超限
+var consumeScript = redis.NewScript(`
+local current = tonumber(redis.call("GET", KEYS[1]) or "0")
+local n = tonumber(ARGV[1])
+local limit = tonumber(ARGV[2])
+local ttl = tonumber(ARGV[3])
+if current + n > limit then
+    return {current, 1}
+end
+local newval = redis.call("INCRBY", KEYS[1], n)
+if ttl > 0 then
+    redis.call("EXPIRE", KEYS[1], ttl)
+end
+return {newval, 0}
+`)
+
 func (m *redisQuotaManager) Consume(ctx context.Context, quota Quota, n int64) (*Usage, error) {
 	key := m.redisKey(quota)
-
-	// 先检查
-	val, err := m.client.Get(ctx, key).Result()
-	var used int64
-	if err == redis.Nil {
-		used = 0
-	} else if err != nil {
-		return nil, err
-	} else {
-		used, _ = strconv.ParseInt(val, 10, 64)
+	ttl := int64(time.Until(windowEnd(quota.Window)).Seconds())
+	if ttl < 1 {
+		ttl = 1
 	}
 
-	if used+n > quota.Limit {
-		remaining := quota.Limit - used
-		if remaining < 0 {
-			remaining = 0
-		}
-		return &Usage{
-			Used:      used,
-			Remaining: remaining,
-			Limit:     quota.Limit,
-			ResetsAt:  windowEnd(quota.Window),
-		}, ErrQuotaExceeded
-	}
-
-	// 增加并设置 TTL
-	newVal, err := m.client.IncrBy(ctx, key, n).Result()
+	result, err := consumeScript.Run(ctx, m.client, []string{key},
+		n, quota.Limit, ttl,
+	).Int64Slice()
 	if err != nil {
 		return nil, err
 	}
-	// 设置过期时间为窗口剩余时间
-	ttl := time.Until(windowEnd(quota.Window))
-	m.client.Expire(ctx, key, ttl)
 
-	remaining := quota.Limit - newVal
+	used := result[0]
+	exceeded := result[1] == 1
+
+	remaining := quota.Limit - used
 	if remaining < 0 {
 		remaining = 0
 	}
-	return &Usage{
-		Used:      newVal,
+	usage := &Usage{
+		Used:      used,
 		Remaining: remaining,
 		Limit:     quota.Limit,
 		ResetsAt:  windowEnd(quota.Window),
-	}, nil
+	}
+	if exceeded {
+		return usage, ErrQuotaExceeded
+	}
+	return usage, nil
 }
 
 func (m *redisQuotaManager) Reset(ctx context.Context, key string) error {

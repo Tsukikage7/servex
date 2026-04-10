@@ -8,6 +8,7 @@ package circuitbreaker
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -77,6 +78,9 @@ type Breaker struct {
 	failureCount    int
 	successCount    int
 	lastStateChange time.Time
+
+	// halfOpenInFlight 限制 HalfOpen 状态下并发探测请求数量
+	halfOpenInFlight atomic.Int32
 }
 
 // 编译期接口合规检查.
@@ -137,7 +141,11 @@ func (b *Breaker) beforeExecute() error {
 	case StateOpen:
 		return ErrCircuitOpen
 	case StateHalfOpen:
-		// HalfOpen 状态只允许一次探测请求
+		// HalfOpen 状态只允许一次探测请求，使用原子计数器限制并发
+		if b.halfOpenInFlight.Add(1) > 1 {
+			b.halfOpenInFlight.Add(-1)
+			return ErrCircuitOpen
+		}
 		return nil
 	default:
 		return nil
@@ -165,12 +173,17 @@ func (b *Breaker) afterExecute(err error) {
 	case StateHalfOpen:
 		if isFailure {
 			// 探测失败，重新开路
+			b.halfOpenInFlight.Store(0)
 			b.toState(StateOpen)
 		} else {
 			b.successCount++
 			if b.successCount >= b.opts.SuccessThreshold {
 				// 探测成功足够次数，关路
+				b.halfOpenInFlight.Store(0)
 				b.toState(StateClosed)
+			} else {
+				// 允许下一个探测请求
+				b.halfOpenInFlight.Add(-1)
 			}
 		}
 	}

@@ -11,10 +11,11 @@ import (
 // DistributedLimiter 分布式限流器.
 // 使用 RateCounter 接口实现分布式限流.
 type DistributedLimiter struct {
-	counter RateCounter
-	prefix  string
-	limit   int
-	window  time.Duration
+	counter  RateCounter
+	prefix   string
+	limit    int
+	window   time.Duration
+	failOpen bool
 }
 
 // DistributedConfig 分布式限流配置.
@@ -30,6 +31,11 @@ type DistributedConfig struct {
 
 	// Window 窗口大小
 	Window time.Duration
+
+	// FailOpen 当 Redis 等后端出错时是否放行请求.
+	// 默认 true（放行），保持向后兼容.
+	// 设置为 false 时，后端错误将导致请求被拒绝.
+	FailOpen *bool
 }
 
 // NewDistributedLimiter 创建分布式限流器.
@@ -52,11 +58,17 @@ func NewDistributedLimiter(cfg *DistributedConfig) (*DistributedLimiter, error) 
 		prefix = "ratelimit"
 	}
 
+	failOpen := true
+	if cfg.FailOpen != nil {
+		failOpen = *cfg.FailOpen
+	}
+
 	return &DistributedLimiter{
-		counter: cfg.Counter,
-		prefix:  prefix,
-		limit:   cfg.Limit,
-		window:  cfg.Window,
+		counter:  cfg.Counter,
+		prefix:   prefix,
+		limit:    cfg.Limit,
+		window:   cfg.Window,
+		failOpen: failOpen,
 	}, nil
 }
 
@@ -82,8 +94,8 @@ func (dl *DistributedLimiter) AllowNWithKey(ctx context.Context, key string, n i
 	// 使用原子递增操作
 	count, err := dl.counter.IncrementBy(ctx, cacheKey, int64(n))
 	if err != nil {
-		// 发生错误时默认放行，避免影响正常业务
-		return true
+		// 发生错误时根据 failOpen 配置决定是否放行
+		return dl.failOpen
 	}
 
 	// 首次设置过期时间
@@ -123,10 +135,12 @@ func (dl *DistributedLimiter) WaitNWithKey(ctx context.Context, key string, n in
 			ttl = time.Millisecond * 100
 		}
 
+		timer := time.NewTimer(ttl)
 		select {
 		case <-ctx.Done():
+			timer.Stop()
 			return ctx.Err()
-		case <-time.After(ttl):
+		case <-timer.C:
 			// 继续尝试
 		}
 	}
@@ -134,10 +148,11 @@ func (dl *DistributedLimiter) WaitNWithKey(ctx context.Context, key string, n in
 
 // KeyedDistributedLimiter 基于键的分布式限流器工厂.
 type KeyedDistributedLimiter struct {
-	counter RateCounter
-	prefix  string
-	limit   int
-	window  time.Duration
+	counter  RateCounter
+	prefix   string
+	limit    int
+	window   time.Duration
+	failOpen bool
 }
 
 // NewKeyedDistributedLimiter 创建基于键的分布式限流器工厂.
@@ -160,11 +175,17 @@ func NewKeyedDistributedLimiter(cfg *DistributedConfig) (*KeyedDistributedLimite
 		prefix = "ratelimit"
 	}
 
+	failOpen := true
+	if cfg.FailOpen != nil {
+		failOpen = *cfg.FailOpen
+	}
+
 	return &KeyedDistributedLimiter{
-		counter: cfg.Counter,
-		prefix:  prefix,
-		limit:   cfg.Limit,
-		window:  cfg.Window,
+		counter:  cfg.Counter,
+		prefix:   prefix,
+		limit:    cfg.Limit,
+		window:   cfg.Window,
+		failOpen: failOpen,
 	}, nil
 }
 
@@ -172,18 +193,20 @@ func NewKeyedDistributedLimiter(cfg *DistributedConfig) (*KeyedDistributedLimite
 // 返回 KeyedLimiterFunc 以便与 KeyedEndpointMiddleware 等配合使用.
 func (kdl *KeyedDistributedLimiter) GetLimiter(key string) Limiter {
 	return &keyedDistributedLimiterInstance{
-		counter: kdl.counter,
-		key:     fmt.Sprintf("%s:%s", kdl.prefix, key),
-		limit:   kdl.limit,
-		window:  kdl.window,
+		counter:  kdl.counter,
+		key:      fmt.Sprintf("%s:%s", kdl.prefix, key),
+		limit:    kdl.limit,
+		window:   kdl.window,
+		failOpen: kdl.failOpen,
 	}
 }
 
 type keyedDistributedLimiterInstance struct {
-	counter RateCounter
-	key     string
-	limit   int
-	window  time.Duration
+	counter  RateCounter
+	key      string
+	limit    int
+	window   time.Duration
+	failOpen bool
 }
 
 func (i *keyedDistributedLimiterInstance) Allow(ctx context.Context) bool {
@@ -193,7 +216,7 @@ func (i *keyedDistributedLimiterInstance) Allow(ctx context.Context) bool {
 func (i *keyedDistributedLimiterInstance) AllowN(ctx context.Context, n int) bool {
 	count, err := i.counter.IncrementBy(ctx, i.key, int64(n))
 	if err != nil {
-		return true
+		return i.failOpen
 	}
 
 	if count == int64(n) {
@@ -218,10 +241,12 @@ func (i *keyedDistributedLimiterInstance) WaitN(ctx context.Context, n int) erro
 			ttl = time.Millisecond * 100
 		}
 
+		timer := time.NewTimer(ttl)
 		select {
 		case <-ctx.Done():
+			timer.Stop()
 			return ctx.Err()
-		case <-time.After(ttl):
+		case <-timer.C:
 		}
 	}
 }

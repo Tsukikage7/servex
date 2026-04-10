@@ -10,6 +10,7 @@ import (
 	"slices"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/Tsukikage7/servex/observability/logger"
 	"github.com/Tsukikage7/servex/transport"
@@ -112,12 +113,11 @@ func (a *Application) start() error {
 		return nil
 	}
 
-	var wg sync.WaitGroup
 	errCh := make(chan error, len(a.servers))
 
 	for _, srv := range a.servers {
 		s := srv
-		wg.Go(func() {
+		go func() {
 			a.opts.logger.With(
 				logger.String("server", s.Name()),
 				logger.String("addr", s.Addr()),
@@ -125,15 +125,18 @@ func (a *Application) start() error {
 			if err := s.Start(a.ctx); err != nil {
 				errCh <- err
 			}
-		})
+		}()
 	}
 
-	go func() {
-		wg.Wait()
-		close(errCh)
-	}()
-
-	return nil
+	// 短暂等待以捕获立即启动失败的服务器
+	timer := time.NewTimer(100 * time.Millisecond)
+	defer timer.Stop()
+	select {
+	case err := <-errCh:
+		return err
+	case <-timer.C:
+		return nil
+	}
 }
 
 func (a *Application) waitForShutdown() error {
@@ -216,6 +219,7 @@ func (a *Application) runCleanups(ctx context.Context) {
 
 	cleanups := make([]Cleanup, len(a.opts.cleanups))
 	copy(cleanups, a.opts.cleanups)
+	// 按 Priority 升序排列：数字越小越先执行，默认值 0 表示最高优先级（最先执行）.
 	slices.SortFunc(cleanups, func(a, b Cleanup) int {
 		return cmp.Compare(a.Priority, b.Priority)
 	})

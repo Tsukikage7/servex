@@ -88,22 +88,34 @@ func HTTPMiddleware(cfg *Config) func(http.Handler) http.Handler {
 			}
 
 			if isSafeMethod(r.Method) {
-				// 安全方法：生成 token，设置 cookie，注入 context
-				token, err := generateToken(cfg.TokenLength)
-				if err != nil {
-					handleError(w, r, cfg, err)
-					return
+				// 安全方法：检查是否已有有效 token，避免每次请求都重新生成（支持多标签页）
+				token := ""
+				if cookie, err := r.Cookie(cfg.CookieName); err == nil && cookie.Value != "" {
+					// cookie 中已有 token，检查长度是否正确（hex 编码后为 TokenLength*2）
+					if len(cookie.Value) == cfg.TokenLength*2 {
+						token = cookie.Value
+					}
 				}
 
-				http.SetCookie(w, &http.Cookie{
-					Name:     cfg.CookieName,
-					Value:    token,
-					Path:     cfg.CookiePath,
-					MaxAge:   int(cfg.CookieMaxAge.Seconds()),
-					Secure:   cfg.Secure,
-					HttpOnly: cfg.HttpOnly,
-					SameSite: cfg.SameSite,
-				})
+				// 无有效 token 时才生成新 token
+				if token == "" {
+					var err error
+					token, err = generateToken(cfg.TokenLength)
+					if err != nil {
+						handleError(w, r, cfg, err)
+						return
+					}
+
+					http.SetCookie(w, &http.Cookie{
+						Name:     cfg.CookieName,
+						Value:    token,
+						Path:     cfg.CookiePath,
+						MaxAge:   int(cfg.CookieMaxAge.Seconds()),
+						Secure:   cfg.Secure,
+						HttpOnly: cfg.HttpOnly,
+						SameSite: cfg.SameSite,
+					})
+				}
 
 				ctx := context.WithValue(r.Context(), ctxKey{}, token)
 				next.ServeHTTP(w, r.WithContext(ctx))

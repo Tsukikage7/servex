@@ -3,7 +3,7 @@ package sms
 import (
 	"context"
 
-	"github.com/google/uuid"
+	"github.com/Tsukikage7/servex/notify"
 )
 
 // AliyunConfig 阿里云短信服务配置.
@@ -25,5 +25,5 @@ func (p *AliyunProvider) Name() string { return "aliyun" }
 
 // Send 桩实现。TODO: 接入阿里云 SMS SDK.
 func (p *AliyunProvider) Send(_ context.Context, _ *SendRequest) (string, error) {
-	return "aliyun-stub-" + uuid.New().String(), nil
+	return "", notify.ErrNotImplemented
 }

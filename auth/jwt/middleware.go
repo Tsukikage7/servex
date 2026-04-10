@@ -37,7 +37,7 @@ func NewSigner(j *JWT) endpoint.Middleware {
 			}
 
 			// 生成令牌
-			token, err := j.Generate(claims)
+			token, err := j.Generate(ctx, claims)
 			if err != nil {
 				return nil, err
 			}
@@ -74,7 +74,7 @@ func NewParser(j *JWT) endpoint.Middleware {
 			}
 
 			// 验证令牌
-			claims, err := j.Validate(token)
+			claims, err := j.Validate(ctx, token)
 			if err != nil {
 				return nil, err
 			}
@@ -113,7 +113,7 @@ func NewParserWithClaims(j *JWT, cf ClaimsFactory) endpoint.Middleware {
 			}
 
 			// 验证令牌（使用自定义 Claims 类型）
-			claims, err := j.ValidateWithClaims(token, cf())
+			claims, err := j.ValidateWithClaims(ctx, token, cf())
 			if err != nil {
 				return nil, err
 			}
@@ -152,7 +152,7 @@ func HTTPMiddleware(j *JWT) func(http.Handler) http.Handler {
 			}
 
 			// 验证令牌
-			claims, err := j.Validate(token)
+			claims, err := j.Validate(r.Context(), token)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusUnauthorized)
 				return
@@ -195,7 +195,7 @@ func HTTPMiddlewareWithClaims(j *JWT, cf ClaimsFactory) func(http.Handler) http.
 			}
 
 			// 验证令牌（使用自定义 Claims 类型）
-			claims, err := j.ValidateWithClaims(token, cf())
+			claims, err := j.ValidateWithClaims(r.Context(), token, cf())
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusUnauthorized)
 				return
@@ -240,7 +240,7 @@ func UnaryServerInterceptor(j *JWT) grpc.UnaryServerInterceptor {
 		}
 
 		// 验证令牌
-		claims, err := j.Validate(token)
+		claims, err := j.Validate(ctx, token)
 		if err != nil {
 			return nil, status.Error(codes.Unauthenticated, err.Error())
 		}
@@ -275,7 +275,7 @@ func UnaryServerInterceptorWithClaims(j *JWT, cf ClaimsFactory) grpc.UnaryServer
 		}
 
 		// 验证令牌（使用自定义 Claims 类型）
-		claims, err := j.ValidateWithClaims(token, cf())
+		claims, err := j.ValidateWithClaims(ctx, token, cf())
 		if err != nil {
 			return nil, status.Error(codes.Unauthenticated, err.Error())
 		}
@@ -319,7 +319,7 @@ func StreamServerInterceptor(j *JWT) grpc.StreamServerInterceptor {
 		}
 
 		// 验证令牌
-		claims, err := j.Validate(token)
+		claims, err := j.Validate(ctx, token)
 		if err != nil {
 			return status.Error(codes.Unauthenticated, err.Error())
 		}
@@ -357,7 +357,7 @@ func StreamServerInterceptorWithClaims(j *JWT, cf ClaimsFactory) grpc.StreamServ
 		}
 
 		// 验证令牌（使用自定义 Claims 类型）
-		claims, err := j.ValidateWithClaims(token, cf())
+		claims, err := j.ValidateWithClaims(ctx, token, cf())
 		if err != nil {
 			return status.Error(codes.Unauthenticated, err.Error())
 		}

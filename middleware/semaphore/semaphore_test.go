@@ -218,12 +218,21 @@ func TestHTTPMiddleware(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(2)
 
+	// 使用 channel 确保第一个请求已开始处理后再发送第二个请求
+	firstStarted := make(chan struct{})
+	origHandler := handler
+	handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		firstStarted <- struct{}{}
+		origHandler.ServeHTTP(w, r)
+	})
+	wrapped = HTTPMiddleware(sem)(handler)
+
 	go func() {
 		defer wg.Done()
 		wrapped.ServeHTTP(rec1, req1)
 	}()
 
-	time.Sleep(10 * time.Millisecond) // 确保第一个请求先开始
+	<-firstStarted // 等待第一个请求确实已开始
 
 	go func() {
 		defer wg.Done()
@@ -252,6 +261,14 @@ func TestUnaryServerInterceptor(t *testing.T) {
 		return "ok", nil
 	}
 
+	// 使用 channel 确保第一个请求已开始处理后再发送第二个请求
+	firstStarted := make(chan struct{})
+	origHandler := handler
+	handler = func(ctx context.Context, req any) (any, error) {
+		firstStarted <- struct{}{}
+		return origHandler(ctx, req)
+	}
+
 	interceptor := UnaryServerInterceptor(sem)
 	info := &grpc.UnaryServerInfo{FullMethod: "/test/Method"}
 
@@ -265,7 +282,7 @@ func TestUnaryServerInterceptor(t *testing.T) {
 		_, results[0] = interceptor(t.Context(), nil, info, handler)
 	}()
 
-	time.Sleep(10 * time.Millisecond)
+	<-firstStarted // 等待第一个请求确实已开始
 
 	go func() {
 		defer wg.Done()

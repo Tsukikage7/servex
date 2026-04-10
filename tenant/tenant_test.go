@@ -53,6 +53,27 @@ func TestMustFromContext_Panic(t *testing.T) {
 	MustFromContext(t.Context())
 }
 
+func TestFromContextErr(t *testing.T) {
+	ctx := WithTenant(t.Context(), &testTenant{id: "t1", enabled: true})
+	tn, err := FromContextErr(ctx)
+	if err != nil {
+		t.Fatalf("FromContextErr 不应返回错误: %v", err)
+	}
+	if tn.TenantID() != "t1" {
+		t.Fatalf("TenantID = %q, want %q", tn.TenantID(), "t1")
+	}
+}
+
+func TestFromContextErr_Missing(t *testing.T) {
+	_, err := FromContextErr(t.Context())
+	if err == nil {
+		t.Fatal("空 context 应返回错误")
+	}
+	if err != ErrMissingTenant {
+		t.Fatalf("错误应为 ErrMissingTenant, got %v", err)
+	}
+}
+
 func TestID(t *testing.T) {
 	ctx := WithTenant(t.Context(), &testTenant{id: "abc", enabled: true})
 	if got := ID(ctx); got != "abc" {

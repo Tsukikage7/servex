@@ -2,6 +2,7 @@ package jwt
 
 import (
 	"context"
+	"crypto/subtle"
 	"net/http"
 	"strings"
 
@@ -21,6 +22,12 @@ type Whitelist struct {
 	//
 	// 默认: "x-internal-service".
 	InternalServiceHeader string
+
+	// InternalServiceSecret 内部服务共享密钥.
+	//
+	// 如果为空，则禁用内部服务 Header 旁路.
+	// 如果设置，则 Header 的值必须与此密钥匹配才能跳过认证.
+	InternalServiceSecret string
 }
 
 // NewWhitelist 创建白名单.
@@ -45,6 +52,14 @@ func (w *Whitelist) AddGRPCMethods(methods ...string) *Whitelist {
 // SetInternalServiceHeader 设置内部服务标识 Header.
 func (w *Whitelist) SetInternalServiceHeader(header string) *Whitelist {
 	w.InternalServiceHeader = header
+	return w
+}
+
+// SetInternalServiceSecret 设置内部服务共享密钥.
+//
+// 如果为空，则禁用内部服务 Header 旁路.
+func (w *Whitelist) SetInternalServiceSecret(secret string) *Whitelist {
+	w.InternalServiceSecret = secret
 	return w
 }
 
@@ -85,13 +100,23 @@ func (w *Whitelist) isInternalService(ctx context.Context) bool {
 		return false
 	}
 
+	// 如果未设置共享密钥，则禁用内部服务旁路
+	if w.InternalServiceSecret == "" {
+		return false
+	}
+
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return false
 	}
 
 	services := md.Get(w.InternalServiceHeader)
-	return len(services) > 0
+	if len(services) == 0 {
+		return false
+	}
+
+	// 使用常量时间比较防止时序攻击
+	return subtle.ConstantTimeCompare([]byte(services[0]), []byte(w.InternalServiceSecret)) == 1
 }
 
 // isHTTPPathWhitelisted 检查 HTTP 路径是否在白名单.

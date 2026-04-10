@@ -44,6 +44,19 @@ type TokenStore interface {
 
 	// Set 存储令牌.
 	Set(ctx context.Context, key string, value string, ttl time.Duration) error
+
+	// Delete 删除令牌.
+	Delete(ctx context.Context, keys ...string) error
+}
+
+// TokenStoreWithKeys 支持按模式查询 key 的令牌存储接口.
+//
+// 如果 TokenStore 实现了此接口，Revoke 会使用 Keys 方法查找并删除匹配的令牌.
+// 否则 Revoke 会设置一个撤销标记来使令牌失效.
+type TokenStoreWithKeys interface {
+	TokenStore
+	// Keys 按模式查找 key（支持 * 通配符）.
+	Keys(ctx context.Context, pattern string) ([]string, error)
 }
 
 // cacheTokenStore 是 cache.Cache 到 TokenStore 的适配器.
@@ -73,6 +86,10 @@ func (c *cacheTokenStore) Set(ctx context.Context, key string, value string, ttl
 	return c.cache.Set(ctx, key, value, ttl)
 }
 
+func (c *cacheTokenStore) Delete(ctx context.Context, keys ...string) error {
+	return c.cache.Del(ctx, keys...)
+}
+
 // JWT JWT 服务.
 type JWT struct {
 	opts *options
@@ -98,7 +115,7 @@ func NewJWT(opts ...Option) *JWT {
 }
 
 // Generate 生成 JWT 令牌.
-func (j *JWT) Generate(claims Claims) (string, error) {
+func (j *JWT) Generate(ctx context.Context, claims Claims) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(j.opts.secretKey))
 	if err != nil {
@@ -120,7 +137,7 @@ func (j *JWT) Generate(claims Claims) (string, error) {
 			iat, _ := claims.GetIssuedAt()
 			key := j.buildCacheKey(subject, iat.Unix(), exp.Unix())
 			ttl := time.Until(exp.Time)
-			if err := j.opts.store.Set(context.Background(), key, tokenString, ttl); err != nil {
+			if err := j.opts.store.Set(ctx, key, tokenString, ttl); err != nil {
 				j.opts.logger.With(
 					logger.String("name", j.opts.name),
 					logger.String("subject", subject),
@@ -155,12 +172,12 @@ func (j *JWT) GenerateWithDuration(claims jwt.Claims, duration time.Duration) (s
 }
 
 // Validate 验证 JWT 令牌.
-func (j *JWT) Validate(tokenString string) (jwt.Claims, error) {
-	return j.ValidateWithClaims(tokenString, &StandardClaims{})
+func (j *JWT) Validate(ctx context.Context, tokenString string) (jwt.Claims, error) {
+	return j.ValidateWithClaims(ctx, tokenString, &StandardClaims{})
 }
 
 // ValidateWithClaims 使用自定义 Claims 类型验证令牌.
-func (j *JWT) ValidateWithClaims(tokenString string, claims jwt.Claims) (jwt.Claims, error) {
+func (j *JWT) ValidateWithClaims(ctx context.Context, tokenString string, claims jwt.Claims) (jwt.Claims, error) {
 	// 移除前缀
 	tokenString = j.stripPrefix(tokenString)
 	if tokenString == "" {
@@ -188,7 +205,7 @@ func (j *JWT) ValidateWithClaims(tokenString string, claims jwt.Claims) (jwt.Cla
 
 	// 验证缓存中的令牌
 	if j.opts.store != nil {
-		if err := j.validateCachedToken(tokenString, token.Claims); err != nil {
+		if err := j.validateCachedToken(ctx, tokenString, token.Claims); err != nil {
 			return nil, err
 		}
 	}
@@ -197,16 +214,16 @@ func (j *JWT) ValidateWithClaims(tokenString string, claims jwt.Claims) (jwt.Cla
 }
 
 // Refresh 刷新令牌.
-func (j *JWT) Refresh(tokenString string, newClaims Claims) (string, error) {
-	return j.RefreshWithClaims(tokenString, &StandardClaims{}, newClaims)
+func (j *JWT) Refresh(ctx context.Context, tokenString string, newClaims Claims) (string, error) {
+	return j.RefreshWithClaims(ctx, tokenString, &StandardClaims{}, newClaims)
 }
 
 // RefreshWithClaims 使用自定义 Claims 类型刷新令牌.
-func (j *JWT) RefreshWithClaims(tokenString string, oldClaimsType jwt.Claims, newClaims Claims) (string, error) {
+func (j *JWT) RefreshWithClaims(ctx context.Context, tokenString string, oldClaimsType jwt.Claims, newClaims Claims) (string, error) {
 	// 先尝试正常验证
-	_, err := j.ValidateWithClaims(tokenString, oldClaimsType)
+	_, err := j.ValidateWithClaims(ctx, tokenString, oldClaimsType)
 	if err == nil {
-		return j.Generate(newClaims)
+		return j.Generate(ctx, newClaims)
 	}
 
 	// 如果验证失败，尝试解析过期令牌
@@ -230,7 +247,7 @@ func (j *JWT) RefreshWithClaims(tokenString string, oldClaimsType jwt.Claims, ne
 	}
 
 	// 生成新令牌
-	newToken, err := j.Generate(newClaims)
+	newToken, err := j.Generate(ctx, newClaims)
 	if err != nil {
 		return "", err
 	}
@@ -254,10 +271,46 @@ func (j *JWT) Revoke(ctx context.Context, subject string) error {
 	}
 
 	pattern := j.opts.cacheKeyPrefix + subject + ":*"
+
+	// 如果存储支持按模式查询 key，则查找并删除匹配的令牌
+	if storeWithKeys, ok := j.opts.store.(TokenStoreWithKeys); ok {
+		keys, err := storeWithKeys.Keys(ctx, pattern)
+		if err != nil {
+			j.opts.logger.With(
+				logger.String("name", j.opts.name),
+				logger.String("pattern", pattern),
+				logger.Err(err),
+			).Error("[JWT] 查询令牌 key 失败")
+			return fmt.Errorf("jwt: 查询令牌 key 失败: %w", err)
+		}
+
+		if len(keys) > 0 {
+			if err := storeWithKeys.Delete(ctx, keys...); err != nil {
+				j.opts.logger.With(
+					logger.String("name", j.opts.name),
+					logger.String("subject", subject),
+					logger.Err(err),
+				).Error("[JWT] 删除令牌失败")
+				return fmt.Errorf("jwt: 删除令牌失败: %w", err)
+			}
+		}
+	} else {
+		// 存储不支持 Keys 查询，设置撤销标记使该用户的令牌在验证时失效
+		revokeKey := j.opts.cacheKeyPrefix + "revoked:" + subject
+		if err := j.opts.store.Set(ctx, revokeKey, "1", j.opts.accessDuration); err != nil {
+			j.opts.logger.With(
+				logger.String("name", j.opts.name),
+				logger.String("subject", subject),
+				logger.Err(err),
+			).Error("[JWT] 设置撤销标记失败")
+			return fmt.Errorf("jwt: 设置撤销标记失败: %w", err)
+		}
+	}
+
 	j.opts.logger.With(
 		logger.String("name", j.opts.name),
-		logger.String("pattern", pattern),
-	).Warn("[JWT] 令牌撤销需要手动删除匹配的 key")
+		logger.String("subject", subject),
+	).Info("[JWT] 令牌已撤销")
 
 	return nil
 }
@@ -307,7 +360,7 @@ func (j *JWT) buildCacheKey(subject string, iat int64, exp int64) string {
 }
 
 // validateCachedToken 验证缓存中的令牌.
-func (j *JWT) validateCachedToken(tokenString string, claims jwt.Claims) error {
+func (j *JWT) validateCachedToken(ctx context.Context, tokenString string, claims jwt.Claims) error {
 	iat, err := claims.GetIssuedAt()
 	if err != nil || iat == nil {
 		return ErrClaimsInvalid
@@ -323,8 +376,14 @@ func (j *JWT) validateCachedToken(tokenString string, claims jwt.Claims) error {
 		return ErrClaimsInvalid
 	}
 
+	// 检查撤销标记（用于不支持 Keys 查询的存储）
+	revokeKey := j.opts.cacheKeyPrefix + "revoked:" + subject
+	if val, err := j.opts.store.Get(ctx, revokeKey); err == nil && val != "" {
+		return ErrTokenRevoked
+	}
+
 	key := j.buildCacheKey(subject, iat.Unix(), exp.Unix())
-	storedToken, err := j.opts.store.Get(context.Background(), key)
+	storedToken, err := j.opts.store.Get(ctx, key)
 	if err != nil {
 		j.opts.logger.With(
 			logger.String("name", j.opts.name),

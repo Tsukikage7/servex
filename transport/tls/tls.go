@@ -9,6 +9,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 )
 
@@ -131,8 +132,10 @@ func NewClientTLSConfig(cfg *Config) (*tls.Config, error) {
 func parseMinVersion(v string) uint16 {
 	switch v {
 	case "1.0", "TLS1.0":
+		log.Println("WARNING: TLS 1.0 is deprecated by RFC 8996 and should not be used. Please upgrade to TLS 1.2 or higher.")
 		return tls.VersionTLS10
 	case "1.1", "TLS1.1":
+		log.Println("WARNING: TLS 1.1 is deprecated by RFC 8996 and should not be used. Please upgrade to TLS 1.2 or higher.")
 		return tls.VersionTLS11
 	case "1.3", "TLS1.3":
 		return tls.VersionTLS13

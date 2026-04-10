@@ -3,7 +3,7 @@ package push
 import (
 	"context"
 
-	"github.com/google/uuid"
+	"github.com/Tsukikage7/servex/notify"
 )
 
 // APNsConfig Apple Push Notification service 连接配置.
@@ -26,5 +26,5 @@ func (p *APNsProvider) Name() string { return "apns" }
 
 // Send 桩实现。TODO: 接入 Apple APNs HTTP/2 API.
 func (p *APNsProvider) Send(_ context.Context, _ string, _ *Payload) (string, error) {
-	return "apns-stub-" + uuid.New().String(), nil
+	return "", notify.ErrNotImplemented
 }

@@ -19,4 +19,5 @@ var (
 	ErrClosed           = errors.New("notification: 已关闭")
 	ErrTemplateNotFound = errors.New("notification: 模板未找到")
 	ErrTemplateRender   = errors.New("notification: 模板渲染失败")
+	ErrNotImplemented   = errors.New("notification: 未实现")
 )

@@ -252,6 +252,29 @@ func (r *redisCache) Unlock(ctx context.Context, key string, value string) error
 	return nil
 }
 
+// ExtendLock 原子地验证锁持有者并延长过期时间.
+func (r *redisCache) ExtendLock(ctx context.Context, key string, value string, ttl time.Duration) (bool, error) {
+	// Lua 脚本：原子地检查持有者并延长过期时间
+	script := redis.NewScript(`
+		if redis.call("get", KEYS[1]) == ARGV[1] then
+			return redis.call("pexpire", KEYS[1], ARGV[2])
+		else
+			return 0
+		end
+	`)
+
+	result, err := script.Run(ctx, r.client, []string{key}, value, ttl.Milliseconds()).Result()
+	if err != nil {
+		r.logger.With(
+			logger.String("key", key),
+			logger.Err(err),
+		).Error("[cache] 延长锁失败")
+		return false, err
+	}
+
+	return result.(int64) == 1, nil
+}
+
 // MGet 批量获取.
 func (r *redisCache) MGet(ctx context.Context, keys ...string) ([]string, error) {
 	if len(keys) == 0 {

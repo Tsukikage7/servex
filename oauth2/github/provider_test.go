@@ -29,6 +29,28 @@ func TestProvider_AuthURL(t *testing.T) {
 	if !strings.Contains(url, "redirect_uri=") {
 		t.Error("missing redirect_uri")
 	}
+	if !strings.Contains(url, "code_challenge=") {
+		t.Error("missing code_challenge (PKCE)")
+	}
+	if !strings.Contains(url, "code_challenge_method=S256") {
+		t.Error("missing code_challenge_method (PKCE)")
+	}
+}
+
+func TestProvider_AuthURL_PKCE_StoresVerifier(t *testing.T) {
+	p := NewProvider(WithClientID("test-id"))
+	p.AuthURL("state-123")
+
+	p.mu.Lock()
+	verifier, ok := p.verifiers["state-123"]
+	p.mu.Unlock()
+
+	if !ok {
+		t.Fatal("verifier should be stored for state")
+	}
+	if len(verifier) < 43 {
+		t.Errorf("verifier length = %d, want >= 43", len(verifier))
+	}
 }
 
 func TestProvider_Exchange(t *testing.T) {
@@ -50,6 +72,47 @@ func TestProvider_Exchange(t *testing.T) {
 	}
 	if token.AccessToken != "gho_test123" {
 		t.Errorf("access_token = %s", token.AccessToken)
+	}
+}
+
+func TestProvider_ExchangeWithState_PKCE(t *testing.T) {
+	var receivedVerifier string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.ParseForm()
+		receivedVerifier = r.FormValue("code_verifier")
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{
+			"access_token": "gho_pkce",
+			"token_type":   "bearer",
+		})
+	}))
+	defer server.Close()
+
+	p := newTestProvider(server.URL)
+	// Generate AuthURL to store verifier
+	p.AuthURL("pkce-state")
+
+	p.mu.Lock()
+	storedVerifier := p.verifiers["pkce-state"]
+	p.mu.Unlock()
+
+	token, err := p.ExchangeWithState(t.Context(), "test-code", "pkce-state")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if token.AccessToken != "gho_pkce" {
+		t.Errorf("access_token = %s", token.AccessToken)
+	}
+	if receivedVerifier != storedVerifier {
+		t.Errorf("code_verifier mismatch: sent=%q, stored=%q", receivedVerifier, storedVerifier)
+	}
+
+	// Verifier should be consumed
+	p.mu.Lock()
+	_, exists := p.verifiers["pkce-state"]
+	p.mu.Unlock()
+	if exists {
+		t.Error("verifier should be consumed after exchange")
 	}
 }
 
