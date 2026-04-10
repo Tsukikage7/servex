@@ -235,3 +235,9 @@ func splitAndTrim(s, sep string) []string {
 	}
 	return result
 }
+
+func init() {
+	devCmd.Flags().StringVar(&devEntry, "entry", "", "入口路径 (默认: 自动检测)")
+	devCmd.Flags().StringVar(&devWatch, "watch", ".", "监听路径，逗号分隔 (默认: .)")
+	devCmd.Flags().StringVar(&devExclude, "exclude", "vendor,node_modules,.git", "排除模式，逗号分隔")
+}
