@@ -108,8 +108,33 @@ func copyField(src, dst reflect.Value, opts *copyOptions) error {
 	dstType := dst.Type()
 
 	if srcType == dstType {
-		dst.Set(src)
-		return nil
+		// 切片和 map 需要深拷贝，避免源和目标共享底层数据
+		switch srcType.Kind() {
+		case reflect.Slice:
+			if src.IsNil() {
+				dst.Set(src)
+			} else {
+				cp := reflect.MakeSlice(srcType, src.Len(), src.Len())
+				reflect.Copy(cp, src)
+				dst.Set(cp)
+			}
+			return nil
+		case reflect.Map:
+			if src.IsNil() {
+				dst.Set(src)
+			} else {
+				cp := reflect.MakeMapWithSize(srcType, src.Len())
+				iter := src.MapRange()
+				for iter.Next() {
+					cp.SetMapIndex(iter.Key(), iter.Value())
+				}
+				dst.Set(cp)
+			}
+			return nil
+		default:
+			dst.Set(src)
+			return nil
+		}
 	}
 
 	if srcType.AssignableTo(dstType) {

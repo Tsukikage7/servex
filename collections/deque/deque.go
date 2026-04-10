@@ -193,6 +193,7 @@ func (d *Deque[T]) ForEachReverse(fn func(T)) {
 // Rotate 旋转队列.
 // n > 0: 向右旋转（头部元素移到尾部）
 // n < 0: 向左旋转（尾部元素移到头部）
+// 使用三次反转算法实现 O(n) 旋转，避免逐个 Pop/Push 触发多次 resize.
 func (d *Deque[T]) Rotate(n int) {
 	if d.count <= 1 {
 		return
@@ -207,10 +208,22 @@ func (d *Deque[T]) Rotate(n int) {
 		n += d.count
 	}
 
-	// 向右旋转 n 次
-	for range n {
-		item, _ := d.PopFront()
-		d.PushBack(item)
+	// 三次反转算法：将 [0, count) 视为逻辑数组
+	// 旋转 n 位 = reverse [0, n) + reverse [n, count) + reverse [0, count)
+	d.reverseRange(0, n-1)
+	d.reverseRange(n, d.count-1)
+	d.reverseRange(0, d.count-1)
+}
+
+// reverseRange 反转队列中逻辑索引 [i, j] 范围内的元素.
+func (d *Deque[T]) reverseRange(i, j int) {
+	mask := len(d.buf) - 1
+	for i < j {
+		idxI := (d.head + i) & mask
+		idxJ := (d.head + j) & mask
+		d.buf[idxI], d.buf[idxJ] = d.buf[idxJ], d.buf[idxI]
+		i++
+		j--
 	}
 }
 

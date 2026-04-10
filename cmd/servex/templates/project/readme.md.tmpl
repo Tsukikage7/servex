@@ -1,0 +1,22 @@
+# {{.Name}}
+
+基于 [servex](https://github.com/Tsukikage7/servex) 构建的微服务。
+
+## 快速开始
+
+```bash
+go mod tidy
+make run
+```
+
+## 项目结构
+
+```
+├── cmd/server/main.go       # 入口
+├── internal/
+│   ├── server/              # HTTP{{if .WithGRPC}}/gRPC{{end}} 服务器
+│   └── service/             # 业务逻辑
+├── config.yaml              # 配置文件
+├── Makefile
+└── Dockerfile
+```

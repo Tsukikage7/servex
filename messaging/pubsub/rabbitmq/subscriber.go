@@ -135,6 +135,8 @@ func (s *Subscriber) reconnectLoop() {
 			s.ch = newCh
 			s.mu.Unlock()
 
+			// 注意：重连后已有的 Subscribe channel 不会自动恢复消费.
+			// 调用方应监听 channel 关闭并重新调用 Subscribe.
 			s.logf("重连成功")
 			break
 		}

@@ -54,11 +54,8 @@ func newZapLogger(config *Config) (Logger, error) {
 func buildOptions(config *Config) []zap.Option {
 	var options []zap.Option
 
-	// Console 格式默认开启 caller（更易读）
+	// 用户显式配置优先
 	enableCaller := config.EnableCaller
-	if config.Format == FormatConsole && !config.EnableCaller {
-		enableCaller = true
-	}
 
 	if enableCaller {
 		options = append(options, zap.AddCaller())
@@ -315,10 +312,12 @@ func (z *zapLogger) Sync() error {
 
 // Close 关闭 logger 并释放资源.
 func (z *zapLogger) Close() error {
-	// 先同步
+	var syncErr error
 	if err := z.logger.Sync(); err != nil {
-		// 忽略 stdout/stderr 的 sync 错误
+		// stdout/stderr 的 sync 错误可忽略
 		// https://github.com/uber-go/zap/issues/328
+		// 文件写入的 sync 错误需要保留
+		syncErr = err
 	}
 
 	// 关闭所有写入器
@@ -326,6 +325,11 @@ func (z *zapLogger) Close() error {
 		if err := w.Close(); err != nil {
 			return err
 		}
+	}
+
+	// 仅在存在文件写入器时返回 sync 错误（stdout/stderr 的忽略）
+	if syncErr != nil && len(z.writers) > 0 {
+		return syncErr
 	}
 
 	return nil

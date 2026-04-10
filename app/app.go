@@ -54,7 +54,11 @@ func New(opts ...Option) *Application {
 func (a *Application) Use(servers ...transport.Server) *Application {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	a.servers = append(a.servers, servers...)
+	for _, s := range servers {
+		if s != nil {
+			a.servers = append(a.servers, s)
+		}
+	}
 	return a
 }
 

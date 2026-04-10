@@ -56,7 +56,7 @@ func newCHClient(config *Config, log logger.Logger) (*chClient, error) {
 		return nil, err
 	}
 
-	log.Info("clickhouse connected", "addrs", config.Addrs, "database", config.Database)
+	log.Info("clickhouse 连接成功", "addrs", config.Addrs, "database", config.Database)
 
 	return &chClient{
 		conn: conn,

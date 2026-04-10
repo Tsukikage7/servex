@@ -55,6 +55,14 @@ func (c *Cond) Wait(ctx context.Context) error {
 	case <-ctx.Done():
 		err = ctx.Err()
 		c.unsubscribe(ch)
+		// unsubscribe 和 Signal 之间可能存在竞态：Signal 可能在 unsubscribe 之前
+		// 已取出 ch 并准备 close。尝试消费 ch 避免丢失唤醒信号.
+		select {
+		case <-ch:
+			// 信号在 unsubscribe 之前已发出，优先返回成功
+			err = nil
+		default:
+		}
 	}
 
 	// 重新加锁

@@ -116,7 +116,6 @@ type Tracker struct {
 	eventsTotal    *prometheus.CounterVec
 	budgetRemGauge *prometheus.GaugeVec
 	burnRateGauge  *prometheus.GaugeVec
-	registry       *prometheus.Registry
 }
 
 // NewTracker 创建 SLO 追踪器.
@@ -219,6 +218,7 @@ func (t *Tracker) OnBreach(fn func(status *Status)) {
 }
 
 // computeStatus 计算目标的当前状态.
+// 注意：当前使用累计值计算 SLI，尚未实现滑动窗口语义（Window 字段暂未生效）.
 func (t *Tracker) computeStatus(ot *objectiveTracker) *Status {
 	good := ot.good.Load()
 	bad := ot.bad.Load()
@@ -270,7 +270,6 @@ type sloCollector struct {
 // PrometheusCollector 返回实现 prometheus.Collector 接口的采集器.
 func (t *Tracker) PrometheusCollector() prometheus.Collector {
 	t.promOnce.Do(func() {
-		t.registry = prometheus.NewRegistry()
 		t.eventsTotal = prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Namespace: t.namespace,
@@ -313,10 +312,21 @@ func (c *sloCollector) Describe(ch chan<- *prometheus.Desc) {
 func (c *sloCollector) Collect(ch chan<- prometheus.Metric) {
 	t := c.tracker
 
+	// 先在 RLock 下复制 trackers 快照，避免持 RLock 时再获取 ot.mu.Lock 导致死锁
 	t.mu.RLock()
-	defer t.mu.RUnlock()
-
+	type entry struct {
+		name string
+		ot   *objectiveTracker
+	}
+	snapshot := make([]entry, 0, len(t.trackers))
 	for name, ot := range t.trackers {
+		snapshot = append(snapshot, entry{name: name, ot: ot})
+	}
+	t.mu.RUnlock()
+
+	for _, e := range snapshot {
+		name := e.name
+		ot := e.ot
 		good := ot.good.Load()
 		bad := ot.bad.Load()
 

@@ -4,6 +4,7 @@ package gateway
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net"
 	"net/http"
 	"time"
@@ -157,12 +158,12 @@ func (s *Server) Start(ctx context.Context) error {
 
 // Stop 停止服务器.
 func (s *Server) Stop(ctx context.Context) error {
-	var lastErr error
+	var errs []error
 
 	if s.httpServer != nil {
 		s.opts.logger.With(logger.String("name", s.opts.name)).Info("[Gateway] HTTP服务器正在停止")
 		if err := s.httpServer.Shutdown(ctx); err != nil {
-			lastErr = err
+			errs = append(errs, err)
 		}
 	}
 
@@ -182,11 +183,11 @@ func (s *Server) Stop(ctx context.Context) error {
 		case <-done:
 		case <-ctx.Done():
 			s.grpcServer.Stop()
-			lastErr = ctx.Err()
+			errs = append(errs, ctx.Err())
 		}
 	}
 
-	return lastErr
+	return errors.Join(errs...)
 }
 
 // Name 返回服务器名称.
@@ -287,7 +288,14 @@ func (s *Server) startGRPC() error {
 		logger.String("addr", s.opts.grpcAddr),
 	).Info("[Gateway] gRPC 服务启动")
 
-	go s.grpcServer.Serve(lis)
+	go func() {
+		if err := s.grpcServer.Serve(lis); err != nil {
+			s.opts.logger.With(
+				logger.String("name", s.opts.name),
+				logger.Err(err),
+			).Error("[Gateway] gRPC Serve 错误")
+		}
+	}()
 	return nil
 }
 

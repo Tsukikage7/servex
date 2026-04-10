@@ -441,7 +441,12 @@ func NewSimple(opts ...Option) *Client {
 	// Apply TLS configuration
 	rt = applyTLSConfig(rt, o.tlsConfig)
 
-	// Build middleware chain (inner to outer)
+	// 先应用用户自定义中间件（内层），再应用内置中间件（外层），与 New 保持一致
+	for i := len(o.middlewares) - 1; i >= 0; i-- {
+		rt = o.middlewares[i](rt)
+	}
+
+	// Build middleware chain: 内置中间件（最先注册 = 最外层）
 	if o.logger != nil {
 		rt = LoggingMiddleware(o.logger)(rt)
 	}
@@ -456,9 +461,6 @@ func NewSimple(opts ...Option) *Client {
 	}
 	if o.metricsCollector != nil {
 		rt = MetricsMiddleware(o.metricsCollector)(rt)
-	}
-	for i := len(o.middlewares) - 1; i >= 0; i-- {
-		rt = o.middlewares[i](rt)
 	}
 
 	return &Client{

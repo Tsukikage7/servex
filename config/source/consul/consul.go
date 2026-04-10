@@ -96,10 +96,26 @@ type consulWatcher struct {
 // Next 阻塞直到 Consul KV 值变更.
 // 使用 Consul blocking query（长轮询）实现.
 func (w *consulWatcher) Next() ([]*config.KeyValue, error) {
+	// 首次调用时先获取当前 index，避免 WaitIndex=0 导致虚假变更通知
+	if w.lastIndex == 0 {
+		opts := w.source.queryOptions()
+		opts = opts.WithContext(w.ctx)
+		_, meta, err := w.source.client.KV().Get(w.source.key, opts)
+		if err != nil {
+			if w.ctx.Err() != nil {
+				return nil, config.ErrSourceClosed
+			}
+			return nil, err
+		}
+		if meta != nil {
+			w.lastIndex = meta.LastIndex
+		}
+	}
+
 	for {
 		opts := w.source.queryOptions()
 		opts.WaitIndex = w.lastIndex
-		opts.WithContext(w.ctx)
+		opts = opts.WithContext(w.ctx)
 
 		pair, meta, err := w.source.client.KV().Get(w.source.key, opts)
 		if err != nil {

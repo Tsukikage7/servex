@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"sync"
 
 	"gorm.io/gorm"
 
@@ -12,15 +13,25 @@ import (
 
 // runner 迁移执行器实现.
 type runner struct {
-	db       *gorm.DB
-	registry *Registry
-	store    Store
-	log      logger.Logger
+	db          *gorm.DB
+	registry    *Registry
+	store       Store
+	log         logger.Logger
+	migrateOnce sync.Once
+	migrateErr  error
+}
+
+// ensureMigrated 确保迁移记录表已创建（只执行一次）.
+func (r *runner) ensureMigrated(ctx context.Context) error {
+	r.migrateOnce.Do(func() {
+		r.migrateErr = r.store.AutoMigrate(ctx)
+	})
+	return r.migrateErr
 }
 
 // Up 执行所有未应用的迁移.
 func (r *runner) Up(ctx context.Context) error {
-	if err := r.store.AutoMigrate(ctx); err != nil {
+	if err := r.ensureMigrated(ctx); err != nil {
 		return fmt.Errorf("migration: 创建迁移记录表失败: %w", err)
 	}
 
@@ -47,7 +58,7 @@ func (r *runner) Up(ctx context.Context) error {
 
 // UpTo 执行迁移到指定版本（含）.
 func (r *runner) UpTo(ctx context.Context, version int64) error {
-	if err := r.store.AutoMigrate(ctx); err != nil {
+	if err := r.ensureMigrated(ctx); err != nil {
 		return fmt.Errorf("migration: 创建迁移记录表失败: %w", err)
 	}
 
@@ -81,7 +92,7 @@ func (r *runner) UpTo(ctx context.Context, version int64) error {
 
 // Down 回滚最后一次迁移.
 func (r *runner) Down(ctx context.Context) error {
-	if err := r.store.AutoMigrate(ctx); err != nil {
+	if err := r.ensureMigrated(ctx); err != nil {
 		return fmt.Errorf("migration: 创建迁移记录表失败: %w", err)
 	}
 
@@ -103,7 +114,7 @@ func (r *runner) Down(ctx context.Context) error {
 
 // DownTo 回滚到指定版本（不含），即保留 target 版本.
 func (r *runner) DownTo(ctx context.Context, version int64) error {
-	if err := r.store.AutoMigrate(ctx); err != nil {
+	if err := r.ensureMigrated(ctx); err != nil {
 		return fmt.Errorf("migration: 创建迁移记录表失败: %w", err)
 	}
 
@@ -134,7 +145,7 @@ func (r *runner) DownTo(ctx context.Context, version int64) error {
 
 // Status 获取所有迁移状态.
 func (r *runner) Status(ctx context.Context) ([]MigrationStatus, error) {
-	if err := r.store.AutoMigrate(ctx); err != nil {
+	if err := r.ensureMigrated(ctx); err != nil {
 		return nil, fmt.Errorf("migration: 创建迁移记录表失败: %w", err)
 	}
 
@@ -167,7 +178,7 @@ func (r *runner) Status(ctx context.Context) ([]MigrationStatus, error) {
 
 // CurrentVersion 获取当前最大已应用版本号.
 func (r *runner) CurrentVersion(ctx context.Context) (int64, error) {
-	if err := r.store.AutoMigrate(ctx); err != nil {
+	if err := r.ensureMigrated(ctx); err != nil {
 		return 0, fmt.Errorf("migration: 创建迁移记录表失败: %w", err)
 	}
 

@@ -133,7 +133,12 @@ func (m *Manager[T]) Close() error {
 	default:
 		close(m.closed)
 	}
-	for _, w := range m.watchers {
+	m.mu.Lock()
+	watchers := make([]Watcher, len(m.watchers))
+	copy(watchers, m.watchers)
+	m.mu.Unlock()
+
+	for _, w := range watchers {
 		w.Stop()
 	}
 	m.wg.Wait()
@@ -210,15 +215,25 @@ func (m *Manager[T]) watchLoop(w Watcher) {
 		}
 
 		old := m.current.Swap(cfg)
-		// 通知观察者
+		// 通知观察者（panic recovery 保护，避免单个观察者崩溃影响其他观察者）
 		for _, obs := range m.observers {
-			obs(old, cfg)
+			func() {
+				defer func() {
+					if r := recover(); r != nil {
+						fmt.Printf("[config] 观察者回调 panic: %v\n", r)
+					}
+				}()
+				obs(old, cfg)
+			}()
 		}
 	}
 }
 
 // defaultDecoder 默认解码器，根据 Format 选择 json/yaml 解码.
 // 多个 KeyValue 时，后者覆盖前者（先解码到同一结构）.
+//
+// 注意: json.Unmarshal 对 slice 字段采用追加语义而非覆盖，
+// 若需要覆盖行为请使用自定义 decoder（通过 WithDecoder 设置）.
 func defaultDecoder[T any](kvs []*KeyValue) (*T, error) {
 	cfg := new(T)
 	for _, kv := range kvs {

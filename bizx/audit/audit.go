@@ -106,6 +106,7 @@ func NewLogger(store Store, opts ...Option) Logger {
 		if o.bufferSize <= 0 {
 			o.bufferSize = 1024
 		}
+		l.opts = o // 同步修正后的值
 		l.ch = make(chan *Entry, o.bufferSize)
 		ctx, cancel := context.WithCancel(context.Background())
 		l.cancel = cancel

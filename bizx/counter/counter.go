@@ -261,7 +261,13 @@ func (c *redisCounter) MGet(ctx context.Context, keys ...string) (map[string]int
 			result[key] = 0
 			continue
 		}
-		v, _ := strconv.ParseInt(vals[i].(string), 10, 64)
+		s, ok := vals[i].(string)
+		if !ok {
+			// Redis 返回了非 string 类型，跳过
+			result[key] = 0
+			continue
+		}
+		v, _ := strconv.ParseInt(s, 10, 64)
 		result[key] = v
 	}
 	return result, nil

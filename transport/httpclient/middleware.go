@@ -123,6 +123,9 @@ func RetryMiddleware(cfg *retry.Config) Middleware {
 }
 
 // CircuitBreakerMiddleware 熔断器中间件.
+//
+// 5xx 响应视为失败触发熔断计数，但仍返回原始响应给调用方（而非返回错误），
+// 以便调用方可以根据响应体做进一步处理.
 func CircuitBreakerMiddleware(cb circuitbreaker.CircuitBreaker) Middleware {
 	return func(next http.RoundTripper) http.RoundTripper {
 		return roundTripperFunc(func(req *http.Request) (*http.Response, error) {
@@ -134,14 +137,16 @@ func CircuitBreakerMiddleware(cb circuitbreaker.CircuitBreaker) Middleware {
 					return e
 				}
 				if resp.StatusCode >= 500 {
+					// 5xx 作为熔断计数的失败信号，但不丢弃响应
 					return fmt.Errorf("server error: %d", resp.StatusCode)
 				}
 				return nil
 			})
-			if err != nil && resp != nil {
+			// 如果有响应（包括 5xx），优先返回响应而非熔断错误
+			if resp != nil {
 				return resp, nil
 			}
-			return resp, err
+			return nil, err
 		})
 	}
 }

@@ -22,7 +22,7 @@ func (s *EncryptColumnTestSuite) TestNewEncryptColumn() {
 	s.NoError(err)
 	s.True(ec.Valid)
 	s.Equal("secret-ssn", ec.Val)
-	s.Equal(testKey, ec.Key)
+	s.Equal(testKey, ec.GetKey())
 }
 
 func (s *EncryptColumnTestSuite) TestNewEncryptColumn_InvalidKeyLength() {
@@ -144,7 +144,7 @@ func (s *EncryptColumnTestSuite) TestDecrypt_AfterScanWithoutKey() {
 	s.NoError(err)
 	s.False(ec.Valid)
 
-	ec.Key = testKey
+	ec.SetKey(testKey)
 	err = ec.Decrypt()
 	s.NoError(err)
 	s.True(ec.Valid)
@@ -166,7 +166,8 @@ func (s *EncryptColumnTestSuite) TestDecrypt_NoKey() {
 }
 
 func (s *EncryptColumnTestSuite) TestDecrypt_NoCiphertext() {
-	ec := &EncryptColumn[string]{Key: testKey}
+	ec := &EncryptColumn[string]{}
+	ec.SetKey(testKey)
 	err := ec.Decrypt()
 	s.Error(err)
 }

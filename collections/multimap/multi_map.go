@@ -28,9 +28,16 @@ func (m *MultiMap[K, V]) PutAll(key K, values ...V) {
 	m.size += len(values)
 }
 
-// Get 返回 key 对应的所有值，不存在时返回 nil.
+// Get 返回 key 对应的所有值的副本，不存在时返回 nil.
+// 返回的切片是内部数据的拷贝，修改不会影响 MultiMap.
 func (m *MultiMap[K, V]) Get(key K) []V {
-	return m.m[key]
+	vals := m.m[key]
+	if vals == nil {
+		return nil
+	}
+	cp := make([]V, len(vals))
+	copy(cp, vals)
+	return cp
 }
 
 // Remove 移除整个 key 及其所有值，返回是否成功.
@@ -53,9 +60,13 @@ func RemoveValue[K comparable, V comparable](m *MultiMap[K, V], key K, value V) 
 	}
 	for i, v := range vals {
 		if v == value {
-			m.m[key] = append(vals[:i], vals[i+1:]...)
+			// 创建新切片，避免修改外部持有者可能保留的旧切片
+			newVals := make([]V, 0, len(vals)-1)
+			newVals = append(newVals, vals[:i]...)
+			newVals = append(newVals, vals[i+1:]...)
+			m.m[key] = newVals
 			m.size--
-			if len(m.m[key]) == 0 {
+			if len(newVals) == 0 {
 				delete(m.m, key)
 			}
 			return true

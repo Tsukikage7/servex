@@ -3,7 +3,9 @@ package grpcserver
 
 import (
 	"context"
+	"errors"
 	"net"
+	"sync"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -21,6 +23,9 @@ type Registrar interface {
 	RegisterGRPC(server *grpc.Server)
 }
 
+// errAlreadyStarted 服务器已启动.
+var errAlreadyStarted = errors.New("grpc server: 服务器已启动")
+
 // Server gRPC 服务器.
 type Server struct {
 	opts     *options
@@ -30,6 +35,9 @@ type Server struct {
 	// 内置健康检查
 	health       *health.Health
 	healthServer *health.GRPCServer
+
+	startOnce sync.Once
+	started   bool
 }
 
 // New 创建 gRPC 服务器，如果未设置 logger 会 panic.
@@ -85,6 +93,20 @@ func (s *Server) HealthServer() *health.GRPCServer {
 
 // Start 启动 gRPC 服务器.
 func (s *Server) Start(ctx context.Context) error {
+	var startErr error
+	started := false
+	s.startOnce.Do(func() {
+		started = true
+		startErr = s.doStart(ctx)
+	})
+	if !started {
+		return errAlreadyStarted
+	}
+	return startErr
+}
+
+// doStart 内部启动逻辑.
+func (s *Server) doStart(ctx context.Context) error {
 	// 创建监听器
 	listener, err := net.Listen("tcp", s.opts.addr)
 	if err != nil {

@@ -68,6 +68,8 @@ func (pq *PriorityQueue[T]) Pop() (T, bool) {
 	top := pq.data[0]
 	last := len(pq.data) - 1
 	pq.data[0] = pq.data[last]
+	var zero T
+	pq.data[last] = zero // 清零移除位置，帮助 GC 回收
 	pq.data = pq.data[:last]
 
 	if len(pq.data) > 0 {
@@ -101,15 +103,21 @@ func (pq *PriorityQueue[T]) Clear() {
 	pq.data = pq.data[:0]
 }
 
-// ToSlice 返回所有元素（按优先级顺序弹出）.
-// 注意：会清空队列.
-func (pq *PriorityQueue[T]) ToSlice() []T {
+// DrainToSlice 按优先级顺序弹出所有元素并返回切片.
+// 注意：此操作是破坏性的，会清空队列.
+func (pq *PriorityQueue[T]) DrainToSlice() []T {
 	result := make([]T, 0, len(pq.data))
 	for pq.Len() > 0 {
 		item, _ := pq.Pop()
 		result = append(result, item)
 	}
 	return result
+}
+
+// ToSlice 返回所有元素（按优先级顺序弹出）.
+// Deprecated: 此方法会清空队列，请使用 DrainToSlice 替代.
+func (pq *PriorityQueue[T]) ToSlice() []T {
+	return pq.DrainToSlice()
 }
 
 // Clone 克隆优先队列.

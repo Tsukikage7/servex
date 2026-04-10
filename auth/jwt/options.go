@@ -28,6 +28,7 @@ type options struct {
 	store           TokenStore
 	logger          logger.Logger
 	whitelist       *Whitelist
+	revokeFailClose bool // 撤销检查缓存故障时是否 fail-close（拒绝请求）
 
 	// 非对称签名相关字段
 	signingMethod jwt.SigningMethod // 签名算法（nil 表示使用默认的 HS256）
@@ -135,6 +136,16 @@ func WithLogger(log logger.Logger) Option {
 func WithWhitelist(w *Whitelist) Option {
 	return func(o *options) {
 		o.whitelist = w
+	}
+}
+
+// WithRevokeFailClose 设置撤销检查的 fail-close 策略.
+//
+// 默认情况下，当缓存不可用时（如 Redis 宕机），撤销检查采用 fail-open 策略（跳过检查，允许请求通过）。
+// 启用此选项后，缓存不可用时将拒绝请求（fail-close），适用于对安全性要求更高的场景。
+func WithRevokeFailClose() Option {
+	return func(o *options) {
+		o.revokeFailClose = true
 	}
 }
 

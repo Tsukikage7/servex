@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/Tsukikage7/servex/endpoint"
+	"github.com/Tsukikage7/servex/observability/logger"
 	"github.com/Tsukikage7/servex/transport/grpcx"
 )
 
@@ -240,13 +241,17 @@ func UnaryServerInterceptor(j *JWT) grpc.UnaryServerInterceptor {
 		// 提取令牌
 		token, err := j.ExtractToken(ctx, req)
 		if err != nil {
-			return nil, status.Error(codes.Unauthenticated, err.Error())
+			// 不向客户端暴露内部错误细节，仅记录日志
+			j.opts.logger.With(logger.Err(err)).Warn("[JWT] gRPC 令牌提取失败")
+			return nil, status.Error(codes.Unauthenticated, "认证失败")
 		}
 
 		// 验证令牌
 		claims, err := j.Validate(ctx, token)
 		if err != nil {
-			return nil, status.Error(codes.Unauthenticated, err.Error())
+			// 不向客户端暴露内部错误细节，仅记录日志
+			j.opts.logger.With(logger.Err(err)).Warn("[JWT] gRPC 令牌验证失败")
+			return nil, status.Error(codes.Unauthenticated, "认证失败")
 		}
 
 		// 将 Claims 存入上下文
@@ -275,13 +280,17 @@ func UnaryServerInterceptorWithClaims(j *JWT, cf ClaimsFactory) grpc.UnaryServer
 		// 提取令牌
 		token, err := j.ExtractToken(ctx, req)
 		if err != nil {
-			return nil, status.Error(codes.Unauthenticated, err.Error())
+			// 不向客户端暴露内部错误细节，仅记录日志
+			j.opts.logger.With(logger.Err(err)).Warn("[JWT] gRPC 令牌提取失败")
+			return nil, status.Error(codes.Unauthenticated, "认证失败")
 		}
 
-		// 验证令牌（使用自定义 Claims 类型）
+		// ��证令牌（使用自定义 Claims 类型）
 		claims, err := j.ValidateWithClaims(ctx, token, cf())
 		if err != nil {
-			return nil, status.Error(codes.Unauthenticated, err.Error())
+			// 不向客户端暴露内部错误细节，仅记录日志
+			j.opts.logger.With(logger.Err(err)).Warn("[JWT] gRPC 令牌验证失败")
+			return nil, status.Error(codes.Unauthenticated, "认证失败")
 		}
 
 		// 将 Claims 存入上下文
@@ -319,13 +328,17 @@ func StreamServerInterceptor(j *JWT) grpc.StreamServerInterceptor {
 		// 提取令牌
 		token, err := j.ExtractToken(ctx, nil)
 		if err != nil {
-			return status.Error(codes.Unauthenticated, err.Error())
+			// 不向客户端暴露内部错误细节，仅记录日志
+			j.opts.logger.With(logger.Err(err)).Warn("[JWT] gRPC 流令牌提取失败")
+			return status.Error(codes.Unauthenticated, "认证失败")
 		}
 
 		// 验证令牌
 		claims, err := j.Validate(ctx, token)
 		if err != nil {
-			return status.Error(codes.Unauthenticated, err.Error())
+			// 不向客户端暴露内部错误细节，仅记录日志
+			j.opts.logger.With(logger.Err(err)).Warn("[JWT] gRPC 流令牌验证失败")
+			return status.Error(codes.Unauthenticated, "认证失败")
 		}
 
 		// 创建带有 Claims 的包装流
@@ -357,13 +370,17 @@ func StreamServerInterceptorWithClaims(j *JWT, cf ClaimsFactory) grpc.StreamServ
 		// 提取令牌
 		token, err := j.ExtractToken(ctx, nil)
 		if err != nil {
-			return status.Error(codes.Unauthenticated, err.Error())
+			// 不向客户端暴露内部错误细节，仅记录日志
+			j.opts.logger.With(logger.Err(err)).Warn("[JWT] gRPC 流令牌提取失败")
+			return status.Error(codes.Unauthenticated, "认证失败")
 		}
 
 		// 验证令牌（使用自定义 Claims 类型）
 		claims, err := j.ValidateWithClaims(ctx, token, cf())
 		if err != nil {
-			return status.Error(codes.Unauthenticated, err.Error())
+			// 不向客户端暴露内部错误细节，仅记录日志
+			j.opts.logger.With(logger.Err(err)).Warn("[JWT] gRPC 流令牌验证失败")
+			return status.Error(codes.Unauthenticated, "认证失败")
 		}
 
 		// 创建带有 Claims 的包装流

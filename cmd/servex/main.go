@@ -393,7 +393,7 @@ var protoBreakingCmd = &cobra.Command{
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		a := args
-		if protoBreakingAgainst != ".git#branch=main" {
+		if cmd.Flags().Changed("against") {
 			a = append(a, "--against", protoBreakingAgainst)
 		}
 		return runProtoBreaking(a)

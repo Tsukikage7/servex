@@ -162,8 +162,10 @@ func (b *bus) Publish(ctx context.Context, name string, payload any) error {
 	// 执行处理器
 	for _, sub := range matched {
 		if sub.async {
+			// 异步任务使用不可取消的 ctx，防止调用方 ctx 取消导致异步处理器无法执行
+			asyncCtx := context.WithoutCancel(ctx)
 			select {
-			case b.asyncCh <- asyncTask{ctx: ctx, handler: sub.handler, event: evt}:
+			case b.asyncCh <- asyncTask{ctx: asyncCtx, handler: sub.handler, event: evt}:
 			default:
 				b.errorHandler(fmt.Errorf("event: 异步缓冲区已满，丢弃事件 %q", name))
 			}

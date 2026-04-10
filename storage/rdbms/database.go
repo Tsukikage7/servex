@@ -55,7 +55,8 @@ type Config struct {
 	Driver string `json:"driver" toml:"driver" yaml:"driver" mapstructure:"driver"`
 
 	// DSN 数据库连接字符串
-	DSN string `json:"dsn" toml:"dsn" yaml:"dsn" mapstructure:"dsn"`
+	// json:"-" 防止序列化时泄露连接凭据
+	DSN string `json:"-" toml:"dsn" yaml:"dsn" mapstructure:"dsn"`
 
 	// AutoMigrate 是否自动迁移表结构
 	AutoMigrate bool `json:"auto_migrate" toml:"auto_migrate" yaml:"auto_migrate" mapstructure:"auto_migrate"`

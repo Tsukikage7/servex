@@ -266,9 +266,10 @@ func (c *Client) WriteTransaction(ctx context.Context, fn func(tx neo4j.ManagedT
 }
 
 // Run 执行 Cypher 查询并返回结果.
+// 注意：使用 AccessModeWrite 以支持读写操作.
 func (c *Client) Run(ctx context.Context, cypher string, params map[string]any) ([]*Record, error) {
-	session := c.Session(ctx, neo4j.AccessModeRead)
-	defer session.Close(ctx) //nolint:errcheck
+	session := c.Session(ctx, neo4j.AccessModeWrite)
+	defer session.Close(ctx) //nolint:errcheck // session 关闭错误不影响查询结果
 
 	result, err := session.Run(ctx, cypher, params)
 	if err != nil {

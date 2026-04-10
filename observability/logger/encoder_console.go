@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math"
 	"strconv"
-	"sync"
 	"time"
 
 	"go.uber.org/zap/buffer"
@@ -19,7 +18,6 @@ type consoleEncoder struct {
 	config    zapcore.EncoderConfig
 	fields    *buffer.Buffer // 存储通过 With() 添加的字段
 	fieldsNum int            // 字段数量
-	pool      *sync.Pool
 }
 
 // newConsoleEncoder 创建自定义 console 编码器.
@@ -28,7 +26,6 @@ func newConsoleEncoder(config zapcore.EncoderConfig) zapcore.Encoder {
 		config:    config,
 		fields:    bufferPool.Get(),
 		fieldsNum: 0,
-		pool:      &sync.Pool{New: func() any { return bufferPool.Get() }},
 	}
 }
 
@@ -38,7 +35,6 @@ func (c *consoleEncoder) Clone() zapcore.Encoder {
 		config:    c.config,
 		fields:    bufferPool.Get(),
 		fieldsNum: c.fieldsNum,
-		pool:      c.pool,
 	}
 	// 复制已有字段
 	if c.fields.Len() > 0 {

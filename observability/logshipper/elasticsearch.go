@@ -3,9 +3,8 @@ package logshipper
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
 	"time"
-
-	"github.com/google/uuid"
 
 	"github.com/Tsukikage7/servex/storage/elasticsearch"
 )
@@ -52,9 +51,13 @@ func (s *ElasticsearchSink) indexName(t time.Time) string {
 	return s.indexPrefix + t.UTC().Format(s.dateSuffix)
 }
 
-// entryID 生成文档 ID：时间戳纳秒 + UUID 后缀，确保唯一性.
+// entrySeq 文档 ID 自增序列号，替代 UUID 以降低高吞吐场景的开销.
+var entrySeq atomic.Uint64
+
+// entryID 生成文档 ID：时间戳纳秒 + 自增序列号，确保唯一性.
 func entryID(e Entry) string {
-	return fmt.Sprintf("%d-%s", e.Timestamp.UnixNano(), uuid.New().String())
+	seq := entrySeq.Add(1)
+	return fmt.Sprintf("%d-%d", e.Timestamp.UnixNano(), seq)
 }
 
 // Write 将日志条目批量写入 ES，使用 Bulk 操作提升效率.

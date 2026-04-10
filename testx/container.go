@@ -32,7 +32,8 @@ func (c *Container) Port() string {
 }
 
 // Close 终止并移除容器.
-func (c *Container) Close(ctx context.Context) error {
+// 注意：ctx 参数当前未使用（testcontainers.TerminateContainer 不接受 context），保留签名以备未来兼容.
+func (c *Container) Close(_ context.Context) error {
 	if c.container == nil {
 		return nil
 	}

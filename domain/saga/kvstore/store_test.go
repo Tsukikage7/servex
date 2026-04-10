@@ -56,12 +56,12 @@ func TestStore_List(t *testing.T) {
 	store, memCache := newTestStore()
 	defer memCache.Close()
 
-	// List should return nil for KV store
+	// List should return empty slice for KV store
 	result, err := store.List(t.Context(), saga.SagaStatusCompleted, 10)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	if result != nil {
-		t.Errorf("expected nil, got %v", result)
+	if len(result) != 0 {
+		t.Errorf("expected empty slice, got %v", result)
 	}
 }

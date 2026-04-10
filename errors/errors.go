@@ -41,13 +41,13 @@ func (e *Error) Unwrap() error {
 	return e.cause
 }
 
-// Is 支持 errors.Is 按 Code 比较.
+// Is 支持 errors.Is 按 Code+Key 比较.
 func (e *Error) Is(target error) bool {
 	t, ok := target.(*Error)
 	if !ok {
 		return false
 	}
-	return e.Code == t.Code
+	return e.Code == t.Code && e.Key == t.Key
 }
 
 // WithHTTP 绑定 HTTP 状态码，返回新实例.

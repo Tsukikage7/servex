@@ -219,7 +219,7 @@ func runNewWizard() (ProjectData, error) {
 		AllComponents: infraDefs,
 	}
 
-	// 记录模式供调用方判断
+	// 通过包级变量传递模式给 cobra RunE（cobra 不便直接返回额外结果）
 	if mode == "standalone" {
 		newStandalone = true
 	}

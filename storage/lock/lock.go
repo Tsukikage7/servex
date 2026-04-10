@@ -37,6 +37,7 @@ package lock
 
 import (
 	"context"
+	"errors"
 	"time"
 )
 
@@ -83,9 +84,11 @@ func WithLock(ctx context.Context, locker Locker, key string, ttl time.Duration,
 	if err := locker.Lock(ctx, key, ttl); err != nil {
 		return err
 	}
-	defer locker.Unlock(ctx, key)
 
-	return fn()
+	fnErr := fn()
+	unlockErr := locker.Unlock(ctx, key)
+
+	return errors.Join(fnErr, unlockErr)
 }
 
 // TryWithLock 尝试执行带锁保护的操作.
@@ -108,7 +111,9 @@ func TryWithLock(ctx context.Context, locker Locker, key string, ttl time.Durati
 	if !acquired {
 		return ErrLockNotAcquired
 	}
-	defer locker.Unlock(ctx, key)
 
-	return fn()
+	fnErr := fn()
+	unlockErr := locker.Unlock(ctx, key)
+
+	return errors.Join(fnErr, unlockErr)
 }

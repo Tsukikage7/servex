@@ -60,5 +60,5 @@ func (s *nopStore) Delete(ctx context.Context, id string) error {
 
 // List 列出状态（返回空列表）.
 func (s *nopStore) List(ctx context.Context, status SagaStatus, limit int) ([]*State, error) {
-	return nil, nil
+	return []*State{}, nil
 }

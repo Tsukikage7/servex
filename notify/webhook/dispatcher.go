@@ -31,6 +31,7 @@ func NewDispatcher(opts ...DispatcherOption) *dispatcher {
 }
 
 // Dispatch 向订阅者投递 webhook 事件.
+// 失败时自动重试（最多 3 次，指数退避）.
 func (d *dispatcher) Dispatch(ctx context.Context, sub *Subscription, event *Event) error {
 	if sub == nil {
 		return ErrNilSubscription
@@ -42,6 +43,31 @@ func (d *dispatcher) Dispatch(ctx context.Context, sub *Subscription, event *Eve
 		return ErrEmptyURL
 	}
 
+	const maxAttempts = 3
+	backoff := 500 * time.Millisecond
+
+	var lastErr error
+	for attempt := range maxAttempts {
+		if attempt > 0 {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(backoff):
+				backoff *= 2
+			}
+		}
+
+		err := d.doDispatch(ctx, sub, event)
+		if err == nil {
+			return nil
+		}
+		lastErr = err
+	}
+	return lastErr
+}
+
+// doDispatch 执行单次 webhook 投递.
+func (d *dispatcher) doDispatch(ctx context.Context, sub *Subscription, event *Event) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, sub.URL, bytes.NewReader(event.Payload))
 	if err != nil {
 		return err

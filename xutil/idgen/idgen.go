@@ -321,3 +321,21 @@ func NanoID() string {
 func UUID() string {
 	return uuid.New().String()
 }
+
+// SnowflakeE 使用默认配置生成 Snowflake ID（返回 error 而非 panic）.
+func SnowflakeE() (string, error) {
+	initDefaults()
+	return defaultSnowflake.NextID()
+}
+
+// ULIDE 生成 ULID（返回 error 而非 panic）.
+func ULIDE() (string, error) {
+	initDefaults()
+	return defaultULID.NextID()
+}
+
+// NanoIDE 生成 NanoID（返回 error 而非 panic）.
+func NanoIDE() (string, error) {
+	initDefaults()
+	return defaultNanoID.NextID()
+}

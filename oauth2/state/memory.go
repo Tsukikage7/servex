@@ -19,6 +19,7 @@ type MemoryStore struct {
 	cleanupInterval time.Duration
 	cancel          context.CancelFunc
 	done            chan struct{}
+	closeOnce       sync.Once
 }
 
 type stateEntry struct {
@@ -57,10 +58,12 @@ func NewMemoryStore(opts ...MemoryStoreOption) *MemoryStore {
 	return s
 }
 
-// Close 停止后台清理协程.
+// Close 停止后台清理协程. 幂等安全.
 func (s *MemoryStore) Close() {
-	s.cancel()
-	<-s.done
+	s.closeOnce.Do(func() {
+		s.cancel()
+		<-s.done
+	})
 }
 
 // Generate 生成一个新的 state 参数并存储.

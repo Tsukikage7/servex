@@ -22,14 +22,24 @@ import (
 //	}
 //
 //	func (u *User) AfterFind(tx *gorm.DB) error {
-//	    u.SSN.Key = getEncryptionKey()
+//	    u.SSN.SetKey(getEncryptionKey())
 //	    return nil
 //	}
 type EncryptColumn[T any] struct {
 	Val        T
 	Valid      bool
-	Key        string // AES 密钥（16/24/32 字节）
+	key        string // AES 密钥（16/24/32 字节），不导出以防止意外序列化
 	Ciphertext string
+}
+
+// SetKey 设置 AES 密钥（通常在 GORM AfterFind 钩子中调用）.
+func (ec *EncryptColumn[T]) SetKey(key string) {
+	ec.key = key
+}
+
+// Key 返回当前 AES 密钥.
+func (ec *EncryptColumn[T]) GetKey() string {
+	return ec.key
 }
 
 // NewEncryptColumn 创建有效的加密列值.
@@ -38,7 +48,7 @@ func NewEncryptColumn[T any](val T, key string) (EncryptColumn[T], error) {
 	if err := validateAESKey(key); err != nil {
 		return EncryptColumn[T]{}, err
 	}
-	return EncryptColumn[T]{Val: val, Valid: true, Key: key}, nil
+	return EncryptColumn[T]{Val: val, Valid: true, key: key}, nil
 }
 
 // NullEncryptColumn 创建空值的加密列.
@@ -49,7 +59,7 @@ func NullEncryptColumn[T any](key string) (EncryptColumn[T], error) {
 			return EncryptColumn[T]{}, err
 		}
 	}
-	return EncryptColumn[T]{Key: key}, nil
+	return EncryptColumn[T]{key: key}, nil
 }
 
 func (ec EncryptColumn[T]) Value() (driver.Value, error) {
@@ -62,7 +72,7 @@ func (ec EncryptColumn[T]) Value() (driver.Value, error) {
 		return nil, fmt.Errorf("database: 加密列序列化失败: %w", err)
 	}
 
-	encrypted, err := aesGCMEncrypt(plaintext, []byte(ec.Key))
+	encrypted, err := aesGCMEncrypt(plaintext, []byte(ec.key))
 	if err != nil {
 		return nil, fmt.Errorf("database: 加密失败: %w", err)
 	}
@@ -86,7 +96,7 @@ func (ec *EncryptColumn[T]) Scan(src any) error {
 		return fmt.Errorf("database: 加密列不支持类型 %T", src)
 	}
 
-	if ec.Key == "" {
+	if ec.key == "" {
 		ec.Ciphertext = encoded
 		ec.Valid = false
 		return nil
@@ -97,7 +107,7 @@ func (ec *EncryptColumn[T]) Scan(src any) error {
 		return fmt.Errorf("database: base64 解码失败: %w", err)
 	}
 
-	plaintext, err := aesGCMDecrypt(encrypted, []byte(ec.Key))
+	plaintext, err := aesGCMDecrypt(encrypted, []byte(ec.key))
 	if err != nil {
 		return fmt.Errorf("database: 解密失败: %w", err)
 	}
@@ -115,7 +125,7 @@ func (ec *EncryptColumn[T]) Decrypt() error {
 	if ec.Valid {
 		return nil
 	}
-	if ec.Key == "" {
+	if ec.key == "" {
 		return fmt.Errorf("database: 加密列 Key 为空，无法解密")
 	}
 	if ec.Ciphertext == "" {
@@ -127,7 +137,7 @@ func (ec *EncryptColumn[T]) Decrypt() error {
 		return fmt.Errorf("database: base64 解码失败: %w", err)
 	}
 
-	plaintext, err := aesGCMDecrypt(encrypted, []byte(ec.Key))
+	plaintext, err := aesGCMDecrypt(encrypted, []byte(ec.key))
 	if err != nil {
 		return fmt.Errorf("database: 解密失败: %w", err)
 	}

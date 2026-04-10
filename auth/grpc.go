@@ -213,15 +213,13 @@ func GRPCBearerExtractor(ctx context.Context, _ any) (*Credentials, error) {
 	}
 
 	auth := vals[0]
-	if !strings.HasPrefix(auth, BearerPrefix) && !strings.HasPrefix(strings.ToLower(auth), "bearer ") {
+	// 统一使用不区分大小写的前缀匹配
+	lower := strings.ToLower(auth)
+	if !strings.HasPrefix(lower, "bearer ") {
 		return nil, ErrCredentialsNotFound
 	}
 
-	token := strings.TrimPrefix(auth, BearerPrefix)
-	if strings.HasPrefix(strings.ToLower(auth), "bearer ") {
-		token = auth[7:]
-	}
-
+	token := strings.TrimSpace(auth[7:])
 	return &Credentials{
 		Type:  CredentialTypeBearer,
 		Token: token,

@@ -39,8 +39,10 @@ func Middleware(resolver Resolver, opts ...Option) endpoint.Middleware {
 			t, err := resolver.Resolve(ctx, token)
 			if err != nil {
 				if o.logger != nil {
+					// 日志中脱敏令牌，仅保留前 4 位，防止泄露完整令牌
+					masked := maskToken(token)
 					logger.FromContext(ctx).Warn("[Tenant] 解析失败",
-						logger.String("token", token),
+						logger.String("token", masked),
 						logger.Err(err),
 					)
 				}
@@ -69,4 +71,12 @@ func extractToken(ctx context.Context, request any, o *options) (string, error) 
 		return o.tokenExtractor(ctx, request)
 	}
 	return "", ErrMissingToken
+}
+
+// maskToken 对令牌进行脱敏，仅保留前 4 个字符.
+func maskToken(token string) string {
+	if len(token) <= 4 {
+		return "****"
+	}
+	return token[:4] + "****"
 }

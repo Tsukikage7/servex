@@ -58,7 +58,7 @@ var commonMIME = map[string]string{
 // CodecForRequest 根据 HTTP 请求头选择编解码器.
 // headerName 通常为 "Content-Type"（解码）或 "Accept"（编码）.
 // 解析 MIME 类型的 subtype 部分（如 "application/xml" -> "xml"）.
-// 未匹配时回退到 JSON.
+// 未匹配时回退到 JSON；若 JSON 编解码器也未注册则返回 nil.
 func CodecForRequest(r *http.Request, headerName string) Codec {
 	header := r.Header.Get(headerName)
 	// 快速路径：常见 MIME 类型直接查缓存
@@ -71,7 +71,11 @@ func CodecForRequest(r *http.Request, headerName string) Codec {
 	if c := GetCodec(name); c != nil {
 		return c
 	}
-	return GetCodec("json")
+	// 回退到 JSON；若未注册则遍历已注册编解码器返回第一个，都没有则返回 nil
+	if c := GetCodec("json"); c != nil {
+		return c
+	}
+	return nil
 }
 
 // subtypeFromHeader 从 MIME 类型中提取子类型.

@@ -56,6 +56,9 @@ func HTTPMiddleware(timeout time.Duration, opts ...Option) func(http.Handler) ht
 				tw.mu.Lock()
 				defer tw.mu.Unlock()
 
+				// 标记超时，阻止 handler goroutine 继续写入
+				tw.timedOut = true
+
 				if !tw.written {
 					// 还没写入响应，返回超时错误
 					if o.logger != nil {
@@ -84,16 +87,17 @@ func HTTPMiddleware(timeout time.Duration, opts ...Option) func(http.Handler) ht
 // timeoutWriter 包装 http.ResponseWriter 以跟踪写入状态.
 type timeoutWriter struct {
 	http.ResponseWriter
-	mu      sync.Mutex
-	written bool
-	done    chan struct{}
+	mu       sync.Mutex
+	written  bool
+	timedOut bool // 超时后禁止 handler goroutine 继续写入
+	done     chan struct{}
 }
 
 func (tw *timeoutWriter) WriteHeader(code int) {
 	tw.mu.Lock()
 	defer tw.mu.Unlock()
 
-	if tw.written {
+	if tw.written || tw.timedOut {
 		return
 	}
 	tw.written = true
@@ -104,6 +108,9 @@ func (tw *timeoutWriter) Write(b []byte) (int, error) {
 	tw.mu.Lock()
 	defer tw.mu.Unlock()
 
+	if tw.timedOut {
+		return 0, context.DeadlineExceeded
+	}
 	if !tw.written {
 		tw.written = true
 	}

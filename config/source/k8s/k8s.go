@@ -221,28 +221,35 @@ func (s *Source) getData(ctx context.Context) (map[string]string, error) {
 
 // k8sWatcher Kubernetes 变更监听器.
 type k8sWatcher struct {
-	source *Source
-	ctx    context.Context
-	cancel context.CancelFunc
+	source  *Source
+	ctx     context.Context
+	cancel  context.CancelFunc
+	watcher watch.Interface // 复用 watch 连接，避免频繁重建
 }
 
 // Next 阻塞直到 Kubernetes 资源发生变更.
 func (w *k8sWatcher) Next() ([]*config.KeyValue, error) {
-	watcher, err := w.startWatch()
-	if err != nil {
-		return nil, err
+	// 懒初始化或重建 watch 连接（仅在首次或连接断开时创建）
+	if w.watcher == nil {
+		watcher, err := w.startWatch()
+		if err != nil {
+			return nil, err
+		}
+		w.watcher = watcher
 	}
-	defer watcher.Stop()
 
 	for {
 		select {
 		case <-w.ctx.Done():
 			return nil, config.ErrSourceClosed
-		case event, ok := <-watcher.ResultChan():
+		case event, ok := <-w.watcher.ResultChan():
 			if !ok {
+				// watch 连接断开，下次调用时重建
+				w.watcher = nil
 				return nil, config.ErrSourceClosed
 			}
-			if event.Type == watch.Modified {
+			// 同时处理 Modified 和 Deleted 事件
+			if event.Type == watch.Modified || event.Type == watch.Deleted {
 				return w.extractData(event.Object)
 			}
 		}
@@ -252,6 +259,9 @@ func (w *k8sWatcher) Next() ([]*config.KeyValue, error) {
 // Stop 停止 Kubernetes 监听.
 func (w *k8sWatcher) Stop() error {
 	w.cancel()
+	if w.watcher != nil {
+		w.watcher.Stop()
+	}
 	return nil
 }
 

@@ -93,16 +93,28 @@ func (c *LRUCache[K, V]) Put(key K, value V) {
 }
 
 // GetOrPut 获取缓存值，不存在则调用 loader 加载并缓存.
+// loader 在释放锁后调用，避免长时间阻塞整个缓存.
 func (c *LRUCache[K, V]) GetOrPut(key K, loader func() V) V {
+	c.mu.Lock()
+	if e, ok := c.cache[key]; ok {
+		c.moveToFront(e)
+		v := e.value
+		c.mu.Unlock()
+		return v
+	}
+	c.mu.Unlock()
+
+	// 在锁外调用 loader，避免持锁时长时间阻塞
+	value := loader()
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	// 再次检查，可能其他 goroutine 已插入
 	if e, ok := c.cache[key]; ok {
 		c.moveToFront(e)
 		return e.value
 	}
-
-	value := loader()
 
 	if len(c.cache) >= c.capacity {
 		c.removeLast()

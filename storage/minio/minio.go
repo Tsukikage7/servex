@@ -171,6 +171,7 @@ func (c *Client) PutObject(ctx context.Context, key string, reader io.Reader, si
 }
 
 // GetObject 获取对象.
+// 注意：调用方必须关闭返回的 *minio.Object 以释放连接资源.
 func (c *Client) GetObject(ctx context.Context, key string) (*minio.Object, error) {
 	if key == "" {
 		return nil, ErrEmptyKey

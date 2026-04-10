@@ -9,7 +9,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 )
 
@@ -76,7 +76,7 @@ func NewTLSConfig(cfg *Config) (*tls.Config, error) {
 	tlsCfg.ClientAuth = parseClientAuth(cfg.ClientAuth)
 
 	if cfg.InsecureSkipVerify {
-		log.Println("WARNING: tls: InsecureSkipVerify 已启用，将跳过证书验证，仅应在测试环境中使用")
+		slog.Warn("tls: InsecureSkipVerify 已启用，将跳过证书验证，仅应在测试环境中使用")
 		tlsCfg.InsecureSkipVerify = true
 	}
 
@@ -105,7 +105,7 @@ func NewClientTLSConfig(cfg *Config) (*tls.Config, error) {
 	}
 
 	if cfg.InsecureSkipVerify {
-		log.Println("WARNING: tls: InsecureSkipVerify 已启用（客户端），将跳过服务端证书验证，仅应在测试环境中使用")
+		slog.Warn("tls: InsecureSkipVerify 已启用（客户端），将跳过服务端证书验证，仅应在测试环境中使用")
 	}
 
 	// 加载客户端证书（mTLS）
@@ -137,10 +137,10 @@ func NewClientTLSConfig(cfg *Config) (*tls.Config, error) {
 func parseMinVersion(v string) uint16 {
 	switch v {
 	case "1.0", "TLS1.0":
-		log.Println("WARNING: TLS 1.0 is deprecated by RFC 8996 and should not be used. Please upgrade to TLS 1.2 or higher.")
+		slog.Warn("TLS 1.0 已被 RFC 8996 弃用，请升级到 TLS 1.2 或更高版本")
 		return tls.VersionTLS10
 	case "1.1", "TLS1.1":
-		log.Println("WARNING: TLS 1.1 is deprecated by RFC 8996 and should not be used. Please upgrade to TLS 1.2 or higher.")
+		slog.Warn("TLS 1.1 已被 RFC 8996 弃用，请升级到 TLS 1.2 或更高版本")
 		return tls.VersionTLS11
 	case "1.3", "TLS1.3":
 		return tls.VersionTLS13

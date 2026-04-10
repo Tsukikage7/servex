@@ -74,6 +74,8 @@ func New(initial State, transitions []Transition) *Machine {
 }
 
 // Fire 触发事件.
+// Guard 和 Action 在持有写锁时执行，保证状态检查与转换的原子性.
+// onLeave/onEnter/onTransition 回调在释放锁后执行，避免持锁时回调阻塞或死锁.
 func (m *Machine) Fire(ctx context.Context, event Event, data any) error {
 	m.mu.Lock()
 

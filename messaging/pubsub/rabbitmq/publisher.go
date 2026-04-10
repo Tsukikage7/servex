@@ -60,12 +60,12 @@ func NewPublisher(url string, opts ...PublisherOption) (*Publisher, error) {
 
 // reconnectLoop 监听连接关闭通知，自动重连（指数退避）.
 func (p *Publisher) reconnectLoop() {
-	for {
+	for !p.closed.Load() {
 		p.mu.Lock()
 		conn := p.conn
 		p.mu.Unlock()
 
-		if conn == nil || p.closed.Load() {
+		if conn == nil {
 			return
 		}
 
@@ -91,15 +91,47 @@ func (p *Publisher) reconnectLoop() {
 				continue
 			}
 
+			// 持有锁期间替换连接和 channel，防止 Publish 使用已失效的 channel
 			p.mu.Lock()
 			p.conn = newConn
-			p.mu.Unlock()
-
-			if err := p.setupChannel(); err != nil {
+			ch, err := newConn.Channel()
+			if err != nil {
+				p.mu.Unlock()
 				p.logf("重连后创建 channel 失败: %v", err)
 				newConn.Close()
 				continue
 			}
+
+			if p.opts.exchange != "" {
+				if err := ch.ExchangeDeclare(
+					p.opts.exchange,
+					p.opts.exchangeType,
+					p.opts.durable,
+					false, false, false, nil,
+				); err != nil {
+					p.mu.Unlock()
+					p.logf("重连后声明交换机失败: %v", err)
+					ch.Close()
+					newConn.Close()
+					continue
+				}
+			}
+
+			var confirms chan amqp.Confirmation
+			if p.opts.confirm {
+				if err := ch.Confirm(false); err != nil {
+					p.mu.Unlock()
+					p.logf("重连后开启发布确认失败: %v", err)
+					ch.Close()
+					newConn.Close()
+					continue
+				}
+				confirms = ch.NotifyPublish(make(chan amqp.Confirmation, 100))
+			}
+
+			p.ch = ch
+			p.confirms = confirms
+			p.mu.Unlock()
 
 			p.logf("重连成功")
 			break

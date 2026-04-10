@@ -56,6 +56,11 @@ func (c *Config) Validate() error {
 		return &ConfigError{Field: "config", Message: "config cannot be nil"}
 	}
 
+	// 大小写标准化
+	c.Level = strings.ToLower(c.Level)
+	c.Format = strings.ToLower(c.Format)
+	c.Output = strings.ToLower(c.Output)
+
 	if c.Level != "" && !isValidLevel(c.Level) {
 		return &ConfigError{Field: "level", Message: "invalid log level: " + c.Level}
 	}

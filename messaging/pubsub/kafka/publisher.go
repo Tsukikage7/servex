@@ -21,6 +21,7 @@ type Publisher struct {
 }
 
 // NewPublisher 基于已有的 sarama.Client 创建 Publisher.
+// 注意：调用方负责关闭传入的 sarama.Client，Publisher 仅关闭其创建的 producer.
 func NewPublisher(client sarama.Client, opts ...PublisherOption) (*Publisher, error) {
 	if client == nil {
 		return nil, errors.New("pubsub/kafka: client 不能为空")

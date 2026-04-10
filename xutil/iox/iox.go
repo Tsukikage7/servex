@@ -81,7 +81,9 @@ func LimitReadCloser(r io.ReadCloser, n int64) io.ReadCloser {
 
 func (l *limitReadCloser) Read(p []byte) (int, error) {
 	if l.read >= l.limit {
-		return 0, errors.New("iox: read limit exceeded")
+		// 返回 io.EOF 而非自定义错误，符合 io.Reader 约定，
+		// 调用方（如 io.ReadAll）能正确识别读取结束
+		return 0, io.EOF
 	}
 	remaining := l.limit - l.read
 	if int64(len(p)) > remaining {
@@ -90,7 +92,8 @@ func (l *limitReadCloser) Read(p []byte) (int, error) {
 	n, err := l.rc.Read(p)
 	l.read += int64(n)
 	if l.read >= l.limit && err == nil {
-		err = errors.New("iox: read limit exceeded")
+		// 已达限制，返回 io.EOF 表示正常结束
+		err = io.EOF
 	}
 	return n, err
 }

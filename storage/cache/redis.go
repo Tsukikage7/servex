@@ -241,7 +241,8 @@ func (r *redisCache) Unlock(ctx context.Context, key string, value string) error
 		return err
 	}
 
-	if result.(int64) == 0 {
+	val, ok := result.(int64)
+	if !ok || val == 0 {
 		r.logger.With(
 			logger.String("key", key),
 			logger.String("reason", "值不匹配或已过期"),
@@ -272,7 +273,11 @@ func (r *redisCache) ExtendLock(ctx context.Context, key string, value string, t
 		return false, err
 	}
 
-	return result.(int64) == 1, nil
+	val, ok := result.(int64)
+	if !ok {
+		return false, nil
+	}
+	return val == 1, nil
 }
 
 // MGet 批量获取.

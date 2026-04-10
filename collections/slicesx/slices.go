@@ -345,7 +345,7 @@ func Last[T any](slice []T) (T, bool) {
 	return slice[len(slice)-1], true
 }
 
-// Take 返回前 n 个元素.
+// Take 返回前 n 个元素的副本.
 func Take[T any](slice []T, n int) []T {
 	if n <= 0 {
 		return nil
@@ -353,18 +353,24 @@ func Take[T any](slice []T, n int) []T {
 	if n > len(slice) {
 		n = len(slice)
 	}
-	return slice[:n]
+	result := make([]T, n)
+	copy(result, slice[:n])
+	return result
 }
 
-// Skip 跳过前 n 个元素.
+// Skip 跳过前 n 个元素，返回剩余元素的副本.
 func Skip[T any](slice []T, n int) []T {
 	if n <= 0 {
-		return slice
+		result := make([]T, len(slice))
+		copy(result, slice)
+		return result
 	}
 	if n >= len(slice) {
 		return nil
 	}
-	return slice[n:]
+	result := make([]T, len(slice)-n)
+	copy(result, slice[n:])
+	return result
 }
 
 // TakeWhile 返回满足条件的前缀元素.

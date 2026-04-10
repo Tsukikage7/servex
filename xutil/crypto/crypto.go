@@ -47,7 +47,10 @@ func GenerateRandomInt64(min, max int64) (int64, error) {
 	if min >= max {
 		return 0, errors.New("crypto: min must be less than max")
 	}
-	n, err := rand.Int(rand.Reader, big.NewInt(max-min+1))
+	// 使用 big.Int 运算避免 max-min+1 在 max 接近 MaxInt64 时溢出
+	rangeSize := new(big.Int).Sub(big.NewInt(max), big.NewInt(min))
+	rangeSize.Add(rangeSize, big.NewInt(1))
+	n, err := rand.Int(rand.Reader, rangeSize)
 	if err != nil {
 		return 0, err
 	}
@@ -55,21 +58,21 @@ func GenerateRandomInt64(min, max int64) (int64, error) {
 }
 
 // GenerateBusinessID 生成 9 位随机数字 ID [100000000, 999999999].
-func GenerateBusinessID() int32 {
+func GenerateBusinessID() (int32, error) {
 	n, err := rand.Int(rand.Reader, big.NewInt(900000000))
 	if err != nil {
-		return 100000000
+		return 0, fmt.Errorf("crypto: 生成随机业务ID失败: %w", err)
 	}
-	return 100000000 + int32(n.Int64())
+	return 100000000 + int32(n.Int64()), nil
 }
 
 // GenerateBusinessID64 生成 18 位随机数字 ID [100000000000000000, 999999999999999999].
-func GenerateBusinessID64() int64 {
+func GenerateBusinessID64() (int64, error) {
 	n, err := rand.Int(rand.Reader, big.NewInt(900000000000000000))
 	if err != nil {
-		return 100000000000000000
+		return 0, fmt.Errorf("crypto: 生成随机业务ID失败: %w", err)
 	}
-	return 100000000000000000 + n.Int64()
+	return 100000000000000000 + n.Int64(), nil
 }
 
 // HashPassword 使用 bcrypt 对密码进行哈希.

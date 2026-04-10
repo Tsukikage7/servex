@@ -81,9 +81,9 @@ func (b *Builder) Options(opts ...Option) *Builder {
 }
 
 // Build 构建 Saga.
-func (b *Builder) Build() *Saga {
+func (b *Builder) Build() (*Saga, error) {
 	if len(b.steps) == 0 {
-		panic("saga: 没有定义步骤")
+		return nil, fmt.Errorf("saga: 没有定义步骤")
 	}
 
 	return &Saga{
@@ -91,7 +91,7 @@ func (b *Builder) Build() *Saga {
 		steps: b.steps,
 		opts:  applyOptions(b.opts),
 		idGen: defaultIDGenerator,
-	}
+	}, nil
 }
 
 // defaultIDGenerator 默认 ID 生成器（UUID 避免碰撞）.

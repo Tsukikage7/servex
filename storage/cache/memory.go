@@ -171,19 +171,18 @@ func (m *memoryCache) Del(ctx context.Context, keys ...string) error {
 }
 
 // Exists 检查键是否存在.
+// 注意：在单次加锁内完成查找和过期清理，避免 TOCTOU 竞态.
 func (m *memoryCache) Exists(ctx context.Context, key string) (bool, error) {
-	m.mu.RLock()
-	item, ok := m.data[key]
-	m.mu.RUnlock()
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
+	item, ok := m.data[key]
 	if !ok {
 		return false, nil
 	}
 
 	if item.isExpired() {
-		m.mu.Lock()
 		delete(m.data, key)
-		m.mu.Unlock()
 		return false, nil
 	}
 

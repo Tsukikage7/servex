@@ -32,6 +32,7 @@ func (b *EventBus) SubscribeAll(handler EventHandler) {
 }
 
 // Publish 发布事件.
+// 注意：采用 fail-fast 策略，第一个处理器返回错误后即停止后续处理器调用.
 func (b *EventBus) Publish(ctx context.Context, event DomainEvent) error {
 	b.mu.RLock()
 	// 复制 handlers 到新切片，避免 append 在 RLock 下复用底层数组导致竞态

@@ -117,15 +117,22 @@ func New(sink Sink, opts ...Option) *Shipper {
 
 // Ship 投递单条日志，写入缓冲 channel.
 // 若 dropOnFull=true 且 channel 满，则丢弃该条目；否则阻塞等待.
+// 若投递器已关闭，直接丢弃.
 func (s *Shipper) Ship(entry Entry) {
 	if s.cfg.dropOnFull {
 		select {
 		case s.ch <- entry:
+		case <-s.stopCh:
+			// 投递器已关闭，丢弃
 		default:
 			// 缓冲区满，丢弃
 		}
 	} else {
-		s.ch <- entry
+		select {
+		case s.ch <- entry:
+		case <-s.stopCh:
+			// 投递器已关闭，丢弃
+		}
 	}
 }
 

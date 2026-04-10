@@ -100,6 +100,12 @@ func HTTPMiddleware(opts ...Option) func(http.Handler) http.Handler {
 		log.Println("cors: WARNING AllowOrigins is set to wildcard \"*\", all origins are allowed. Consider setting explicit origins for production use.")
 	}
 
+	// 安全警告：AllowCredentials 与 AllowOrigins "*" 冲突
+	// 浏览器不允许 Access-Control-Allow-Origin: * 与 Access-Control-Allow-Credentials: true 同时使用.
+	if o.AllowCredentials && isAllOrigins(o.AllowOrigins) {
+		log.Println("cors: WARNING AllowCredentials=true 与 AllowOrigins=[\"*\"] 冲突，浏览器将拒绝携带凭据的跨域请求。请设置明确的 AllowOrigins 列表。")
+	}
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			origin := r.Header.Get("Origin")

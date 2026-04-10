@@ -25,6 +25,10 @@ func newMongoClient(config *Config, log logger.Logger) (*mongoClient, error) {
 	// 连接超时
 	opts.SetConnectTimeout(config.ConnectTimeout)
 	opts.SetServerSelectionTimeout(config.ServerSelectionTimeout)
+	// SocketTimeout 通过 Timeout 选项应用于操作级别超时
+	if config.SocketTimeout > 0 {
+		opts.SetTimeout(config.SocketTimeout)
+	}
 
 	// 连接池配置
 	opts.SetMaxPoolSize(config.MaxPoolSize)

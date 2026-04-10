@@ -92,7 +92,7 @@ func (m *OutboxMessage) ToMessage() *pubsub.Message {
 		Body:  m.Value,
 	}
 	if m.Headers != "" {
-		_ = json.Unmarshal([]byte(m.Headers), &msg.Headers)
+		_ = json.Unmarshal([]byte(m.Headers), &msg.Headers) // Headers 反序列化失败时发送无 header 的消息
 	}
 	return msg
 }

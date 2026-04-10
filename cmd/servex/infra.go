@@ -707,7 +707,9 @@ var discoveryComponents = map[string]ComponentDef{}
 var otherComponents = map[string]ComponentDef{}
 
 func init() {
-	// 从 componentRegistry 中分离各类组件到独立 registry
+	// 从 componentRegistry 中分离各类组件到独立 registry.
+	// 注意：此操作会修改 componentRegistry 的内容（删除已分类的条目），
+	// 使得 componentRegistry 仅保留基础设施组件.
 	observeKeys := map[string]bool{"metrics": true, "tracing": true, "profiling": true}
 	authKeys := map[string]bool{"jwt": true, "rbac": true}
 	discoveryKeys := map[string]bool{"consul": true, "etcd": true, "nacos": true}

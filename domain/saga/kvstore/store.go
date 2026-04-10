@@ -167,7 +167,7 @@ func (s *Store) Delete(ctx context.Context, id string) error {
 func (s *Store) List(ctx context.Context, status saga.SagaStatus, limit int) ([]*saga.State, error) {
 	// KV 不支持高效的条件查询，返回空列表
 	// 如果需要此功能，建议使用数据库存储或维护额外的索引
-	return nil, nil
+	return []*saga.State{}, nil
 }
 
 // cacheKV 是 cache.Cache 到 saga.KV 的适配器.

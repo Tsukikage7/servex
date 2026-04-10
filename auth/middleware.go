@@ -61,9 +61,11 @@ func Middleware(authenticator Authenticator, opts ...Option) endpoint.Middleware
 			// 将主体存入 context
 			ctx = WithPrincipal(ctx, principal)
 
-			// 授权
+			// 授权（action/resource 从 options 获取，未配置时传空字符串由 authorizer 自行处理）
 			if o.authorizer != nil {
-				if err := o.authorizer.Authorize(ctx, principal, "", ""); err != nil {
+				action := o.action
+				resource := o.resource
+				if err := o.authorizer.Authorize(ctx, principal, resource, action); err != nil {
 					if o.logger != nil {
 						logger.FromContext(ctx).Warn("[Auth] 授权失败",
 							logger.String("principal_id", principal.ID),

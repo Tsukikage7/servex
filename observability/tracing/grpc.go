@@ -2,6 +2,8 @@ package tracing
 
 import (
 	"context"
+	"errors"
+	"io"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -160,7 +162,10 @@ func StreamServerInterceptor(serviceName string) grpc.StreamServerInterceptor {
 		// 在响应 header 中返回 traceId，便于客户端关联请求
 		if spanCtx.TraceID().IsValid() {
 			header := metadata.Pairs(TraceIDMetadataKey, spanCtx.TraceID().String())
-			_ = ss.SendHeader(header)
+			if err := ss.SendHeader(header); err != nil {
+				// SendHeader 可能因流已关闭等原因失败，仅记录但不中断处理
+				span.RecordError(err)
+			}
 		}
 
 		// 包装 ServerStream 以传递新的 context
@@ -317,7 +322,7 @@ func (w *clientStreamWrapper) RecvMsg(m any) error {
 	err := w.ClientStream.RecvMsg(m)
 	if err != nil {
 		// 流结束或错误时关闭 span
-		if err.Error() == "EOF" {
+		if errors.Is(err, io.EOF) {
 			w.span.SetAttributes(attribute.String("rpc.grpc.status_code", "OK"))
 		} else {
 			s, _ := status.FromError(err)

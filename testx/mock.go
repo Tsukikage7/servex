@@ -8,28 +8,10 @@ import (
 	"github.com/Tsukikage7/servex/observability/logger"
 )
 
-// nopLogger 空操作日志记录器，丢弃所有日志输出.
-type nopLogger struct{}
-
-func (n *nopLogger) Debug(_ ...any)                       {}
-func (n *nopLogger) Debugf(_ string, _ ...any)            {}
-func (n *nopLogger) Info(_ ...any)                        {}
-func (n *nopLogger) Infof(_ string, _ ...any)             {}
-func (n *nopLogger) Warn(_ ...any)                        {}
-func (n *nopLogger) Warnf(_ string, _ ...any)             {}
-func (n *nopLogger) Error(_ ...any)                       {}
-func (n *nopLogger) Errorf(_ string, _ ...any)            {}
-func (n *nopLogger) Fatal(_ ...any)                       {}
-func (n *nopLogger) Fatalf(_ string, _ ...any)            {}
-func (n *nopLogger) Panic(_ ...any)                       {}
-func (n *nopLogger) Panicf(_ string, _ ...any)            {}
-func (n *nopLogger) With(_ ...logger.Field) logger.Logger { return n }
-func (n *nopLogger) Sync() error                          { return nil }
-func (n *nopLogger) Close() error                         { return nil }
-
-// NopLogger 返回一个空操作日志记录器，实现了 logger.Logger 的所有方法但不产生任何输出.
+// NopLogger 返回一个空操作日志记录器.
+// 内部委托给 logger.Nop()，避免重复实现.
 func NopLogger() logger.Logger {
-	return &nopLogger{}
+	return logger.Nop()
 }
 
 // testLogger 将日志输出转发到 testing.T 的日志记录器.
@@ -78,15 +60,17 @@ func (l *testLogger) Errorf(format string, args ...any) {
 	l.t.Helper()
 	l.logf("ERROR", format, args...)
 }
-func (l *testLogger) Fatal(args ...any) { l.t.Helper(); l.log("FATAL", args...) }
+func (l *testLogger) Fatal(args ...any) { l.t.Helper(); l.log("FATAL", args...); l.t.FailNow() }
 func (l *testLogger) Fatalf(format string, args ...any) {
 	l.t.Helper()
 	l.logf("FATAL", format, args...)
+	l.t.FailNow()
 }
-func (l *testLogger) Panic(args ...any) { l.t.Helper(); l.log("PANIC", args...) }
+func (l *testLogger) Panic(args ...any) { l.t.Helper(); l.log("PANIC", args...); l.t.FailNow() }
 func (l *testLogger) Panicf(format string, args ...any) {
 	l.t.Helper()
 	l.logf("PANIC", format, args...)
+	l.t.FailNow()
 }
 
 func (l *testLogger) With(fields ...logger.Field) logger.Logger {
