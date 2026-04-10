@@ -13,6 +13,7 @@ func IDFromContext(ctx context.Context) string {
 // WhereClause 返回 SQL WHERE 子句和参数.
 // 无租户时返回空字符串（不过滤）.
 // 示例:
+//
 //	clause, args := tenant.WhereClause(ctx)
 //	// → ("tenant_id = ?", ["abc123"])
 //	clause, args := tenant.WhereClause(ctx, "t.tenant_id")

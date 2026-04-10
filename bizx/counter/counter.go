@@ -2,6 +2,7 @@
 // 区别于 storage/redis 的原子操作，本包提供滑动窗口统计、批量聚合等
 // 业务级计数能力.
 // 基本用法:
+//
 //	// 内存实现（适合测试或单进程场景）
 //	c := counter.NewMemoryCounter(counter.WithPrefix("app:"))
 //	// Redis 实现（分布式场景）

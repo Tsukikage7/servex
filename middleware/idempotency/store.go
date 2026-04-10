@@ -104,6 +104,7 @@ type cacheKV struct {
 
 // CacheKV 将 cache.Cache 适配为 KV 接口.
 // 示例:
+//
 //	redisCache, _ := cache.New(&cache.Config{Type: "redis", ...})
 //	kv := idempotency.CacheKV(redisCache)
 //	store := idempotency.NewStore(kv)

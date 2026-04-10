@@ -3,9 +3,9 @@ package alerting
 
 import (
 	"context"
-	"math"
 	"errors"
 	"fmt"
+	"math"
 	"sync"
 	"time"
 )

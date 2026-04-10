@@ -40,7 +40,9 @@ type Sorting struct {
 //   - "field" -> field desc (默认降序)
 //   - "field:asc" 或 "field:desc"
 //   - "field1:desc,field2:asc" (多字段)
+//
 // 使用示例:
+//
 //	sorting.New("created_time")                    // created_time desc
 //	sorting.New("name:asc")                        // name asc
 //	sorting.New("created_time:desc,id:asc")        // created_time desc, id asc
@@ -137,6 +139,7 @@ func (s Sorting) String() string {
 
 // Filter 过滤排序字段，只保留允许的字段（白名单）.
 // 使用示例:
+//
 //	sorting.New("name:asc,password:desc").Filter("id", "name", "created_time")
 //	// 结果只保留 name:asc，password 被过滤
 func (s Sorting) Filter(allowedFields ...string) Sorting {
@@ -160,6 +163,7 @@ func (s Sorting) Filter(allowedFields ...string) Sorting {
 
 // WithDefault 如果排序为空，使用默认排序.
 // 使用示例:
+//
 //	sorting.New("").WithDefault("created_time:desc")
 func (s Sorting) WithDefault(defaultSort string) Sorting {
 	if s.IsEmpty() {

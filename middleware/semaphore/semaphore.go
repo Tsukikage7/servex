@@ -2,13 +2,16 @@
 // 信号量用于限制对共享资源的并发访问数量，
 // 适用于分布式部署场景.
 // 基本用法:
+//
 //	counter := semaphore.CacheCounter(cacheClient)
 //	sem := semaphore.New(counter, "api-limit", 100)
 //	if err := sem.Acquire(ctx); err != nil {
 //	    return err
 //	}
 //	defer sem.Release(ctx)
+//
 // 中间件:
+//
 //	endpoint = semaphore.EndpointMiddleware(sem)(endpoint)
 package semaphore
 

@@ -15,7 +15,9 @@ import (
 //   - Add/Remove/Contains 操作时间复杂度 O(log n)
 //   - 支持自定义比较器
 //   - 不允许重复元素
+//
 // 示例:
+//
 //	ts := treeset.NewOrdered[int]()
 //	ts.Add(3, 1, 2)
 //	ts.ToSlice() // [1, 2, 3]

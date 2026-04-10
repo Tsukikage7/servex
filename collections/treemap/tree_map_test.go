@@ -301,7 +301,7 @@ func (s *TreeMapTestSuite) TestAllEarlyBreak() {
 	tm.Put(3, "three")
 
 	var keys []int
-	for k, _ := range tm.All() {
+	for k := range tm.All() {
 		keys = append(keys, k)
 		if k == 2 {
 			break

@@ -4,7 +4,9 @@
 //   - ULID: 26 字符 Crockford Base32，同毫秒内单调递增
 //   - NanoID: 可配置字母表和长度的随机 ID
 //   - UUID: 封装 google/uuid
+//
 // 示例：
+//
 //	// Snowflake
 //	gen, _ := idgen.NewSnowflake(&idgen.SnowflakeConfig{WorkerID: 1})
 //	id, _ := gen.NextID() // "6849812345678901"

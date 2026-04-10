@@ -41,7 +41,7 @@ func typeAssert[T any](av AnyValue, typeName string) (T, error) {
 }
 
 // Int 将值断言为 int 类型.
-func (av AnyValue) Int() (int, error)         { return typeAssert[int](av, "int") }
+func (av AnyValue) Int() (int, error) { return typeAssert[int](av, "int") }
 
 // Int8 将值断言为 int8 类型.
 func (av AnyValue) Int8() (int8, error) { return typeAssert[int8](av, "int8") }

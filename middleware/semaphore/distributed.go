@@ -140,6 +140,7 @@ type cacheCounter struct {
 
 // CacheCounter 将 cache.Cache 适配为 Counter 接口.
 // 示例:
+//
 //	redisCache, _ := cache.New(&cache.Config{Type: "redis", ...})
 //	counter := semaphore.CacheCounter(redisCache)
 //	sem := semaphore.New(counter, "api-limit", 100)

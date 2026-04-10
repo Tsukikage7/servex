@@ -258,7 +258,7 @@ func (s *LRUCacheTestSuite) TestAllAfterAccess() {
 
 	// 最近使用在前：a, c, b
 	var keys []string
-	for k, _ := range cache.All() {
+	for k := range cache.All() {
 		keys = append(keys, k)
 	}
 	s.Equal([]string{"a", "c", "b"}, keys)

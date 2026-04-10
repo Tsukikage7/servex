@@ -44,7 +44,7 @@ func (s OrderStatus) String() string {
 
 // 订单领域错误.
 var (
-	ErrEmptyItems      = errors.New("order: 订单项不能为空")
+	ErrEmptyItems       = errors.New("order: 订单项不能为空")
 	ErrAlreadyCancelled = errors.New("order: 订单已取消")
 	ErrAlreadyCompleted = errors.New("order: 订单已完成")
 	ErrNotShippable     = errors.New("order: 当前状态不可发货")

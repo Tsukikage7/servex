@@ -164,7 +164,7 @@ func (s *LinkedMapTestSuite) TestAllEarlyBreak() {
 	m.Put("c", 3)
 
 	var keys []string
-	for k, _ := range m.All() {
+	for k := range m.All() {
 		keys = append(keys, k)
 		if k == "b" {
 			break

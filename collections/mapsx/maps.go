@@ -6,6 +6,7 @@ import "iter"
 
 // Keys 返回 map 的所有键.
 // 示例:
+//
 //	m := map[string]int{"a": 1, "b": 2}
 //	keys := maps.Keys(m)
 //	// keys: ["a", "b"] (顺序不确定)
@@ -19,6 +20,7 @@ func Keys[K comparable, V any](m map[K]V) []K {
 
 // Values 返回 map 的所有值.
 // 示例:
+//
 //	m := map[string]int{"a": 1, "b": 2}
 //	values := maps.Values(m)
 //	// values: [1, 2] (顺序不确定)
@@ -32,6 +34,7 @@ func Values[K comparable, V any](m map[K]V) []V {
 
 // Entries 返回 map 的所有键值对.
 // 示例:
+//
 //	m := map[string]int{"a": 1, "b": 2}
 //	entries := maps.Entries(m)
 func Entries[K comparable, V any](m map[K]V) []Entry[K, V] {
@@ -50,6 +53,7 @@ type Entry[K comparable, V any] struct {
 
 // FromEntries 从键值对创建 map.
 // 示例:
+//
 //	entries := []maps.Entry[string, int]{{"a", 1}, {"b", 2}}
 //	m := maps.FromEntries(entries)
 //	// m: {"a": 1, "b": 2}
@@ -63,6 +67,7 @@ func FromEntries[K comparable, V any](entries []Entry[K, V]) map[K]V {
 
 // Merge 合并多个 map（后面的覆盖前面的）.
 // 示例:
+//
 //	m1 := map[string]int{"a": 1}
 //	m2 := map[string]int{"b": 2, "a": 10}
 //	merged := maps.Merge(m1, m2)
@@ -84,6 +89,7 @@ func Merge[K comparable, V any](maps ...map[K]V) map[K]V {
 
 // Filter 过滤 map，返回满足条件的键值对.
 // 示例:
+//
 //	m := map[string]int{"a": 1, "b": 2, "c": 3}
 //	filtered := maps.Filter(m, func(k string, v int) bool { return v > 1 })
 //	// filtered: {"b": 2, "c": 3}
@@ -99,6 +105,7 @@ func Filter[K comparable, V any](m map[K]V, fn func(K, V) bool) map[K]V {
 
 // FilterKeys 过滤 map，只保留指定的键.
 // 示例:
+//
 //	m := map[string]int{"a": 1, "b": 2, "c": 3}
 //	filtered := maps.FilterKeys(m, "a", "c")
 //	// filtered: {"a": 1, "c": 3}
@@ -114,6 +121,7 @@ func FilterKeys[K comparable, V any](m map[K]V, keys ...K) map[K]V {
 
 // OmitKeys 过滤 map，排除指定的键.
 // 示例:
+//
 //	m := map[string]int{"a": 1, "b": 2, "c": 3}
 //	filtered := maps.OmitKeys(m, "a")
 //	// filtered: {"b": 2, "c": 3}
@@ -134,6 +142,7 @@ func OmitKeys[K comparable, V any](m map[K]V, keys ...K) map[K]V {
 
 // MapKeys 转换 map 的键.
 // 示例:
+//
 //	m := map[int]string{1: "a", 2: "b"}
 //	mapped := maps.MapKeys(m, strconv.Itoa)
 //	// mapped: {"1": "a", "2": "b"}
@@ -147,6 +156,7 @@ func MapKeys[K comparable, V any, NK comparable](m map[K]V, fn func(K) NK) map[N
 
 // MapValues 转换 map 的值.
 // 示例:
+//
 //	m := map[string]int{"a": 1, "b": 2}
 //	mapped := maps.MapValues(m, func(v int) int { return v * 10 })
 //	// mapped: {"a": 10, "b": 20}
@@ -161,6 +171,7 @@ func MapValues[K comparable, V, NV any](m map[K]V, fn func(V) NV) map[K]NV {
 // Invert 反转 map（键值互换）.
 // 如果有重复值，后面的会覆盖前面的.
 // 示例:
+//
 //	m := map[string]int{"a": 1, "b": 2}
 //	inverted := maps.Invert(m)
 //	// inverted: {1: "a", 2: "b"}
@@ -174,6 +185,7 @@ func Invert[K comparable, V comparable](m map[K]V) map[V]K {
 
 // Clone 复制 map（浅拷贝）.
 // 示例:
+//
 //	m := map[string]int{"a": 1, "b": 2}
 //	cloned := maps.Clone(m)
 func Clone[K comparable, V any](m map[K]V) map[K]V {
@@ -186,6 +198,7 @@ func Clone[K comparable, V any](m map[K]V) map[K]V {
 
 // Equal 比较两个 map 是否相等.
 // 示例:
+//
 //	m1 := map[string]int{"a": 1, "b": 2}
 //	m2 := map[string]int{"a": 1, "b": 2}
 //	equal := maps.Equal(m1, m2) // true
@@ -216,6 +229,7 @@ func EqualBy[K comparable, V any](m1, m2 map[K]V, eq func(V, V) bool) bool {
 
 // GetOrDefault 获取值，不存在则返回默认值.
 // 示例:
+//
 //	m := map[string]int{"a": 1}
 //	val := maps.GetOrDefault(m, "b", 100)
 //	// val: 100
@@ -228,6 +242,7 @@ func GetOrDefault[K comparable, V any](m map[K]V, key K, defaultVal V) V {
 
 // GetOrPut 获取值，不存在则设置并返回默认值.
 // 示例:
+//
 //	m := map[string]int{"a": 1}
 //	val := maps.GetOrPut(m, "b", 100)
 //	// val: 100, m: {"a": 1, "b": 100}
@@ -241,6 +256,7 @@ func GetOrPut[K comparable, V any](m map[K]V, key K, defaultVal V) V {
 
 // GetOrCompute 获取值，不存在则计算并设置.
 // 示例:
+//
 //	m := map[string]int{"a": 1}
 //	val := maps.GetOrCompute(m, "b", func() int { return 100 })
 //	// val: 100, m: {"a": 1, "b": 100}
@@ -255,6 +271,7 @@ func GetOrCompute[K comparable, V any](m map[K]V, key K, compute func() V) V {
 
 // ForEach 遍历 map.
 // 示例:
+//
 //	m := map[string]int{"a": 1, "b": 2}
 //	maps.ForEach(m, func(k string, v int) {
 //	    fmt.Printf("%s: %d\n", k, v)
@@ -358,6 +375,7 @@ func Diff[K, V comparable](m1, m2 map[K]V) (added, removed, changed []K) {
 
 // KeysValues 同时返回 map 的键切片和值切片，顺序保持一致（即 keys[i] 对应 values[i]）.
 // 示例:
+//
 //	m := map[string]int{"a": 1, "b": 2}
 //	keys, values := KeysValues(m)
 //	// keys 与 values 同序对应
@@ -374,6 +392,7 @@ func KeysValues[K comparable, V any](m map[K]V) ([]K, []V) {
 // MergeFunc 合并多个 map，遇到重复键时调用 mergeFunc 解决冲突.
 // mergeFunc(v1, v2) 接收已有值 v1 和新值 v2，返回最终存储的值.
 // 示例:
+//
 //	m1 := map[string]int{"a": 1}
 //	m2 := map[string]int{"a": 2, "b": 3}
 //	merged := MergeFunc(func(v1, v2 int) int { return v1 + v2 }, m1, m2)

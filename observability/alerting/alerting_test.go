@@ -117,8 +117,8 @@ func TestAddRule(t *testing.T) {
 		Name: "High CPU",
 		Type: RuleThreshold,
 		Condition: Condition{
-			Metric:   "cpu_usage",
-			Operator: OpGT,
+			Metric:    "cpu_usage",
+			Operator:  OpGT,
 			Threshold: 80,
 		},
 	}
@@ -166,8 +166,8 @@ func TestRemoveRule(t *testing.T) {
 		Name: "test",
 		Type: RuleThreshold,
 		Condition: Condition{
-			Metric:   "cpu_usage",
-			Operator: OpGT,
+			Metric:    "cpu_usage",
+			Operator:  OpGT,
 			Threshold: 80,
 		},
 	}
@@ -192,8 +192,8 @@ func TestGetRule(t *testing.T) {
 		Name: "test",
 		Type: RuleThreshold,
 		Condition: Condition{
-			Metric:   "cpu_usage",
-			Operator: OpGT,
+			Metric:    "cpu_usage",
+			Operator:  OpGT,
 			Threshold: 80,
 		},
 	}
@@ -223,8 +223,8 @@ func TestListRules(t *testing.T) {
 			Name: fmt.Sprintf("test-%d", i),
 			Type: RuleThreshold,
 			Condition: Condition{
-				Metric:   "cpu_usage",
-				Operator: OpGT,
+				Metric:    "cpu_usage",
+				Operator:  OpGT,
 				Threshold: 80,
 			},
 		})
@@ -400,8 +400,8 @@ func TestAbsenceAlert(t *testing.T) {
 		Name: "Metric Absent",
 		Type: RuleAbsence,
 		Condition: Condition{
-			Metric:   "heartbeat",
-			Operator: OpGT, // 缺失检测中运算符不影响判定
+			Metric:    "heartbeat",
+			Operator:  OpGT, // 缺失检测中运算符不影响判定
 			Threshold: 0,
 		},
 		For: 0,
@@ -465,7 +465,7 @@ func TestAlertResolution(t *testing.T) {
 	ctx := context.Background()
 
 	// 触发告警：第一次 Pending，第二次 Firing (For=0).
-	e.Evaluate(ctx) // → Pending
+	e.Evaluate(ctx)              // → Pending
 	alerts, _ := e.Evaluate(ctx) // → Firing
 	hasFiring := false
 	for _, a := range alerts {
@@ -577,7 +577,7 @@ func TestEvaluateMultipleRules(t *testing.T) {
 	})
 
 	ctx := context.Background()
-	e.Evaluate(ctx) // first eval → Pending for cpu and memory
+	e.Evaluate(ctx)              // first eval → Pending for cpu and memory
 	alerts, _ := e.Evaluate(ctx) // second eval → Firing for cpu and memory
 
 	// cpu 和 memory 应触发，disk 不应触发.
@@ -832,4 +832,3 @@ func TestWithHistorySizeZero(t *testing.T) {
 		t.Error("零值不应改变默认历史大小")
 	}
 }
-

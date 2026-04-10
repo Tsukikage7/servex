@@ -5,9 +5,13 @@
 //   - HTTP 中间件（服务端验签）
 //   - 请求签名辅助函数（客户端签名）
 //   - 常量时间比较防时序攻击
+//
 // 签名算法：
+//
 //	HMAC-SHA256(secret, timestamp + "." + body)
+//
 // 示例：
+//
 //	// 服务端
 //	cfg := signature.DefaultConfig("my-secret")
 //	handler = signature.HTTPMiddleware(cfg)(handler)

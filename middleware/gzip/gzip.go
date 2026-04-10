@@ -117,11 +117,11 @@ type gzipResponseWriter struct {
 	minLength           int
 	excludeContentTypes []string
 
-	buf             []byte // 缓冲区，用于判断是否达到 MinLength
-	headerWritten   bool
-	gzipEnabled     bool
-	statusCode      int
-	sniffDone       bool // Content-Type 嗅探是否完成
+	buf           []byte // 缓冲区，用于判断是否达到 MinLength
+	headerWritten bool
+	gzipEnabled   bool
+	statusCode    int
+	sniffDone     bool // Content-Type 嗅探是否完成
 }
 
 // WriteHeader 写入状态码.

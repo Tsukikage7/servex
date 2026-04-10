@@ -26,16 +26,16 @@ type mediumStruct struct {
 }
 
 type largeStruct struct {
-	ID          int              `json:"id"`
-	Name        string           `json:"name"`
-	Email       string           `json:"email"`
-	Age         int              `json:"age"`
-	Active      bool             `json:"active"`
-	Tags        []string         `json:"tags"`
-	Scores      []float64        `json:"scores"`
-	Metadata    map[string]any   `json:"metadata"`
-	Items       []mediumStruct   `json:"items"`
-	Preferences map[string]bool  `json:"preferences"`
+	ID          int             `json:"id"`
+	Name        string          `json:"name"`
+	Email       string          `json:"email"`
+	Age         int             `json:"age"`
+	Active      bool            `json:"active"`
+	Tags        []string        `json:"tags"`
+	Scores      []float64       `json:"scores"`
+	Metadata    map[string]any  `json:"metadata"`
+	Items       []mediumStruct  `json:"items"`
+	Preferences map[string]bool `json:"preferences"`
 }
 
 var (

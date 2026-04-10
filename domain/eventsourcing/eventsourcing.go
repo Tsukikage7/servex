@@ -2,6 +2,7 @@
 // 事件溯源通过存储聚合根上发生的所有事件来重建聚合状态，
 // 而非直接存储当前状态。支持可选的快照机制加速聚合加载.
 // 使用示例:
+//
 //	// 定义聚合
 //	type Order struct {
 //	    eventsourcing.BaseAggregate

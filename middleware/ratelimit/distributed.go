@@ -250,6 +250,7 @@ type cacheRateCounter struct {
 
 // CacheRateCounter 将 cache.Cache 适配为 RateCounter 接口.
 // 示例:
+//
 //	redisCache, _ := cache.New(&cache.Config{Type: "redis", ...})
 //	counter := ratelimit.CacheRateCounter(redisCache)
 //	limiter, _ := ratelimit.NewDistributedLimiter(&ratelimit.DistributedConfig{

@@ -6,11 +6,15 @@
 //  2. 服务端检查该键是否已存在
 //  3. 如果存在，返回之前的结果
 //  4. 如果不存在，执行请求并保存结果
+//
 // 基本用法:
+//
 //	kv := idempotency.CacheKV(cacheClient)
 //	store := idempotency.NewStore(kv)
 //	handler = idempotency.HTTPMiddleware(store)(handler)
+//
 // 自定义键提取:
+//
 //	handler = idempotency.HTTPMiddleware(store,
 //	    idempotency.WithKeyExtractor(func(r *http.Request) string {
 //	        return r.Header.Get("X-Request-ID")

@@ -209,6 +209,7 @@ func (c *PrometheusCollector) UpdateMemoryUsage(bytes int64) {
 
 // Counter 增加计数器.
 // 使用示例:
+//
 //	collector.Counter("payment_failed_total", map[string]string{"channel": "alipay", "reason": "timeout"})
 func (c *PrometheusCollector) Counter(name string, labels map[string]string) {
 	// 提取 label 名称和值（保持顺序一致）
@@ -245,6 +246,7 @@ func (c *PrometheusCollector) Counter(name string, labels map[string]string) {
 
 // Histogram 观察自定义直方图.
 // 使用示例:
+//
 //	collector.Histogram("payment_duration_seconds", 0.5, map[string]string{"channel": "alipay"})
 func (c *PrometheusCollector) Histogram(name string, value float64, labels map[string]string) {
 	// 提取 label 名称和值（保持顺序一致）
@@ -282,6 +284,7 @@ func (c *PrometheusCollector) Histogram(name string, value float64, labels map[s
 
 // Gauge 设置自定义仪表盘.
 // 使用示例:
+//
 //	collector.Gauge("pending_orders", 42, map[string]string{"status": "unpaid"})
 func (c *PrometheusCollector) Gauge(name string, value float64, labels map[string]string) {
 	// 提取 label 名称和值（保持顺序一致）

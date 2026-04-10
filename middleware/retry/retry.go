@@ -23,6 +23,7 @@ type Retry struct {
 
 // Do 创建重试器.
 // 使用示例:
+//
 //	err := retry.Do(ctx, func() error {
 //	    return someOperation()
 //	}).Run()

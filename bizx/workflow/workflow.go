@@ -318,8 +318,8 @@ func (e *Engine) executeParallel(ctx context.Context, instance *Instance, node *
 	// 使用信号量控制并行度
 	sem := make(chan struct{}, e.maxParallel)
 	var (
-		wg      sync.WaitGroup
-		mu      sync.Mutex
+		wg       sync.WaitGroup
+		mu       sync.Mutex
 		firstErr error
 	)
 
