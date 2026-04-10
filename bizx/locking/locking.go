@@ -184,7 +184,6 @@ func lockTokenFromCtx(ctx context.Context) string {
 	return ""
 }
 
-
 // reentrantLock 可重入锁，同一令牌持有者可多次获取.
 // 通过 WithLockToken(ctx, token) 注入令牌，持有相同令牌的调用可重入.
 type reentrantLock struct {

@@ -130,16 +130,16 @@ func TestErrors(t *testing.T) {
 
 type mockStore struct{}
 
-func (m *mockStore) Save(ctx context.Context, msgs ...*OutboxMessage) error  { return nil }
-func (m *mockStore) WithTx(ctx context.Context, fn TxFunc) error             { return nil }
+func (m *mockStore) Save(ctx context.Context, msgs ...*OutboxMessage) error { return nil }
+func (m *mockStore) WithTx(ctx context.Context, fn TxFunc) error            { return nil }
 func (m *mockStore) FetchPending(ctx context.Context, limit int) ([]*OutboxMessage, error) {
 	return nil, nil
 }
-func (m *mockStore) MarkSent(ctx context.Context, ids []uint64) error                      { return nil }
-func (m *mockStore) MarkFailed(ctx context.Context, id uint64, errMsg string) error        { return nil }
-func (m *mockStore) ResetStale(ctx context.Context, d time.Duration) (int64, error)        { return 0, nil }
-func (m *mockStore) Cleanup(ctx context.Context, before time.Time) (int64, error)          { return 0, nil }
-func (m *mockStore) AutoMigrate() error                                                    { return nil }
+func (m *mockStore) MarkSent(ctx context.Context, ids []uint64) error               { return nil }
+func (m *mockStore) MarkFailed(ctx context.Context, id uint64, errMsg string) error { return nil }
+func (m *mockStore) ResetStale(ctx context.Context, d time.Duration) (int64, error) { return 0, nil }
+func (m *mockStore) Cleanup(ctx context.Context, before time.Time) (int64, error)   { return 0, nil }
+func (m *mockStore) AutoMigrate() error                                             { return nil }
 
 type mockPublisher struct{}
 

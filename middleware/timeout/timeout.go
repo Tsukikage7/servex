@@ -2,6 +2,7 @@
 // 支持 Endpoint、HTTP 和 gRPC 三种级别的超时控制，
 // 并支持级联超时（调用下游时自动减去已用时间）。
 // 基本用法:
+//
 //	// Endpoint 中间件
 //	endpoint = timeout.EndpointMiddleware(5*time.Second)(endpoint)
 //	// HTTP 中间件
@@ -10,7 +11,9 @@
 //	grpc.NewServer(
 //	    grpc.UnaryInterceptor(timeout.UnaryServerInterceptor(5*time.Second)),
 //	)
+//
 // 级联超时:
+//
 //	// 自动计算剩余时间
 //	ctx, cancel := timeout.Cascade(ctx, 2*time.Second)
 //	defer cancel()
@@ -36,6 +39,7 @@ func Remaining(ctx context.Context) (time.Duration, bool) {
 // 如果父 context 有 deadline，则取 min(父剩余时间, timeout) 作为新 deadline.
 // 如果父 context 没有 deadline，则直接使用 timeout.
 // 示例:
+//
 //	// 调用下游服务时，自动减去已用时间
 //	ctx, cancel := timeout.Cascade(ctx, 2*time.Second)
 //	defer cancel()
@@ -57,6 +61,7 @@ func Cascade(ctx context.Context, timeout time.Duration) (context.Context, conte
 // ShrinkBy 创建一个减去指定时间的超时 context.
 // 用于预留处理时间，确保有足够时间处理超时后的清理工作.
 // 示例:
+//
 //	// 预留 500ms 处理超时响应
 //	ctx, cancel := timeout.ShrinkBy(ctx, 500*time.Millisecond)
 //	defer cancel()

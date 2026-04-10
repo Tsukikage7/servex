@@ -47,16 +47,16 @@ type mockClient struct {
 	listeners []storage.ChangeListener
 }
 
-func (m *mockClient) GetConfig(_ string) *storage.Config                     { return nil }
-func (m *mockClient) GetConfigAndInit(_ string) *storage.Config              { return nil }
-func (m *mockClient) GetConfigCache(_ string) agcache.CacheInterface         { return m.cache }
-func (m *mockClient) GetDefaultConfigCache() agcache.CacheInterface          { return m.cache }
-func (m *mockClient) GetApolloConfigCache() agcache.CacheInterface           { return m.cache }
-func (m *mockClient) GetValue(_ string) string                               { return "" }
-func (m *mockClient) GetStringValue(_ string, defaultValue string) string    { return defaultValue }
-func (m *mockClient) GetIntValue(_ string, defaultValue int) int             { return defaultValue }
-func (m *mockClient) GetFloatValue(_ string, defaultValue float64) float64   { return defaultValue }
-func (m *mockClient) GetBoolValue(_ string, defaultValue bool) bool          { return defaultValue }
+func (m *mockClient) GetConfig(_ string) *storage.Config                   { return nil }
+func (m *mockClient) GetConfigAndInit(_ string) *storage.Config            { return nil }
+func (m *mockClient) GetConfigCache(_ string) agcache.CacheInterface       { return m.cache }
+func (m *mockClient) GetDefaultConfigCache() agcache.CacheInterface        { return m.cache }
+func (m *mockClient) GetApolloConfigCache() agcache.CacheInterface         { return m.cache }
+func (m *mockClient) GetValue(_ string) string                             { return "" }
+func (m *mockClient) GetStringValue(_ string, defaultValue string) string  { return defaultValue }
+func (m *mockClient) GetIntValue(_ string, defaultValue int) int           { return defaultValue }
+func (m *mockClient) GetFloatValue(_ string, defaultValue float64) float64 { return defaultValue }
+func (m *mockClient) GetBoolValue(_ string, defaultValue bool) bool        { return defaultValue }
 func (m *mockClient) GetStringSliceValue(_ string, defaultValue []string) []string {
 	return defaultValue
 }

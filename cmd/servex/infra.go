@@ -517,7 +517,7 @@ var componentRegistry = map[string]ComponentDef{
 		DisplayName: "RBAC 权限",
 		Import:      "github.com/Tsukikage7/servex/auth/rbac",
 		ConfigKey:   "rbac",
-		ConfigYAML: `# rbac: 权限规则通常在代码中定义`,
+		ConfigYAML:  `# rbac: 权限规则通常在代码中定义`,
 		InitCode: `// 初始化 RBAC 权限管理
 	rbacStore := rbac.NewMemoryStore()
 	rbacMgr := rbac.NewManager(rbacStore)
@@ -624,7 +624,7 @@ var componentRegistry = map[string]ComponentDef{
 		DisplayName: "定时任务",
 		Import:      "github.com/Tsukikage7/servex/scheduler",
 		ConfigKey:   "scheduler",
-		ConfigYAML: `# scheduler: 任务规则通常在代码中定义`,
+		ConfigYAML:  `# scheduler: 任务规则通常在代码中定义`,
 		InitCode: `// 初始化定时任务调度器
 	sched, err := scheduler.NewScheduler()
 	if err != nil {
@@ -667,7 +667,7 @@ var componentRegistry = map[string]ComponentDef{
 		DisplayName: "多租户",
 		Import:      "github.com/Tsukikage7/servex/tenant",
 		ConfigKey:   "tenant",
-		ConfigYAML: `# tenant: 租户解析通常在代码中配置`,
+		ConfigYAML:  `# tenant: 租户解析通常在代码中配置`,
 		InitCode: `// 多租户中间件[需要自定义 Resolver 实现]
 	// resolver := tenant.NewXxxResolver(...)
 	// tenantMW := tenant.Middleware(resolver)
@@ -680,7 +680,6 @@ var componentRegistry = map[string]ComponentDef{
 		ConfigField: "",
 	},
 }
-
 
 // componentCategory 基础设施分类.
 type componentCategory struct {

@@ -13,6 +13,7 @@ type LessFunc[T any] func(a, b T) bool
 // PriorityQueue 优先队列.
 // 基于二叉堆实现，支持 O(log n) 的插入和弹出操作.
 // 示例:
+//
 //	// 最小堆
 //	pq := priorityqueue.NewMin[int]()
 //	pq.Push(3, 1, 2)

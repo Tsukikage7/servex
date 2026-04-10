@@ -44,15 +44,15 @@ func GetCodec(name string) Codec {
 
 // 常见 MIME 类型到编解码器子类型的缓存，避免每次解析.
 var commonMIME = map[string]string{
-	"application/json":                  "json",
-	"application/json; charset=utf-8":   "json",
-	"application/xml":                   "xml",
-	"application/xml; charset=utf-8":    "xml",
-	"text/xml":                          "xml",
-	"text/xml; charset=utf-8":           "xml",
-	"application/x-protobuf":            "proto",
-	"application/protobuf":              "proto",
-	"application/grpc+proto":            "proto",
+	"application/json":                "json",
+	"application/json; charset=utf-8": "json",
+	"application/xml":                 "xml",
+	"application/xml; charset=utf-8":  "xml",
+	"text/xml":                        "xml",
+	"text/xml; charset=utf-8":         "xml",
+	"application/x-protobuf":          "proto",
+	"application/protobuf":            "proto",
+	"application/grpc+proto":          "proto",
 }
 
 // CodecForRequest 根据 HTTP 请求头选择编解码器.

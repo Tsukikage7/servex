@@ -47,10 +47,10 @@ func WithBaseDir(dir string) Option {
 
 // Engine 增强模板引擎，封装 text/template 和 html/template.
 type Engine struct {
-	opts     *options
-	textTpl  *texttemplate.Template
-	htmlTpl  *htmltemplate.Template
-	funcMap  texttemplate.FuncMap
+	opts    *options
+	textTpl *texttemplate.Template
+	htmlTpl *htmltemplate.Template
+	funcMap texttemplate.FuncMap
 }
 
 // New 创建模板引擎实例.

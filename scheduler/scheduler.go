@@ -7,7 +7,9 @@
 //   - Hook 机制：BeforeJob/AfterJob/OnError/OnSkip
 //   - 失败重试
 //   - 优雅关闭
+//
 // 示例：
+//
 //	// 创建调度器（使用 cache 包实现分布式锁）
 //	s := scheduler.MustNewScheduler(
 //	    scheduler.WithLogger(log),

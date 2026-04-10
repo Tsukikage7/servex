@@ -10,6 +10,7 @@ const minCapacity = 8
 // 基于环形缓冲区实现，PushFront/PushBack/PopFront/PopBack 操作时间复杂度 O(1).
 // 自动扩容和缩容.
 // 示例:
+//
 //	dq := deque.New[int]()
 //	dq.PushBack(1)
 //	dq.PushBack(2)

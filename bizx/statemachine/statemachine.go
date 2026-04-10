@@ -2,6 +2,7 @@
 // 支持状态转换定义、守卫条件、转换动作、状态进入/离开回调等功能，
 // 适用于订单流程、工作流等业务场景.
 // 基本用法:
+//
 //	sm := statemachine.New("pending", []statemachine.Transition{
 //	    {From: "pending", Event: "pay",     To: "paid"},
 //	    {From: "paid",    Event: "ship",    To: "shipped"},

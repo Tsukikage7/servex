@@ -5,7 +5,9 @@
 //   - 支持自定义错误消息模板（{field}/{param} 占位符）
 //   - 结构体校验 & 单字段校验
 //   - 注册自定义校验规则
+//
 // 示例：
+//
 //	v := validation.New()
 //	type User struct {
 //	    Name  string `json:"name" validate:"required"`

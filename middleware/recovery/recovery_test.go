@@ -42,14 +42,14 @@ func (m *mockLogger) Error(args ...any) {
 		}
 	}
 }
-func (m *mockLogger) Errorf(format string, args ...any)             { m.errorCalled = true }
-func (m *mockLogger) Fatal(args ...any)                             {}
-func (m *mockLogger) Fatalf(format string, args ...any)             {}
-func (m *mockLogger) Panic(args ...any)                             {}
-func (m *mockLogger) Panicf(format string, args ...any)             {}
+func (m *mockLogger) Errorf(format string, args ...any)         { m.errorCalled = true }
+func (m *mockLogger) Fatal(args ...any)                         {}
+func (m *mockLogger) Fatalf(format string, args ...any)         {}
+func (m *mockLogger) Panic(args ...any)                         {}
+func (m *mockLogger) Panicf(format string, args ...any)         {}
 func (m *mockLogger) With(fields ...logger.Field) logger.Logger { return m }
 func (m *mockLogger) Sync() error                               { return nil }
-func (m *mockLogger) Close() error                               { return nil }
+func (m *mockLogger) Close() error                              { return nil }
 
 // ctxWithLogger 将 mock logger 注入到 context 中.
 func ctxWithLogger(ctx context.Context, l logger.Logger) context.Context {

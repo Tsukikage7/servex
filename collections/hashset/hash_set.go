@@ -9,7 +9,9 @@ import "iter"
 //   - Add/Remove/Contains 操作时间复杂度 O(1)
 //   - 不保证元素顺序
 //   - 不允许重复元素
+//
 // 示例:
+//
 //	hs := hashset.New(1, 2, 3)
 //	hs.Add(4)
 //	hs.Contains(1) // true

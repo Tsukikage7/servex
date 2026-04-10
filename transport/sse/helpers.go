@@ -121,7 +121,7 @@ func (b *EventBuilder) Build() *Event {
 // Broker 事件代理，支持主题订阅.
 type Broker struct {
 	server Server
-	mu     sync.RWMutex                    // 保护 topics 的并发访问
+	mu     sync.RWMutex                 // 保护 topics 的并发访问
 	topics map[string]map[string]Client // topic -> clientID -> client
 }
 

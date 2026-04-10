@@ -20,6 +20,7 @@ type HTTPRetryableFunc func(resp *http.Response, err error) bool
 
 // NewHTTPClient 创建可重试的 HTTP 客户端.
 // 使用示例:
+//
 //	client := retry.NewHTTPClient(http.DefaultClient, retry.DefaultConfig())
 //	resp, err := client.Do(req)
 func NewHTTPClient(client *http.Client, cfg *Config) *HTTPClient {

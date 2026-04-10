@@ -9,6 +9,7 @@ import (
 
 // OutboxPublisher 通过 Outbox 发布领域事件，保证事务一致性.
 // 典型用法：
+//
 //	publisher := outbox.NewOutboxPublisher(store, domain.NewJSONEventConverter())
 //	store.WithTx(ctx, func(txCtx context.Context) error {
 //	    // 业务操作...

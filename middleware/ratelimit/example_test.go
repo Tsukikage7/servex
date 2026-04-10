@@ -36,7 +36,7 @@ func ExampleNewSlidingWindow() {
 		results[i] = limiter.Allow(ctx)
 	}
 	fmt.Println(results[0], results[1], results[2]) // 前 3 个通过
-	fmt.Println(results[3], results[4])              // 后 2 个被限流
+	fmt.Println(results[3], results[4])             // 后 2 个被限流
 	// Output:
 	// true true true
 	// false false

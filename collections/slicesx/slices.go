@@ -9,6 +9,7 @@ import (
 
 // Filter 过滤切片，返回满足条件的元素.
 // 示例:
+//
 //	nums := []int{1, 2, 3, 4, 5}
 //	evens := slices.Filter(nums, func(n int) bool { return n%2 == 0 })
 //	// evens: [2, 4]
@@ -24,6 +25,7 @@ func Filter[T any](slice []T, fn func(T) bool) []T {
 
 // Map 对切片中的每个元素应用转换函数.
 // 示例:
+//
 //	nums := []int{1, 2, 3}
 //	strs := slices.Map(nums, strconv.Itoa)
 //	// strs: ["1", "2", "3"]
@@ -37,6 +39,7 @@ func Map[T, R any](slice []T, fn func(T) R) []R {
 
 // Reduce 将切片归约为单个值.
 // 示例:
+//
 //	nums := []int{1, 2, 3, 4}
 //	sum := slices.Reduce(nums, 0, func(acc, n int) int { return acc + n })
 //	// sum: 10
@@ -50,6 +53,7 @@ func Reduce[T, R any](slice []T, initial R, fn func(R, T) R) R {
 
 // Unique 返回去重后的切片（保持原顺序）.
 // 示例:
+//
 //	nums := []int{1, 2, 2, 3, 1}
 //	unique := slices.Unique(nums)
 //	// unique: [1, 2, 3]
@@ -67,6 +71,7 @@ func Unique[T comparable](slice []T) []T {
 
 // UniqueBy 根据键函数去重（保持原顺序）.
 // 示例:
+//
 //	users := []User{{ID: 1, Name: "a"}, {ID: 1, Name: "b"}}
 //	unique := slices.UniqueBy(users, func(u User) int { return u.ID })
 //	// unique: [{ID: 1, Name: "a"}]
@@ -85,6 +90,7 @@ func UniqueBy[T any, K comparable](slice []T, keyFn func(T) K) []T {
 
 // GroupBy 根据键函数对切片进行分组.
 // 示例:
+//
 //	nums := []int{1, 2, 3, 4, 5}
 //	groups := slices.GroupBy(nums, func(n int) string {
 //	    if n%2 == 0 { return "even" }
@@ -102,6 +108,7 @@ func GroupBy[T any, K comparable](slice []T, keyFn func(T) K) map[K][]T {
 
 // Chunk 将切片分割为指定大小的块.
 // 示例:
+//
 //	nums := []int{1, 2, 3, 4, 5}
 //	chunks := slices.Chunk(nums, 2)
 //	// chunks: [[1, 2], [3, 4], [5]]
@@ -126,6 +133,7 @@ func Chunk[T any](slice []T, size int) [][]T {
 
 // Partition 将切片分为满足条件和不满足条件的两部分.
 // 示例:
+//
 //	nums := []int{1, 2, 3, 4, 5}
 //	evens, odds := slices.Partition(nums, func(n int) bool { return n%2 == 0 })
 //	// evens: [2, 4], odds: [1, 3, 5]
@@ -144,6 +152,7 @@ func Partition[T any](slice []T, fn func(T) bool) (matched, unmatched []T) {
 
 // Find 查找第一个满足条件的元素.
 // 示例:
+//
 //	nums := []int{1, 2, 3, 4}
 //	val, ok := slices.Find(nums, func(n int) bool { return n > 2 })
 //	// val: 3, ok: true
@@ -159,6 +168,7 @@ func Find[T any](slice []T, fn func(T) bool) (T, bool) {
 
 // FindIndex 查找第一个满足条件的元素索引.
 // 示例:
+//
 //	nums := []int{1, 2, 3, 4}
 //	idx := slices.FindIndex(nums, func(n int) bool { return n > 2 })
 //	// idx: 2
@@ -173,6 +183,7 @@ func FindIndex[T any](slice []T, fn func(T) bool) int {
 
 // Any 判断是否有任意元素满足条件.
 // 示例:
+//
 //	nums := []int{1, 2, 3}
 //	hasEven := slices.Any(nums, func(n int) bool { return n%2 == 0 })
 //	// hasEven: true
@@ -187,6 +198,7 @@ func Any[T any](slice []T, fn func(T) bool) bool {
 
 // All 判断是否所有元素都满足条件.
 // 示例:
+//
 //	nums := []int{2, 4, 6}
 //	allEven := slices.All(nums, func(n int) bool { return n%2 == 0 })
 //	// allEven: true
@@ -201,6 +213,7 @@ func All[T any](slice []T, fn func(T) bool) bool {
 
 // None 判断是否没有元素满足条件.
 // 示例:
+//
 //	nums := []int{1, 3, 5}
 //	noEven := slices.None(nums, func(n int) bool { return n%2 == 0 })
 //	// noEven: true
@@ -210,6 +223,7 @@ func None[T any](slice []T, fn func(T) bool) bool {
 
 // Count 统计满足条件的元素数量.
 // 示例:
+//
 //	nums := []int{1, 2, 3, 4}
 //	count := slices.Count(nums, func(n int) bool { return n%2 == 0 })
 //	// count: 2
@@ -225,6 +239,7 @@ func Count[T any](slice []T, fn func(T) bool) int {
 
 // Flatten 将二维切片扁平化为一维切片.
 // 示例:
+//
 //	nested := [][]int{{1, 2}, {3, 4}, {5}}
 //	flat := slices.Flatten(nested)
 //	// flat: [1, 2, 3, 4, 5]
@@ -243,6 +258,7 @@ func Flatten[T any](slices [][]T) []T {
 
 // Zip 将两个切片合并为键值对切片.
 // 示例:
+//
 //	keys := []string{"a", "b", "c"}
 //	vals := []int{1, 2, 3}
 //	pairs := slices.Zip(keys, vals)
@@ -268,6 +284,7 @@ type Pair[K, V any] struct {
 
 // ToMap 将键值对切片转换为 map.
 // 示例:
+//
 //	pairs := []slices.Pair[string, int]{{"a", 1}, {"b", 2}}
 //	m := slices.ToMap(pairs)
 //	// m: {"a": 1, "b": 2}
@@ -281,6 +298,7 @@ func ToMap[K comparable, V any](pairs []Pair[K, V]) map[K]V {
 
 // KeyBy 将切片转换为 map，使用键函数生成键.
 // 示例:
+//
 //	users := []User{{ID: 1, Name: "a"}, {ID: 2, Name: "b"}}
 //	m := slices.KeyBy(users, func(u User) int { return u.ID })
 //	// m: {1: {ID: 1, Name: "a"}, 2: {ID: 2, Name: "b"}}
@@ -294,6 +312,7 @@ func KeyBy[T any, K comparable](slice []T, keyFn func(T) K) map[K]T {
 
 // Compact 移除切片中的零值元素.
 // 示例:
+//
 //	strs := []string{"a", "", "b", "", "c"}
 //	compact := slices.Compact(strs)
 //	// compact: ["a", "b", "c"]
@@ -370,6 +389,7 @@ func SkipWhile[T any](slice []T, fn func(T) bool) []T {
 
 // Contains 判断切片中是否包含目标元素.
 // 示例:
+//
 //	nums := []int{1, 2, 3}
 //	ok := Contains(nums, 2) // true
 func Contains[T comparable](slice []T, target T) bool {
@@ -383,6 +403,7 @@ func Contains[T comparable](slice []T, target T) bool {
 
 // ContainsAll 判断 src 是否包含 target 中的所有元素.
 // 示例:
+//
 //	ContainsAll([]int{1, 2, 3}, []int{1, 2}) // true
 func ContainsAll[T comparable](src, target []T) bool {
 	set := make(map[T]struct{}, len(src))
@@ -399,6 +420,7 @@ func ContainsAll[T comparable](src, target []T) bool {
 
 // ContainsAny 判断 src 是否包含 target 中的任意元素.
 // 示例:
+//
 //	ContainsAny([]int{1, 2, 3}, []int{4, 2}) // true
 func ContainsAny[T comparable](src, target []T) bool {
 	set := make(map[T]struct{}, len(src))
@@ -415,6 +437,7 @@ func ContainsAny[T comparable](src, target []T) bool {
 
 // IntersectSet 返回两个切片的交集（去重，保持 src 中的顺序）.
 // 示例:
+//
 //	IntersectSet([]int{1, 2, 3}, []int{2, 3, 4}) // [2, 3]
 func IntersectSet[T comparable](src, dst []T) []T {
 	set := make(map[T]struct{}, len(dst))
@@ -458,6 +481,7 @@ outer:
 
 // UnionSet 返回两个切片的并集（去重，保持顺序：先 src 后 dst 的新增部分）.
 // 示例:
+//
 //	UnionSet([]int{1, 2}, []int{2, 3}) // [1, 2, 3]
 func UnionSet[T comparable](src, dst []T) []T {
 	seen := make(map[T]struct{}, len(src)+len(dst))
@@ -495,6 +519,7 @@ outer:
 
 // DiffSet 返回在 src 中存在但 dst 中不存在的元素（差集，去重）.
 // 示例:
+//
 //	DiffSet([]int{1, 2, 3}, []int{2, 3}) // [1]
 func DiffSet[T comparable](src, dst []T) []T {
 	set := make(map[T]struct{}, len(dst))
@@ -538,6 +563,7 @@ outer:
 
 // SymmetricDiffSet 返回两个切片的对称差集（只在其中一个集合中出现的元素，去重）.
 // 示例:
+//
 //	SymmetricDiffSet([]int{1, 2, 3}, []int{2, 3, 4}) // [1, 4]
 func SymmetricDiffSet[T comparable](src, dst []T) []T {
 	srcSet := make(map[T]struct{}, len(src))
@@ -613,6 +639,7 @@ func SymmetricDiffSetFunc[T any](src, dst []T, equal func(T, T) bool) []T {
 
 // Sum 对数值切片求和.
 // 示例:
+//
 //	Sum([]int{1, 2, 3}) // 6
 func Sum[T Number](slice []T) T {
 	var total T
@@ -624,6 +651,7 @@ func Sum[T Number](slice []T) T {
 
 // Min 返回切片中的最小值；切片为空时返回零值和 false.
 // 示例:
+//
 //	Min([]int{3, 1, 2}) // 1, true
 func Min[T interface {
 	~int | ~int8 | ~int16 | ~int32 | ~int64 | ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr | ~float32 | ~float64 | ~string
@@ -643,6 +671,7 @@ func Min[T interface {
 
 // Max 返回切片中的最大值；切片为空时返回零值和 false.
 // 示例:
+//
 //	Max([]int{3, 1, 2}) // 3, true
 func Max[T interface {
 	~int | ~int8 | ~int16 | ~int32 | ~int64 | ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr | ~float32 | ~float64 | ~string
@@ -662,6 +691,7 @@ func Max[T interface {
 
 // IndexAll 返回目标元素在切片中所有出现的索引.
 // 示例:
+//
 //	IndexAll([]int{1, 2, 1, 3}, 1) // [0, 2]
 func IndexAll[T comparable](slice []T, target T) []int {
 	result := make([]int, 0)
@@ -675,6 +705,7 @@ func IndexAll[T comparable](slice []T, target T) []int {
 
 // LastIndex 返回目标元素最后一次出现的索引，不存在返回 -1.
 // 示例:
+//
 //	LastIndex([]int{1, 2, 1, 3}, 1) // 2
 func LastIndex[T comparable](slice []T, target T) int {
 	for i := len(slice) - 1; i >= 0; i-- {
@@ -687,6 +718,7 @@ func LastIndex[T comparable](slice []T, target T) int {
 
 // Reverse 返回逆序的新切片.
 // 示例:
+//
 //	Reverse([]int{1, 2, 3}) // [3, 2, 1]
 func Reverse[T any](slice []T) []T {
 	n := len(slice)
@@ -699,6 +731,7 @@ func Reverse[T any](slice []T) []T {
 
 // ReverseSelf 原地逆序切片.
 // 示例:
+//
 //	s := []int{1, 2, 3}
 //	ReverseSelf(s) // s: [3, 2, 1]
 func ReverseSelf[T any](slice []T) {
@@ -709,6 +742,7 @@ func ReverseSelf[T any](slice []T) {
 
 // Insert 在指定索引处插入元素，返回新切片；索引越界返回 error.
 // 示例:
+//
 //	Insert([]int{1, 2, 3}, 1, 10) // [1, 10, 2, 3], nil
 func Insert[T any](slice []T, index int, elem T) ([]T, error) {
 	n := len(slice)
@@ -724,6 +758,7 @@ func Insert[T any](slice []T, index int, elem T) ([]T, error) {
 
 // Delete 删除指定索引处的元素，返回新切片；索引越界返回 error.
 // 示例:
+//
 //	Delete([]int{1, 2, 3}, 1) // [1, 3], nil
 func Delete[T any](slice []T, index int) ([]T, error) {
 	n := len(slice)

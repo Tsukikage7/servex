@@ -17,12 +17,12 @@ import (
 // Subscriber 通过 Redis Streams 订阅消息.
 // 支持消费者组（XREADGROUP）和简单读取（XREAD）两种模式.
 type Subscriber struct {
-	client goredis.Cmdable
+	client  goredis.Cmdable
 	closed  atomic.Bool
 	mu      sync.Mutex
 	cancels []context.CancelFunc // 所有订阅的 cancel 函数
 	wg      sync.WaitGroup
-	opts   subscriberOptions
+	opts    subscriberOptions
 }
 
 // NewSubscriber 基于已有的 redis.Cmdable 创建 Subscriber.

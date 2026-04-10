@@ -38,7 +38,9 @@ type node[K any, V any] struct {
 //   - 按键排序存储
 //   - Put/Get/Remove 操作时间复杂度 O(log n)
 //   - 支持自定义比较器
+//
 // 示例:
+//
 //	tm := treemap.New[int, string](treemap.OrderedCompare[int])
 //	tm.Put(3, "three")
 //	tm.Put(1, "one")

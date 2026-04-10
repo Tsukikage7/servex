@@ -19,6 +19,7 @@ type entry[K comparable, V any] struct {
 // 当缓存满时，自动淘汰最近最少使用的元素.
 // 线程安全.
 // 示例:
+//
 //	cache := lrucache.New[string, int](100)
 //	cache.Put("a", 1)
 //	cache.Put("b", 2)

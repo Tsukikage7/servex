@@ -178,9 +178,9 @@ func (m *mwMockCollector) RecordGRPCRequest(string, string, string, time.Duratio
 func (m *mwMockCollector) RecordPanic(string, string, string)                      {}
 func (m *mwMockCollector) UpdateGoroutineCount(int)                                {}
 func (m *mwMockCollector) UpdateMemoryUsage(int64)                                 {}
-func (m *mwMockCollector) Counter(string, map[string]string)              {}
-func (m *mwMockCollector) Histogram(string, float64, map[string]string)   {}
-func (m *mwMockCollector) Gauge(string, float64, map[string]string)       {}
+func (m *mwMockCollector) Counter(string, map[string]string)                       {}
+func (m *mwMockCollector) Histogram(string, float64, map[string]string)            {}
+func (m *mwMockCollector) Gauge(string, float64, map[string]string)                {}
 func (m *mwMockCollector) GetHandler() http.Handler                                { return nil }
 func (m *mwMockCollector) GetPath() string                                         { return "" }
 

@@ -703,7 +703,7 @@ func (s *ContextTestSuite) TestNewContext_WithTraceFields() {
 
 	// 业务代码取出的 logger 已经带 trace 信息，无需额外操作
 	result := FromContext(ctx)
-	s.NotEqual(log, result)  // 带了字段，是新实例
+	s.NotEqual(log, result) // 带了字段，是新实例
 	s.Equal(logWithTrace, result)
 }
 

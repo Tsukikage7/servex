@@ -42,6 +42,7 @@ func WithLogger(log logger.Logger) Option {
 // 用于分布式任务调度，确保同一任务在多实例间只执行一次.
 // 需要配合 Job.Distributed 使用.
 // 示例:
+//
 //	redisCache, _ := cache.New(&cache.Config{Type: "redis", ...})
 //	locker := lock.NewRedis(redisCache, lock.WithKeyPrefix("scheduler:"))
 //	s := scheduler.New(scheduler.WithLocker(locker))

@@ -114,14 +114,14 @@ type Limiter struct {
 	errorRateTracker *errorRateTracker
 
 	// CPU 负载估算
-	cpuMu      sync.Mutex
-	lastCPUIdle uint64
+	cpuMu        sync.Mutex
+	lastCPUIdle  uint64
 	lastCPUTotal uint64
-	cpuUsage   float64
+	cpuUsage     float64
 
 	// 冷却控制
-	limiting     atomic.Bool
-	cooldownEnd  atomic.Int64 // unix nano
+	limiting    atomic.Bool
+	cooldownEnd atomic.Int64 // unix nano
 
 	logger           *log.Logger
 	metricsCollector MetricsCollector

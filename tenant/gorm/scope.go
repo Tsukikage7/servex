@@ -13,6 +13,7 @@ const defaultColumn = "tenant_id"
 
 // Scope 返回 GORM 查询作用域，自动按 tenant_id 过滤.
 // 示例:
+//
 //	db.Scopes(tenantgorm.Scope(ctx)).Find(&results)
 //	db.Scopes(tenantgorm.Scope(ctx, "t.tenant_id")).Find(&results)
 func Scope(ctx context.Context, columns ...string) func(*gorm.DB) *gorm.DB {
@@ -32,6 +33,7 @@ func Scope(ctx context.Context, columns ...string) func(*gorm.DB) *gorm.DB {
 // AutoInject 注册 GORM 回调，在 Create/Update 时自动注入 tenant_id.
 // 使用前需要确保模型包含对应的 tenant_id 字段.
 // 示例:
+//
 //	if err := tenantgorm.AutoInject(db); err != nil {
 //	    log.Fatal(err)
 //	}

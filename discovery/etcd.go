@@ -32,12 +32,12 @@ type etcdServiceInfo struct {
 
 // etcdDiscovery 基于 etcd 的服务发现实现.
 type etcdDiscovery struct {
-	client *clientv3.Client
-	config *Config
-	logger logger.Logger
+	client  *clientv3.Client
+	config  *Config
+	logger  logger.Logger
 	mu      sync.Mutex
-	leases  map[string]clientv3.LeaseID      // serviceID -> leaseID
-	cancels map[string]context.CancelFunc    // serviceID -> keepalive cancel
+	leases  map[string]clientv3.LeaseID   // serviceID -> leaseID
+	cancels map[string]context.CancelFunc // serviceID -> keepalive cancel
 }
 
 // 编译期接口合规检查.
@@ -65,9 +65,9 @@ func newEtcdDiscovery(config *Config, log logger.Logger) (Discovery, error) {
 	}
 
 	return &etcdDiscovery{
-		client: client,
-		config: config,
-		logger: log,
+		client:  client,
+		config:  config,
+		logger:  log,
 		leases:  make(map[string]clientv3.LeaseID),
 		cancels: make(map[string]context.CancelFunc),
 	}, nil

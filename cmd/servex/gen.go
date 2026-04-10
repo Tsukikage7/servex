@@ -43,14 +43,14 @@ type JustfileData struct {
 
 // AggregateData 聚合模板数据.
 type AggregateData struct {
-	Name         string       // PascalCase 名称
-	NameLower    string       // camelCase 名称 (包名)
-	NameSnake    string       // snake_case 名称
-	Module       string       // Go module 路径
-	Service      string       // 目标服务名[monorepo 模式下生成 adapter 层]
-	Fields       []Field      // 所有字段[含 ID]
-	NonIDFields  []Field      // 非 ID 字段
-	IDType       string       // ID 字段类型
+	Name         string  // PascalCase 名称
+	NameLower    string  // camelCase 名称 (包名)
+	NameSnake    string  // snake_case 名称
+	Module       string  // Go module 路径
+	Service      string  // 目标服务名[monorepo 模式下生成 adapter 层]
+	Fields       []Field // 所有字段[含 ID]
+	NonIDFields  []Field // 非 ID 字段
+	IDType       string  // ID 字段类型
 	NeedsTime    bool
 	Commands     []CommandDef // 业务命令列表
 	UniqueFields []Field      // 唯一字段[生成 FindByXxx]

@@ -60,6 +60,7 @@ type cachedResolver struct {
 // NewCachedResolver 创建带缓存的 Resolver.
 // 用户必须提供 WithMarshal 和 WithUnmarshal 回调，因为库不知道具体租户类型.
 // 示例:
+//
 //	cached := tenant.NewCachedResolver(dbResolver, redisStore,
 //	    tenant.WithCacheTTL(10*time.Minute),
 //	    tenant.WithMarshal(func(t tenant.Tenant) (string, error) {
