@@ -310,7 +310,7 @@ var genValueObjectCmd = &cobra.Command{
 // protoCmd Proto 管理父命令.
 var protoCmd = &cobra.Command{
 	Use:   "proto",
-	Short: "Proto 文件管理[add/client/server]",
+	Short: "Proto 文件管理[add/client/server/lint/breaking]",
 }
 
 var (
@@ -333,7 +333,7 @@ var protoClientOutput string
 // protoClientCmd Proto 客户端代码生成命令.
 var protoClientCmd = &cobra.Command{
 	Use:   "client <proto-file>",
-	Short: "从 proto 文件生成客户端代码[pb.go/grpc.go/http.go]",
+	Short: "从 proto 文件使用 buf 生成客户端代码[pb.go/grpc.go/http.go]",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runProtoClient(buildProtoClientArgs(args[0], protoClientOutput))
@@ -352,6 +352,32 @@ var protoServerCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runProtoServer(buildProtoServerArgs(args[0], protoServerTarget, protoServerService))
+	},
+}
+
+var protoBreakingAgainst string
+
+// protoLintCmd Proto lint 检查命令.
+var protoLintCmd = &cobra.Command{
+	Use:   "lint [path]",
+	Short: "使用 buf lint 检查 proto 文件规范",
+	Args:  cobra.MaximumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return runProtoLint(args)
+	},
+}
+
+// protoBreakingCmd Proto 兼容性检查命令.
+var protoBreakingCmd = &cobra.Command{
+	Use:   "breaking [path]",
+	Short: "使用 buf breaking 检测 proto 不兼容变更",
+	Args:  cobra.MaximumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		a := args
+		if protoBreakingAgainst != ".git#branch=main" {
+			a = append(a, "--against", protoBreakingAgainst)
+		}
+		return runProtoBreaking(a)
 	},
 }
 
@@ -511,7 +537,10 @@ func init() {
 	protoServerCmd.Flags().StringVar(&protoServerService, "service", "", "目标服务名[monorepo 模式]")
 
 	// proto 子命令
-	protoCmd.AddCommand(protoAddCmd, protoClientCmd, protoServerCmd)
+	protoCmd.AddCommand(protoAddCmd, protoClientCmd, protoServerCmd, protoLintCmd, protoBreakingCmd)
+
+	// proto breaking
+	protoBreakingCmd.Flags().StringVar(&protoBreakingAgainst, "against", ".git#branch=main", "对比目标 (默认: main 分支)")
 
 	// 注册所有顶级命令
 	rootCmd.AddCommand(newCmd, addCmd, genCmd, protoCmd, runCmdDef, upgradeCmd, versionCmd)

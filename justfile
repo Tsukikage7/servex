@@ -134,9 +134,9 @@ outdated:
 
 # ── 生成 ──────────────────────────────────────────────
 
-# 生成 protobuf
+# 生成 protobuf (buf)
 proto:
-    protoc --go_out=. --go-grpc_out=. auth/proto/auth.proto
+    buf generate auth/proto
 
 # ── 文档 ──────────────────────────────────────────────
 

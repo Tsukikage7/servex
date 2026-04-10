@@ -35,9 +35,9 @@ lint:
     go vet ./...
     @test -z "$$(gofmt -l .)" || (echo "gofmt check failed:" && gofmt -l . && exit 1)
 
-# 生成指定服务的 proto 代码
+# 生成指定服务的 proto 代码 (buf)
 proto service:
-    protoc --go_out=. --go-grpc_out=. services/{{"{{service}}"}}/proto/*.proto
+    buf generate api/
 
 # 构建指定服务的 Docker 镜像
 docker service tag="latest":

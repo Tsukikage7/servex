@@ -52,6 +52,10 @@ func runProto(args []string) error {
 		return runProtoClient(args[1:])
 	case "server":
 		return runProtoServer(args[1:])
+	case "lint":
+		return runProtoLint(args[1:])
+	case "breaking":
+		return runProtoBreaking(args[1:])
 	case "help", "-h", "--help":
 		printProtoUsage()
 		return nil
@@ -66,9 +70,11 @@ func printProtoUsage() {
 	fmt.Println(`用法: servex proto <subcommand> [arguments]
 
 子命令:
-  add       创建 proto 服务模板
-  client    从 proto 文件生成客户端代码
+  add       创建 proto 服务模板 (自动生成 buf 配置)
+  client    从 proto 文件使用 buf 生成客户端代码
   server    从 proto 文件生成服务端桩代码
+  lint      使用 buf lint 检查 proto 文件规范
+  breaking  使用 buf breaking 检测不兼容变更
 
 运行 'servex proto <subcommand> -h' 查看更多信息.`)
 }
@@ -123,18 +129,40 @@ func runProtoAdd(args []string) error {
 	fmt.Printf("Proto 文件已创建: %s\n", outPath)
 	fmt.Printf("  服务: %sService\n", data.PascalName)
 	fmt.Printf("  包名: %s.v1\n", name)
+
+	// 自动生成 buf 配置文件 (如不存在)
+	apiDir := filepath.Join(*output, "api")
+	bufYamlPath := filepath.Join(apiDir, "buf.yaml")
+	if _, err := os.Stat(bufYamlPath); os.IsNotExist(err) {
+		if err := generateBufYaml(bufYamlPath); err != nil {
+			return fmt.Errorf("生成 buf.yaml: %w", err)
+		}
+		fmt.Printf("Buf 配置已创建: %s\n", bufYamlPath)
+	}
+
+	bufGenYamlPath := filepath.Join(apiDir, "buf.gen.yaml")
+	if _, err := os.Stat(bufGenYamlPath); os.IsNotExist(err) {
+		if err := generateBufGenYaml(bufGenYamlPath, true); err != nil {
+			return fmt.Errorf("生成 buf.gen.yaml: %w", err)
+		}
+		fmt.Printf("Buf 生成配置已创建: %s\n", bufGenYamlPath)
+	}
+
 	return nil
 }
 
-// runProtoClient 执行 servex proto client 命令.
+// runProtoClient 执行 servex proto client 命令，使用 buf generate 生成代码.
 func runProtoClient(args []string) error {
 	fs := flag.NewFlagSet("proto client", flag.ExitOnError)
 	output := fs.String("output", "", "输出目录 (默认: proto 文件所在目录)")
 	fs.Usage = func() {
 		fmt.Println("用法: servex proto client <proto-file> [options]")
 		fmt.Println()
-		fmt.Println("从 proto 文件使用 protoc 生成 Go 客户端代码.")
+		fmt.Println("从 proto 文件使用 buf 生成 Go 客户端代码.")
 		fmt.Println("生成: *.pb.go, *_grpc.pb.go, *_http.pb.go")
+		fmt.Println()
+		fmt.Println("前置条件:")
+		fmt.Println("  brew install bufbuild/buf/buf")
 		fmt.Println()
 		fmt.Println("选项:")
 		fs.PrintDefaults()
@@ -163,41 +191,202 @@ func runProtoClient(args []string) error {
 		return fmt.Errorf("创建输出目录: %w", err)
 	}
 
-	protocPath, err := exec.LookPath("protoc")
+	bufPath, err := exec.LookPath("buf")
 	if err != nil {
-		return fmt.Errorf("未找到 protoc，请先安装:\n\n安装 protoc:\n  macOS:   brew install protobuf\n  Linux:   apt install -y protobuf-compiler\n  手动:    https://github.com/protocolbuffers/protobuf/releases\n\n安装 Go 插件:\n  go install google.golang.org/protobuf/cmd/protoc-gen-go@latest\n  go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest")
+		return fmt.Errorf("未找到 buf，请先安装:\n\n  macOS:   brew install bufbuild/buf/buf\n  Linux:   sudo apt install -y buf 或 npm install -g @bufbuild/buf\n  手动:    https://buf.build/docs/installation")
 	}
 
-	protoDir := filepath.Dir(protoFile)
-
-	// 基础 protoc 参数
-	protocArgs := []string{
-		"--proto_path=" + protoDir,
-		"--go_out=" + outDir,
-		"--go_opt=paths=source_relative",
-		"--go-grpc_out=" + outDir,
-		"--go-grpc_opt=paths=source_relative",
+	// 查找或自动生成 buf.gen.yaml
+	genYamlPath := findBufGenYaml(protoFile)
+	if genYamlPath == "" {
+		apiDir := findAPIDir(protoFile)
+		genPath := filepath.Join(apiDir, "buf.gen.yaml")
+		withHTTP := hasHTTPAnnotations(protoFile)
+		if err := generateBufGenYaml(genPath, withHTTP); err != nil {
+			return fmt.Errorf("生成 buf.gen.yaml: %w", err)
+		}
+		genYamlPath = genPath
+		fmt.Printf("自动生成 buf.gen.yaml: %s\n", genYamlPath)
 	}
 
-	// 检测是否包含 HTTP 注解，启用 HTTP 代码生成
-	if hasHTTPAnnotations(protoFile) {
-		protocArgs = append(protocArgs,
-			"--go-http_out="+outDir,
-			"--go-http_opt=paths=source_relative",
-		)
+	// 确保 buf.yaml 存在
+	apiDir := findAPIDir(protoFile)
+	bufYamlPath := filepath.Join(apiDir, "buf.yaml")
+	if _, err := os.Stat(bufYamlPath); os.IsNotExist(err) {
+		if err := generateBufYaml(bufYamlPath); err != nil {
+			return fmt.Errorf("生成 buf.yaml: %w", err)
+		}
+		fmt.Printf("自动生成 buf.yaml: %s\n", bufYamlPath)
 	}
 
-	protocArgs = append(protocArgs, protoFile)
+	// 构建 buf generate 参数
+	bufArgs := []string{"generate", "--template", genYamlPath, "--path", protoFile}
 
-	cmd := exec.Command(protocPath, protocArgs...)
+	cmd := exec.Command(bufPath, bufArgs...)
+	cmd.Dir = apiDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("protoc 执行失败: %w", err)
+		return fmt.Errorf("buf generate 执行失败: %w", err)
 	}
 
 	fmt.Printf("客户端代码已生成: %s\n", outDir)
 	return nil
+}
+
+// runProtoLint 执行 servex proto lint 命令.
+func runProtoLint(args []string) error {
+	fs := flag.NewFlagSet("proto lint", flag.ExitOnError)
+	fs.Usage = func() {
+		fmt.Println("用法: servex proto lint [path]")
+		fmt.Println()
+		fmt.Println("使用 buf lint 检查 proto 文件规范.")
+		fmt.Println("默认 lint 当前目录下的 api/ 目录.")
+	}
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	bufPath, err := exec.LookPath("buf")
+	if err != nil {
+		return fmt.Errorf("未找到 buf，请先安装: brew install bufbuild/buf/buf")
+	}
+
+	target := "api"
+	if fs.NArg() > 0 {
+		target = fs.Arg(0)
+	}
+
+	if _, err := os.Stat(target); os.IsNotExist(err) {
+		return fmt.Errorf("目标路径不存在: %s", target)
+	}
+
+	cmd := exec.Command(bufPath, "lint", target)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("buf lint 检查发现问题")
+	}
+
+	fmt.Println("proto lint 检查通过")
+	return nil
+}
+
+// runProtoBreaking 执行 servex proto breaking 命令.
+func runProtoBreaking(args []string) error {
+	fs := flag.NewFlagSet("proto breaking", flag.ExitOnError)
+	against := fs.String("against", ".git#branch=main", "对比目标 (默认: main 分支)")
+	fs.Usage = func() {
+		fmt.Println("用法: servex proto breaking [path] [options]")
+		fmt.Println()
+		fmt.Println("使用 buf breaking 检测 proto 文件的不兼容变更.")
+		fmt.Println("默认对比 main 分支.")
+		fmt.Println()
+		fmt.Println("选项:")
+		fs.PrintDefaults()
+	}
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	bufPath, err := exec.LookPath("buf")
+	if err != nil {
+		return fmt.Errorf("未找到 buf，请先安装: brew install bufbuild/buf/buf")
+	}
+
+	target := "api"
+	if fs.NArg() > 0 {
+		target = fs.Arg(0)
+	}
+
+	if _, err := os.Stat(target); os.IsNotExist(err) {
+		return fmt.Errorf("目标路径不存在: %s", target)
+	}
+
+	cmd := exec.Command(bufPath, "breaking", target, "--against", *against)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("buf breaking 检测到不兼容变更")
+	}
+
+	fmt.Println("proto 兼容性检查通过")
+	return nil
+}
+
+// findBufGenYaml 从 proto 文件所在目录向上查找 buf.gen.yaml.
+func findBufGenYaml(protoFile string) string {
+	dir, err := filepath.Abs(filepath.Dir(protoFile))
+	if err != nil {
+		return ""
+	}
+
+	for {
+		candidate := filepath.Join(dir, "buf.gen.yaml")
+		if _, err := os.Stat(candidate); err == nil {
+			return candidate
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break
+		}
+		dir = parent
+	}
+	return ""
+}
+
+// findAPIDir 从 proto 文件路径中找到 api/ 目录.
+// 例如 api/order/v1/order.proto → api/
+func findAPIDir(protoFile string) string {
+	absPath, err := filepath.Abs(protoFile)
+	if err != nil {
+		return filepath.Dir(protoFile)
+	}
+
+	dir := absPath
+	for {
+		if filepath.Base(dir) == "api" {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break
+		}
+		dir = parent
+	}
+
+	// 回退: 使用 proto 文件所在目录
+	return filepath.Dir(protoFile)
+}
+
+// generateBufYaml 生成 buf.yaml 配置文件.
+func generateBufYaml(path string) error {
+	content, err := protoTemplates.ReadFile("templates/proto/buf.yaml.tmpl")
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, content, 0o644)
+}
+
+// generateBufGenYaml 生成 buf.gen.yaml 配置文件.
+func generateBufGenYaml(path string, withHTTP bool) error {
+	tmplName := "templates/proto/buf.gen.yaml.tmpl"
+	if withHTTP {
+		tmplName = "templates/proto/buf.gen.http.yaml.tmpl"
+	}
+	content, err := protoTemplates.ReadFile(tmplName)
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, content, 0o644)
 }
 
 // hasHTTPAnnotations 检测 proto 文件是否包含 google.api.http 注解.

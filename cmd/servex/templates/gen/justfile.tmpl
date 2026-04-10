@@ -26,9 +26,9 @@ lint:
     go vet ./...
     @test -z "$$(gofmt -l .)" || (echo "gofmt check failed:" && gofmt -l . && exit 1)
 
-# 生成 proto 代码
+# 生成 proto 代码 (buf)
 proto:
-    protoc --go_out=. --go-grpc_out=. proto/*.proto
+    buf generate api/
 
 # 运行 Wire 依赖注入
 wire:
