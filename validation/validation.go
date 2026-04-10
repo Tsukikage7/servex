@@ -52,6 +52,13 @@ var defaultEnMessages = map[string]string{
 	"uuid":     "{field} must be a valid UUID",
 }
 
+// Validatable 可由请求/配置对象实现以启用自动校验.
+//
+// Handle 等函数在解码后自动检查该接口并调用 Validate().
+type Validatable interface {
+	Validate() error
+}
+
 // Validator 校验器.
 type Validator struct {
 	validate *validator.Validate

@@ -1,24 +1,26 @@
-package activity
+// Package kafka 提供基于 Kafka 的活跃事件生产者实现.
+package kafka
 
 import (
 	"context"
 	"encoding/json"
 
+	"github.com/Tsukikage7/servex/httpx/activity"
 	"github.com/Tsukikage7/servex/messaging/pubsub"
 )
 
-// KafkaProducer Kafka 消息生产者.
-type KafkaProducer struct {
+// Producer Kafka 消息生产者.
+type Producer struct {
 	publisher pubsub.Publisher
 }
 
-// NewKafkaProducer 创建 Kafka 生产者.
-func NewKafkaProducer(publisher pubsub.Publisher) *KafkaProducer {
-	return &KafkaProducer{publisher: publisher}
+// NewProducer 创建 Kafka 生产者.
+func NewProducer(publisher pubsub.Publisher) *Producer {
+	return &Producer{publisher: publisher}
 }
 
 // Publish 发布活跃事件到 Kafka.
-func (p *KafkaProducer) Publish(ctx context.Context, topic string, event *Event) error {
+func (p *Producer) Publish(ctx context.Context, topic string, event *activity.Event) error {
 	data, err := json.Marshal(event)
 	if err != nil {
 		return err
@@ -37,5 +39,5 @@ func (p *KafkaProducer) Publish(ctx context.Context, topic string, event *Event)
 	return p.publisher.Publish(ctx, topic, msg)
 }
 
-// 确保 KafkaProducer 实现了 Producer 接口.
-var _ Producer = (*KafkaProducer)(nil)
+// 确保 Producer 实现了 activity.Producer 接口.
+var _ activity.Producer = (*Producer)(nil)

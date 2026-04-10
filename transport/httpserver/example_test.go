@@ -20,7 +20,6 @@ func ExampleNew() {
 	srv := httpserver.New(mux,
 		httpserver.WithLogger(log),
 		httpserver.WithAddr(":8080"),
-		httpserver.WithRecovery(),
 	)
 
 	fmt.Println(srv.Name())

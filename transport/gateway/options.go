@@ -16,7 +16,6 @@ import (
 	"github.com/Tsukikage7/servex/middleware/logging"
 	"github.com/Tsukikage7/servex/middleware/ratelimit"
 	"github.com/Tsukikage7/servex/middleware/recovery"
-	"github.com/Tsukikage7/servex/middleware/requestid"
 	"github.com/Tsukikage7/servex/observability/logger"
 	"github.com/Tsukikage7/servex/observability/metrics"
 	"github.com/Tsukikage7/servex/observability/tracing"
@@ -74,9 +73,8 @@ type options struct {
 	corsOpts   []cors.Option
 	enableCORS bool
 
-	// RequestID
+	// RequestID（已由 trace 中间件统一处理，保留开关兼容）
 	enableRequestID bool
-	requestIDOpts   []requestid.Option
 
 	// Logging
 	enableLogging    bool
@@ -471,7 +469,7 @@ func WithClientIP(opts ...clientip.Option) Option {
 
 // WithRequestID 启用 Request ID（gRPC + HTTP 双端）.
 //
-// 自动生成或透传请求 ID，注入 context 并写入响应头/metadata.
+// Deprecated: Request ID 已由 trace 中间件统一处理，此选项保留兼容但不再生效.
 //
 // 示例:
 //
@@ -503,14 +501,9 @@ func WithHTTPTLS(cfg *tls.Config) Option {
 // applyNewInterceptors 按照正确的顺序应用新增的 gRPC 拦截器.
 //
 // 拦截器按追加顺序执行，因此先添加的先执行:
-// RequestID → Logging → Metrics → RateLimit → ClientIP → Tenant
+// Logging → Metrics → RateLimit → ClientIP → Tenant
 // （Recovery 和 Auth 由各自的 apply 函数处理，Tracing 在 WithTrace 中直接添加）
 func applyNewInterceptors(o *options) {
-	// RequestID
-	if o.enableRequestID {
-		o.unaryInterceptors = append(o.unaryInterceptors, requestid.UnaryServerInterceptor(o.requestIDOpts...))
-	}
-
 	// Logging
 	if o.enableLogging && o.logger != nil {
 		loggingOpts := []logging.Option{

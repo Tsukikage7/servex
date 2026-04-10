@@ -46,54 +46,12 @@ func TestNewFromConfig(t *testing.T) {
 		}
 	})
 
-	t.Run("Recovery 配置", func(t *testing.T) {
-		cfg := &Config{Recovery: true}
-		srv := NewFromConfig(mux, cfg, log)
-
-		if !srv.opts.recovery {
-			t.Error("期望 recovery=true")
-		}
-	})
-
-	t.Run("Logging 配置", func(t *testing.T) {
-		cfg := &Config{
-			Logging:      true,
-			LogSkipPaths: []string{"/health", "/metrics"},
-		}
-		srv := NewFromConfig(mux, cfg, log)
-
-		if !srv.opts.loggingEnabled {
-			t.Error("期望 loggingEnabled=true")
-		}
-		if len(srv.opts.loggingSkipPaths) != 2 {
-			t.Errorf("期望 2 个跳过路径，实际为 %d", len(srv.opts.loggingSkipPaths))
-		}
-	})
-
-	t.Run("Tracing 配置", func(t *testing.T) {
-		cfg := &Config{Tracing: "my-service"}
-		srv := NewFromConfig(mux, cfg, log)
-
-		if srv.opts.traceName != "my-service" {
-			t.Errorf("期望 traceName='my-service'，实际为 '%s'", srv.opts.traceName)
-		}
-	})
-
 	t.Run("Profiling 配置", func(t *testing.T) {
 		cfg := &Config{Profiling: "/debug/pprof"}
 		srv := NewFromConfig(mux, cfg, log)
 
 		if srv.opts.profiling != "/debug/pprof" {
 			t.Errorf("期望 profiling='/debug/pprof'，实际为 '%s'", srv.opts.profiling)
-		}
-	})
-
-	t.Run("ClientIP 配置", func(t *testing.T) {
-		cfg := &Config{ClientIP: true}
-		srv := NewFromConfig(mux, cfg, log)
-
-		if !srv.opts.clientIP {
-			t.Error("期望 clientIP=true")
 		}
 	})
 
@@ -125,12 +83,7 @@ func TestNewFromConfig(t *testing.T) {
 			ReadTimeout:  5 * time.Second,
 			WriteTimeout: 10 * time.Second,
 			IdleTimeout:  30 * time.Second,
-			Recovery:     true,
-			Logging:      true,
-			LogSkipPaths: []string{"/healthz"},
-			Tracing:      "full-svc",
 			Profiling:    "/debug/pprof",
-			ClientIP:     true,
 		}
 		srv := NewFromConfig(mux, cfg, log)
 
@@ -140,20 +93,8 @@ func TestNewFromConfig(t *testing.T) {
 		if srv.opts.readTimeout != 5*time.Second {
 			t.Errorf("期望 readTimeout=5s，实际为 %v", srv.opts.readTimeout)
 		}
-		if !srv.opts.recovery {
-			t.Error("期望 recovery=true")
-		}
-		if !srv.opts.loggingEnabled {
-			t.Error("期望 loggingEnabled=true")
-		}
-		if srv.opts.traceName != "full-svc" {
-			t.Errorf("期望 traceName='full-svc'，实际为 '%s'", srv.opts.traceName)
-		}
 		if srv.opts.profiling != "/debug/pprof" {
 			t.Errorf("期望 profiling='/debug/pprof'，实际为 '%s'", srv.opts.profiling)
-		}
-		if !srv.opts.clientIP {
-			t.Error("期望 clientIP=true")
 		}
 	})
 }

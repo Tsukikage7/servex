@@ -14,6 +14,8 @@ import (
 
 	"github.com/Tsukikage7/servex/llm"
 	"github.com/Tsukikage7/servex/llm/serving/apikey"
+
+	authapikey "github.com/Tsukikage7/servex/auth/apikey"
 )
 
 // ── Mock 实现 ────────────────────────────────────────────────────────────────
@@ -349,6 +351,8 @@ func (m *mockAPIKeyManager) List(_ context.Context, _ string) ([]*apikey.Key, er
 }
 
 func (m *mockAPIKeyManager) UpdateQuota(_ context.Context, _ string, _ int64) error { return nil }
+
+func (m *mockAPIKeyManager) AsValidator() authapikey.Validator { return nil }
 
 var _ apikey.Manager = (*mockAPIKeyManager)(nil)
 

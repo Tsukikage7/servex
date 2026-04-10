@@ -1,6 +1,6 @@
 # servex 中间件
 
-**组合顺序：** requestid → logging → tracing → metrics → ratelimit → circuitbreaker → retry → timeout → recovery
+**组合顺序：** logging → tracing → metrics → ratelimit → circuitbreaker → retry → timeout → recovery
 
 （logging 在 tracing 之前是 servex 约定：tracing 中间件将 trace ID 写入 context，logging 在其后可提取并输出到日志）
 
@@ -89,15 +89,6 @@ mw := cors.New(
     cors.WithAllowHeaders("Authorization", "Content-Type"),
     cors.WithMaxAge(86400),
 )
-```
-
-## requestid — 请求 ID
-
-```go
-mw := requestid.New() // 自动生成 UUID，写入 X-Request-ID header 和 context
-
-// 在 handler 中读取
-id := requestid.FromContext(ctx)
 ```
 
 ## logging — 结构化日志
@@ -391,7 +382,7 @@ fmt.Printf("限流中: %v, CPU: %.2f, P99: %v, 错误率: %.2f\n",
 import "github.com/Tsukikage7/servex/middleware/trace"
 ```
 
-统一 trace-id 在日志、响应头、下游调用中的传播，构建于 `middleware/requestid` 和 `observability/tracing` 之上。
+统一 trace-id 在日志、响应头、下游调用中的传播，构建于 `observability/tracing` 之上。
 
 ```go
 // HTTP 中间件
@@ -404,10 +395,9 @@ mw := trace.HTTPMiddleware(&trace.Config{
     Logger:           log,             // 自动注入 trace_id 字段到日志
 })
 
-// 注入 httpserver（放在 requestid 之后）
+// 注入 httpserver
 srv := httpserver.New(mux,
     httpserver.WithMiddlewares(
-        requestid.New(),
         trace.HTTPMiddleware(nil),
     ),
 )
@@ -433,7 +423,7 @@ ctx = trace.InjectGRPCMetadata(ctx)
 
 **默认行为：**
 1. 从请求头（`X-Trace-ID`）提取 trace-id，不存在则生成 UUID
-2. 优先从 `requestid` 中间件获取 request-id，其次从请求头，最后生成 UUID
+2. 从请求头（`X-Request-ID`）提取 request-id，不存在则生成 UUID
 3. 将 trace-id / request-id 写入响应头
 4. 注入 logger context（后续 `log.Info(ctx, ...)` 自动携带 `trace_id` 字段）
 

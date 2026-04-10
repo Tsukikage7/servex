@@ -8,7 +8,7 @@
 //	                                                    │
 //	                                          ResetStale ──► Pending(0)
 // 使用示例:
-//	store := outbox.NewGORMStore(db)
+//	store := outboxgorm.NewStore(db)  // import outboxgorm "github.com/Tsukikage7/servex/domain/outbox/gorm"
 //	store.AutoMigrate()
 //	relay, _ := outbox.NewRelay(store, producer, outbox.WithLogger(log))
 //	relay.Start(ctx)

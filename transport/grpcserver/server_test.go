@@ -9,8 +9,6 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/Tsukikage7/servex/middleware/ratelimit"
-	"github.com/Tsukikage7/servex/observability/metrics"
 	"github.com/Tsukikage7/servex/testx"
 )
 
@@ -218,40 +216,17 @@ func TestServerOptions(t *testing.T) {
 }
 
 func TestServerOptions_Extended(t *testing.T) {
-	t.Run("WithRecovery", func(t *testing.T) {
-		srv := New(
-			WithLogger(testx.NopLogger()),
-			WithRecovery(),
-		)
-		if !srv.opts.enableRecovery {
-			t.Error("recovery should be enabled")
-		}
-	})
-
-	t.Run("WithLogging", func(t *testing.T) {
-		srv := New(
-			WithLogger(testx.NopLogger()),
-			WithLogging("/grpc.health.v1.Health/Check"),
-		)
-		if !srv.opts.enableLogging {
-			t.Error("logging should be enabled")
-		}
-		if len(srv.opts.loggingSkipPaths) != 1 {
-			t.Error("skip paths not set")
-		}
-	})
-
-	t.Run("WithPublicMethods", func(t *testing.T) {
-		srv := New(
-			WithLogger(testx.NopLogger()),
-			WithPublicMethods("/api.v1.Auth/Login", "/api.v1.Auth/Register"),
-		)
-		if len(srv.opts.publicMethods) != 2 {
-			t.Errorf("expected 2 public methods, got %d", len(srv.opts.publicMethods))
-		}
-	})
-
 	t.Run("WithHealthTimeout", func(t *testing.T) {
+		srv := New(
+			WithLogger(testx.NopLogger()),
+			WithHealthTimeout(10*time.Second),
+		)
+		if srv.opts.healthTimeout != 10*time.Second {
+			t.Error("health timeout not set correctly")
+		}
+	})
+
+	t.Run("WithName", func(t *testing.T) {
 		srv := New(
 			WithLogger(testx.NopLogger()),
 			WithHealthTimeout(10*time.Second),
@@ -296,36 +271,6 @@ func TestServerOptions_Extended(t *testing.T) {
 		}
 		if ep.Addr != ":9090" {
 			t.Errorf("expected default addr, got %s", ep.Addr)
-		}
-	})
-
-	t.Run("WithMetrics", func(t *testing.T) {
-		collector, err := metrics.NewPrometheus(&metrics.Config{
-			Namespace: "test",
-		})
-		if err != nil {
-			t.Fatalf("failed to create metrics collector: %v", err)
-		}
-		srv := New(
-			WithLogger(testx.NopLogger()),
-			WithMetrics(collector),
-		)
-		if srv.opts.metricsCollector == nil {
-			t.Error("metrics collector should be set")
-		}
-		if srv.opts.metricsCollector != collector {
-			t.Error("metrics collector should match the provided collector")
-		}
-	})
-
-	t.Run("WithRateLimit", func(t *testing.T) {
-		limiter := ratelimit.NewTokenBucket(100, 200)
-		srv := New(
-			WithLogger(testx.NopLogger()),
-			WithRateLimit(limiter),
-		)
-		if srv.opts.rateLimiter == nil {
-			t.Error("rate limiter should be set")
 		}
 	})
 }

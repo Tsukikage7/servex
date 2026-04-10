@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/Tsukikage7/servex/transport/response"
+	"github.com/Tsukikage7/servex/validation"
 )
 
 // Validatable 可由请求对象实现以启用自动校验.
@@ -26,9 +27,9 @@ import (
 //	func (r *CreateUserReq) Validate() error {
 //	    return validate.Struct(r)
 //	}
-type Validatable interface {
-	Validate() error
-}
+//
+// Deprecated: 请直接使用 validation.Validatable.
+type Validatable = validation.Validatable
 
 // Handle 创建类型安全的 Gin HandlerFunc，自动处理 JSON 解码、校验与统一响应格式.
 //

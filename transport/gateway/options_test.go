@@ -164,9 +164,9 @@ func TestGateway_Options_Applied(t *testing.T) {
 	}
 
 	// 验证 gRPC 拦截器数量：
-	// recovery(1) + tracing(1) + requestid(1) + logging(1) + metrics(1) + ratelimit(1) + clientip(1) + response(1) = 8 unary
+	// recovery(1) + tracing(1) + logging(1) + metrics(1) + ratelimit(1) + clientip(1) + response(1) = 7 unary
 	// recovery(1) + tracing(1) + logging(1) + metrics(1) + ratelimit(1) + clientip(1) = 6 stream
-	expectedUnary := 8
+	expectedUnary := 7
 	if len(srv.opts.unaryInterceptors) != expectedUnary {
 		t.Errorf("期望 %d 个一元拦截器，实际为 %d", expectedUnary, len(srv.opts.unaryInterceptors))
 	}

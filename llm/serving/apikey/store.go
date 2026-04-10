@@ -3,8 +3,6 @@ package apikey
 import (
 	"context"
 	"sync"
-
-	"gorm.io/gorm"
 )
 
 // Store API Key 持久化接口.
@@ -23,56 +21,6 @@ type Store interface {
 	Delete(ctx context.Context, id string) error
 	// AutoMigrate 自动迁移数据库表结构.
 	AutoMigrate(ctx context.Context) error
-}
-
-// GORMStore 基于 GORM 的 Store 实现.
-type GORMStore struct {
-	db *gorm.DB
-}
-
-// NewGORMStore 创建基于 GORM 的 Store.
-func NewGORMStore(db *gorm.DB) *GORMStore {
-	return &GORMStore{db: db}
-}
-
-func (s *GORMStore) Save(ctx context.Context, key *Key) error {
-	return s.db.WithContext(ctx).Create(key).Error
-}
-
-func (s *GORMStore) GetByHash(ctx context.Context, hashedKey string) (*Key, error) {
-	var key Key
-	if err := s.db.WithContext(ctx).Where("hashed_key = ?", hashedKey).First(&key).Error; err != nil {
-		return nil, err
-	}
-	return &key, nil
-}
-
-func (s *GORMStore) GetByID(ctx context.Context, id string) (*Key, error) {
-	var key Key
-	if err := s.db.WithContext(ctx).Where("id = ?", id).First(&key).Error; err != nil {
-		return nil, err
-	}
-	return &key, nil
-}
-
-func (s *GORMStore) List(ctx context.Context, ownerID string) ([]*Key, error) {
-	var keys []*Key
-	if err := s.db.WithContext(ctx).Where("owner_id = ?", ownerID).Find(&keys).Error; err != nil {
-		return nil, err
-	}
-	return keys, nil
-}
-
-func (s *GORMStore) Update(ctx context.Context, key *Key) error {
-	return s.db.WithContext(ctx).Save(key).Error
-}
-
-func (s *GORMStore) Delete(ctx context.Context, id string) error {
-	return s.db.WithContext(ctx).Where("id = ?", id).Delete(&Key{}).Error
-}
-
-func (s *GORMStore) AutoMigrate(ctx context.Context) error {
-	return s.db.WithContext(ctx).AutoMigrate(&Key{})
 }
 
 // MemoryStore 基于内存的 Store 实现，用于测试.

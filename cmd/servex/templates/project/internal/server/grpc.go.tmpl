@@ -1,6 +1,8 @@
 package server
 
 import (
+	"github.com/Tsukikage7/servex/middleware/logging"
+	"github.com/Tsukikage7/servex/middleware/recovery"
 	"github.com/Tsukikage7/servex/observability/logger"
 	"github.com/Tsukikage7/servex/transport"
 	"github.com/Tsukikage7/servex/transport/grpcserver"
@@ -12,8 +14,14 @@ func NewGRPC(log logger.Logger) transport.Server {
 		grpcserver.WithLogger(log),
 		grpcserver.WithAddr(":9090"),
 		grpcserver.WithReflection(true),
-		grpcserver.WithRecovery(),
-		grpcserver.WithLogging(),
+		grpcserver.WithUnaryInterceptor(
+			recovery.UnaryServerInterceptor(recovery.WithLogger(log)),
+			logging.UnaryServerInterceptor(logging.WithLogger(log)),
+		),
+		grpcserver.WithStreamInterceptor(
+			recovery.StreamServerInterceptor(recovery.WithLogger(log)),
+			logging.StreamServerInterceptor(logging.WithLogger(log)),
+		),
 	)
 
 	// TODO: 注册 gRPC 服务

@@ -12,14 +12,15 @@ import (
 	"github.com/cloudwego/hertz/pkg/app"
 
 	"github.com/Tsukikage7/servex/transport/response"
+	"github.com/Tsukikage7/servex/validation"
 )
 
 // Validatable 可由请求对象实现以启用自动校验.
 //
 // Handle/HandleWith 在解码后自动调用 Validate()，无需额外配置.
-type Validatable interface {
-	Validate() error
-}
+//
+// Deprecated: 请直接使用 validation.Validatable.
+type Validatable = validation.Validatable
 
 // Handle 创建类型安全的 Hertz HandlerFunc，自动处理 JSON 解码、校验与统一响应格式.
 //

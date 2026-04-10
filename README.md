@@ -86,10 +86,12 @@ servex gen valueobject address --aggregate order --fields "street:string,city:st
 # 生成外部服务适配器（防腐层）
 servex gen client user --service order
 
-# Proto 管理
+# Proto 管理（基于 buf）
 servex proto add order
 servex proto client api/order/v1/order.proto
 servex proto server api/order/v1/order.proto --service order
+servex proto lint api/
+servex proto breaking api/ --against ".git#branch=main"
 
 # Dockerfile / justfile
 servex gen dockerfile --name myservice --port 8080
@@ -184,7 +186,6 @@ myproject/
 | [middleware/recovery](./middleware/recovery/) | Panic 恢复 | Y | Y | Y |
 | [middleware/timeout](./middleware/timeout/) | 超时控制 | Y | Y | Y |
 | [middleware/cors](./middleware/cors/) | 跨域资源共享（CORS） | - | Y | - |
-| [middleware/requestid](./middleware/requestid/) | 请求 ID 注入与传播 | Y | Y | Y |
 | [middleware/idempotency](./middleware/idempotency/) | 幂等性保证 | Y | Y | - |
 | [middleware/semaphore](./middleware/semaphore/) | 并发控制 | Y | - | - |
 | [middleware/logging](./middleware/logging/) | 请求日志（HTTP / gRPC） | - | Y | Y |
@@ -394,7 +395,7 @@ myproject/
 
 ## 中间件执行顺序
 
-推荐顺序（从外到内）：RequestID → Logging → Tracing → Metrics → RateLimit → CircuitBreaker → Retry → Timeout → Recovery
+推荐顺序（从外到内）：Logging → Tracing → Metrics → RateLimit → CircuitBreaker → Retry → Timeout → Recovery
 
 详见各中间件包的 README。
 

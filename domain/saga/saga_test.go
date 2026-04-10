@@ -5,17 +5,7 @@ import (
 	"errors"
 	"testing"
 	"time"
-
-	"github.com/Tsukikage7/servex/storage/cache"
-	"github.com/Tsukikage7/servex/testx"
 )
-
-// newTestStore 创建测试用的存储.
-func newTestStore() (*KVStore, cache.Cache) {
-	memCache, _ := cache.NewMemoryCache(nil, testx.NopLogger())
-	kv := CacheKV(memCache)
-	return NewKVStore(kv), memCache
-}
 
 func TestSagaSuccess(t *testing.T) {
 	executed := make([]string, 0)
@@ -169,8 +159,8 @@ func TestSagaWithRetry(t *testing.T) {
 }
 
 func TestSagaWithStore(t *testing.T) {
-	store, memCache := newTestStore()
-	defer memCache.Close()
+	// 使用 nopStore 测试 saga 的 store 接口兼容性
+	store := newNopStore()
 
 	step := func(ctx context.Context, data *Data) error {
 		return nil
@@ -185,9 +175,6 @@ func TestSagaWithStore(t *testing.T) {
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-
-	// 注意: RedisStore.List 返回 nil，因此不能用 List 验证
-	// 状态已通过 saga 执行过程中的 Save 调用保存
 }
 
 func TestSagaWithHooks(t *testing.T) {
@@ -300,43 +287,6 @@ func TestDataHelpers(t *testing.T) {
 	data.Delete("str")
 	if data.GetString("str") != "" {
 		t.Error("Delete failed")
-	}
-}
-
-func TestKVStore(t *testing.T) {
-	store, memCache := newTestStore()
-	defer memCache.Close()
-
-	ctx := t.Context()
-
-	// Save
-	state := NewState("test-1", "test-saga", 2)
-	state.Status = SagaStatusCompleted
-
-	err := store.Save(ctx, state)
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-
-	// Get
-	got, err := store.Get(ctx, "test-1")
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-	if got.Name != "test-saga" {
-		t.Errorf("expected name test-saga, got %s", got.Name)
-	}
-
-	// Delete
-	err = store.Delete(ctx, "test-1")
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-
-	// Get after delete
-	_, err = store.Get(ctx, "test-1")
-	if !errors.Is(err, ErrSagaNotFound) {
-		t.Errorf("expected ErrSagaNotFound, got %v", err)
 	}
 }
 

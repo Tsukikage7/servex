@@ -16,29 +16,24 @@ type Config struct {
 	WriteTimeout time.Duration `json:"write_timeout" yaml:"write_timeout" mapstructure:"write_timeout"`
 	IdleTimeout  time.Duration `json:"idle_timeout" yaml:"idle_timeout" mapstructure:"idle_timeout"`
 	TLS          *tlsx.Config  `json:"tls" yaml:"tls" mapstructure:"tls"`
-	Recovery     bool          `json:"recovery" yaml:"recovery" mapstructure:"recovery"`
-	Logging      bool          `json:"logging" yaml:"logging" mapstructure:"logging"`
-	LogSkipPaths []string      `json:"log_skip_paths" yaml:"log_skip_paths" mapstructure:"log_skip_paths"`
-	Tracing      string        `json:"tracing" yaml:"tracing" mapstructure:"tracing"`       // 服务名，空字符串表示不启用
 	Profiling    string        `json:"profiling" yaml:"profiling" mapstructure:"profiling"` // 路径前缀，空字符串表示不启用
-	ClientIP     bool          `json:"client_ip" yaml:"client_ip" mapstructure:"client_ip"`
 }
 
 // NewFromConfig 从配置创建 HTTP 服务器.
 //
 // 将 Config 字段转换为对应的 WithXxx 选项，然后调用 New.
-// additionalOpts 可用于补充 Config 无法表达的选项（如 Auth、Tenant 等需要运行时对象的配置）.
+// additionalOpts 可用于补充 Config 无法表达的选项（如自定义中间件等需要运行时对象的配置）.
 //
 // 示例:
 //
 //	cfg := &httpserver.Config{
-//	    Name:     "api",
-//	    Addr:     ":8080",
-//	    Recovery: true,
-//	    Logging:  true,
-//	    Tracing:  "my-service",
+//	    Name:      "api",
+//	    Addr:      ":8080",
+//	    Profiling: "/debug/pprof",
 //	}
-//	srv := httpserver.NewFromConfig(handler, cfg, log)
+//	srv := httpserver.NewFromConfig(handler, cfg, log,
+//	    httpserver.WithMiddlewares(recovery.HTTPMiddleware(), logging.HTTPMiddleware()),
+//	)
 func NewFromConfig(handler http.Handler, cfg *Config, log logger.Logger, additionalOpts ...Option) *Server {
 	var opts []Option
 
@@ -67,21 +62,9 @@ func NewFromConfig(handler http.Handler, cfg *Config, log logger.Logger, additio
 		opts = append(opts, WithTLS(tlsCfg))
 	}
 
-	// 中间件配置
-	if cfg.Recovery {
-		opts = append(opts, WithRecovery())
-	}
-	if cfg.Logging {
-		opts = append(opts, WithLogging(cfg.LogSkipPaths...))
-	}
-	if cfg.Tracing != "" {
-		opts = append(opts, WithTrace(cfg.Tracing))
-	}
+	// Profiling 配置
 	if cfg.Profiling != "" {
 		opts = append(opts, WithProfiling(cfg.Profiling))
-	}
-	if cfg.ClientIP {
-		opts = append(opts, WithClientIP())
 	}
 
 	// 附加用户自定义选项

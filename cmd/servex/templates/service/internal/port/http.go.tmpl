@@ -3,6 +3,8 @@ package port
 import (
 	"net/http"
 
+	"github.com/Tsukikage7/servex/middleware/logging"
+	"github.com/Tsukikage7/servex/middleware/recovery"
 	"github.com/Tsukikage7/servex/observability/logger"
 	"github.com/Tsukikage7/servex/transport"
 	"github.com/Tsukikage7/servex/transport/httpserver"
@@ -28,7 +30,9 @@ func NewHTTP(log logger.Logger) transport.Server {
 	return httpserver.New(router,
 		httpserver.WithLogger(log),
 		httpserver.WithAddr(":8080"),
-		httpserver.WithRecovery(),
-		httpserver.WithLogging(),
+		httpserver.WithMiddlewares(
+			recovery.HTTPMiddleware(recovery.WithLogger(log)),
+			logging.HTTPMiddleware(logging.WithLogger(log)),
+		),
 	)
 }

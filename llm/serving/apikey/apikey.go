@@ -12,6 +12,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/Tsukikage7/servex/auth"
+	authapikey "github.com/Tsukikage7/servex/auth/apikey"
 )
 
 // Key API 密钥模型.
@@ -66,6 +69,9 @@ type Manager interface {
 	List(ctx context.Context, ownerID string) ([]*Key, error)
 	// UpdateQuota 更新指定 Key 的配额使用量.
 	UpdateQuota(ctx context.Context, keyID string, tokensUsed int64) error
+	// AsValidator 将 Manager 适配为 auth/apikey.Validator，
+	// 使其可与 auth/apikey.Authenticator 配合使用.
+	AsValidator() authapikey.Validator
 }
 
 // RateLimiter 限流接口.
@@ -248,6 +254,27 @@ func (m *manager) UpdateQuota(ctx context.Context, keyID string, tokensUsed int6
 	}
 	key.QuotaUsed += tokensUsed
 	return m.store.Update(ctx, key)
+}
+
+// AsValidator 将 Manager 适配为 auth/apikey.Validator，
+// 使其可直接用作 authapikey.New(manager.AsValidator()) 的参数.
+// 验证通过时返回包含 Key 信息的 auth.Principal.
+func (m *manager) AsValidator() authapikey.Validator {
+	return func(ctx context.Context, rawKey string) (*auth.Principal, error) {
+		key, err := m.Validate(ctx, rawKey)
+		if err != nil {
+			return nil, err
+		}
+		p := &auth.Principal{
+			ID:          key.OwnerID,
+			Type:        auth.PrincipalTypeService,
+			Name:        key.Name,
+			Permissions: key.Permissions,
+			Metadata:    map[string]any{"key_id": key.ID},
+			ExpiresAt:   key.ExpiresAt,
+		}
+		return p, nil
+	}
 }
 
 // hashKey 使用 SHA-256 对原始密钥进行哈希.

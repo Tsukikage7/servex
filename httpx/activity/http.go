@@ -4,7 +4,6 @@ import (
 	"math/rand"
 	"net/http"
 
-	"github.com/Tsukikage7/servex/auth"
 	"github.com/Tsukikage7/servex/httpx/clientip"
 )
 
@@ -43,11 +42,6 @@ func HTTPMiddleware(tracker *Tracker, opts ...MiddlewareOption) func(http.Handle
 			var userID string
 			if tracker.opts.extractor != nil {
 				userID = tracker.opts.extractor(r.Context())
-			} else {
-				// 默认从 auth principal 提取
-				if principal, ok := auth.FromContext(r.Context()); ok {
-					userID = principal.ID
-				}
 			}
 
 			// 构建事件

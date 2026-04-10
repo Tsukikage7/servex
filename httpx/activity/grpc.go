@@ -8,7 +8,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
-	"github.com/Tsukikage7/servex/auth"
 	"github.com/Tsukikage7/servex/httpx/clientip"
 )
 
@@ -39,11 +38,6 @@ func UnaryServerInterceptor(tracker *Tracker, opts ...GRPCInterceptorOption) grp
 		var userID string
 		if tracker.opts.extractor != nil {
 			userID = tracker.opts.extractor(ctx)
-		} else {
-			// 默认从 auth principal 提取
-			if principal, ok := auth.FromContext(ctx); ok {
-				userID = principal.ID
-			}
 		}
 
 		// 追踪活跃
@@ -91,11 +85,6 @@ func StreamServerInterceptor(tracker *Tracker, opts ...GRPCInterceptorOption) gr
 		var userID string
 		if tracker.opts.extractor != nil {
 			userID = tracker.opts.extractor(ctx)
-		} else {
-			// 默认从 auth principal 提取
-			if principal, ok := auth.FromContext(ctx); ok {
-				userID = principal.ID
-			}
 		}
 
 		// 追踪活跃

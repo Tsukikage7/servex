@@ -31,7 +31,6 @@ type Middleware = func(http.Handler) http.Handler
 //
 //	srv := httpserver.New(router,
 //	    httpserver.WithLogger(log),
-//	    httpserver.WithRecovery(),
 //	)
 type Router struct {
 	mux    *http.ServeMux

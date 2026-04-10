@@ -14,7 +14,6 @@ func ExampleNew() {
 		grpcserver.WithLogger(log),
 		grpcserver.WithName("order-grpc"),
 		grpcserver.WithAddr(":9090"),
-		grpcserver.WithRecovery(),
 		grpcserver.WithReflection(true),
 	)
 

@@ -4,8 +4,6 @@ import (
 	"context"
 	"sync"
 	"time"
-
-	"gorm.io/gorm"
 )
 
 // UserRole 用户-角色关联.
@@ -25,78 +23,6 @@ type Store interface {
 	RevokeRole(ctx context.Context, userID, roleName string) error
 	GetUserRoles(ctx context.Context, userID string) ([]string, error)
 	AutoMigrate(ctx context.Context) error
-}
-
-// gormStore 基于 GORM 的角色存储.
-type gormStore struct {
-	db *gorm.DB
-}
-
-// NewGORMStore 创建基于 GORM 的角色存储.
-func NewGORMStore(db *gorm.DB) Store {
-	return &gormStore{db: db}
-}
-
-func (s *gormStore) SaveRole(ctx context.Context, role *Role) error {
-	return s.db.WithContext(ctx).Save(role).Error
-}
-
-func (s *gormStore) GetRole(ctx context.Context, name string) (*Role, error) {
-	var role Role
-	err := s.db.WithContext(ctx).Where("name = ?", name).First(&role).Error
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, ErrRoleNotFound
-		}
-		return nil, err
-	}
-	return &role, nil
-}
-
-func (s *gormStore) DeleteRole(ctx context.Context, name string) error {
-	result := s.db.WithContext(ctx).Where("name = ?", name).Delete(&Role{})
-	if result.Error != nil {
-		return result.Error
-	}
-	if result.RowsAffected == 0 {
-		return ErrRoleNotFound
-	}
-	return nil
-}
-
-func (s *gormStore) ListRoles(ctx context.Context) ([]*Role, error) {
-	var roles []*Role
-	err := s.db.WithContext(ctx).Find(&roles).Error
-	return roles, err
-}
-
-func (s *gormStore) AssignRole(ctx context.Context, userID, roleName string) error {
-	return s.db.WithContext(ctx).Save(&UserRole{
-		UserID:   userID,
-		RoleName: roleName,
-	}).Error
-}
-
-func (s *gormStore) RevokeRole(ctx context.Context, userID, roleName string) error {
-	return s.db.WithContext(ctx).Where("user_id = ? AND role_name = ?", userID, roleName).
-		Delete(&UserRole{}).Error
-}
-
-func (s *gormStore) GetUserRoles(ctx context.Context, userID string) ([]string, error) {
-	var roles []UserRole
-	err := s.db.WithContext(ctx).Where("user_id = ?", userID).Find(&roles).Error
-	if err != nil {
-		return nil, err
-	}
-	names := make([]string, len(roles))
-	for i, r := range roles {
-		names[i] = r.RoleName
-	}
-	return names, nil
-}
-
-func (s *gormStore) AutoMigrate(ctx context.Context) error {
-	return s.db.WithContext(ctx).AutoMigrate(&Role{}, &UserRole{})
 }
 
 // memoryStore 基于内存的角色存储.

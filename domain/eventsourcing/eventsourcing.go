@@ -18,7 +18,7 @@
 //	    return nil
 //	}
 //	// 使用仓库
-//	store := eventsourcing.NewGORMEventStore(db)
+//	store := esgorm.NewEventStore(db)  // import esgorm "github.com/Tsukikage7/servex/domain/eventsourcing/gorm"
 //	repo := eventsourcing.NewRepository(store, func() *Order {
 //	    return &Order{BaseAggregate: eventsourcing.NewBaseAggregate("", "Order")}
 //	})

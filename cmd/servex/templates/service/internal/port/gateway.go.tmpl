@@ -3,6 +3,8 @@ package port
 import (
 	"{{.Module}}/services/{{.Name}}-service/internal/service"
 
+	"github.com/Tsukikage7/servex/middleware/logging"
+	"github.com/Tsukikage7/servex/middleware/recovery"
 	"github.com/Tsukikage7/servex/observability/logger"
 	"github.com/Tsukikage7/servex/transport"
 	"github.com/Tsukikage7/servex/transport/gateway"
@@ -14,9 +16,19 @@ func NewGateway(log logger.Logger) transport.Server {
 		gateway.WithLogger(log),
 		gateway.WithHTTPAddr(":8080"),
 		gateway.WithGRPCAddr(":9090"),
-		gateway.WithRecovery(),
-		gateway.WithLogging(),
 		gateway.WithReflection(true),
+		gateway.WithHTTPMiddlewares(
+			recovery.HTTPMiddleware(recovery.WithLogger(log)),
+			logging.HTTPMiddleware(logging.WithLogger(log)),
+		),
+		gateway.WithUnaryInterceptor(
+			recovery.UnaryServerInterceptor(recovery.WithLogger(log)),
+			logging.UnaryServerInterceptor(logging.WithLogger(log)),
+		),
+		gateway.WithStreamInterceptor(
+			recovery.StreamServerInterceptor(recovery.WithLogger(log)),
+			logging.StreamServerInterceptor(logging.WithLogger(log)),
+		),
 	)
 
 	// 注册服务（同时注册 gRPC + REST 路由）

@@ -32,7 +32,6 @@
 //   - [middleware/recovery] Panic 恢复
 //   - [middleware/timeout] 超时控制
 //   - [middleware/cors] 跨域资源共享
-//   - [middleware/requestid] 请求 ID 注入与传播
 //   - [middleware/idempotency] 幂等性保证
 //   - [middleware/semaphore] 并发控制
 //   - [middleware/logging] 请求日志

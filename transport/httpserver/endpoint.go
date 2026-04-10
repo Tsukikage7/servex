@@ -7,6 +7,7 @@ import (
 
 	"github.com/Tsukikage7/servex/endpoint"
 	"github.com/Tsukikage7/servex/transport/response"
+	"github.com/Tsukikage7/servex/validation"
 )
 
 // DecodeRequestFunc 从 HTTP 请求解码为业务请求对象.
@@ -63,9 +64,9 @@ type ResponseFunc func(ctx context.Context, w http.ResponseWriter) context.Conte
 //	func (r CreateUserReq) Validate() error {
 //	    return validate.Struct(r)
 //	}
-type Validatable interface {
-	Validate() error
-}
+//
+// Deprecated: 请直接使用 validation.Validatable.
+type Validatable = validation.Validatable
 
 // EndpointHandler 将 Endpoint 包装为 http.Handler.
 //

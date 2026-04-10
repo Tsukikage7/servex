@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 
 	"github.com/Tsukikage7/servex/llm"
 	aimw "github.com/Tsukikage7/servex/llm/middleware"
@@ -76,37 +75,6 @@ type Store interface {
 	GetRecords(ctx context.Context, keyID string, from, to time.Time) ([]UsageRecord, error)
 	// AutoMigrate 自动迁移数据库表结构.
 	AutoMigrate(ctx context.Context) error
-}
-
-// --- GORM Store ---
-
-// gormStore 基于 GORM 的 Store 实现.
-type gormStore struct {
-	db *gorm.DB
-}
-
-// NewGORMStore 创建基于 GORM 的 Store，使用 usage_records 表.
-func NewGORMStore(db *gorm.DB) Store {
-	return &gormStore{db: db}
-}
-
-func (s *gormStore) SaveRecord(ctx context.Context, record *UsageRecord) error {
-	return s.db.WithContext(ctx).Create(record).Error
-}
-
-func (s *gormStore) GetRecords(ctx context.Context, keyID string, from, to time.Time) ([]UsageRecord, error) {
-	var records []UsageRecord
-	err := s.db.WithContext(ctx).
-		Where("key_id = ? AND created_at >= ? AND created_at <= ?", keyID, from, to).
-		Find(&records).Error
-	if err != nil {
-		return nil, err
-	}
-	return records, nil
-}
-
-func (s *gormStore) AutoMigrate(ctx context.Context) error {
-	return s.db.WithContext(ctx).AutoMigrate(&UsageRecord{})
 }
 
 // --- Memory Store ---

@@ -4,12 +4,14 @@ package config
 import (
 	"path/filepath"
 	"strings"
+
+	"github.com/Tsukikage7/servex/validation"
 )
 
 // Validatable 可验证的配置接口.
-type Validatable interface {
-	Validate() error
-}
+//
+// Deprecated: 请直接使用 validation.Validatable.
+type Validatable = validation.Validatable
 
 // GetConfigType 根据文件扩展名获取配置类型.
 func GetConfigType(filename string) string {

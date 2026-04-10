@@ -13,10 +13,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/redis/go-redis/v9"
-
 	"github.com/Tsukikage7/servex/llm"
 	"github.com/Tsukikage7/servex/llm/agent/conversation"
+	"github.com/Tsukikage7/servex/storage/cache"
 )
 
 // 包级错误变量.
@@ -137,7 +136,7 @@ func (s *MemoryStore) List(_ context.Context) ([]string, error) {
 var _ Store = (*MemoryStore)(nil)
 
 // =============================================================================
-// RedisStore — Redis 实现
+// RedisStore — 基于 cache.Cache 的实现
 // =============================================================================
 
 const (
@@ -145,11 +144,13 @@ const (
 	defaultKeyPrefix = "servex:memory:"
 	// defaultTTL 默认过期时间 24 小时.
 	defaultTTL = 24 * time.Hour
-	// fieldMessages Redis Hash 中存储消息的字段名.
-	fieldMessages = "messages"
-	// fieldMetadata Redis Hash 中存储元数据的字段名.
-	fieldMetadata = "metadata"
 )
+
+// sessionData 单个会话在缓存中的序列化结构.
+type sessionData struct {
+	Messages []llm.Message      `json:"messages"`
+	Metadata map[string]any     `json:"metadata,omitempty"`
+}
 
 // redisStoreOptions RedisStore 可选配置.
 type redisStoreOptions struct {
@@ -170,15 +171,15 @@ func WithTTL(ttl time.Duration) StoreOption {
 	return func(o *redisStoreOptions) { o.ttl = ttl }
 }
 
-// RedisStore 基于 Redis Hash 的记忆存储实现.
-// Hash 字段：messages（JSON 编码的消息列表）、metadata（JSON 编码的元数据）.
+// RedisStore 基于 cache.Cache 的记忆存储实现.
+// 将消息和元数据序列化为 JSON 存入缓存.
 type RedisStore struct {
-	client redis.Cmdable
-	opts   redisStoreOptions
+	cache cache.Cache
+	opts  redisStoreOptions
 }
 
-// NewRedisStore 创建 RedisStore，client 需实现 redis.Cmdable 接口.
-func NewRedisStore(client redis.Cmdable, opts ...StoreOption) *RedisStore {
+// NewRedisStore 创建 RedisStore，c 需实现 cache.Cache 接口.
+func NewRedisStore(c cache.Cache, opts ...StoreOption) *RedisStore {
 	o := redisStoreOptions{
 		keyPrefix: defaultKeyPrefix,
 		ttl:       defaultTTL,
@@ -186,104 +187,65 @@ func NewRedisStore(client redis.Cmdable, opts ...StoreOption) *RedisStore {
 	for _, opt := range opts {
 		opt(&o)
 	}
-	return &RedisStore{client: client, opts: o}
+	return &RedisStore{cache: c, opts: o}
 }
 
-// sessionKey 生成指定会话的 Redis Key.
+// sessionKey 生成指定会话的缓存 Key.
 func (s *RedisStore) sessionKey(sessionID string) string {
 	return s.opts.keyPrefix + sessionID
 }
 
-// Save 将消息和元数据序列化后存入 Redis Hash，并设置过期时间.
+// Save 将消息和元数据序列化后存入缓存，并设置过期时间.
 func (s *RedisStore) Save(ctx context.Context, sessionID string, messages []llm.Message, metadata map[string]any) error {
-	msgsJSON, err := json.Marshal(messages)
-	if err != nil {
-		return fmt.Errorf("memory: marshal messages: %w", err)
+	data := sessionData{
+		Messages: messages,
+		Metadata: metadata,
 	}
-
-	metaJSON, err := json.Marshal(metadata)
+	jsonBytes, err := json.Marshal(data)
 	if err != nil {
-		return fmt.Errorf("memory: marshal metadata: %w", err)
+		return fmt.Errorf("memory: marshal session data: %w", err)
 	}
 
 	key := s.sessionKey(sessionID)
-	pipe := s.client.(interface {
-		Pipeline() redis.Pipeliner
-	})
-	_ = pipe // 避免 lint 警告，直接使用 HSet + Expire
-
-	if err := s.client.HSet(ctx, key, fieldMessages, msgsJSON, fieldMetadata, metaJSON).Err(); err != nil {
-		return fmt.Errorf("memory: redis HSet: %w", err)
-	}
-	if err := s.client.Expire(ctx, key, s.opts.ttl).Err(); err != nil {
-		return fmt.Errorf("memory: redis Expire: %w", err)
+	if err := s.cache.Set(ctx, key, string(jsonBytes), s.opts.ttl); err != nil {
+		return fmt.Errorf("memory: cache Set: %w", err)
 	}
 	return nil
 }
 
-// Load 从 Redis Hash 中读取并反序列化消息和元数据.
+// Load 从缓存中读取并反序列化消息和元数据.
 func (s *RedisStore) Load(ctx context.Context, sessionID string) ([]llm.Message, map[string]any, error) {
 	key := s.sessionKey(sessionID)
 
-	vals, err := s.client.HMGet(ctx, key, fieldMessages, fieldMetadata).Result()
+	val, err := s.cache.Get(ctx, key)
 	if err != nil {
-		return nil, nil, fmt.Errorf("memory: redis HMGet: %w", err)
+		return nil, nil, fmt.Errorf("memory: cache Get: %w", err)
 	}
-
-	// 两个字段均为 nil 代表 Key 不存在.
-	if vals[0] == nil && vals[1] == nil {
+	if val == "" {
 		return nil, nil, ErrSessionNotFound
 	}
 
-	var messages []llm.Message
-	if vals[0] != nil {
-		msgsJSON := []byte(vals[0].(string))
-		if err := json.Unmarshal(msgsJSON, &messages); err != nil {
-			return nil, nil, fmt.Errorf("memory: unmarshal messages: %w", err)
-		}
+	var data sessionData
+	if err := json.Unmarshal([]byte(val), &data); err != nil {
+		return nil, nil, fmt.Errorf("memory: unmarshal session data: %w", err)
 	}
 
-	var metadata map[string]any
-	if vals[1] != nil {
-		metaJSON := []byte(vals[1].(string))
-		if err := json.Unmarshal(metaJSON, &metadata); err != nil {
-			return nil, nil, fmt.Errorf("memory: unmarshal metadata: %w", err)
-		}
-	}
-
-	return messages, metadata, nil
+	return data.Messages, data.Metadata, nil
 }
 
-// Delete 删除指定会话的 Redis Key.
+// Delete 删除指定会话的缓存 Key.
 func (s *RedisStore) Delete(ctx context.Context, sessionID string) error {
-	if err := s.client.Del(ctx, s.sessionKey(sessionID)).Err(); err != nil {
-		return fmt.Errorf("memory: redis Del: %w", err)
+	if err := s.cache.Del(ctx, s.sessionKey(sessionID)); err != nil {
+		return fmt.Errorf("memory: cache Del: %w", err)
 	}
 	return nil
 }
 
-// List 扫描所有匹配前缀的 Key，返回会话 ID 列表.
-func (s *RedisStore) List(ctx context.Context) ([]string, error) {
-	pattern := s.opts.keyPrefix + "*"
-	var (
-		cursor uint64
-		ids    []string
-	)
-	for {
-		keys, nextCursor, err := s.client.Scan(ctx, cursor, pattern, 100).Result()
-		if err != nil {
-			return nil, fmt.Errorf("memory: redis Scan: %w", err)
-		}
-		prefixLen := len(s.opts.keyPrefix)
-		for _, k := range keys {
-			ids = append(ids, k[prefixLen:])
-		}
-		cursor = nextCursor
-		if cursor == 0 {
-			break
-		}
-	}
-	return ids, nil
+// List 通过缓存接口列出会话 ID.
+// cache.Cache 接口不提供 Scan 能力，因此该方法返回空列表.
+// 如需 List 功能，请使用 MemoryStore 或自行维护会话 ID 索引.
+func (s *RedisStore) List(_ context.Context) ([]string, error) {
+	return nil, nil
 }
 
 // 编译期接口断言.
