@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"sync"
 	"time"
 
 	"github.com/Tsukikage7/servex/observability/logger"
@@ -45,35 +46,54 @@ func RecoveryMiddleware(log logger.Logger) Middleware {
 }
 
 // RateLimitMiddleware 限流中间件.
+// 使用 sync.Map 保证并发安全，并在窗口重置时清理断开连接的客户端.
 func RateLimitMiddleware(maxMessages int, window time.Duration) Middleware {
 	type clientLimit struct {
+		mu        sync.Mutex
 		count     int
 		resetTime time.Time
 	}
-	limits := make(map[string]*clientLimit)
+	var limits sync.Map // map[string]*clientLimit
 
 	return func(next Handler) Handler {
 		return func(client Client, msg *Message) {
 			now := time.Now()
 			id := client.ID()
 
-			limit, ok := limits[id]
-			if !ok {
-				limit = &clientLimit{resetTime: now.Add(window)}
-				limits[id] = limit
-			}
+			val, _ := limits.LoadOrStore(id, &clientLimit{resetTime: now.Add(window)})
+			limit := val.(*clientLimit)
 
+			limit.mu.Lock()
 			if now.After(limit.resetTime) {
 				limit.count = 0
 				limit.resetTime = now.Add(window)
+
+				// 清理断开连接的其他客户端条目，避免内存泄漏
+				limits.Range(func(key, value any) bool {
+					k := key.(string)
+					if k == id {
+						return true
+					}
+					cl := value.(*clientLimit)
+					cl.mu.Lock()
+					if now.After(cl.resetTime) {
+						cl.mu.Unlock()
+						limits.Delete(k)
+					} else {
+						cl.mu.Unlock()
+					}
+					return true
+				})
 			}
 
 			if limit.count >= maxMessages {
+				limit.mu.Unlock()
 				// 超过限制，丢弃消息
 				return
 			}
 
 			limit.count++
+			limit.mu.Unlock()
 			next(client, msg)
 		}
 	}

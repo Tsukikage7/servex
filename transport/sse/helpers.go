@@ -3,6 +3,7 @@ package sse
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
 )
 
 // NewEvent 创建新事件.
@@ -120,6 +121,7 @@ func (b *EventBuilder) Build() *Event {
 // Broker 事件代理，支持主题订阅.
 type Broker struct {
 	server Server
+	mu     sync.RWMutex                    // 保护 topics 的并发访问
 	topics map[string]map[string]Client // topic -> clientID -> client
 }
 
@@ -138,6 +140,8 @@ func (b *Broker) Subscribe(clientID, topic string) error {
 		return ErrClientNotFound
 	}
 
+	b.mu.Lock()
+	defer b.mu.Unlock()
 	if _, ok := b.topics[topic]; !ok {
 		b.topics[topic] = make(map[string]Client)
 	}
@@ -147,6 +151,8 @@ func (b *Broker) Subscribe(clientID, topic string) error {
 
 // Unsubscribe 取消订阅.
 func (b *Broker) Unsubscribe(clientID, topic string) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
 	if clients, ok := b.topics[topic]; ok {
 		delete(clients, clientID)
 		if len(clients) == 0 {
@@ -157,6 +163,8 @@ func (b *Broker) Unsubscribe(clientID, topic string) {
 
 // UnsubscribeAll 取消所有订阅.
 func (b *Broker) UnsubscribeAll(clientID string) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
 	for topic := range b.topics {
 		delete(b.topics[topic], clientID)
 		if len(b.topics[topic]) == 0 {
@@ -167,6 +175,8 @@ func (b *Broker) UnsubscribeAll(clientID string) {
 
 // Publish 发布事件到主题.
 func (b *Broker) Publish(topic string, event *Event) {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
 	if clients, ok := b.topics[topic]; ok {
 		for _, client := range clients {
 			_ = client.Send(event)
@@ -176,6 +186,8 @@ func (b *Broker) Publish(topic string, event *Event) {
 
 // Subscribers 返回主题订阅者数量.
 func (b *Broker) Subscribers(topic string) int {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
 	if clients, ok := b.topics[topic]; ok {
 		return len(clients)
 	}

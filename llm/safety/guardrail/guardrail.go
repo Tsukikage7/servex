@@ -24,6 +24,21 @@ var (
 	ErrTooMany = errors.New("guardrail: too many messages")
 )
 
+// allText 提取消息中的所有文本内容（Content + Parts 中 ContentTypeText 的文本）.
+func allText(m llm.Message) string {
+	if len(m.Parts) == 0 {
+		return m.Content
+	}
+	var b strings.Builder
+	b.WriteString(m.Content)
+	for _, p := range m.Parts {
+		if p.Type == llm.ContentTypeText {
+			b.WriteString(p.Text)
+		}
+	}
+	return b.String()
+}
+
 // Guard 护栏接口.
 type Guard interface {
 	Check(ctx context.Context, messages []llm.Message) error
@@ -38,12 +53,12 @@ func (f GuardFunc) Check(ctx context.Context, messages []llm.Message) error {
 }
 
 // MaxLength 输入长度限制（总字符数）.
-// 对所有消息的 Content 字段求 utf8 rune 数之和，超过 maxChars 时返回 ErrTooLong.
+// 对所有消息的 Content 和 Parts 文本字段求 utf8 rune 数之和，超过 maxChars 时返回 ErrTooLong.
 func MaxLength(maxChars int) Guard {
 	return GuardFunc(func(_ context.Context, messages []llm.Message) error {
 		total := 0
 		for _, m := range messages {
-			total += utf8.RuneCountInString(m.Content)
+			total += utf8.RuneCountInString(allText(m))
 		}
 		if total > maxChars {
 			return ErrTooLong
@@ -73,7 +88,7 @@ func KeywordFilter(keywords []string) Guard {
 	}
 	return GuardFunc(func(_ context.Context, messages []llm.Message) error {
 		for _, m := range messages {
-			content := strings.ToLower(m.Content)
+			content := strings.ToLower(allText(m))
 			for _, kw := range lower {
 				if strings.Contains(content, kw) {
 					return ErrBlocked
@@ -94,8 +109,9 @@ func RegexFilter(patterns []string) Guard {
 	}
 	return GuardFunc(func(_ context.Context, messages []llm.Message) error {
 		for _, m := range messages {
+			text := allText(m)
 			for _, re := range compiled {
-				if re.MatchString(m.Content) {
+				if re.MatchString(text) {
 					return ErrBlocked
 				}
 			}
@@ -143,8 +159,9 @@ func PIIDetector(patterns ...PIIPattern) Guard {
 	}
 	return GuardFunc(func(_ context.Context, messages []llm.Message) error {
 		for _, m := range messages {
+			text := allText(m)
 			for _, re := range regs {
-				if re.MatchString(m.Content) {
+				if re.MatchString(text) {
 					return ErrPIIDetected
 				}
 			}

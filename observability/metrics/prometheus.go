@@ -211,12 +211,12 @@ func (c *PrometheusCollector) UpdateMemoryUsage(bytes int64) {
 // 使用示例:
 //	collector.Counter("payment_failed_total", map[string]string{"channel": "alipay", "reason": "timeout"})
 func (c *PrometheusCollector) Counter(name string, labels map[string]string) {
+	// 提取 label 名称和值（保持顺序一致）
+	labelNames, labelValues := extractLabels(labels)
+
 	c.mu.RLock()
 	counter, exists := c.counters[name]
 	c.mu.RUnlock()
-
-	// 提取 label 名称和值（保持顺序一致）
-	labelNames, labelValues := extractLabels(labels)
 
 	if !exists {
 		c.mu.Lock()
@@ -247,12 +247,12 @@ func (c *PrometheusCollector) Counter(name string, labels map[string]string) {
 // 使用示例:
 //	collector.Histogram("payment_duration_seconds", 0.5, map[string]string{"channel": "alipay"})
 func (c *PrometheusCollector) Histogram(name string, value float64, labels map[string]string) {
+	// 提取 label 名称和值（保持顺序一致）
+	labelNames, labelValues := extractLabels(labels)
+
 	c.mu.RLock()
 	histogram, exists := c.histograms[name]
 	c.mu.RUnlock()
-
-	// 提取 label 名称和值（保持顺序一致）
-	labelNames, labelValues := extractLabels(labels)
 
 	if !exists {
 		c.mu.Lock()
@@ -284,12 +284,12 @@ func (c *PrometheusCollector) Histogram(name string, value float64, labels map[s
 // 使用示例:
 //	collector.Gauge("pending_orders", 42, map[string]string{"status": "unpaid"})
 func (c *PrometheusCollector) Gauge(name string, value float64, labels map[string]string) {
+	// 提取 label 名称和值（保持顺序一致）
+	labelNames, labelValues := extractLabels(labels)
+
 	c.mu.RLock()
 	gauge, exists := c.gauges[name]
 	c.mu.RUnlock()
-
-	// 提取 label 名称和值（保持顺序一致）
-	labelNames, labelValues := extractLabels(labels)
 
 	if !exists {
 		c.mu.Lock()

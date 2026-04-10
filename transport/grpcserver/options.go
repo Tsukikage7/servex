@@ -114,9 +114,10 @@ func WithConfig(cfg transport.GRPCConfig) Option {
 		if cfg.Addr != "" {
 			o.addr = cfg.Addr
 		}
-		// EnableReflection 是 bool 类型，需要特殊处理
-		// 由于无法区分 false 和零值，这里只在配置中显式设置时才应用
-		o.enableReflection = cfg.EnableReflection
+		// EnableReflection 使用 *bool 区分零值和未设置
+		if cfg.EnableReflection != nil {
+			o.enableReflection = *cfg.EnableReflection
+		}
 		if cfg.KeepaliveTime > 0 {
 			o.keepaliveTime = cfg.KeepaliveTime
 		}

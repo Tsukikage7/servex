@@ -3,6 +3,7 @@ package circuitbreaker
 import (
 	"errors"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -47,55 +48,63 @@ func TestBreaker_Execute_OpenRejectsRequests(t *testing.T) {
 }
 
 func TestBreaker_OpenToHalfOpen(t *testing.T) {
-	b := New(
-		WithFailureThreshold(1),
-		WithOpenTimeout(50*time.Millisecond),
-	)
+	synctest.Test(t, func(t *testing.T) {
+		b := New(
+			WithFailureThreshold(1),
+			WithOpenTimeout(50*time.Millisecond),
+		)
 
-	b.Execute(t.Context(), func() error { return errTest })
-	assert.Equal(t, StateOpen, b.State())
+		b.Execute(t.Context(), func() error { return errTest })
+		assert.Equal(t, StateOpen, b.State())
 
-	time.Sleep(60 * time.Millisecond)
+		// synctest 虚拟时钟：立即推进，无需真实等待
+		time.Sleep(60 * time.Millisecond)
 
-	assert.Equal(t, StateHalfOpen, b.State())
+		assert.Equal(t, StateHalfOpen, b.State())
+	})
 }
 
 func TestBreaker_HalfOpenToClosedOnSuccess(t *testing.T) {
-	b := New(
-		WithFailureThreshold(1),
-		WithSuccessThreshold(2),
-		WithOpenTimeout(50*time.Millisecond),
-	)
+	synctest.Test(t, func(t *testing.T) {
+		b := New(
+			WithFailureThreshold(1),
+			WithSuccessThreshold(2),
+			WithOpenTimeout(50*time.Millisecond),
+		)
 
-	// 触发开路
-	b.Execute(t.Context(), func() error { return errTest })
+		// 触发开路
+		b.Execute(t.Context(), func() error { return errTest })
 
-	// 等待转 HalfOpen
-	time.Sleep(60 * time.Millisecond)
-	require.Equal(t, StateHalfOpen, b.State())
+		// synctest 虚拟时钟：立即推进到 HalfOpen
+		time.Sleep(60 * time.Millisecond)
+		require.Equal(t, StateHalfOpen, b.State())
 
-	// 成功两次后关路
-	b.Execute(t.Context(), func() error { return nil })
-	b.Execute(t.Context(), func() error { return nil })
+		// 成功两次后关路
+		b.Execute(t.Context(), func() error { return nil })
+		b.Execute(t.Context(), func() error { return nil })
 
-	assert.Equal(t, StateClosed, b.State())
+		assert.Equal(t, StateClosed, b.State())
+	})
 }
 
 func TestBreaker_HalfOpenToOpenOnFailure(t *testing.T) {
-	b := New(
-		WithFailureThreshold(1),
-		WithOpenTimeout(50*time.Millisecond),
-	)
+	synctest.Test(t, func(t *testing.T) {
+		b := New(
+			WithFailureThreshold(1),
+			WithOpenTimeout(50*time.Millisecond),
+		)
 
-	b.Execute(t.Context(), func() error { return errTest })
+		b.Execute(t.Context(), func() error { return errTest })
 
-	time.Sleep(60 * time.Millisecond)
-	require.Equal(t, StateHalfOpen, b.State())
+		// synctest 虚拟时钟：立即推进到 HalfOpen
+		time.Sleep(60 * time.Millisecond)
+		require.Equal(t, StateHalfOpen, b.State())
 
-	// 探测失败，重新开路
-	b.Execute(t.Context(), func() error { return errTest })
+		// 探测失败，重新开路
+		b.Execute(t.Context(), func() error { return errTest })
 
-	assert.Equal(t, StateOpen, b.State())
+		assert.Equal(t, StateOpen, b.State())
+	})
 }
 
 func TestBreaker_Reset(t *testing.T) {

@@ -1,9 +1,7 @@
 package discovery
 
 import (
-	"fmt"
-	"math/rand"
-	"time"
+	"github.com/google/uuid"
 
 	"github.com/Tsukikage7/servex/observability/logger"
 )
@@ -46,20 +44,10 @@ func MustNewDiscovery(config *Config, log logger.Logger) Discovery {
 	return d
 }
 
-// GenerateServiceID 生成唯一的服务ID.
+// GenerateServiceID 生成唯一的服务ID，使用 UUID 确保唯一性.
 func GenerateServiceID(serviceName string) string {
 	if serviceName == "" {
 		serviceName = "unknown"
 	}
-
-	// 创建随机数生成器
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-
-	// 生成随机数
-	randomNum := r.Intn(999999)
-
-	// 获取时间戳
-	timestamp := time.Now().Unix()
-
-	return fmt.Sprintf("%s-%d%d", serviceName, randomNum, timestamp)
+	return serviceName + "-" + uuid.New().String()
 }

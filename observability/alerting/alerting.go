@@ -3,6 +3,7 @@ package alerting
 
 import (
 	"context"
+	"math"
 	"errors"
 	"fmt"
 	"sync"
@@ -570,6 +571,9 @@ func (e *Engine) notify(alert *Alert) {
 	}()
 }
 
+// floatEpsilon 浮点数比较精度.
+const floatEpsilon = 1e-9
+
 // compareValue 比较值与阈值.
 func compareValue(value float64, op Operator, threshold float64) bool {
 	switch op {
@@ -582,9 +586,9 @@ func compareValue(value float64, op Operator, threshold float64) bool {
 	case OpLTE:
 		return value <= threshold
 	case OpEQ:
-		return value == threshold
+		return math.Abs(value-threshold) < floatEpsilon
 	case OpNEQ:
-		return value != threshold
+		return math.Abs(value-threshold) >= floatEpsilon
 	default:
 		return false
 	}

@@ -173,7 +173,7 @@ func (c *Client) Stream(ctx context.Context, messages []llm.Message, opts ...llm
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 		resp.Body.Close()
 		retryAfter := llm.ParseRetryAfter(resp.Header.Get("Retry-After"))
 		return nil, c.parseError(resp.StatusCode, retryAfter, body)
@@ -351,7 +351,8 @@ func (c *Client) do(ctx context.Context, payload any) ([]byte, int, int, error) 
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	// 限制响应体读取大小（1MB），防止异常响应消耗过多内存.
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if err != nil {
 		return nil, resp.StatusCode, 0, fmt.Errorf("anthropic: 读取响应失败: %w", err)
 	}

@@ -190,3 +190,25 @@ func (s *ConcurrentPQTestSuite) TestConcurrentClone() {
 	}
 	wg.Wait()
 }
+
+func (s *ConcurrentPQTestSuite) TestAll() {
+	cpq := NewConcurrentMin[int]()
+	cpq.Push(3, 1, 2)
+
+	var items []int
+	for item := range cpq.All() {
+		items = append(items, item)
+	}
+	s.Equal([]int{1, 2, 3}, items)
+	// 原队列不受影响
+	s.Equal(3, cpq.Len())
+}
+
+func (s *ConcurrentPQTestSuite) TestAllEmpty() {
+	cpq := NewConcurrentMin[int]()
+	count := 0
+	for range cpq.All() {
+		count++
+	}
+	s.Equal(0, count)
+}

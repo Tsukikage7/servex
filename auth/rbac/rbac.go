@@ -27,6 +27,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -188,7 +189,9 @@ func (m *manager) GetUserRoles(ctx context.Context, userID string) ([]*Role, err
 	for _, name := range roleNames {
 		role, err := m.store.GetRole(ctx, name)
 		if err != nil {
-			continue // 跳过不存在的角色
+			// 记录不存在或查询失败的角色，便于排查数据不一致问题
+			log.Printf("rbac: 获取用户 %s 的角色 %s 失败: %v", userID, name, err)
+			continue
 		}
 		roles = append(roles, role)
 	}

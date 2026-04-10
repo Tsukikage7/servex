@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	mathrand "math/rand/v2"
+	"math/big"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -22,7 +22,12 @@ func GenerateID() (string, error) {
 
 // GenerateVerificationCode 生成 6 位数字验证码.
 func GenerateVerificationCode() string {
-	return fmt.Sprintf("%06d", mathrand.IntN(1000000))
+	n, err := rand.Int(rand.Reader, big.NewInt(1000000))
+	if err != nil {
+		// crypto/rand 在正常系统上不会失败，但为保持接口不变做 fallback
+		return "000000"
+	}
+	return fmt.Sprintf("%06d", n.Int64())
 }
 
 // GenerateRandomInt32 生成 [min, max] 范围内的随机 int32.
@@ -30,7 +35,11 @@ func GenerateRandomInt32(min, max int32) (int32, error) {
 	if min >= max {
 		return 0, errors.New("crypto: min must be less than max")
 	}
-	return min + mathrand.Int32N(max-min+1), nil
+	n, err := rand.Int(rand.Reader, big.NewInt(int64(max-min+1)))
+	if err != nil {
+		return 0, err
+	}
+	return min + int32(n.Int64()), nil
 }
 
 // GenerateRandomInt64 生成 [min, max] 范围内的随机 int64.
@@ -38,17 +47,29 @@ func GenerateRandomInt64(min, max int64) (int64, error) {
 	if min >= max {
 		return 0, errors.New("crypto: min must be less than max")
 	}
-	return min + mathrand.Int64N(max-min+1), nil
+	n, err := rand.Int(rand.Reader, big.NewInt(max-min+1))
+	if err != nil {
+		return 0, err
+	}
+	return min + n.Int64(), nil
 }
 
 // GenerateBusinessID 生成 9 位随机数字 ID [100000000, 999999999].
 func GenerateBusinessID() int32 {
-	return 100000000 + mathrand.Int32N(900000000)
+	n, err := rand.Int(rand.Reader, big.NewInt(900000000))
+	if err != nil {
+		return 100000000
+	}
+	return 100000000 + int32(n.Int64())
 }
 
 // GenerateBusinessID64 生成 18 位随机数字 ID [100000000000000000, 999999999999999999].
 func GenerateBusinessID64() int64 {
-	return 100000000000000000 + mathrand.Int64N(900000000000000000)
+	n, err := rand.Int(rand.Reader, big.NewInt(900000000000000000))
+	if err != nil {
+		return 100000000000000000
+	}
+	return 100000000000000000 + n.Int64()
 }
 
 // HashPassword 使用 bcrypt 对密码进行哈希.

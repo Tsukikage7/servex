@@ -1,6 +1,7 @@
 package httpserver
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -23,6 +24,7 @@ type Config struct {
 //
 // 将 Config 字段转换为对应的 WithXxx 选项，然后调用 New.
 // additionalOpts 可用于补充 Config 无法表达的选项（如自定义中间件等需要运行时对象的配置）.
+// 如果 TLS 配置无效，返回 (nil, error) 而非 panic.
 //
 // 示例:
 //
@@ -31,10 +33,10 @@ type Config struct {
 //	    Addr:      ":8080",
 //	    Profiling: "/debug/pprof",
 //	}
-//	srv := httpserver.NewFromConfig(handler, cfg, log,
+//	srv, err := httpserver.NewFromConfig(handler, cfg, log,
 //	    httpserver.WithMiddlewares(recovery.HTTPMiddleware(), logging.HTTPMiddleware()),
 //	)
-func NewFromConfig(handler http.Handler, cfg *Config, log logger.Logger, additionalOpts ...Option) *Server {
+func NewFromConfig(handler http.Handler, cfg *Config, log logger.Logger, additionalOpts ...Option) (*Server, error) {
 	var opts []Option
 
 	// 日志记录器（必需）
@@ -53,11 +55,11 @@ func NewFromConfig(handler http.Handler, cfg *Config, log logger.Logger, additio
 		opts = append(opts, WithTimeout(cfg.ReadTimeout, cfg.WriteTimeout, cfg.IdleTimeout))
 	}
 
-	// TLS 配置
+	// TLS 配置：返回 error 而非 panic
 	if cfg.TLS != nil {
 		tlsCfg, err := tlsx.NewServerTLSConfig(cfg.TLS)
 		if err != nil {
-			panic("httpserver: 创建 TLS 配置失败: " + err.Error())
+			return nil, fmt.Errorf("httpserver: 创建 TLS 配置失败: %w", err)
 		}
 		opts = append(opts, WithTLS(tlsCfg))
 	}
@@ -70,5 +72,5 @@ func NewFromConfig(handler http.Handler, cfg *Config, log logger.Logger, additio
 	// 附加用户自定义选项
 	opts = append(opts, additionalOpts...)
 
-	return New(handler, opts...)
+	return New(handler, opts...), nil
 }

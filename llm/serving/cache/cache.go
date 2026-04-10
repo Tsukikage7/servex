@@ -61,6 +61,8 @@ type entry struct {
 }
 
 // MemoryStore 基于内存切片的缓存实现，线性扫描余弦相似度.
+// 注意：Search 方法对所有条目执行线性扫描（O(n)），仅适用于条目数较少的场景（建议 < 10000 条）.
+// 生产环境中若缓存条目较多，建议使用基于向量数据库的 Store 实现.
 type MemoryStore struct {
 	mu      sync.RWMutex
 	entries []entry

@@ -4,6 +4,8 @@ package event
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log"
 	"sort"
 	"strings"
 	"sync"
@@ -104,7 +106,8 @@ func New(opts ...Option) Bus {
 		subscribers: make(map[string][]subscriber),
 		bufferSize:  1024,
 		errorHandler: func(err error) {
-			// 默认忽略错误
+			// 默认通过标准日志输出错误，避免静默丢弃事件.
+			log.Printf("[event] %v", err)
 		},
 	}
 	for _, opt := range opts {
@@ -162,7 +165,7 @@ func (b *bus) Publish(ctx context.Context, name string, payload any) error {
 			select {
 			case b.asyncCh <- asyncTask{ctx: ctx, handler: sub.handler, event: evt}:
 			default:
-				b.errorHandler(errors.New("event: async buffer full"))
+				b.errorHandler(fmt.Errorf("event: 异步缓冲区已满，丢弃事件 %q", name))
 			}
 		} else {
 			if err := sub.handler(ctx, evt); err != nil {

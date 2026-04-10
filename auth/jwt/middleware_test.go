@@ -25,7 +25,7 @@ type testClaims struct {
 // newTestJWT 创建测试用 JWT 服务.
 func newTestJWT() *JWT {
 	return NewJWT(
-		WithSecretKey("test-secret-key-for-testing"),
+		WithSecretKey("test-secret-key-for-testing-32b!"),
 		WithLogger(testx.NopLogger()),
 		WithIssuer("test-issuer"),
 	)
@@ -246,7 +246,7 @@ func TestNewParser_Whitelist(t *testing.T) {
 	whitelist.AddHTTPPaths("/health", "/metrics")
 
 	j := NewJWT(
-		WithSecretKey("test-secret-key"),
+		WithSecretKey("test-secret-key-at-least-32bytes!"),
 		WithLogger(testx.NopLogger()),
 		WithWhitelist(whitelist),
 	)
@@ -426,7 +426,7 @@ func TestHTTPMiddleware_Whitelist(t *testing.T) {
 	whitelist.AddHTTPPaths("/health", "/public/")
 
 	j := NewJWT(
-		WithSecretKey("test-secret-key"),
+		WithSecretKey("test-secret-key-at-least-32bytes!"),
 		WithLogger(testx.NopLogger()),
 		WithWhitelist(whitelist),
 	)
@@ -630,9 +630,15 @@ func TestNewJWT_Panics(t *testing.T) {
 		})
 	})
 
+	t.Run("secret key too short", func(t *testing.T) {
+		assert.Panics(t, func() {
+			NewJWT(WithSecretKey("short"), WithLogger(testx.NopLogger()))
+		})
+	})
+
 	t.Run("no logger", func(t *testing.T) {
 		assert.Panics(t, func() {
-			NewJWT(WithSecretKey("secret"))
+			NewJWT(WithSecretKey("a-key-that-is-at-least-32-bytes!"))
 		})
 	})
 }

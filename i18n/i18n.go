@@ -121,10 +121,20 @@ func (b *Bundle) NewLocalizer(langs ...string) *Localizer {
 	_, idx, _ := b.matcher.Match(parsedTags...)
 	matchedTag := b.tags[idx]
 
+	// 深拷贝消息映射，避免 Localizer 持有 Bundle 内部 map 的引用导致并发读写竞争.
+	msgsCopy := make(map[language.Tag]map[string]string, len(b.messages))
+	for tag, msgs := range b.messages {
+		cp := make(map[string]string, len(msgs))
+		for k, v := range msgs {
+			cp[k] = v
+		}
+		msgsCopy[tag] = cp
+	}
+
 	return &Localizer{
 		tag:        matchedTag,
 		defaultTag: b.defaultTag,
-		messages:   b.messages,
+		messages:   msgsCopy,
 	}
 }
 

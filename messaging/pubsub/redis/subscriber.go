@@ -18,10 +18,10 @@ import (
 // 支持消费者组（XREADGROUP）和简单读取（XREAD）两种模式.
 type Subscriber struct {
 	client goredis.Cmdable
-	closed atomic.Bool
-	mu     sync.Mutex
-	cancel context.CancelFunc
-	wg     sync.WaitGroup
+	closed  atomic.Bool
+	mu      sync.Mutex
+	cancels []context.CancelFunc // 所有订阅的 cancel 函数
+	wg      sync.WaitGroup
 	opts   subscriberOptions
 }
 
@@ -53,7 +53,7 @@ func (s *Subscriber) Subscribe(ctx context.Context, topic string) (<-chan *pubsu
 
 	subCtx, cancel := context.WithCancel(ctx)
 	s.mu.Lock()
-	s.cancel = cancel
+	s.cancels = append(s.cancels, cancel)
 	s.mu.Unlock()
 
 	msgCh := make(chan *pubsub.Message)
@@ -106,6 +106,15 @@ func (s *Subscriber) readGroup(ctx context.Context, stream string, out chan<- *p
 			if errors.Is(err, goredis.Nil) || ctx.Err() != nil {
 				continue
 			}
+			if s.opts.logger != nil {
+				s.opts.logger.Errorf("[PubSub/Redis] XREADGROUP 错误 [stream:%s group:%s]: %v", stream, s.opts.groupID, err)
+			}
+			// 退避等待，避免错误风暴
+			select {
+			case <-time.After(time.Second):
+			case <-ctx.Done():
+				return
+			}
 			continue
 		}
 
@@ -143,6 +152,15 @@ func (s *Subscriber) readStream(ctx context.Context, stream string, out chan<- *
 		if err != nil {
 			if errors.Is(err, goredis.Nil) || ctx.Err() != nil {
 				continue
+			}
+			if s.opts.logger != nil {
+				s.opts.logger.Errorf("[PubSub/Redis] XREAD 错误 [stream:%s]: %v", stream, err)
+			}
+			// 退避等待，避免错误风暴
+			select {
+			case <-time.After(time.Second):
+			case <-ctx.Done():
+				return
 			}
 			continue
 		}
@@ -195,9 +213,10 @@ func (s *Subscriber) Close() error {
 		return nil
 	}
 	s.mu.Lock()
-	if s.cancel != nil {
-		s.cancel()
+	for _, cancel := range s.cancels {
+		cancel()
 	}
+	s.cancels = nil
 	s.mu.Unlock()
 	s.wg.Wait()
 	return nil

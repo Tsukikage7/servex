@@ -76,6 +76,7 @@ func NewTLSConfig(cfg *Config) (*tls.Config, error) {
 	tlsCfg.ClientAuth = parseClientAuth(cfg.ClientAuth)
 
 	if cfg.InsecureSkipVerify {
+		log.Println("WARNING: tls: InsecureSkipVerify 已启用，将跳过证书验证，仅应在测试环境中使用")
 		tlsCfg.InsecureSkipVerify = true
 	}
 
@@ -101,6 +102,10 @@ func NewClientTLSConfig(cfg *Config) (*tls.Config, error) {
 	tlsCfg := &tls.Config{
 		MinVersion:         parseMinVersion(cfg.MinVersion),
 		InsecureSkipVerify: cfg.InsecureSkipVerify,
+	}
+
+	if cfg.InsecureSkipVerify {
+		log.Println("WARNING: tls: InsecureSkipVerify 已启用（客户端），将跳过服务端证书验证，仅应在测试环境中使用")
 	}
 
 	// 加载客户端证书（mTLS）

@@ -76,3 +76,27 @@ func ExampleNewManager_withObserver() {
 	fmt.Println(mgr.Get().Name)
 	// Output: v1
 }
+
+func ExampleConfigFieldError_Error() {
+	err := &config.ConfigFieldError{
+		Field:    "database.host",
+		Source:   "file:config.yaml",
+		Message:  "类型不匹配",
+		Expected: "string",
+		Actual:   "123",
+	}
+	fmt.Println(err.Error())
+	// Output: config: 字段 "database.host" (来源: file:config.yaml): 类型不匹配 (期望: string, 实际: 123)
+}
+
+func ExampleNewFieldError() {
+	err := config.NewFieldError("server.port", "env:SERVER_PORT", "字段缺失")
+	fmt.Println(err.Error())
+	// Output: config: 字段 "server.port" (来源: env:SERVER_PORT): 字段缺失
+}
+
+func ExampleNewFieldTypeError() {
+	err := config.NewFieldTypeError("server.port", "file:app.yaml", "int", "\"abc\"")
+	fmt.Println(err.Error())
+	// Output: config: 字段 "server.port" (来源: file:app.yaml): 类型不匹配 (期望: int, 实际: "abc")
+}

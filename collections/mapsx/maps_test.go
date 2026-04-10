@@ -287,3 +287,67 @@ func (s *MapsTestSuite) TestMergeFunc_LastWins() {
 	result := MergeFunc(func(_, v2 int) int { return v2 }, m1, m2)
 	s.Equal(2, result["a"])
 }
+
+func (s *MapsTestSuite) TestIterAll() {
+	m := map[string]int{"a": 1, "b": 2}
+	collected := make(map[string]int)
+	for k, v := range IterAll(m) {
+		collected[k] = v
+	}
+	s.Equal(m, collected)
+}
+
+func (s *MapsTestSuite) TestIterAllEmpty() {
+	count := 0
+	for range IterAll(map[string]int{}) {
+		count++
+	}
+	s.Equal(0, count)
+}
+
+func (s *MapsTestSuite) TestIterKeys() {
+	m := map[string]int{"a": 1, "b": 2}
+	keys := make(map[string]bool)
+	for k := range IterKeys(m) {
+		keys[k] = true
+	}
+	s.True(keys["a"])
+	s.True(keys["b"])
+	s.Len(keys, 2)
+}
+
+func (s *MapsTestSuite) TestIterValues() {
+	m := map[string]int{"a": 1, "b": 2}
+	vals := make(map[int]bool)
+	for v := range IterValues(m) {
+		vals[v] = true
+	}
+	s.True(vals[1])
+	s.True(vals[2])
+	s.Len(vals, 2)
+}
+
+func (s *MapsTestSuite) TestIterAllEarlyBreak() {
+	m := map[string]int{"a": 1, "b": 2, "c": 3}
+	count := 0
+	for range IterAll(m) {
+		count++
+		if count == 1 {
+			break
+		}
+	}
+	s.Equal(1, count)
+}
+
+func (s *MapsTestSuite) TestCollect() {
+	m := map[string]int{"a": 1, "b": 2}
+	seq := IterAll(m)
+	result := Collect(seq)
+	s.Equal(m, result)
+}
+
+func (s *MapsTestSuite) TestCollectEmpty() {
+	seq := IterAll(map[string]int{})
+	result := Collect(seq)
+	s.Empty(result)
+}

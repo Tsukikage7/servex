@@ -44,8 +44,10 @@ func HTTPMiddleware(opts ...Option) func(http.Handler) http.Handler {
 						_ = o.Handler(r, p, stack)
 					}
 
-					// 返回 500
+					// 返回 500，写入响应体便于客户端识别错误
+					w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 					w.WriteHeader(http.StatusInternalServerError)
+					_, _ = w.Write([]byte("Internal Server Error"))
 				}
 			}()
 

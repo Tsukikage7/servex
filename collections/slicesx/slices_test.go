@@ -381,3 +381,76 @@ func (s *SlicesTestSuite) TestDelete() {
 	_, err = Delete([]int{1, 2, 3}, -1)
 	s.Error(err)
 }
+
+func (s *SlicesTestSuite) TestIterAll() {
+	slice := []string{"a", "b", "c"}
+	var indices []int
+	var vals []string
+	for i, v := range IterAll(slice) {
+		indices = append(indices, i)
+		vals = append(vals, v)
+	}
+	s.Equal([]int{0, 1, 2}, indices)
+	s.Equal([]string{"a", "b", "c"}, vals)
+}
+
+func (s *SlicesTestSuite) TestIterAllEmpty() {
+	count := 0
+	for range IterAll([]int{}) {
+		count++
+	}
+	s.Equal(0, count)
+}
+
+func (s *SlicesTestSuite) TestIterValues() {
+	slice := []int{10, 20, 30}
+	var vals []int
+	for v := range IterValues(slice) {
+		vals = append(vals, v)
+	}
+	s.Equal([]int{10, 20, 30}, vals)
+}
+
+func (s *SlicesTestSuite) TestIterValuesEarlyBreak() {
+	slice := []int{1, 2, 3, 4, 5}
+	var vals []int
+	for v := range IterValues(slice) {
+		vals = append(vals, v)
+		if v == 3 {
+			break
+		}
+	}
+	s.Equal([]int{1, 2, 3}, vals)
+}
+
+func (s *SlicesTestSuite) TestIterBackward() {
+	slice := []string{"a", "b", "c"}
+	var indices []int
+	var vals []string
+	for i, v := range IterBackward(slice) {
+		indices = append(indices, i)
+		vals = append(vals, v)
+	}
+	s.Equal([]int{2, 1, 0}, indices)
+	s.Equal([]string{"c", "b", "a"}, vals)
+}
+
+func (s *SlicesTestSuite) TestIterBackwardEmpty() {
+	count := 0
+	for range IterBackward([]int{}) {
+		count++
+	}
+	s.Equal(0, count)
+}
+
+func (s *SlicesTestSuite) TestCollect() {
+	seq := IterValues([]int{1, 2, 3})
+	result := Collect(seq)
+	s.Equal([]int{1, 2, 3}, result)
+}
+
+func (s *SlicesTestSuite) TestCollectEmpty() {
+	seq := IterValues([]int{})
+	result := Collect(seq)
+	s.Nil(result)
+}

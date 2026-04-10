@@ -1,8 +1,10 @@
 // Package treeset 提供基于红黑树实现的有序集合.
+// 注意：本包的数据结构非并发安全，如需在多 goroutine 中使用请自行加锁.
 package treeset
 
 import (
 	"cmp"
+	"iter"
 
 	"github.com/Tsukikage7/servex/collections/treemap"
 )
@@ -166,4 +168,22 @@ func (s *TreeSet[T]) Equal(other *TreeSet[T]) bool {
 		return false
 	}
 	return s.IsSubset(other)
+}
+
+// All 返回按排序顺序遍历所有元素的迭代器.
+func (s *TreeSet[T]) All() iter.Seq[T] {
+	return func(yield func(T) bool) {
+		s.tm.Range(func(key T, _ struct{}) bool {
+			return yield(key)
+		})
+	}
+}
+
+// Backward 返回按排序逆序遍历所有元素的迭代器.
+func (s *TreeSet[T]) Backward() iter.Seq[T] {
+	return func(yield func(T) bool) {
+		s.tm.RangeReverse(func(key T, _ struct{}) bool {
+			return yield(key)
+		})
+	}
 }

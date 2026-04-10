@@ -3,7 +3,6 @@ package openai
 import (
 	"bufio"
 	"encoding/json"
-	"errors"
 	"io"
 	"strings"
 
@@ -190,6 +189,3 @@ func (r *streamReader) Close() error {
 
 // 编译期接口断言.
 var _ llm.StreamReader = (*streamReader)(nil)
-
-// errStreamClosed 流关闭错误.
-var errStreamClosed = errors.New("stream closed")

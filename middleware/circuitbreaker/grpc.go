@@ -2,6 +2,7 @@ package circuitbreaker
 
 import (
 	"context"
+	"errors"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -23,7 +24,7 @@ func UnaryServerInterceptor(cb CircuitBreaker) grpc.UnaryServerInterceptor {
 			resp, e = handler(ctx, req)
 			return e
 		})
-		if err == ErrCircuitOpen {
+		if errors.Is(err, ErrCircuitOpen) {
 			return nil, status.Error(codes.Unavailable, "服务暂时不可用，请稍后重试")
 		}
 		return resp, err
@@ -41,7 +42,7 @@ func StreamServerInterceptor(cb CircuitBreaker) grpc.StreamServerInterceptor {
 		err := cb.Execute(ss.Context(), func() error {
 			return handler(srv, ss)
 		})
-		if err == ErrCircuitOpen {
+		if errors.Is(err, ErrCircuitOpen) {
 			return status.Error(codes.Unavailable, "服务暂时不可用，请稍后重试")
 		}
 		return err

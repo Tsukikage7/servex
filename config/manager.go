@@ -12,12 +12,18 @@ import (
 // Observer 配置变更观察者回调.
 type Observer[T any] func(old, new *T)
 
+// Namer 支持命名的数据源接口.
+type Namer interface {
+	Name() string
+}
+
 // Manager 配置管理器，支持多数据源 + 热加载.
 type Manager[T any] struct {
 	sources   []Source
 	decoder   func([]*KeyValue) (*T, error)
 	observers []Observer[T]
 	current   atomic.Pointer[T]
+	mu        sync.Mutex // 保护 watchers 的并发访问
 	watchers  []Watcher
 	wg        sync.WaitGroup
 	closed    chan struct{}
@@ -73,12 +79,20 @@ func (m *Manager[T]) Load() error {
 	}
 	cfg, err := m.decoder(kvs)
 	if err != nil {
-		return fmt.Errorf("config: %w: %v", ErrUnmarshal, err)
+		return &ConfigFieldError{
+			Source:  m.sourceNames(),
+			Message: fmt.Sprintf("%v: %v", ErrUnmarshal, err),
+			Err:     ErrUnmarshal,
+		}
 	}
 	// 验证
 	if v, ok := any(cfg).(Validatable); ok {
 		if err := v.Validate(); err != nil {
-			return fmt.Errorf("config: %w: %v", ErrValidation, err)
+			return &ConfigFieldError{
+				Source:  m.sourceNames(),
+				Message: fmt.Sprintf("%v: %v", ErrValidation, err),
+				Err:     ErrValidation,
+			}
 		}
 	}
 	m.current.Store(cfg)
@@ -88,6 +102,9 @@ func (m *Manager[T]) Load() error {
 // Watch 启动所有 Source 的 Watcher，检测变更时自动重新加载.
 // 非阻塞，内部启动 goroutine.
 func (m *Manager[T]) Watch() error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	for _, src := range m.sources {
 		w, err := src.Watch()
 		if err != nil {
@@ -123,6 +140,26 @@ func (m *Manager[T]) Close() error {
 	return nil
 }
 
+// sourceNames 返回所有数据源名称的汇总字符串.
+func (m *Manager[T]) sourceNames() string {
+	names := make([]string, 0, len(m.sources))
+	for i, src := range m.sources {
+		if n, ok := src.(Namer); ok {
+			names = append(names, n.Name())
+		} else {
+			names = append(names, fmt.Sprintf("source[%d]", i))
+		}
+	}
+	if len(names) == 1 {
+		return names[0]
+	}
+	result := names[0]
+	for _, n := range names[1:] {
+		result += "," + n
+	}
+	return result
+}
+
 // loadAll 从所有 Source 加载并合并 KeyValue.
 // 后者覆盖前者.
 func (m *Manager[T]) loadAll() ([]*KeyValue, error) {
@@ -155,16 +192,19 @@ func (m *Manager[T]) watchLoop(w Watcher) {
 		// 重新从所有源加载（确保合并一致性）
 		kvs, err := m.loadAll()
 		if err != nil {
+			fmt.Printf("[config] 热加载失败: 加载数据源出错: %v\n", err)
 			continue
 		}
 		cfg, err := m.decoder(kvs)
 		if err != nil {
+			fmt.Printf("[config] 热加载失败: 解码配置出错: %v\n", err)
 			continue
 		}
 
 		// 验证
 		if v, ok := any(cfg).(Validatable); ok {
 			if err := v.Validate(); err != nil {
+				fmt.Printf("[config] 热加载失败: 配置验证出错: %v\n", err)
 				continue
 			}
 		}

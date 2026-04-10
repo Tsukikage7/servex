@@ -97,6 +97,10 @@ func (e *Engine) Render(name string, data any) (string, error) {
 }
 
 // RenderString 渲染内联模板字符串.
+//
+// 注意: 本方法使用 text/template，不会对输出进行 HTML 转义.
+// 如果模板内容或数据来源于不可信输入，存在注入风险，
+// 请改用 [Engine.RenderHTML] 或 html/template.
 func (e *Engine) RenderString(tpl string, data any) (string, error) {
 	t := texttemplate.New("inline").Funcs(e.funcMap)
 

@@ -268,3 +268,83 @@ func (s *TreeMapTestSuite) TestLargeDataset() {
 		}
 	}
 }
+
+func (s *TreeMapTestSuite) TestAll() {
+	tm := NewOrdered[int, string]()
+	tm.Put(3, "three")
+	tm.Put(1, "one")
+	tm.Put(2, "two")
+
+	var keys []int
+	var vals []string
+	for k, v := range tm.All() {
+		keys = append(keys, k)
+		vals = append(vals, v)
+	}
+	s.Equal([]int{1, 2, 3}, keys)
+	s.Equal([]string{"one", "two", "three"}, vals)
+}
+
+func (s *TreeMapTestSuite) TestAllEmpty() {
+	tm := NewOrdered[int, string]()
+	count := 0
+	for range tm.All() {
+		count++
+	}
+	s.Equal(0, count)
+}
+
+func (s *TreeMapTestSuite) TestAllEarlyBreak() {
+	tm := NewOrdered[int, string]()
+	tm.Put(1, "one")
+	tm.Put(2, "two")
+	tm.Put(3, "three")
+
+	var keys []int
+	for k, _ := range tm.All() {
+		keys = append(keys, k)
+		if k == 2 {
+			break
+		}
+	}
+	s.Equal([]int{1, 2}, keys)
+}
+
+func (s *TreeMapTestSuite) TestBackward() {
+	tm := NewOrdered[int, string]()
+	tm.Put(3, "three")
+	tm.Put(1, "one")
+	tm.Put(2, "two")
+
+	var keys []int
+	var vals []string
+	for k, v := range tm.Backward() {
+		keys = append(keys, k)
+		vals = append(vals, v)
+	}
+	s.Equal([]int{3, 2, 1}, keys)
+	s.Equal([]string{"three", "two", "one"}, vals)
+}
+
+func (s *TreeMapTestSuite) TestBackwardEmpty() {
+	tm := NewOrdered[int, string]()
+	count := 0
+	for range tm.Backward() {
+		count++
+	}
+	s.Equal(0, count)
+}
+
+func (s *TreeMapTestSuite) TestRangeReverse() {
+	tm := NewOrdered[int, string]()
+	tm.Put(3, "three")
+	tm.Put(1, "one")
+	tm.Put(2, "two")
+
+	var keys []int
+	tm.RangeReverse(func(k int, v string) bool {
+		keys = append(keys, k)
+		return true
+	})
+	s.Equal([]int{3, 2, 1}, keys)
+}

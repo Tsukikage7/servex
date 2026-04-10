@@ -387,9 +387,10 @@ func (m *memoryCache) Close() error {
 	return nil
 }
 
-// Client 返回底层数据（测试用）.
+// Client 返回底层客户端.
+// 内存缓存无外部客户端，返回 nil 以避免暴露内部 map 绕过锁保护.
 func (m *memoryCache) Client() any {
-	return m.data
+	return nil
 }
 
 // serialize 序列化值.

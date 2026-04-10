@@ -1,5 +1,8 @@
 // Package hashset 提供基于 map 实现的无序集合.
+// 注意：本包的数据结构非并发安全，如需在多 goroutine 中使用请自行加锁.
 package hashset
+
+import "iter"
 
 // HashSet 基于 map 的无序集合.
 // 特性:
@@ -184,4 +187,15 @@ func (s *HashSet[T]) IsDisjoint(other *HashSet[T]) bool {
 		}
 	}
 	return true
+}
+
+// All 返回遍历所有元素的迭代器（顺序不确定）.
+func (s *HashSet[T]) All() iter.Seq[T] {
+	return func(yield func(T) bool) {
+		for item := range s.m {
+			if !yield(item) {
+				return
+			}
+		}
+	}
 }

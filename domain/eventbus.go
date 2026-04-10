@@ -34,7 +34,12 @@ func (b *EventBus) SubscribeAll(handler EventHandler) {
 // Publish 发布事件.
 func (b *EventBus) Publish(ctx context.Context, event DomainEvent) error {
 	b.mu.RLock()
-	handlers := append(b.handlers[event.EventName()], b.handlers["*"]...)
+	// 复制 handlers 到新切片，避免 append 在 RLock 下复用底层数组导致竞态
+	src := b.handlers[event.EventName()]
+	wild := b.handlers["*"]
+	handlers := make([]EventHandler, 0, len(src)+len(wild))
+	handlers = append(handlers, src...)
+	handlers = append(handlers, wild...)
 	b.mu.RUnlock()
 
 	for _, h := range handlers {

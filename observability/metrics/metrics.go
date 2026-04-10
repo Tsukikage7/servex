@@ -20,9 +20,9 @@ type Collector interface {
 	UpdateMemoryUsage(bytes int64)
 
 	// 自定义指标
-	IncrementCounter(name string, labels map[string]string)
-	ObserveHistogram(name string, value float64, labels map[string]string)
-	SetGauge(name string, value float64, labels map[string]string)
+	Counter(name string, labels map[string]string)
+	Histogram(name string, value float64, labels map[string]string)
+	Gauge(name string, value float64, labels map[string]string)
 
 	// Handler
 	GetHandler() http.Handler

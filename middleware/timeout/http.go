@@ -3,6 +3,7 @@ package timeout
 import (
 	"context"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/Tsukikage7/servex/observability/logger"
@@ -83,25 +84,9 @@ func HTTPMiddleware(timeout time.Duration, opts ...Option) func(http.Handler) ht
 // timeoutWriter 包装 http.ResponseWriter 以跟踪写入状态.
 type timeoutWriter struct {
 	http.ResponseWriter
-	mu      mutex
+	mu      sync.Mutex
 	written bool
 	done    chan struct{}
-}
-
-// mutex 简单互斥锁（避免导入 sync 包只为一个类型）.
-type mutex struct {
-	ch chan struct{}
-}
-
-func (m *mutex) Lock() {
-	if m.ch == nil {
-		m.ch = make(chan struct{}, 1)
-	}
-	m.ch <- struct{}{}
-}
-
-func (m *mutex) Unlock() {
-	<-m.ch
 }
 
 func (tw *timeoutWriter) WriteHeader(code int) {

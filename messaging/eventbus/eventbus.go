@@ -84,6 +84,7 @@ type Bus struct {
 	asyncCh chan asyncTask
 	wg      sync.WaitGroup
 	closed  atomic.Bool
+	closeMu sync.RWMutex // 保护 asyncCh 的发送与关闭操作
 }
 
 // asyncTask 异步任务.
@@ -202,6 +203,10 @@ func (b *Bus) Publish(ctx context.Context, event Event) error {
 
 // PublishAsync 异步发布事件，将事件分发给工作协程处理.
 func (b *Bus) PublishAsync(ctx context.Context, event Event) {
+	// 使用 closeMu 读锁防止与 Close 中的 channel 关闭竞态
+	b.closeMu.RLock()
+	defer b.closeMu.RUnlock()
+
 	if b.closed.Load() {
 		return
 	}
@@ -214,7 +219,10 @@ func (b *Bus) PublishAsync(ctx context.Context, event Event) {
 // Close 关闭事件总线，等待所有异步处理完成.
 func (b *Bus) Close() {
 	if b.closed.CompareAndSwap(false, true) {
+		// 获取写锁，确保所有 PublishAsync 的发送已完成
+		b.closeMu.Lock()
 		close(b.asyncCh)
+		b.closeMu.Unlock()
 		b.wg.Wait()
 	}
 }

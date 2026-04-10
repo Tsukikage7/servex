@@ -35,8 +35,9 @@ type etcdDiscovery struct {
 	client *clientv3.Client
 	config *Config
 	logger logger.Logger
-	mu     sync.Mutex
-	leases map[string]clientv3.LeaseID // serviceID -> leaseID
+	mu      sync.Mutex
+	leases  map[string]clientv3.LeaseID      // serviceID -> leaseID
+	cancels map[string]context.CancelFunc    // serviceID -> keepalive cancel
 }
 
 // 编译期接口合规检查.
@@ -67,7 +68,8 @@ func newEtcdDiscovery(config *Config, log logger.Logger) (Discovery, error) {
 		client: client,
 		config: config,
 		logger: log,
-		leases: make(map[string]clientv3.LeaseID),
+		leases:  make(map[string]clientv3.LeaseID),
+		cancels: make(map[string]context.CancelFunc),
 	}, nil
 }
 
@@ -129,9 +131,11 @@ func (e *etcdDiscovery) RegisterWithHealthEndpoint(ctx context.Context, serviceN
 		return "", ErrRegister
 	}
 
-	// 持续续约（使用独立 context，避免业务 ctx 取消时停止续约）
-	keepAliveCh, err := e.client.KeepAlive(context.Background(), lease.ID)
+	// 持续续约（使用独立可取消 context，Unregister/Close 时取消以防 goroutine 泄漏）
+	keepAliveCtx, keepAliveCancel := context.WithCancel(context.Background())
+	keepAliveCh, err := e.client.KeepAlive(keepAliveCtx, lease.ID)
 	if err != nil {
+		keepAliveCancel()
 		e.logger.With(logger.Err(err)).Error("[Discovery] etcd续约失败")
 		return "", ErrRegister
 	}
@@ -143,7 +147,12 @@ func (e *etcdDiscovery) RegisterWithHealthEndpoint(ctx context.Context, serviceN
 	}()
 
 	e.mu.Lock()
+	// 如果同一个 serviceID 已存在（重复注册），先取消旧的 keepalive goroutine
+	if oldCancel, ok := e.cancels[serviceID]; ok {
+		oldCancel()
+	}
 	e.leases[serviceID] = lease.ID
+	e.cancels[serviceID] = keepAliveCancel
 	e.mu.Unlock()
 
 	e.logger.With(
@@ -167,7 +176,16 @@ func (e *etcdDiscovery) Unregister(ctx context.Context, serviceID string) error 
 	if ok {
 		delete(e.leases, serviceID)
 	}
+	cancelFn, hasCancel := e.cancels[serviceID]
+	if hasCancel {
+		delete(e.cancels, serviceID)
+	}
 	e.mu.Unlock()
+
+	// 取消 keepalive goroutine，防止泄漏
+	if hasCancel {
+		cancelFn()
+	}
 
 	if ok {
 		if _, err := e.client.Revoke(ctx, leaseID); err != nil {
@@ -220,8 +238,14 @@ func (e *etcdDiscovery) Discover(ctx context.Context, serviceName string) ([]str
 	return addresses, nil
 }
 
-// Close 关闭 etcd 客户端.
+// Close 关闭 etcd 客户端，取消所有 keepalive goroutine.
 func (e *etcdDiscovery) Close() error {
+	e.mu.Lock()
+	for id, cancel := range e.cancels {
+		cancel()
+		delete(e.cancels, id)
+	}
+	e.mu.Unlock()
 	e.logger.Debug("[Discovery] etcd服务发现连接已关闭")
 	return e.client.Close()
 }

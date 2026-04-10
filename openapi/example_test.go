@@ -25,7 +25,7 @@ func ExampleNewRegistry() {
 	fmt.Println(spec.Info.Title)
 	fmt.Println(spec.Info.Version)
 	// Output:
-	// 3.0.3
+	// 3.1.0
 	// Pet Store API
 	// 1.0.0
 }

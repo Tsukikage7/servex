@@ -53,6 +53,7 @@ func (r *Relay) Start(ctx context.Context) error {
 
 	r.wg.Go(func() { r.pollLoop(relayCtx) })
 	r.wg.Go(func() { r.cleanupLoop(relayCtx) })
+	r.wg.Go(func() { r.resetStaleLoop(relayCtx) })
 
 	r.logDebug("中继器已启动")
 	return nil
@@ -135,22 +136,36 @@ func (r *Relay) poll(ctx context.Context) {
 			r.logErrorf("批量标记已发送失败: %v", err)
 		}
 	}
-
-	// 重置超时/失败消息
-	if n, err := r.store.ResetStale(dbCtx, r.opts.staleTimeout); err != nil {
-		r.logErrorf("重置过期消息失败: %v", err)
-	} else if n > 0 {
-		r.logDebugf("已重置 %d 条过期消息", n)
-	}
 }
 
 // send 发送单条消息到消息队列.
 func (r *Relay) send(ctx context.Context, msg *OutboxMessage) error {
 	if msg.RetryCount >= r.opts.maxRetries {
-		r.logWarnf("消息已达最大重试次数，跳过 [id:%d retries:%d]", msg.ID, msg.RetryCount)
-		return nil
+		r.logWarnf("消息已达最大重试次数，标记为死信 [id:%d retries:%d]", msg.ID, msg.RetryCount)
+		return ErrMaxRetriesExceeded
 	}
 	return r.publisher.Publish(ctx, msg.Topic, msg.ToMessage())
+}
+
+// resetStaleLoop 定期重置超时的 Processing/Failed 消息.
+// 仅重置超过 staleTimeout（默认 5 分钟）的消息，避免干扰正在处理的消息.
+func (r *Relay) resetStaleLoop(ctx context.Context) {
+	// 重置间隔为 staleTimeout，确保不会过于频繁
+	ticker := time.NewTicker(r.opts.staleTimeout)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			if n, err := r.store.ResetStale(context.Background(), r.opts.staleTimeout); err != nil {
+				r.logErrorf("重置过期消息失败: %v", err)
+			} else if n > 0 {
+				r.logDebugf("已重置 %d 条过期消息", n)
+			}
+		}
+	}
 }
 
 // cleanupLoop 定期清理已发送消息.

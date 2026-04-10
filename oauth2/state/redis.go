@@ -58,8 +58,20 @@ func (s *RedisStore) Generate(ctx context.Context) (string, error) {
 }
 
 // Validate 验证并消费一个 state 参数.
+// 使用 Get+Del 实现一次性消费；通过 SetNX 标记防止并发重复消费.
 func (s *RedisStore) Validate(ctx context.Context, state string) (bool, error) {
 	key := s.prefix + state
+	// 使用 SetNX 设置消费标记，确保只有一个请求能成功消费该 state
+	consumeKey := key + ":consumed"
+	acquired, err := s.cache.SetNX(ctx, consumeKey, "1", s.ttl)
+	if err != nil {
+		return false, err
+	}
+	if !acquired {
+		// 已被其他请求消费
+		return false, nil
+	}
+
 	val, err := s.cache.Get(ctx, key)
 	if err != nil {
 		if errors.Is(err, cache.ErrNotFound) {
@@ -67,7 +79,7 @@ func (s *RedisStore) Validate(ctx context.Context, state string) (bool, error) {
 		}
 		return false, err
 	}
-	// 一次性消费：验证后立即删除
-	s.cache.Del(ctx, key)
+	// 删除原始 state key
+	_ = s.cache.Del(ctx, key)
 	return val == "1", nil
 }

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -35,12 +36,13 @@ func Load[T any](configPath string, opts ...Option) (*T, error) {
 	applyOptions(v, options)
 
 	// 读取配置文件
+	source := "file:" + configPath
 	if err := v.ReadInConfig(); err != nil {
-		return nil, ErrReadConfig
+		return nil, fmt.Errorf("%w: %v", ErrReadConfig, err)
 	}
 
 	// 解析并验证
-	return unmarshalAndValidate[T](v)
+	return unmarshalAndValidate[T](v, source)
 }
 
 // MustLoad 加载配置，失败时 panic.
@@ -66,12 +68,13 @@ func LoadFromBytes[T any](data []byte, configType string, opts ...Option) (*T, e
 	applyOptions(v, options)
 
 	// 从字节读取
+	source := "bytes:" + configType
 	if err := v.ReadConfig(strings.NewReader(string(data))); err != nil {
-		return nil, ErrReadConfig
+		return nil, fmt.Errorf("%w: %v", ErrReadConfig, err)
 	}
 
 	// 解析并验证
-	return unmarshalAndValidate[T](v)
+	return unmarshalAndValidate[T](v, source)
 }
 
 // LoadWithSearch 在多个目录中搜索配置文件.
@@ -98,7 +101,8 @@ func LoadWithSearch[T any](configName string, searchPaths []string, opts ...Opti
 	}
 
 	// 解析并验证
-	return unmarshalAndValidate[T](v)
+	source := "search:" + configName
+	return unmarshalAndValidate[T](v, source)
 }
 
 // applyOptions 应用通用选项到 viper 实例.
@@ -125,16 +129,24 @@ func applyOptions(v *viper.Viper, options *Options) {
 }
 
 // unmarshalAndValidate 解析配置并验证.
-func unmarshalAndValidate[T any](v *viper.Viper) (*T, error) {
+func unmarshalAndValidate[T any](v *viper.Viper, source string) (*T, error) {
 	config := new(T)
 	if err := v.Unmarshal(config); err != nil {
-		return nil, ErrUnmarshal
+		return nil, &ConfigFieldError{
+			Source:  source,
+			Message: fmt.Sprintf("%v: %v", ErrUnmarshal, err),
+			Err:     ErrUnmarshal,
+		}
 	}
 
 	// 如果实现了 Validatable 接口，进行验证
 	if validator, ok := any(config).(Validatable); ok {
 		if err := validator.Validate(); err != nil {
-			return nil, ErrValidation
+			return nil, &ConfigFieldError{
+				Source:  source,
+				Message: fmt.Sprintf("%v: %v", ErrValidation, err),
+				Err:     ErrValidation,
+			}
 		}
 	}
 

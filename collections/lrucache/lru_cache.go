@@ -1,7 +1,10 @@
 // Package lrucache 提供 LRU (Least Recently Used) 缓存实现.
 package lrucache
 
-import "sync"
+import (
+	"iter"
+	"sync"
+)
 
 // entry 双向链表节点.
 type entry[K comparable, V any] struct {
@@ -194,6 +197,20 @@ func (c *LRUCache[K, V]) Resize(capacity int) {
 	// 淘汰多余元素
 	for len(c.cache) > capacity {
 		c.removeLast()
+	}
+}
+
+// All 返回按最近使用顺序遍历所有键值对的迭代器（最近使用在前）.
+// 遍历期间持有读锁，不会影响 LRU 顺序.
+func (c *LRUCache[K, V]) All() iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		c.mu.RLock()
+		defer c.mu.RUnlock()
+		for e := c.head.next; e != c.tail; e = e.next {
+			if !yield(e.key, e.value) {
+				return
+			}
+		}
 	}
 }
 

@@ -53,9 +53,9 @@ type Config struct {
 	// Username 用户名
 	Username string `json:"username" yaml:"username" mapstructure:"username"`
 	// Password 密码
-	Password string `json:"password" yaml:"password" mapstructure:"password"`
+	Password string `json:"-" yaml:"password" mapstructure:"password"`
 	// APIKey API 密钥
-	APIKey string `json:"api_key" yaml:"api_key" mapstructure:"api_key"`
+	APIKey string `json:"-" yaml:"api_key" mapstructure:"api_key"`
 	// CloudID Elastic Cloud ID
 	CloudID string `json:"cloud_id" yaml:"cloud_id" mapstructure:"cloud_id"`
 	// CACert CA 证书内容

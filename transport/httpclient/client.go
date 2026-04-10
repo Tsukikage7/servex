@@ -36,7 +36,7 @@ type Client struct {
 	lastDiscover time.Time
 }
 
-// New 创建 HTTP 客户端，必需设置 serviceName、discovery、logger，否则会 panic.
+// New 创建 HTTP 客户端，必需设置 serviceName、discovery、logger，否则返回错误.
 func New(opts ...Option) (*Client, error) {
 	o := defaultOptions()
 	for _, opt := range opts {
@@ -45,13 +45,13 @@ func New(opts ...Option) (*Client, error) {
 
 	// 验证必需参数
 	if o.serviceName == "" {
-		panic("http client: 必须设置 serviceName")
+		return nil, fmt.Errorf("http client: 必须设置 serviceName")
 	}
 	if o.discovery == nil {
-		panic("http client: 必须设置 discovery")
+		return nil, fmt.Errorf("http client: 必须设置 discovery")
 	}
 	if o.logger == nil {
-		panic("http client: 必须设置 logger")
+		return nil, fmt.Errorf("http client: 必须设置 logger")
 	}
 
 	// 初始服务发现
@@ -187,7 +187,7 @@ func (c *Client) pick(ctx context.Context) (string, error) {
 	c.mu.RUnlock()
 
 	// 缓存过期时重新发现
-	if time.Since(lastDiscover) > defaultDiscoveryCacheTTL {
+	if time.Since(lastDiscover) > c.opts.cacheTTL {
 		newAddrs, err := c.opts.discovery.Discover(ctx, c.opts.serviceName)
 		if err == nil && len(newAddrs) > 0 {
 			c.mu.Lock()
@@ -226,15 +226,17 @@ type options struct {
 	tracerName       string
 	metricsCollector metrics.Collector
 	tlsConfig        *tls.Config
+	cacheTTL         time.Duration // 服务发现缓存 TTL
 }
 
 // defaultOptions 返回默认配置.
 func defaultOptions() *options {
 	return &options{
-		name:    "HTTP-Client",
-		scheme:  "http",
-		timeout: 30 * time.Second,
-		headers: make(map[string]string),
+		name:     "HTTP-Client",
+		scheme:   "http",
+		timeout:  30 * time.Second,
+		headers:  make(map[string]string),
+		cacheTTL: defaultDiscoveryCacheTTL,
 	}
 }
 
@@ -348,6 +350,11 @@ func WithMetrics(c metrics.Collector) Option {
 // 否则创建新的 http.Transport 并配置 TLS.
 func WithTLS(cfg *tls.Config) Option {
 	return func(o *options) { o.tlsConfig = cfg }
+}
+
+// WithCacheTTL 设置服务发现缓存 TTL，默认 10 秒.
+func WithCacheTTL(d time.Duration) Option {
+	return func(o *options) { o.cacheTTL = d }
 }
 
 // Request 支持 auto JSON 和 per-request headers 的请求描述.

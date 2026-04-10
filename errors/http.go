@@ -2,6 +2,7 @@ package errors
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 )
 
@@ -42,13 +43,15 @@ func WriteError(w http.ResponseWriter, err *Error) {
 }
 
 // WriteErrorFrom 将 error 写入 HTTP 响应.
+// 非 *Error 类型不暴露内部错误详情，仅返回通用错误消息并记录原始错误.
 func WriteErrorFrom(w http.ResponseWriter, err error) {
 	e, ok := FromError(err)
 	if !ok {
+		slog.Error("内部服务器错误", "error", err)
 		e = &Error{
 			Code:    900500,
 			Key:     "internal",
-			Message: err.Error(),
+			Message: "内部服务器错误",
 			HTTP:    http.StatusInternalServerError,
 		}
 	}

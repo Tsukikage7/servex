@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -70,7 +71,7 @@ func (s *reActStrategy) Execute(ctx context.Context, model llm.ChatModel, tools 
 	execResult, err := executor.Run(ctx, messages, opts...)
 	if err != nil {
 		// 检查是否为最大轮次错误
-		if strings.Contains(err.Error(), "超过最大工具调用轮次") {
+		if errors.Is(err, toolcall.ErrMaxRounds) {
 			return nil, ErrMaxIterations
 		}
 		return nil, err
@@ -131,7 +132,7 @@ func (s *reActStrategy) ExecuteStream(ctx context.Context, model llm.ChatModel, 
 
 		execResult, err := executor.Run(ctx, messages, opts...)
 		if err != nil {
-			if strings.Contains(err.Error(), "超过最大工具调用轮次") {
+			if errors.Is(err, toolcall.ErrMaxRounds) {
 				ch <- Event{Type: EventError, Content: ErrMaxIterations.Error()}
 			} else {
 				ch <- Event{Type: EventError, Content: err.Error()}
@@ -231,7 +232,7 @@ func (s *planExecuteStrategy) Execute(ctx context.Context, model llm.ChatModel, 
 
 			execResult, execErr := executor.Run(ctx, stepMessages, opts...)
 			if execErr != nil {
-				if strings.Contains(execErr.Error(), "超过最大工具调用轮次") {
+				if errors.Is(execErr, toolcall.ErrMaxRounds) {
 					return nil, ErrMaxIterations
 				}
 				return nil, fmt.Errorf("agent: 步骤 %d 执行失败: %w", i+1, execErr)

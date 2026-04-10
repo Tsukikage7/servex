@@ -78,7 +78,7 @@ func ExampleWithLock() {
 func ExampleNewReentrantLock() {
 	locker := newTestLocker()
 	rl := locking.NewReentrantLock(locker, "resource:abc")
-	ctx := context.Background()
+	ctx := locking.WithLockToken(context.Background(), "holder-1")
 
 	_ = rl.Lock(ctx)
 	fmt.Println("lock count after first lock:", rl.LockCount())

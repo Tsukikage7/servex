@@ -226,15 +226,23 @@ func (w *rotateWriter) compressFile(filename string) {
 	if err != nil {
 		return
 	}
-	defer output.Close()
 
 	gzWriter := gzip.NewWriter(output)
-	defer gzWriter.Close()
 
 	if _, err := io.Copy(gzWriter, input); err != nil {
+		gzWriter.Close()
+		output.Close()
 		os.Remove(filename + ".gz")
 		return
 	}
+
+	// 必须检查 gzWriter.Close() 错误，确保压缩数据完整写入
+	if err := gzWriter.Close(); err != nil {
+		output.Close()
+		os.Remove(filename + ".gz")
+		return
+	}
+	output.Close()
 
 	os.Remove(filename)
 }

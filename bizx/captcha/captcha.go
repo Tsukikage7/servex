@@ -4,6 +4,7 @@ package captcha
 import (
 	"context"
 	"crypto/rand"
+	"crypto/subtle"
 	"errors"
 	"math/big"
 	"sync"
@@ -159,7 +160,7 @@ func (m *mgr) Verify(ctx context.Context, key string, code string) error {
 		return ErrCodeExpired
 	}
 
-	if stored != code {
+	if subtle.ConstantTimeCompare([]byte(stored), []byte(code)) != 1 {
 		return ErrCodeInvalid
 	}
 
@@ -236,6 +237,7 @@ func (s *memoryStore) Delete(_ context.Context, key string) error {
 	defer s.mu.Unlock()
 	delete(s.codes, key)
 	delete(s.attempts, key)
+	delete(s.cooldowns, key) // 同时清理冷却记录
 	return nil
 }
 

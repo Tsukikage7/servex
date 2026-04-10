@@ -2,6 +2,7 @@
 // 区别于 storage/lock 的基础分布式锁，本包提供可重入锁、读写锁、
 // 自动续期等高级锁能力.
 // 基本用法:
+//
 //	// 普通锁
 //	l := locking.NewLock(locker, "order:123", locking.WithTTL(30*time.Second))
 //	err := locking.WithLock(ctx, l, func(ctx context.Context) error {
@@ -24,7 +25,6 @@ import (
 	"context"
 	"errors"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	storagelock "github.com/Tsukikage7/servex/storage/lock"
@@ -170,7 +170,36 @@ func (l *simpleLock) Extend(ctx context.Context, ttl time.Duration) error {
 
 // ---- 可重入锁实现 ----
 
-// reentrantLock 可重入锁，同一 goroutine 可多次获取.
+type lockTokenCtxKey struct{}
+
+// WithLockToken 将锁令牌注入到 context，用于可重入锁身份识别.
+func WithLockToken(ctx context.Context, token string) context.Context {
+	return context.WithValue(ctx, lockTokenCtxKey{}, token)
+}
+
+func lockTokenFromCtx(ctx context.Context) string {
+	if v, ok := ctx.Value(lockTokenCtxKey{}).(string); ok {
+		return v
+	}
+	return ""
+}
+
+type lockTokenCtxKey struct{}
+
+// WithLockToken 将锁令牌注入到 context，用于可重入锁身份识别.
+func WithLockToken(ctx context.Context, token string) context.Context {
+	return context.WithValue(ctx, lockTokenCtxKey{}, token)
+}
+
+func lockTokenFromCtx(ctx context.Context) string {
+	if v, ok := ctx.Value(lockTokenCtxKey{}).(string); ok {
+		return v
+	}
+	return ""
+}
+
+// reentrantLock 可重入锁，同一令牌持有者可多次获取.
+// 通过 WithLockToken(ctx, token) 注入令牌，持有相同令牌的调用可重入.
 type reentrantLock struct {
 	locker storagelock.Locker
 	key    string
@@ -178,11 +207,8 @@ type reentrantLock struct {
 
 	mu    sync.Mutex
 	count int32
-	owner int64 // 持有锁的标识（使用 atomic 自增 ID）
+	token string // 当前持有锁的令牌
 }
-
-// 全局计数器，用于生成锁持有者标识.
-var lockOwnerID atomic.Int64
 
 // NewReentrantLock 创建可重入锁.
 func NewReentrantLock(locker storagelock.Locker, key string, opts ...Option) ReentrantLock {
@@ -194,8 +220,11 @@ func NewReentrantLock(locker storagelock.Locker, key string, opts ...Option) Ree
 }
 
 func (l *reentrantLock) Lock(ctx context.Context) error {
+	token := lockTokenFromCtx(ctx)
+
 	l.mu.Lock()
-	if l.count > 0 {
+	// 同一令牌可重入
+	if l.count > 0 && token != "" && l.token == token {
 		l.count++
 		l.mu.Unlock()
 		return nil
@@ -212,7 +241,7 @@ func (l *reentrantLock) Lock(ctx context.Context) error {
 		if acquired {
 			l.mu.Lock()
 			l.count = 1
-			l.owner = lockOwnerID.Add(1)
+			l.token = token
 			l.mu.Unlock()
 			return nil
 		}
@@ -259,17 +288,18 @@ func (l *reentrantLock) LockCount() int {
 
 // ---- 读写锁实现 ----
 
-// rwLock 读写锁，使用 storage/lock.Locker 实现.
+// rwLock 分布式互斥锁，对外提供 RWLock 接口.
+// 注意: 分布式环境下无法用本地计数器实现真正的读写锁，
+// 因此 RLock/RUnlock 实际退化为写锁（互斥锁），保证正确性.
 type rwLock struct {
 	locker storagelock.Locker
 	key    string
 	opts   *options
-
-	mu      sync.Mutex
-	readers int32 // 当前读者数量
 }
 
-// NewRWLock 创建读写锁.
+// NewRWLock 创建分布式锁（实现 RWLock 接口）.
+// 注意: 分布式场景下 RLock 退化为互斥锁，不支持多读并发.
+// 如需真正的分布式读写锁，请使用支持读写语义的分布式锁服务.
 func NewRWLock(locker storagelock.Locker, key string, opts ...Option) RWLock {
 	return &rwLock{
 		locker: locker,
@@ -282,46 +312,15 @@ func (l *rwLock) writerKey() string {
 	return l.key + ":w"
 }
 
-func (l *rwLock) readerKey() string {
-	return l.key + ":r"
-}
-
+// RLock 获取读锁.
+// 注意: 分布式环境下退化为互斥锁，与 Lock 行为一致.
 func (l *rwLock) RLock(ctx context.Context) error {
-	// 获取读锁：先确保没有写锁
-	deadline := time.Now().Add(l.opts.retryTimeout)
-	for {
-		// 检查写锁是否被持有
-		acquired, err := l.locker.TryLock(ctx, l.writerKey(), l.opts.ttl)
-		if err != nil {
-			return err
-		}
-		if acquired {
-			// 写锁没被持有，释放它，增加读者计数
-			_ = l.locker.Unlock(ctx, l.writerKey())
-			l.mu.Lock()
-			l.readers++
-			l.mu.Unlock()
-			return nil
-		}
-		if time.Now().After(deadline) {
-			return ErrLockFailed
-		}
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(l.opts.retryInterval):
-		}
-	}
+	return l.Lock(ctx)
 }
 
-func (l *rwLock) RUnlock(_ context.Context) error {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	if l.readers <= 0 {
-		return ErrNotLocked
-	}
-	l.readers--
-	return nil
+// RUnlock 释放读锁.
+func (l *rwLock) RUnlock(ctx context.Context) error {
+	return l.Unlock(ctx)
 }
 
 func (l *rwLock) Lock(ctx context.Context) error {
@@ -332,15 +331,7 @@ func (l *rwLock) Lock(ctx context.Context) error {
 			return err
 		}
 		if acquired {
-			// 等待所有读者释放
-			l.mu.Lock()
-			readers := l.readers
-			l.mu.Unlock()
-			if readers == 0 {
-				return nil
-			}
-			// 还有读者，释放写锁并重试
-			_ = l.locker.Unlock(ctx, l.writerKey())
+			return nil
 		}
 		if time.Now().After(deadline) {
 			return ErrLockFailed

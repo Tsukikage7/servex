@@ -75,22 +75,24 @@ func New(initial State, transitions []Transition) *Machine {
 // Fire 触发事件.
 func (m *Machine) Fire(ctx context.Context, event Event, data any) error {
 	m.mu.Lock()
-	defer m.mu.Unlock()
 
 	// 查找匹配的转换
 	t, ok := m.findTransition(event)
 	if !ok {
+		m.mu.Unlock()
 		return fmt.Errorf("%w: no transition from %q on event %q", ErrInvalidTransition, m.current, event)
 	}
 
 	// 检查守卫条件
 	if t.Guard != nil && !t.Guard(ctx, data) {
+		m.mu.Unlock()
 		return ErrGuardRejected
 	}
 
 	// 执行转换动作
 	if t.Action != nil {
 		if err := t.Action(ctx, data); err != nil {
+			m.mu.Unlock()
 			return fmt.Errorf("%w: %v", ErrActionFailed, err)
 		}
 	}
@@ -98,21 +100,26 @@ func (m *Machine) Fire(ctx context.Context, event Event, data any) error {
 	from := m.current
 	to := t.To
 
-	// 触发离开回调
-	for _, cb := range m.onLeave[from] {
-		cb(ctx, data)
-	}
+	// 复制回调列表，以便在锁外执行
+	leaveCbs := make([]stateCallback, len(m.onLeave[from]))
+	copy(leaveCbs, m.onLeave[from])
+	enterCbs := make([]stateCallback, len(m.onEnter[to]))
+	copy(enterCbs, m.onEnter[to])
+	transitionCbs := make([]transitionCallback, len(m.onTransition))
+	copy(transitionCbs, m.onTransition)
 
 	// 更新状态
 	m.current = to
+	m.mu.Unlock()
 
-	// 触发进入回调
-	for _, cb := range m.onEnter[to] {
+	// 在锁外执行回调，避免持锁时回调阻塞或死锁
+	for _, cb := range leaveCbs {
 		cb(ctx, data)
 	}
-
-	// 触发转换回调
-	for _, cb := range m.onTransition {
+	for _, cb := range enterCbs {
+		cb(ctx, data)
+	}
+	for _, cb := range transitionCbs {
 		cb(from, to, event)
 	}
 

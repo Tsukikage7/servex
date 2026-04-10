@@ -262,9 +262,19 @@ func (s *redisStore) Delete(ctx context.Context, name string) error {
 }
 
 func (s *redisStore) List(ctx context.Context) ([]*Flag, error) {
-	keys, err := s.client.Keys(ctx, s.opts.prefix+"*").Result()
-	if err != nil {
-		return nil, err
+	var keys []string
+	var cursor uint64
+	for {
+		var batch []string
+		var err error
+		batch, cursor, err = s.client.Scan(ctx, cursor, s.opts.prefix+"*", 100).Result()
+		if err != nil {
+			return nil, err
+		}
+		keys = append(keys, batch...)
+		if cursor == 0 {
+			break
+		}
 	}
 	result := make([]*Flag, 0, len(keys))
 	for _, key := range keys {

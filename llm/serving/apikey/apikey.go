@@ -9,6 +9,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -140,6 +141,7 @@ type manager struct {
 	store       Store
 	rateLimiter RateLimiter
 	keyPrefix   string
+	quotaMu     sync.Mutex // 保护 UpdateQuota 的读-改-写操作原子性
 }
 
 // NewManager 创建 Manager 实例.
@@ -248,6 +250,10 @@ func (m *manager) List(ctx context.Context, ownerID string) ([]*Key, error) {
 }
 
 func (m *manager) UpdateQuota(ctx context.Context, keyID string, tokensUsed int64) error {
+	// 加锁保证读-改-写操作的原子性，防止并发更新丢失.
+	m.quotaMu.Lock()
+	defer m.quotaMu.Unlock()
+
 	key, err := m.store.GetByID(ctx, keyID)
 	if err != nil {
 		return ErrKeyNotFound

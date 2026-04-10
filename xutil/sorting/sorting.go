@@ -3,6 +3,7 @@ package sorting
 
 import (
 	"strings"
+	"unicode"
 )
 
 // Order 排序方向.
@@ -70,6 +71,7 @@ func (s *Sorting) parse(sort string) {
 }
 
 // parseField 解析单个字段，返回字段名和排序方向.
+// 字段名仅允许字母、数字、下划线，防止 ORDER BY 注入.
 func parseField(part string) (string, Order) {
 	if idx := strings.LastIndex(part, ":"); idx > 0 {
 		field := strings.TrimSpace(part[:idx])
@@ -82,9 +84,29 @@ func parseField(part string) (string, Order) {
 			order = Desc
 		}
 
+		if !isSafeFieldName(field) {
+			return "", DefaultOrder
+		}
 		return field, order
 	}
-	return strings.TrimSpace(part), DefaultOrder
+	field := strings.TrimSpace(part)
+	if !isSafeFieldName(field) {
+		return "", DefaultOrder
+	}
+	return field, DefaultOrder
+}
+
+// isSafeFieldName 校验字段名是否安全（仅允许字母、数字、下划线和点号），防止 SQL 注入.
+func isSafeFieldName(name string) bool {
+	if name == "" {
+		return false
+	}
+	for _, r := range name {
+		if !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != '_' && r != '.' {
+			return false
+		}
+	}
+	return true
 }
 
 // IsEmpty 是否为空.

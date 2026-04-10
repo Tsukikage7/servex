@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
@@ -313,7 +315,13 @@ func (s *Server) discoverPublicMethods() {
 }
 
 func (s *Server) connectGateway() error {
-	dialOpts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+	// 根据配置选择 gRPC 连接凭证
+	dialOpts := make([]grpc.DialOption, 0, len(s.opts.dialOptions)+1)
+	if s.opts.grpcTLSConfig != nil {
+		dialOpts = append(dialOpts, grpc.WithTransportCredentials(credentials.NewTLS(s.opts.grpcTLSConfig)))
+	} else {
+		dialOpts = append(dialOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	}
 	dialOpts = append(dialOpts, s.opts.dialOptions...)
 
 	conn, err := grpc.NewClient(s.opts.grpcAddr, dialOpts...)
@@ -425,11 +433,12 @@ func (s *Server) startHTTP(ctx context.Context) error {
 		}
 	}()
 
+	// 短暂等待以捕获启动时的立即错误（如端口占用）
 	select {
 	case err := <-errCh:
 		return err
 	case <-ctx.Done():
-	default:
+	case <-time.After(100 * time.Millisecond):
 	}
 	return nil
 }

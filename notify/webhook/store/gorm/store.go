@@ -66,9 +66,11 @@ func (s *Store) Delete(ctx context.Context, id string) error {
 
 // ListByEvent 按事件类型查询订阅列表.
 func (s *Store) ListByEvent(ctx context.Context, eventType string) ([]*webhook.Subscription, error) {
+	// 转义 LIKE 通配符，防止用户输入的 % 和 _ 导致意外匹配.
+	escaped := escapeLike(eventType)
 	var models []subscriptionModel
 	if err := s.db.Table(s.tableName).WithContext(ctx).
-		Where("events = '' OR events LIKE ?", "%"+eventType+"%").
+		Where("events = '' OR events LIKE ?", "%"+escaped+"%").
 		Find(&models).Error; err != nil {
 		return nil, err
 	}
@@ -77,6 +79,12 @@ func (s *Store) ListByEvent(ctx context.Context, eventType string) ([]*webhook.S
 		subs[i] = fromModel(&models[i])
 	}
 	return subs, nil
+}
+
+// escapeLike 转义 SQL LIKE 通配符 % 和 _.
+func escapeLike(s string) string {
+	r := strings.NewReplacer("%", "\\%", "_", "\\_")
+	return r.Replace(s)
 }
 
 // Get 按 ID 查询单个订阅.

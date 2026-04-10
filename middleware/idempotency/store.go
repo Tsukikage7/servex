@@ -75,20 +75,18 @@ func (s *IdempotentStore) Set(ctx context.Context, key string, result *Result, t
 }
 
 // SetNX 仅在键不存在时设置（用于获取处理锁）.
+// 直接依赖 SetNX 的原子性，避免 Exists + SetNX 之间的 TOCTOU 竞态窗口.
 func (s *IdempotentStore) SetNX(ctx context.Context, key string, ttl time.Duration) (bool, error) {
 	fullKey := s.keyPrefix + key
 	lockKey := s.keyPrefix + "lock:" + key
 
-	// 先检查是否已有结果
-	exists, err := s.kv.Exists(ctx, fullKey)
-	if err != nil {
-		return false, err
-	}
-	if exists {
+	// 先检查是否已有结果（只读检查，有结果直接返回，无需加锁）
+	data, err := s.kv.Get(ctx, fullKey)
+	if err == nil && data != "" {
 		return false, nil
 	}
 
-	// 尝试获取锁
+	// 尝试原子获取锁
 	return s.kv.SetNX(ctx, lockKey, "1", ttl)
 }
 

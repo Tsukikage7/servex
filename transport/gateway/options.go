@@ -97,6 +97,9 @@ type options struct {
 	// HTTP TLS
 	httpTLSConfig *tls.Config
 
+	// gRPC Gateway 连接 TLS（connectGateway 回连 gRPC 时使用）
+	grpcTLSConfig *tls.Config
+
 	// Auth
 	authenticator       auth.Authenticator
 	authOptions         []auth.Option
@@ -495,6 +498,16 @@ func WithRequestID() Option {
 func WithHTTPTLS(cfg *tls.Config) Option {
 	return func(o *options) {
 		o.httpTLSConfig = cfg
+	}
+}
+
+// WithGRPCTLS 启用 gRPC Gateway 回连 TLS.
+//
+// 传入 *tls.Config 后，connectGateway 将使用 TLS 凭证连接 gRPC 服务，
+// 而非默认的 insecure 连接.
+func WithGRPCTLS(cfg *tls.Config) Option {
+	return func(o *options) {
+		o.grpcTLSConfig = cfg
 	}
 }
 

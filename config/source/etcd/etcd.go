@@ -3,6 +3,7 @@ package etcd
 
 import (
 	"context"
+	"time"
 
 	mvccpb "go.etcd.io/etcd/api/v3/mvccpb"
 	clientv3 "go.etcd.io/etcd/client/v3"
@@ -42,7 +43,9 @@ func New(client *clientv3.Client, key string, opts ...Option) *Source {
 
 // Load 从 etcd KV 读取配置.
 func (s *Source) Load() ([]*config.KeyValue, error) {
-	resp, err := s.client.Get(context.Background(), s.key)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	resp, err := s.client.Get(ctx, s.key)
 	if err != nil {
 		return nil, err
 	}

@@ -569,9 +569,17 @@ func TestDefaultHTTPCredentialsExtractor(t *testing.T) {
 		}
 	})
 
-	t.Run("query param", func(t *testing.T) {
+	t.Run("query param no longer extracted by default", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/?access_token=query-token", nil)
-		creds, err := DefaultHTTPCredentialsExtractor(t.Context(), req)
+		_, err := DefaultHTTPCredentialsExtractor(t.Context(), req)
+		if err != ErrCredentialsNotFound {
+			t.Errorf("expected ErrCredentialsNotFound, got %v", err)
+		}
+	})
+
+	t.Run("query param via QueryParamExtractor", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/?access_token=query-token", nil)
+		creds, err := QueryParamExtractor(t.Context(), req)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}

@@ -83,7 +83,11 @@ func New(opts ...Option) func(http.Handler) http.Handler {
 			}
 
 			gz := pool.Get().(*gzip.Writer)
-			defer pool.Put(gz)
+			defer func() {
+				// 归还 pool 前 Reset，避免引用已释放的 ResponseWriter
+				gz.Reset(io.Discard)
+				pool.Put(gz)
+			}()
 
 			gz.Reset(w)
 

@@ -36,8 +36,9 @@ func New(opts ...Option) *Application {
 		opt(o)
 	}
 
+	// logger 为 nil 时使用默认 nop logger，避免 panic
 	if o.logger == nil {
-		panic("app: logger is required")
+		o.logger = logger.Nop()
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -68,6 +69,10 @@ func (a *Application) Run() error {
 	a.mu.Unlock()
 
 	if err := a.opts.hooks.runBeforeStart(a.ctx); err != nil {
+		// 启动前钩子失败，清理 running 标记
+		a.mu.Lock()
+		a.running = false
+		a.mu.Unlock()
 		return err
 	}
 
@@ -77,6 +82,10 @@ func (a *Application) Run() error {
 	).Info("[App] starting")
 
 	if err := a.start(); err != nil {
+		// 启动失败，清理 running 标记
+		a.mu.Lock()
+		a.running = false
+		a.mu.Unlock()
 		return err
 	}
 
@@ -127,6 +136,14 @@ func (a *Application) start() error {
 			}
 		}()
 	}
+
+	// 后台持续读取服务器错误，记录日志并触发关闭
+	go func() {
+		for err := range errCh {
+			a.opts.logger.With(logger.Err(err)).Error("[App] server error, triggering shutdown")
+			a.cancel()
+		}
+	}()
 
 	// 短暂等待以捕获立即启动失败的服务器
 	timer := time.NewTimer(100 * time.Millisecond)

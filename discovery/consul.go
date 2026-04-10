@@ -318,10 +318,14 @@ func (c *consulDiscovery) Discover(ctx context.Context, serviceName string) ([]s
 		return nil, ErrEmptyName
 	}
 
-	// 默认过滤gRPC服务,避免返回HTTP端口
+	// 使用配置中的标签过滤服务，不再硬编码 "grpc"
+	tag := ""
+	if len(c.config.Services.GRPC.Tags) > 0 {
+		tag = c.config.Services.GRPC.Tags[0]
+	}
 	queryOpts := &api.QueryOptions{}
 	queryOpts = queryOpts.WithContext(ctx)
-	services, _, err := c.client.Health().Service(serviceName, "grpc", true, queryOpts)
+	services, _, err := c.client.Health().Service(serviceName, tag, true, queryOpts)
 	if err != nil {
 		c.logger.With(
 			logger.String("serviceName", serviceName),

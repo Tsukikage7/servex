@@ -3,8 +3,11 @@ package esgorm
 
 import (
 	"context"
+	"errors"
 	"strings"
 
+	"github.com/go-sql-driver/mysql"
+	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
@@ -65,15 +68,30 @@ func (s *EventStore) LoadAll(ctx context.Context, aggregateID string) ([]eventso
 }
 
 // isConcurrencyError 检测唯一约束冲突错误.
+// 优先通过数据库驱动错误码精确判断（MySQL 1062, PostgreSQL 23505），
+// 回退到字符串匹配以兼容 SQLite 等其他数据库.
 func isConcurrencyError(err error) bool {
 	if err == nil {
 		return false
 	}
+
+	// MySQL: 错误码 1062 (ER_DUP_ENTRY)
+	var mysqlErr *mysql.MySQLError
+	if errors.As(err, &mysqlErr) {
+		return mysqlErr.Number == 1062
+	}
+
+	// PostgreSQL: 错误码 23505 (unique_violation)
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		return pgErr.Code == "23505"
+	}
+
+	// SQLite 及其他数据库: 回退到字符串匹配（仅匹配 UNIQUE constraint 相关）
 	msg := strings.ToLower(err.Error())
-	// SQLite / MySQL / PostgreSQL 唯一约束冲突关键词
-	return strings.Contains(msg, "unique") ||
-		strings.Contains(msg, "duplicate") ||
-		strings.Contains(msg, "constraint")
+	return strings.Contains(msg, "unique constraint") ||
+		strings.Contains(msg, "duplicate entry") ||
+		strings.Contains(msg, "unique_violation")
 }
 
 // SnapshotStore 基于 GORM 的快照存储实现.

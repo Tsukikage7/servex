@@ -71,8 +71,8 @@ func HTTPMiddleware(cfg *Config) func(http.Handler) http.Handler {
 				w.Header().Set("X-XSS-Protection", cfg.XSSProtection)
 			}
 
-			// Strict-Transport-Security（开发模式下跳过）
-			if hstsValue != "" && !cfg.IsDevelopment {
+			// Strict-Transport-Security（仅 HTTPS 请求且非开发模式下设置）
+			if hstsValue != "" && !cfg.IsDevelopment && (r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https") {
 				w.Header().Set("Strict-Transport-Security", hstsValue)
 			}
 

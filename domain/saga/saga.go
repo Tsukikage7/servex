@@ -31,8 +31,9 @@ package saga
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/Tsukikage7/servex/observability/logger"
 )
@@ -42,7 +43,6 @@ type Saga struct {
 	name  string
 	steps []Step
 	opts  *options
-	mu    sync.Mutex
 	idGen func() string
 }
 
@@ -94,9 +94,9 @@ func (b *Builder) Build() *Saga {
 	}
 }
 
-// defaultIDGenerator 默认 ID 生成器.
+// defaultIDGenerator 默认 ID 生成器（UUID 避免碰撞）.
 func defaultIDGenerator() string {
-	return fmt.Sprintf("%d", time.Now().UnixNano())
+	return uuid.New().String()
 }
 
 // Execute 执行 Saga.
@@ -107,10 +107,7 @@ func (s *Saga) Execute(ctx context.Context) error {
 
 // ExecuteWithData 使用指定的共享数据执行 Saga.
 func (s *Saga) ExecuteWithData(ctx context.Context, data *Data) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	// 创建状态
+	// 创建状态（每次执行独立的状态实例，无需全局互斥）
 	state := NewState(s.idGen(), s.name, len(s.steps))
 	for i, step := range s.steps {
 		state.StepResults[i].StepName = step.Name
@@ -204,7 +201,7 @@ func (s *Saga) ExecuteWithData(ctx context.Context, data *Data) error {
 		state.Status = SagaStatusCompleted
 		now := time.Now()
 		state.CompletedAt = &now
-		s.saveState(ctx, state)
+		_ = s.saveState(ctx, state)
 
 		if s.opts.logger != nil {
 			logger.FromContext(ctx).Info(
@@ -219,7 +216,7 @@ func (s *Saga) ExecuteWithData(ctx context.Context, data *Data) error {
 	// 执行补偿
 	state.Status = SagaStatusCompensating
 	state.Error = lastErr.Error()
-	s.saveState(ctx, state)
+	_ = s.saveState(ctx, state)
 
 	if s.opts.logger != nil {
 		logger.FromContext(ctx).Info(
@@ -236,12 +233,16 @@ func (s *Saga) ExecuteWithData(ctx context.Context, data *Data) error {
 
 	if compensateErr != nil {
 		state.Status = SagaStatusCompensateFailed
-		s.saveState(ctx, state)
+		if saveErr := s.saveState(ctx, state); saveErr != nil {
+			return fmt.Errorf("%w: %v (compensation failed: %v, state save failed: %v)", ErrSagaFailed, lastErr, compensateErr, saveErr)
+		}
 		return fmt.Errorf("%w: %v (compensation failed: %v)", ErrSagaFailed, lastErr, compensateErr)
 	}
 
 	state.Status = SagaStatusCompensated
-	s.saveState(ctx, state)
+	if saveErr := s.saveState(ctx, state); saveErr != nil {
+		return fmt.Errorf("%w: %v (state save failed: %v)", ErrSagaFailed, lastErr, saveErr)
+	}
 	return fmt.Errorf("%w: %v", ErrSagaFailed, lastErr)
 }
 
@@ -327,8 +328,8 @@ func (s *Saga) compensate(ctx context.Context, data *Data, state *State, complet
 	return lastErr
 }
 
-// saveState 保存状态.
-func (s *Saga) saveState(ctx context.Context, state *State) {
+// saveState 保存状态. 返回保存错误.
+func (s *Saga) saveState(ctx context.Context, state *State) error {
 	if err := s.opts.store.Save(ctx, state); err != nil {
 		if s.opts.logger != nil {
 			logger.FromContext(ctx).Warn(
@@ -338,7 +339,9 @@ func (s *Saga) saveState(ctx context.Context, state *State) {
 				logger.Err(err),
 			)
 		}
+		return err
 	}
+	return nil
 }
 
 // Name 返回 Saga 名称.

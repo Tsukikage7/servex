@@ -231,3 +231,60 @@ func (s *LRUCacheTestSuite) TestIntKey() {
 	s.True(ok)
 	s.Equal("one", val)
 }
+
+func (s *LRUCacheTestSuite) TestAll() {
+	cache := New[string, int](10)
+	cache.Put("a", 1)
+	cache.Put("b", 2)
+	cache.Put("c", 3)
+
+	// 最近使用在前：c, b, a
+	var keys []string
+	var vals []int
+	for k, v := range cache.All() {
+		keys = append(keys, k)
+		vals = append(vals, v)
+	}
+	s.Equal([]string{"c", "b", "a"}, keys)
+	s.Equal([]int{3, 2, 1}, vals)
+}
+
+func (s *LRUCacheTestSuite) TestAllAfterAccess() {
+	cache := New[string, int](10)
+	cache.Put("a", 1)
+	cache.Put("b", 2)
+	cache.Put("c", 3)
+	cache.Get("a") // 访问 a，使其成为最近使用
+
+	// 最近使用在前：a, c, b
+	var keys []string
+	for k, _ := range cache.All() {
+		keys = append(keys, k)
+	}
+	s.Equal([]string{"a", "c", "b"}, keys)
+}
+
+func (s *LRUCacheTestSuite) TestAllEmpty() {
+	cache := New[string, int](10)
+	count := 0
+	for range cache.All() {
+		count++
+	}
+	s.Equal(0, count)
+}
+
+func (s *LRUCacheTestSuite) TestAllEarlyBreak() {
+	cache := New[string, int](10)
+	cache.Put("a", 1)
+	cache.Put("b", 2)
+	cache.Put("c", 3)
+
+	count := 0
+	for range cache.All() {
+		count++
+		if count == 2 {
+			break
+		}
+	}
+	s.Equal(2, count)
+}

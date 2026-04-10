@@ -203,6 +203,9 @@ func TestSchedulerStartStopAndTrigger(t *testing.T) {
 		t.Fatalf("Trigger error: %v", err)
 	}
 
+	// TODO: 考虑使用 testing/synctest 替换 time.Sleep，
+	// 当前 cronScheduler 内部依赖 robfig/cron 的后台 goroutine，
+	// 无法完全封装在 synctest bubble 中.
 	// Wait briefly for the triggered job to complete.
 	time.Sleep(50 * time.Millisecond)
 

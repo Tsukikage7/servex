@@ -28,7 +28,7 @@ type Config struct {
 
 	// Redis
 	Addr     string `json:"addr"     yaml:"addr"`
-	Password string `json:"password" yaml:"password"`
+	Password string `json:"-" yaml:"password"`
 	DB       int    `json:"db"       yaml:"db"`
 }
 

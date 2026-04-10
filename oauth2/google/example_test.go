@@ -13,6 +13,7 @@ func ExampleNewProvider() {
 		google.WithRedirectURL("https://example.com/callback"),
 		google.WithScopes("openid", "email"),
 	)
+	defer p.Close()
 	fmt.Println(p != nil)
 	// Output:
 	// true

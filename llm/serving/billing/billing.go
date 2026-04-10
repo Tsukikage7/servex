@@ -231,7 +231,7 @@ func Middleware(b Billing, keyExtractor func(ctx context.Context) string) aimw.M
 				return &billingStreamReader{
 					reader:       reader,
 					billing:      b,
-					ctx:          ctx,
+					ctx:          context.WithoutCancel(ctx),
 					keyExtractor: keyExtractor,
 				}, nil
 			},
@@ -243,7 +243,7 @@ func Middleware(b Billing, keyExtractor func(ctx context.Context) string) aimw.M
 type billingStreamReader struct {
 	reader       llm.StreamReader
 	billing      Billing
-	ctx          context.Context //nolint:containedctx
+	ctx          context.Context //nolint:containedctx // 使用 WithoutCancel 避免生命周期问题
 	keyExtractor func(ctx context.Context) string
 	done         bool
 }

@@ -360,3 +360,75 @@ func (s *DequeTestSuite) TestWraparound() {
 	expected := []int{4, 5, 6, 7, 8, 9, 10, 11}
 	s.Equal(expected, dq.ToSlice())
 }
+
+func (s *DequeTestSuite) TestAll() {
+	dq := From([]int{10, 20, 30})
+	var indices []int
+	var vals []int
+	for i, v := range dq.All() {
+		indices = append(indices, i)
+		vals = append(vals, v)
+	}
+	s.Equal([]int{0, 1, 2}, indices)
+	s.Equal([]int{10, 20, 30}, vals)
+}
+
+func (s *DequeTestSuite) TestAllEmpty() {
+	dq := New[int]()
+	count := 0
+	for range dq.All() {
+		count++
+	}
+	s.Equal(0, count)
+}
+
+func (s *DequeTestSuite) TestAllEarlyBreak() {
+	dq := From([]int{1, 2, 3, 4, 5})
+	var vals []int
+	for _, v := range dq.All() {
+		vals = append(vals, v)
+		if v == 3 {
+			break
+		}
+	}
+	s.Equal([]int{1, 2, 3}, vals)
+}
+
+func (s *DequeTestSuite) TestBackwardIter() {
+	dq := From([]int{10, 20, 30})
+	var indices []int
+	var vals []int
+	for i, v := range dq.Backward() {
+		indices = append(indices, i)
+		vals = append(vals, v)
+	}
+	s.Equal([]int{2, 1, 0}, indices)
+	s.Equal([]int{30, 20, 10}, vals)
+}
+
+func (s *DequeTestSuite) TestBackwardIterEmpty() {
+	dq := New[int]()
+	count := 0
+	for range dq.Backward() {
+		count++
+	}
+	s.Equal(0, count)
+}
+
+func (s *DequeTestSuite) TestValues() {
+	dq := From([]int{10, 20, 30})
+	var vals []int
+	for v := range dq.Values() {
+		vals = append(vals, v)
+	}
+	s.Equal([]int{10, 20, 30}, vals)
+}
+
+func (s *DequeTestSuite) TestValuesEmpty() {
+	dq := New[int]()
+	count := 0
+	for range dq.Values() {
+		count++
+	}
+	s.Equal(0, count)
+}

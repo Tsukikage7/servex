@@ -91,8 +91,8 @@ func HTTPMiddleware(cfg *Config) func(http.Handler) http.Handler {
 				// 安全方法：检查是否已有有效 token，避免每次请求都重新生成（支持多标签页）
 				token := ""
 				if cookie, err := r.Cookie(cfg.CookieName); err == nil && cookie.Value != "" {
-					// cookie 中已有 token，检查长度是否正确（hex 编码后为 TokenLength*2）
-					if len(cookie.Value) == cfg.TokenLength*2 {
+					// cookie 中已有 token，检查长度和 hex 格式是否正确
+					if len(cookie.Value) == cfg.TokenLength*2 && isValidHex(cookie.Value) {
 						token = cookie.Value
 					}
 				}
@@ -178,4 +178,14 @@ func handleError(w http.ResponseWriter, r *http.Request, cfg *Config, err error)
 		return
 	}
 	http.Error(w, err.Error(), http.StatusForbidden)
+}
+
+// isValidHex 检查字符串是否为合法的 hex 编码.
+func isValidHex(s string) bool {
+	for _, c := range s {
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+			return false
+		}
+	}
+	return len(s) > 0
 }

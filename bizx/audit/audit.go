@@ -38,6 +38,9 @@ type Change struct {
 type Logger interface {
 	Log(ctx context.Context, entry *Entry) error
 	Query(ctx context.Context, filter *Filter) ([]Entry, error)
+	// Close 关闭异步 Logger，等待所有缓冲条目写入完成.
+	// 同步模式下调用为无操作.
+	Close() error
 }
 
 // Filter 查询过滤.
@@ -81,6 +84,7 @@ type logger struct {
 	opts   options
 	ch     chan *Entry
 	done   chan struct{}
+	cancel context.CancelFunc
 	closed bool
 	mu     sync.Mutex
 }
@@ -103,18 +107,39 @@ func NewLogger(store Store, opts ...Option) Logger {
 			o.bufferSize = 1024
 		}
 		l.ch = make(chan *Entry, o.bufferSize)
-		go l.processAsync()
+		ctx, cancel := context.WithCancel(context.Background())
+		l.cancel = cancel
+		go l.processAsync(ctx)
 	}
 
 	return l
 }
 
 // processAsync 异步处理审计日志.
-func (l *logger) processAsync() {
+func (l *logger) processAsync(ctx context.Context) {
 	defer close(l.done)
 	for entry := range l.ch {
-		_ = l.store.Save(context.Background(), entry)
+		_ = l.store.Save(ctx, entry)
 	}
+}
+
+// Close 关闭异步 Logger，等待所有缓冲条目写入完成.
+// 同步模式下调用为无操作.
+func (l *logger) Close() error {
+	if !l.opts.async {
+		return nil
+	}
+	l.mu.Lock()
+	if l.closed {
+		l.mu.Unlock()
+		return nil
+	}
+	l.closed = true
+	l.mu.Unlock()
+	close(l.ch)
+	<-l.done
+	l.cancel()
+	return nil
 }
 
 // Log 记录审计日志.

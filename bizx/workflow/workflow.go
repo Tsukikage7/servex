@@ -3,6 +3,7 @@ package workflow
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -57,6 +58,8 @@ var (
 	ErrWorkflowCompleted = errors.New("workflow: workflow already completed")
 	// ErrApprovalRequired 需要审批.
 	ErrApprovalRequired = errors.New("workflow: approval required")
+	// ErrMaxStepsExceeded 超过最大步数限制.
+	ErrMaxStepsExceeded = errors.New("workflow: max steps exceeded")
 )
 
 // Handler 节点处理函数.
@@ -126,6 +129,15 @@ func WithMaxParallel(n int) Option {
 	}
 }
 
+// WithMaxSteps 设置工作流单次执行的最大步数，防止死循环（默认1000）.
+func WithMaxSteps(n int) Option {
+	return func(e *Engine) {
+		if n > 0 {
+			e.maxSteps = n
+		}
+	}
+}
+
 // Engine 工作流引擎.
 type Engine struct {
 	mu          sync.RWMutex
@@ -133,6 +145,7 @@ type Engine struct {
 	definitions map[string]*Definition
 	logger      *slog.Logger
 	maxParallel int
+	maxSteps    int
 }
 
 // New 创建工作流引擎.
@@ -142,6 +155,7 @@ func New(store Store, opts ...Option) *Engine {
 		definitions: make(map[string]*Definition),
 		logger:      slog.Default(),
 		maxParallel: 5,
+		maxSteps:    1000,
 	}
 	for _, opt := range opts {
 		opt(e)
@@ -212,7 +226,13 @@ func (e *Engine) Execute(ctx context.Context, instanceID string) error {
 	instance.Status = StatusRunning
 	instance.UpdatedAt = time.Now()
 
-	for {
+	for steps := 0; ; steps++ {
+		if steps >= e.maxSteps {
+			instance.Status = StatusFailed
+			instance.UpdatedAt = time.Now()
+			_ = e.store.UpdateInstance(ctx, instance)
+			return fmt.Errorf("%w: exceeded %d steps", ErrMaxStepsExceeded, e.maxSteps)
+		}
 		node, ok := def.Nodes[instance.CurrentNodeID]
 		if !ok {
 			instance.Status = StatusFailed
@@ -463,14 +483,21 @@ func (s *MemoryStore) ListInstancesByStatus(_ context.Context, status Status) ([
 	return result, nil
 }
 
-// copyData 浅拷贝 map.
+// copyData 深拷贝 map（通过 JSON 序列化/反序列化）.
 func copyData(data map[string]any) map[string]any {
 	if data == nil {
 		return nil
 	}
-	cp := make(map[string]any, len(data))
-	for k, v := range data {
-		cp[k] = v
+	b, err := json.Marshal(data)
+	if err != nil {
+		// 回退到浅拷贝
+		cp := make(map[string]any, len(data))
+		for k, v := range data {
+			cp[k] = v
+		}
+		return cp
 	}
+	cp := make(map[string]any, len(data))
+	_ = json.Unmarshal(b, &cp)
 	return cp
 }

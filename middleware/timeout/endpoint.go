@@ -38,7 +38,7 @@ func EndpointMiddleware(timeout time.Duration, opts ...Option) endpoint.Middlewa
 			ctx, cancel := Cascade(ctx, o.timeout)
 			defer cancel()
 
-			// 使用 channel 等待结果
+			// 使用 buffered channel 等待结果，确保 goroutine 超时后仍能写入并退出
 			type result struct {
 				response any
 				err      error
@@ -47,6 +47,9 @@ func EndpointMiddleware(timeout time.Duration, opts ...Option) endpoint.Middlewa
 
 			go func() {
 				resp, err := next(ctx, request)
+				// 即使超时，buffered channel 保证此 send 不会阻塞，goroutine 可正常退出。
+				// 注意：如果 next 不响应 context 取消，goroutine 会一直阻塞在 next 调用中。
+				// 使用者应确保 endpoint 实现能响应 context.Done()。
 				done <- result{response: resp, err: err}
 			}()
 
@@ -100,6 +103,7 @@ func EndpointMiddlewareWithFallback(
 			ctx, cancel := Cascade(ctx, o.timeout)
 			defer cancel()
 
+			// 使用 buffered channel，确保 goroutine 超时后仍能写入并退出
 			type result struct {
 				response any
 				err      error

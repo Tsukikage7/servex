@@ -4,10 +4,12 @@ package httpserver
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"net/http"
 	"net/http/pprof"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Tsukikage7/servex/observability/logger"
@@ -22,6 +24,7 @@ type Server struct {
 	handler http.Handler
 	server  *http.Server
 	health  *health.Health
+	once    sync.Once // 保护 Start 只执行一次
 }
 
 // New 创建 HTTP 服务器.
@@ -64,6 +67,9 @@ func New(handler http.Handler, opts ...Option) *Server {
 	wrapped := health.Middleware(h)(handler)
 
 	if o.profiling != "" {
+		if o.profilingAuth == nil {
+			o.logger.Warn("[HTTP] pprof 端点已启用但未配置认证函数，建议使用 WithProfilingAuth 设置认证")
+		}
 		wrapped = wrapProfiling(wrapped, o.profiling, o.profilingAuth)
 	}
 
@@ -124,36 +130,45 @@ func wrapProfiling(next http.Handler, prefix string, authFn func(*http.Request) 
 	})
 }
 
+// errAlreadyStarted 服务器已启动.
+var errAlreadyStarted = errors.New("http server: already started")
+
 // Start 启动服务器.
 func (s *Server) Start(ctx context.Context) error {
-	s.server = &http.Server{
-		Addr:         s.opts.addr,
-		Handler:      s.handler,
-		ReadTimeout:  s.opts.readTimeout,
-		WriteTimeout: s.opts.writeTimeout,
-		IdleTimeout:  s.opts.idleTimeout,
-		TLSConfig:    s.opts.tlsConfig,
-	}
-
-	s.opts.logger.With(
-		logger.String("name", s.opts.name),
-		logger.String("addr", s.opts.addr),
-	).Info("[HTTP] 服务器启动")
-
-	errCh := make(chan error, 1)
-	if s.opts.tlsConfig != nil {
-		// TLS 模式：证书已通过 TLSConfig 加载，传空字符串
-		go func() { errCh <- s.server.ListenAndServeTLS("", "") }()
-	} else {
-		go func() { errCh <- s.server.ListenAndServe() }()
-	}
-
-	select {
-	case err := <-errCh:
-		if err != nil && err != http.ErrServerClosed {
-			return err
+	var startErr error
+	s.once.Do(func() {
+		s.server = &http.Server{
+			Addr:         s.opts.addr,
+			Handler:      s.handler,
+			ReadTimeout:  s.opts.readTimeout,
+			WriteTimeout: s.opts.writeTimeout,
+			IdleTimeout:  s.opts.idleTimeout,
+			TLSConfig:    s.opts.tlsConfig,
 		}
-	case <-ctx.Done():
+
+		s.opts.logger.With(
+			logger.String("name", s.opts.name),
+			logger.String("addr", s.opts.addr),
+		).Info("[HTTP] 服务器启动")
+
+		errCh := make(chan error, 1)
+		if s.opts.tlsConfig != nil {
+			// TLS 模式：证书已通过 TLSConfig 加载，传空字符串
+			go func() { errCh <- s.server.ListenAndServeTLS("", "") }()
+		} else {
+			go func() { errCh <- s.server.ListenAndServe() }()
+		}
+
+		select {
+		case err := <-errCh:
+			if err != nil && err != http.ErrServerClosed {
+				startErr = err
+			}
+		case <-ctx.Done():
+		}
+	})
+	if startErr != nil {
+		return startErr
 	}
 	return nil
 }

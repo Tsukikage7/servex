@@ -6,7 +6,7 @@ import "time"
 type Config struct {
 	Type         string        `json:"type" yaml:"type" toml:"type" mapstructure:"type"`
 	Addr         string        `json:"addr" yaml:"addr" toml:"addr" mapstructure:"addr"`
-	Password     string        `json:"password" yaml:"password" toml:"password" mapstructure:"password"`
+	Password     string        `json:"-" yaml:"password" toml:"password" mapstructure:"password"`
 	DB           int           `json:"db" yaml:"db" toml:"db" mapstructure:"db"`
 	PoolSize     int           `json:"pool_size" yaml:"pool_size" toml:"pool_size" mapstructure:"pool_size"`
 	Timeout      time.Duration `json:"timeout" yaml:"timeout" toml:"timeout" mapstructure:"timeout"`
