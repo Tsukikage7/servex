@@ -15,8 +15,13 @@ type BaseEvent struct {
 }
 
 // NewBaseEvent 创建领域事件.
-func NewBaseEvent(name string) BaseEvent {
-	return BaseEvent{name: name, occurredAt: time.Now()}
+// 可选参数 occurredAt 用于指定事件发生时间，默认为 time.Now().
+func NewBaseEvent(name string, occurredAt ...time.Time) BaseEvent {
+	t := time.Now()
+	if len(occurredAt) > 0 {
+		t = occurredAt[0]
+	}
+	return BaseEvent{name: name, occurredAt: t}
 }
 
 func (e BaseEvent) EventName() string     { return e.name }

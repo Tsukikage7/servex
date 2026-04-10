@@ -7,6 +7,16 @@ import (
 	"time"
 )
 
+// mustBuild 测试辅助：构建 Saga，失败时终止测试.
+func mustBuild(t *testing.T, b *Builder) *Saga {
+	t.Helper()
+	s, err := b.Build()
+	if err != nil {
+		t.Fatalf("Build failed: %v", err)
+	}
+	return s
+}
+
 func TestSagaSuccess(t *testing.T) {
 	executed := make([]string, 0)
 
@@ -30,11 +40,10 @@ func TestSagaSuccess(t *testing.T) {
 		return nil
 	}
 
-	saga := New("test-saga").
+	saga := mustBuild(t, New("test-saga").
 		Step("step1", step1, nil).
 		Step("step2", step2, nil).
-		Step("step3", step3, nil).
-		Build()
+		Step("step3", step3, nil))
 
 	err := saga.Execute(t.Context())
 	if err != nil {
@@ -79,11 +88,10 @@ func TestSagaFailureWithCompensation(t *testing.T) {
 		return errors.New("step3 failed")
 	}
 
-	saga := New("test-saga").
+	saga := mustBuild(t, New("test-saga").
 		Step("step1", step1, comp1).
 		Step("step2", step2, comp2).
-		Step("step3", step3, nil).
-		Build()
+		Step("step3", step3, nil))
 
 	err := saga.Execute(t.Context())
 	if err == nil {
@@ -121,10 +129,9 @@ func TestSagaWithTimeout(t *testing.T) {
 		}
 	}
 
-	saga := New("timeout-saga").
+	saga := mustBuild(t, New("timeout-saga").
 		Step("slow-step", step, nil).
-		Options(WithTimeout(100 * time.Millisecond)).
-		Build()
+		Options(WithTimeout(100*time.Millisecond)))
 
 	err := saga.Execute(t.Context())
 	if err == nil {
@@ -143,10 +150,9 @@ func TestSagaWithRetry(t *testing.T) {
 		return nil
 	}
 
-	saga := New("retry-saga").
+	saga := mustBuild(t, New("retry-saga").
 		Step("flaky-step", step, nil).
-		Options(WithRetry(3, 10*time.Millisecond)).
-		Build()
+		Options(WithRetry(3, 10*time.Millisecond)))
 
 	err := saga.Execute(t.Context())
 	if err != nil {
@@ -166,10 +172,9 @@ func TestSagaWithStore(t *testing.T) {
 		return nil
 	}
 
-	saga := New("store-saga").
+	saga := mustBuild(t, New("store-saga").
 		Step("step1", step, nil).
-		Options(WithStore(store)).
-		Build()
+		Options(WithStore(store)))
 
 	err := saga.Execute(t.Context())
 	if err != nil {
@@ -185,14 +190,13 @@ func TestSagaWithHooks(t *testing.T) {
 		return nil
 	}
 
-	saga := New("hooks-saga").
+	saga := mustBuild(t, New("hooks-saga").
 		Step("step1", step, nil).
 		Step("step2", step, nil).
 		Options(WithStepHooks(
 			func(name string) { started = append(started, name) },
 			func(name string, err error) { ended = append(ended, name) },
-		)).
-		Build()
+		)))
 
 	err := saga.Execute(t.Context())
 	if err != nil {
@@ -218,10 +222,9 @@ func TestSagaCompensationFailure(t *testing.T) {
 		return errors.New("compensation failed")
 	}
 
-	saga := New("comp-fail-saga").
+	saga := mustBuild(t, New("comp-fail-saga").
 		Step("step1", step, failComp).
-		Step("step2", failStep, nil).
-		Build()
+		Step("step2", failStep, nil))
 
 	err := saga.Execute(t.Context())
 	if err == nil {
@@ -310,12 +313,9 @@ func TestSagaStatusIsTerminal(t *testing.T) {
 	}
 }
 
-func TestBuilderPanicOnNoSteps(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Error("expected panic")
-		}
-	}()
-
-	New("empty-saga").Build()
+func TestBuilderErrorOnNoSteps(t *testing.T) {
+	_, err := New("empty-saga").Build()
+	if err == nil {
+		t.Error("expected error for empty saga")
+	}
 }

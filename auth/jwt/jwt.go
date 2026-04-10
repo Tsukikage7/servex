@@ -138,8 +138,12 @@ func NewJWT(opts ...Option) *JWT {
 //
 // 使用配置的签名算法（默认 HMAC-SHA256，也支持 RS256/ES256/EdDSA）.
 func (j *JWT) Generate(ctx context.Context, claims Claims) (string, error) {
+	key := j.signingKey()
+	if key == nil {
+		return "", fmt.Errorf("%w: 未配置签名密钥（仅验证模式下不可签发令牌）", ErrTokenInvalid)
+	}
 	token := jwt.NewWithClaims(j.getSigningMethod(), claims)
-	tokenString, err := token.SignedString(j.signingKey())
+	tokenString, err := token.SignedString(key)
 	if err != nil {
 		j.opts.logger.With(
 			logger.String("name", j.opts.name),
@@ -179,8 +183,12 @@ func (j *JWT) Generate(ctx context.Context, claims Claims) (string, error) {
 
 // GenerateWithDuration 使用指定有效期生成令牌.
 func (j *JWT) GenerateWithDuration(claims jwt.Claims, duration time.Duration) (string, error) {
+	key := j.signingKey()
+	if key == nil {
+		return "", fmt.Errorf("%w: 未配置签名密钥（仅验证模式下不可签发令牌）", ErrTokenInvalid)
+	}
 	token := jwt.NewWithClaims(j.getSigningMethod(), claims)
-	tokenString, err := token.SignedString(j.signingKey())
+	tokenString, err := token.SignedString(key)
 	if err != nil {
 		j.opts.logger.With(
 			logger.String("name", j.opts.name),
@@ -410,9 +418,13 @@ func (j *JWT) getSigningMethod() jwt.SigningMethod {
 
 // signingKey 获取签名密钥.
 //
-// 非对称模式返回私钥，HMAC 模式返回 secretKey 字节.
+// 非对称模式返回私钥（可能为 nil，仅验证模式不配置私钥），HMAC 模式返回 secretKey 字节.
+// 调用方应检查返回值是否为 nil.
 func (j *JWT) signingKey() any {
 	if j.opts.signingMethod != nil {
+		if j.opts.privateKey == nil {
+			return nil // 仅验证模式，未配置私钥
+		}
 		return j.opts.privateKey
 	}
 	return []byte(j.opts.secretKey)

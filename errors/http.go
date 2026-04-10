@@ -39,7 +39,10 @@ func WriteError(w http.ResponseWriter, err *Error) {
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(resp)
+	if encErr := json.NewEncoder(w).Encode(resp); encErr != nil {
+		// JSON 编码失败时记录日志，响应头已发送无法回滚
+		slog.Error("WriteError: JSON 编码失败", "error", encErr)
+	}
 }
 
 // WriteErrorFrom 将 error 写入 HTTP 响应.
@@ -59,6 +62,9 @@ func WriteErrorFrom(w http.ResponseWriter, err error) {
 }
 
 // HTTPErrorHandler 返回 HTTP 错误处理中间件.
+//
+// Deprecated: 此中间件当前为空操作（直接透传），不执行任何错误处理逻辑.
+// 建议直接使用 WriteErrorFrom 在业务 handler 中处理错误.
 func HTTPErrorHandler() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

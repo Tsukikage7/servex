@@ -29,11 +29,13 @@ func EncodeResponse(_ context.Context, w http.ResponseWriter, response any) erro
 
 // DecodeRequest 从 HTTP 请求体解码 proto 消息.
 func DecodeRequest[T proto.Message](r *http.Request, msg T) error {
-	data, err := io.ReadAll(r.Body)
+	defer r.Body.Close()
+	// 限制请求体大小为 10MB，防止 OOM
+	const maxBodySize = 10 << 20
+	data, err := io.ReadAll(io.LimitReader(r.Body, maxBodySize))
 	if err != nil {
 		return err
 	}
-	defer r.Body.Close()
 
 	return Unmarshal(data, msg)
 }

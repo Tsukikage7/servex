@@ -305,7 +305,7 @@ func (s *redisStore) Get(ctx context.Context, key string) (string, error) {
 }
 
 func (s *redisStore) Delete(ctx context.Context, key string) error {
-	return s.client.Del(ctx, s.codeKey(key), s.attemptKey(key)).Err()
+	return s.client.Del(ctx, s.codeKey(key), s.attemptKey(key), s.cooldownKey(key)).Err()
 }
 
 func (s *redisStore) IncrAttempts(ctx context.Context, key string) (int, error) {

@@ -6,6 +6,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// 全局选项为包级常量，不应在运行时修改.
 var (
 	// MarshalOptions 序列化选项，输出零值字段.
 	MarshalOptions = protojson.MarshalOptions{

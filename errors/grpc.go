@@ -56,10 +56,14 @@ func ToGRPCStatus(err error) *status.Status {
 
 	// 附加标准 gRPC error details
 	// 1. ErrorInfo: 始终附加，携带 reason/domain/metadata
+	metadata := e.Metadata
+	if metadata == nil {
+		metadata = make(map[string]string)
+	}
 	errorInfo := &errdetails.ErrorInfo{
 		Reason:   e.Key,
 		Domain:   "servex",
-		Metadata: e.Metadata,
+		Metadata: metadata,
 	}
 
 	// 2. BadRequest: 当 metadata 中包含 field 和 field_violation 时附加

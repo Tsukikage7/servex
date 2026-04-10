@@ -72,20 +72,27 @@ func (r *devRunner) stop() {
 	// 发送 SIGTERM 到进程组
 	_ = syscall.Kill(-r.cmd.Process.Pid, syscall.SIGTERM)
 
-	// 等待子进程退出，超时后强制杀掉
-	done := make(chan struct{})
-	go func() {
-		_ = r.cmd.Wait()
-		close(done)
-	}()
+	// 等待 start() 中启动的异步 Wait goroutine 回收进程，超时后强制杀掉
+	timer := time.NewTimer(3 * time.Second)
+	defer timer.Stop()
 
-	select {
-	case <-done:
-	case <-time.After(3 * time.Second):
-		_ = syscall.Kill(-r.cmd.Process.Pid, syscall.SIGKILL)
+	// 轮询 ProcessState 判断是否已退出，避免重复 Wait
+	ticker := time.NewTicker(50 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			if r.cmd.ProcessState != nil {
+				r.cmd = nil
+				return
+			}
+		case <-timer.C:
+			_ = syscall.Kill(-r.cmd.Process.Pid, syscall.SIGKILL)
+			r.cmd = nil
+			return
+		}
 	}
-
-	r.cmd = nil
 }
 
 // restart 重启子进程.

@@ -388,9 +388,17 @@ func (e *Engine) evalLoop(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			e.mu.Lock()
-			alerts, err := e.evaluateAll(ctx)
-			e.mu.Unlock()
+			// 先在读锁下复制规则快照，避免在持锁期间执行网络 IO
+			e.mu.RLock()
+			snapshot := make(map[string]*Rule, len(e.rules))
+			stateSnap := make(map[string]*ruleState, len(e.states))
+			for id, rule := range e.rules {
+				snapshot[id] = rule
+				stateSnap[id] = e.states[id]
+			}
+			e.mu.RUnlock()
+
+			alerts, err := e.evaluateSnapshot(ctx, snapshot, stateSnap)
 			if err != nil {
 				if e.printf != nil {
 					e.printf("alerting: 评估失败: %v", err)
@@ -404,11 +412,16 @@ func (e *Engine) evalLoop(ctx context.Context) {
 
 // evaluateAll 评估所有规则（调用者需持有写锁）.
 func (e *Engine) evaluateAll(ctx context.Context) ([]*Alert, error) {
+	return e.evaluateSnapshot(ctx, e.rules, e.states)
+}
+
+// evaluateSnapshot 在无锁环境下评估规则快照，避免持锁执行网络 IO.
+func (e *Engine) evaluateSnapshot(ctx context.Context, rules map[string]*Rule, states map[string]*ruleState) ([]*Alert, error) {
 	now := time.Now()
 	var alerts []*Alert
 
-	for id, rule := range e.rules {
-		rs := e.states[id]
+	for id, rule := range rules {
+		rs := states[id]
 		alert, err := e.evaluateRule(ctx, rule, rs, now)
 		if err != nil {
 			if e.printf != nil {
@@ -525,7 +538,6 @@ func (e *Engine) handleConditionMet(rule *Rule, rs *ruleState, value float64, no
 // handleResolution 处理条件恢复.
 func (e *Engine) handleResolution(rule *Rule, rs *ruleState, value float64, now time.Time) *Alert {
 	rs.alert.Value = value
-	_ = rule
 
 	switch rs.alert.State {
 	case StatePending:

@@ -26,6 +26,8 @@ type options struct {
 	skipper              Skipper
 	errorHandler         ErrorHandler
 	logger               logger.Logger
+	resource             string // 授权检查的资源名
+	action               string // 授权检查的操作名
 }
 
 // Option 中间件配置选项.
@@ -70,5 +72,19 @@ func WithErrorHandler(handler ErrorHandler) Option {
 func WithLogger(log logger.Logger) Option {
 	return func(o *options) {
 		o.logger = log
+	}
+}
+
+// WithResource 设置授权检查的资源名.
+func WithResource(resource string) Option {
+	return func(o *options) {
+		o.resource = resource
+	}
+}
+
+// WithAction 设置授权检查的操作名.
+func WithAction(action string) Option {
+	return func(o *options) {
+		o.action = action
 	}
 }

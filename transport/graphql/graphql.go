@@ -105,6 +105,9 @@ func (s *Server) Handler() http.Handler {
 
 		switch r.Method {
 		case http.MethodPost:
+			// 限制请求体大小（10MB），防止 OOM
+			const maxBodySize = 10 << 20
+			r.Body = http.MaxBytesReader(w, r.Body, maxBodySize)
 			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 				s.writeError(w, ErrInvalidRequest, http.StatusBadRequest)
 				return
@@ -175,7 +178,7 @@ func (s *Server) writeError(w http.ResponseWriter, err error, status int) {
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
-// playgroundTmpl GraphiQL playground HTML 模板，endpoint 经过安全转义.
+// playgroundTmpl GraphiQL playground HTML 模板，endpoint 已预先 JSON 编码.
 var playgroundTmpl = template.Must(template.New("graphiql").Parse(`<!DOCTYPE html>
 <html>
 <head>
@@ -206,9 +209,11 @@ var playgroundTmpl = template.Must(template.New("graphiql").Parse(`<!DOCTYPE htm
 </body>
 </html>`))
 
-// playgroundHTML 生成 GraphiQL playground 的 HTML 页面，endpoint 经过 JS 转义防止 XSS.
+// playgroundHTML 生成 GraphiQL playground 的 HTML 页面，endpoint 经过 JSON 编码防止 XSS.
 func playgroundHTML(endpoint string) string {
+	// 使用 JSON 编码确保在 JavaScript 上下文中安全转义
+	endpointJSON, _ := json.Marshal(endpoint)
 	var b strings.Builder
-	_ = playgroundTmpl.Execute(&b, struct{ Endpoint string }{Endpoint: endpoint})
+	_ = playgroundTmpl.Execute(&b, struct{ Endpoint string }{Endpoint: string(endpointJSON)})
 	return b.String()
 }

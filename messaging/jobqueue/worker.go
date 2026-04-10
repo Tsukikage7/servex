@@ -93,6 +93,7 @@ func (w *worker) fetchJob(ctx context.Context) *Job {
 func (w *worker) processJob(ctx context.Context, job *Job) {
 	if err := w.store.MarkRunning(ctx, job.ID); err != nil {
 		w.logErrorf("标记任务为运行中失败 [id:%s]: %v", job.ID, err)
+		return // 状态更新失败，放弃执行以避免重复处理
 	}
 
 	w.mu.RLock()

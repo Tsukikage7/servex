@@ -173,6 +173,7 @@ func (c *CompositeChecker) Name() string {
 }
 
 // Check 执行所有子检查器，任一失败则整体失败.
+// 当前串行执行各子检查器；如需并行可由调用方使用独立的 goroutine.
 func (c *CompositeChecker) Check(ctx context.Context) CheckResult {
 	details := make(map[string]any)
 	overallStatus := StatusUp

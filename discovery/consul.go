@@ -313,6 +313,8 @@ func (c *consulDiscovery) Unregister(ctx context.Context, serviceID string) erro
 }
 
 // Discover 发现服务实例.
+// 默认使用配置中 GRPC 服务的第一个标签进行过滤.
+// 如需按其他协议发现，建议使用 DiscoverWithProtocol（待实现）.
 func (c *consulDiscovery) Discover(ctx context.Context, serviceName string) ([]string, error) {
 	if serviceName == "" {
 		return nil, ErrEmptyName

@@ -271,9 +271,13 @@ func (p *Profiler) Stop(_ context.Context) error {
 	// 等待采集 goroutine 退出.
 	p.wg.Wait()
 
-	// 重置 block 和 mutex 剖析率
-	runtime.SetBlockProfileRate(0)
-	runtime.SetMutexProfileFraction(0)
+	// 仅当本 Profiler 启动时设置过 block/mutex 剖析率时才重置
+	if p.config.BlockProfileRate > 0 {
+		runtime.SetBlockProfileRate(0)
+	}
+	if p.config.MutexProfileFraction > 0 {
+		runtime.SetMutexProfileFraction(0)
+	}
 
 	p.printf("profiling: 已停止")
 	return nil
@@ -372,6 +376,7 @@ func (p *Profiler) loop(ctx context.Context) {
 }
 
 // collectAll 采集所有配置的剖析类型.
+// 注意：CPU profiling 是全局操作（runtime/pprof.StartCPUProfile），串行采集避免冲突.
 func (p *Profiler) collectAll(ctx context.Context) {
 	for _, profileType := range p.config.Types {
 		prof, err := p.Collect(ctx, profileType)

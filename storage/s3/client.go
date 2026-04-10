@@ -235,6 +235,9 @@ func (c *s3Client) DeleteObjects(ctx context.Context, keys []string) error {
 }
 
 func (c *s3Client) CopyObject(ctx context.Context, srcKey, destKey string) error {
+	if srcKey == "" || destKey == "" {
+		return ErrEmptyKey
+	}
 	_, err := c.client.CopyObject(ctx, &s3.CopyObjectInput{
 		Bucket:     aws.String(c.bucket),
 		CopySource: aws.String(c.bucket + "/" + srcKey),

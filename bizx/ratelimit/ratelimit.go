@@ -83,8 +83,9 @@ func applyOptions(opts []Option) *options {
 }
 
 // windowStart 计算当前窗口的起始时间.
+// 使用 UTC 避免 time.Truncate 在 >=24h 窗口时受本地时区偏移影响.
 func windowStart(window time.Duration) time.Time {
-	now := time.Now()
+	now := time.Now().UTC()
 	return now.Truncate(window)
 }
 

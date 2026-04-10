@@ -50,7 +50,7 @@ var (
 // Config MongoDB 配置.
 type Config struct {
 	// URI 连接字符串
-	URI string `json:"uri" yaml:"uri" mapstructure:"uri"`
+	URI string `json:"-" yaml:"uri" mapstructure:"uri"`
 	// Database 数据库名
 	Database string `json:"database" yaml:"database" mapstructure:"database"`
 	// ConnectTimeout 连接超时

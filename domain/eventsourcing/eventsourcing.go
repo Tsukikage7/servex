@@ -111,6 +111,7 @@ func (a *BaseAggregate) RaiseEvent(applier func(Event) error, eventType string, 
 		return err
 	}
 
+	oldVersion := a.version
 	a.version++
 	event := Event{
 		ID:            uuid.New().String(),
@@ -121,10 +122,18 @@ func (a *BaseAggregate) RaiseEvent(applier func(Event) error, eventType string, 
 		Data:          rawData,
 	}
 
+	// 使用 defer 恢复版本号，确保 applier panic 时版本号也能正确回滚
+	success := false
+	defer func() {
+		if !success {
+			a.version = oldVersion
+		}
+	}()
+
 	if err := applier(event); err != nil {
-		a.version--
 		return err
 	}
+	success = true
 
 	a.uncommittedEvents = append(a.uncommittedEvents, event)
 	return nil

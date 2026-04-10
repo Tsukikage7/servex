@@ -140,6 +140,10 @@ func (p *Provider) get(ctx context.Context, url string, result any) error {
 		return err
 	}
 	defer resp.Body.Close()
+	// 检查 HTTP 状态码
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("HTTP %d", resp.StatusCode)
+	}
 	// 限制响应体大小为 1MB，防止异常响应导致内存耗尽
 	return json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(result)
 }

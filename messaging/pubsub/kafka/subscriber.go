@@ -24,6 +24,7 @@ type Subscriber struct {
 }
 
 // NewSubscriber 基于已有的 sarama.Client 创建 Subscriber.
+// 注意：调用方负责关闭传入的 sarama.Client，Subscriber 仅关闭其创建的 consumer group.
 func NewSubscriber(client sarama.Client, groupID string, opts ...SubscriberOption) (*Subscriber, error) {
 	if client == nil {
 		return nil, errors.New("pubsub/kafka: client 不能为空")

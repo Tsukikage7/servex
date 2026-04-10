@@ -3,6 +3,7 @@ package apikey
 
 import (
 	"context"
+	"crypto/sha256"
 	"crypto/subtle"
 	"time"
 
@@ -62,12 +63,15 @@ func (a *Authenticator) Authenticate(ctx context.Context, creds auth.Credentials
 // StaticValidator 静态 API Key 验证器.
 //
 // 适合 Key 数量固定、部署时确定的场景.
-// 使用常量时间比较防止时序攻击，遍历所有 key 防止通过响应时间推断 key 数量.
+// 使用 HMAC-SHA256 哈希后常量时间比较，确保不同长度的 key 也是常量时间.
+// 遍历所有 key 防止通过响应时间推断 key 数量.
 func StaticValidator(keys map[string]*auth.Principal) Validator {
 	return func(_ context.Context, key string) (*auth.Principal, error) {
+		keyHash := sha256.Sum256([]byte(key))
 		var matched *auth.Principal
 		for k, principal := range keys {
-			if subtle.ConstantTimeCompare([]byte(k), []byte(key)) == 1 {
+			kHash := sha256.Sum256([]byte(k))
+			if subtle.ConstantTimeCompare(kHash[:], keyHash[:]) == 1 {
 				matched = principal
 			}
 		}

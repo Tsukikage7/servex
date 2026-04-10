@@ -4,6 +4,7 @@ package migration
 import (
 	"context"
 	"sort"
+	"sync"
 	"time"
 
 	"gorm.io/gorm"
@@ -23,8 +24,9 @@ type Migration struct {
 	Down func(tx *gorm.DB) error
 }
 
-// Registry 迁移注册表.
+// Registry 迁移注册表（并发安全）.
 type Registry struct {
+	mu         sync.Mutex
 	migrations []Migration
 }
 
@@ -35,12 +37,16 @@ func NewRegistry() *Registry {
 
 // Add 添加一个迁移，支持链式调用.
 func (r *Registry) Add(m Migration) *Registry {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	r.migrations = append(r.migrations, m)
 	return r
 }
 
 // Migrations 按 Version 排序返回所有迁移.
 func (r *Registry) Migrations() []Migration {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	result := make([]Migration, len(r.migrations))
 	copy(result, r.migrations)
 	sort.Slice(result, func(i, j int) bool {

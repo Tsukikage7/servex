@@ -57,6 +57,18 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 	return n, err
 }
 
+// Flush 实现 http.Flusher 接口，确保 SSE 等流式响应正常工作.
+func (rw *responseWriter) Flush() {
+	if f, ok := rw.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+}
+
+// Unwrap 返回底层 ResponseWriter，支持 http.ResponseController 等标准库功能.
+func (rw *responseWriter) Unwrap() http.ResponseWriter {
+	return rw.ResponseWriter
+}
+
 // EndpointMiddleware 返回 Endpoint 指标采集中间件.
 // 使用示例:
 //

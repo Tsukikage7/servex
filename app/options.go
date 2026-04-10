@@ -33,6 +33,7 @@ func defaultOptions() *options {
 	return &options{
 		name:            "app",
 		version:         "1.0.0",
+		hooks:           &Hooks{},
 		gracefulTimeout: 30 * time.Second,
 	}
 }

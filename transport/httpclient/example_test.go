@@ -26,7 +26,11 @@ func ExampleNewFromConfig() {
 		Timeout: 5 * time.Second,
 	}
 
-	client := httpclient.NewFromConfig(cfg)
+	client, err := httpclient.NewFromConfig(cfg)
+	if err != nil {
+		fmt.Println("error:", err)
+		return
+	}
 	fmt.Println("client created:", client != nil)
 	// Output:
 	// client created: true

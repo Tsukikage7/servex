@@ -26,8 +26,7 @@ package rbac
 import (
 	"context"
 	"errors"
-	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -190,7 +189,7 @@ func (m *manager) GetUserRoles(ctx context.Context, userID string) ([]*Role, err
 		role, err := m.store.GetRole(ctx, name)
 		if err != nil {
 			// 记录不存在或查询失败的角色，便于排查数据不一致问题
-			log.Printf("rbac: 获取用户 %s 的角色 %s 失败: %v", userID, name, err)
+			slog.Warn("rbac: 获取用户角色失败", "user_id", userID, "role", name, "error", err)
 			continue
 		}
 		roles = append(roles, role)
@@ -198,10 +197,16 @@ func (m *manager) GetUserRoles(ctx context.Context, userID string) ([]*Role, err
 	return roles, nil
 }
 
+// maxInheritanceDepth 角色继承链最大深度，防止循环引用或过深递归.
+const maxInheritanceDepth = 10
+
 // collectPermissions 收集角色及其父角色的所有权限.
 func (m *manager) collectPermissions(ctx context.Context, role *Role, visited map[string]bool) []string {
 	if visited[role.Name] {
 		return nil // 避免循环
+	}
+	if len(visited) >= maxInheritanceDepth {
+		return nil // 继承链深度超限，停止递归
 	}
 	visited[role.Name] = true
 
@@ -306,7 +311,9 @@ func HTTPMiddleware(rbac RBAC, resource, action string) func(http.Handler) http.
 
 			has, err := rbac.HasPermission(r.Context(), principal.ID, resource, action)
 			if err != nil {
-				http.Error(w, fmt.Sprintf("rbac: 权限检查错误: %v", err), http.StatusInternalServerError)
+				// 不暴露内部错误详情到客户端
+				slog.Error("rbac: 权限检查错误", "user_id", principal.ID, "error", err)
+				http.Error(w, "权限检查失败", http.StatusInternalServerError)
 				return
 			}
 			if !has {

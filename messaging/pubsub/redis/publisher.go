@@ -89,6 +89,7 @@ func (p *Publisher) Publish(ctx context.Context, topic string, msgs ...*pubsub.M
 }
 
 // Close 关闭 Publisher. 幂等.
+// 注意：不关闭底层 Redis 连接（连接由调用方管理）.
 func (p *Publisher) Close() error {
 	p.closed.Store(true)
 	return nil

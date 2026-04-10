@@ -38,33 +38,6 @@ type RPCInfo struct {
 	ReplyType   string // 响应类型
 }
 
-// runProto 执行 servex proto 命令.
-func runProto(args []string) error {
-	if len(args) == 0 {
-		printProtoUsage()
-		return fmt.Errorf("必须指定 proto 子命令")
-	}
-
-	switch args[0] {
-	case "add":
-		return runProtoAdd(args[1:])
-	case "client":
-		return runProtoClient(args[1:])
-	case "server":
-		return runProtoServer(args[1:])
-	case "lint":
-		return runProtoLint(args[1:])
-	case "breaking":
-		return runProtoBreaking(args[1:])
-	case "help", "-h", "--help":
-		printProtoUsage()
-		return nil
-	default:
-		printProtoUsage()
-		return fmt.Errorf("未知 proto 子命令: %s", args[0])
-	}
-}
-
 // printProtoUsage 输出 proto 命令帮助信息.
 func printProtoUsage() {
 	fmt.Println(`用法: servex proto <subcommand> [arguments]

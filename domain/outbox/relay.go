@@ -171,8 +171,9 @@ func (r *Relay) resetStaleLoop(ctx context.Context) {
 // cleanupLoop 定期清理已发送消息.
 func (r *Relay) cleanupLoop(ctx context.Context) {
 	cleanup := func() {
+		// 使用独立 context，确保清理操作不受 relay 生命周期 context 取消的影响
 		before := time.Now().Add(-r.opts.cleanupAge)
-		if n, err := r.store.Cleanup(ctx, before); err != nil {
+		if n, err := r.store.Cleanup(context.Background(), before); err != nil {
 			r.logErrorf("清理已发送消息失败: %v", err)
 		} else if n > 0 {
 			r.logDebugf("已清理 %d 条过期消息", n)

@@ -152,10 +152,12 @@ func (l *simpleLock) Lock(ctx context.Context) error {
 		if time.Now().After(deadline) {
 			return ErrLockFailed
 		}
+		retryTimer := time.NewTimer(l.opts.retryInterval)
 		select {
 		case <-ctx.Done():
+			retryTimer.Stop()
 			return ctx.Err()
-		case <-time.After(l.opts.retryInterval):
+		case <-retryTimer.C:
 		}
 	}
 }

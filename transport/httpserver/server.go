@@ -4,7 +4,6 @@ package httpserver
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"net/http"
 	"net/http/pprof"
 	"slices"
@@ -129,9 +128,6 @@ func wrapProfiling(next http.Handler, prefix string, authFn func(*http.Request) 
 		next.ServeHTTP(w, r)
 	})
 }
-
-// errAlreadyStarted 服务器已启动.
-var errAlreadyStarted = errors.New("http server: already started")
 
 // Start 启动服务器.
 func (s *Server) Start(ctx context.Context) error {

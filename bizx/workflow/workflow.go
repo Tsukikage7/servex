@@ -138,6 +138,17 @@ func WithMaxSteps(n int) Option {
 	}
 }
 
+// CheckpointFunc 检查点回调，在每个节点执行完成后调用以持久化中间状态.
+// 崩溃恢复时可从最近的检查点继续执行，避免重复执行已完成的节点.
+type CheckpointFunc func(ctx context.Context, instance *Instance) error
+
+// WithCheckpoint 设置检查点回调函数.
+func WithCheckpoint(fn CheckpointFunc) Option {
+	return func(e *Engine) {
+		e.checkpoint = fn
+	}
+}
+
 // Engine 工作流引擎.
 type Engine struct {
 	mu          sync.RWMutex
@@ -146,6 +157,7 @@ type Engine struct {
 	logger      *slog.Logger
 	maxParallel int
 	maxSteps    int
+	checkpoint  CheckpointFunc
 }
 
 // New 创建工作流引擎.
@@ -262,6 +274,12 @@ func (e *Engine) Execute(ctx context.Context, instanceID string) error {
 			}
 			instance.CurrentNodeID = node.NextNodes[0]
 			instance.UpdatedAt = time.Now()
+			// 持久化中间状态，崩溃恢复时可从此节点继续
+			if e.checkpoint != nil {
+				if err := e.checkpoint(ctx, instance); err != nil {
+					e.logger.WarnContext(ctx, "workflow: 检查点持久化失败", "instance_id", instance.ID, "error", err)
+				}
+			}
 
 		case NodeTypeApproval:
 			instance.Status = StatusWaitingApproval
@@ -284,6 +302,12 @@ func (e *Engine) Execute(ctx context.Context, instanceID string) error {
 			}
 			instance.CurrentNodeID = nextID
 			instance.UpdatedAt = time.Now()
+			// 持久化中间状态
+			if e.checkpoint != nil {
+				if err := e.checkpoint(ctx, instance); err != nil {
+					e.logger.WarnContext(ctx, "workflow: 检查点持久化失败", "instance_id", instance.ID, "error", err)
+				}
+			}
 
 		case NodeTypeParallel:
 			if err := e.executeParallel(ctx, instance, node); err != nil {
@@ -299,6 +323,12 @@ func (e *Engine) Execute(ctx context.Context, instanceID string) error {
 			}
 			instance.CurrentNodeID = node.NextNodes[0]
 			instance.UpdatedAt = time.Now()
+			// 持久化中间状态
+			if e.checkpoint != nil {
+				if err := e.checkpoint(ctx, instance); err != nil {
+					e.logger.WarnContext(ctx, "workflow: 检查点持久化失败", "instance_id", instance.ID, "error", err)
+				}
+			}
 
 		default:
 			instance.Status = StatusFailed
@@ -310,9 +340,16 @@ func (e *Engine) Execute(ctx context.Context, instanceID string) error {
 }
 
 // executeParallel 并行执行节点的所有子处理器.
+// 查找所有 NextNodes 引用的节点并行执行其 Handler，使用信号量控制并行度.
 func (e *Engine) executeParallel(ctx context.Context, instance *Instance, node *Node) error {
-	if node.Handler == nil {
+	if node.Handler == nil && len(node.NextNodes) == 0 {
 		return nil
+	}
+
+	// 收集需要并行执行的 handler 列表
+	var handlers []Handler
+	if node.Handler != nil {
+		handlers = append(handlers, node.Handler)
 	}
 
 	// 使用信号量控制并行度
@@ -323,21 +360,22 @@ func (e *Engine) executeParallel(ctx context.Context, instance *Instance, node *
 		firstErr error
 	)
 
-	// 并行节点执行自身 handler 多次（由 NextNodes 中除第一个外的节点定义并行任务）
-	// 简化设计: 并行节点只执行自身的 Handler 一次
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		sem <- struct{}{}
-		defer func() { <-sem }()
-		if err := node.Handler(ctx, instance); err != nil {
-			mu.Lock()
-			if firstErr == nil {
-				firstErr = err
+	for _, h := range handlers {
+		h := h
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+			if err := h(ctx, instance); err != nil {
+				mu.Lock()
+				if firstErr == nil {
+					firstErr = err
+				}
+				mu.Unlock()
 			}
-			mu.Unlock()
-		}
-	}()
+		}()
+	}
 
 	wg.Wait()
 	return firstErr

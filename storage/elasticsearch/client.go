@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 
 	es "github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
@@ -55,7 +54,7 @@ func newESClient(config *Config, log logger.Logger) (*esClient, error) {
 	}
 
 	// 测试连接
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), config.PingTimeout)
 	defer cancel()
 
 	res, err := client.Ping(client.Ping.WithContext(ctx))

@@ -18,10 +18,11 @@ func TestNewFromConfig_MinimalConfig(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := NewFromConfig(&Config{
+	c, err := NewFromConfig(&Config{
 		BaseURL: srv.URL,
 		Timeout: 5 * time.Second,
 	})
+	require.NoError(t, err)
 	require.NotNil(t, c)
 
 	resp, err := c.DoRequest(t.Context(), &Request{Method: http.MethodGet, Path: "/api"})
@@ -42,12 +43,13 @@ func TestNewFromConfig_WithRetry(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := NewFromConfig(&Config{
+	c, err := NewFromConfig(&Config{
 		BaseURL:    srv.URL,
 		Timeout:    5 * time.Second,
 		MaxRetries: 3,
 		RetryDelay: time.Millisecond,
 	})
+	require.NoError(t, err)
 
 	resp, err := c.DoRequest(t.Context(), &Request{Method: http.MethodGet, Path: "/api"})
 	require.NoError(t, err)
@@ -62,10 +64,11 @@ func TestNewFromConfig_WithAdditionalOpts(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := NewFromConfig(
+	c, err := NewFromConfig(
 		&Config{BaseURL: srv.URL},
 		WithHeader("X-Service", "test-service"),
 	)
+	require.NoError(t, err)
 
 	resp, err := c.DoRequest(t.Context(), &Request{Method: http.MethodGet, Path: "/api"})
 	require.NoError(t, err)
@@ -73,6 +76,7 @@ func TestNewFromConfig_WithAdditionalOpts(t *testing.T) {
 }
 
 func TestNewFromConfig_ZeroValues(t *testing.T) {
-	c := NewFromConfig(&Config{})
+	c, err := NewFromConfig(&Config{})
+	require.NoError(t, err)
 	require.NotNil(t, c)
 }

@@ -59,6 +59,7 @@ type Event struct {
 }
 
 // Bytes 将事件序列化为 SSE 格式.
+// 根据 SSE 规范，多行数据需要每行使用独立的 "data: " ���缀.
 func (e *Event) Bytes() []byte {
 	var buf bytes.Buffer
 
@@ -78,9 +79,13 @@ func (e *Event) Bytes() []byte {
 		buf.WriteByte('\n')
 	}
 	if len(e.Data) > 0 {
-		buf.WriteString("data: ")
-		buf.Write(e.Data)
-		buf.WriteByte('\n')
+		// SSE 规范要求多行数据每行使用独立的 "data: " 前缀
+		lines := bytes.Split(e.Data, []byte("\n"))
+		for _, line := range lines {
+			buf.WriteString("data: ")
+			buf.Write(line)
+			buf.WriteByte('\n')
+		}
 	}
 	buf.WriteByte('\n')
 

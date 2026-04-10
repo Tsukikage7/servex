@@ -17,4 +17,6 @@ type OTLPConfig struct {
 	Endpoint string `json:"endpoint" yaml:"endpoint" mapstructure:"endpoint"`
 	// Headers 请求头[可选]
 	Headers map[string]string `json:"headers" yaml:"headers" mapstructure:"headers"`
+	// Insecure 是否使用 HTTP（不加密），默认 true 以兼容旧行为；生产环境建议设为 false
+	Insecure bool `json:"insecure" yaml:"insecure" mapstructure:"insecure"`
 }

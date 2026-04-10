@@ -1,6 +1,9 @@
 package syncx
 
-import "sync"
+import (
+	"math/bits"
+	"sync"
+)
 
 // SegmentKeysLock 分段键锁.
 // 通过对 key 进行哈希分段，减小锁粒度提升并发性能.
@@ -9,15 +12,30 @@ type SegmentKeysLock struct {
 	size  uint32
 }
 
-// NewSegmentKeysLock 创建分段键锁，size 建议使用 2 的幂次.
+// NewSegmentKeysLock 创建分段键锁.
+// size 会被向上取整到 2 的幂次，以保证哈希分布均匀.
 func NewSegmentKeysLock(size uint32) *SegmentKeysLock {
 	if size == 0 {
 		size = 16
 	}
+	// 向上取整到 2 的幂次
+	size = nextPowerOf2(size)
 	return &SegmentKeysLock{
 		locks: make([]sync.RWMutex, size),
 		size:  size,
 	}
+}
+
+// nextPowerOf2 返回 >= n 的最小 2 的幂次.
+func nextPowerOf2(n uint32) uint32 {
+	if n == 0 {
+		return 1
+	}
+	// 如果已经是 2 的幂次则直接返回
+	if bits.OnesCount32(n) == 1 {
+		return n
+	}
+	return 1 << bits.Len32(n)
 }
 
 // Lock 对指定 key 加写锁.
@@ -49,5 +67,5 @@ func (s *SegmentKeysLock) hash(key string) uint32 {
 		h ^= uint32(key[i])
 		h *= prime32
 	}
-	return h % s.size
+	return h & (s.size - 1) // size 保证为 2 的幂次，位与替代取模更高效且分布均匀
 }

@@ -189,6 +189,9 @@ func (h *Handler) serveHTML(w http.ResponseWriter, r *http.Request) {
 }
 
 // RegisterRoutes 注册调试路由到 http.ServeMux.
+//
+// 注意: 调试面板暴露敏感信息（配置、路由、指标等），
+// 生产环境中应通过 HTTP 中间件或网络策略限制访问（如仅内网可访问）.
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.Handle("/debug/info", h)
 	mux.Handle("/debug/", h)

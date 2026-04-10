@@ -205,6 +205,17 @@ func NewClient(config *Config, log logger.Logger) (Client, error) {
 		WriteTimeout: config.WriteTimeout,
 	})
 
+	// 测试连接
+	ctx, cancel := context.WithTimeout(context.Background(), config.DialTimeout)
+	defer cancel()
+
+	if err := rdb.Ping(ctx).Err(); err != nil {
+		_ = rdb.Close()
+		return nil, err
+	}
+
+	log.Info("redis connected", "addr", config.Addr, "db", config.DB)
+
 	return &redisClient{
 		client: rdb,
 		log:    log,

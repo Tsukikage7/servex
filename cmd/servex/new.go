@@ -2,7 +2,6 @@ package main
 
 import (
 	"embed"
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -24,56 +23,13 @@ type ProjectData struct {
 	AllComponents []ComponentDef // 合并后的全部组件[模板用]
 }
 
-// runNew 执行 servex new 命令.
-func runNew(args []string) error {
-	fs := flag.NewFlagSet("new", flag.ExitOnError)
-	module := fs.String("module", "", "Go module 路径 (默认: github.com/example/<project>)")
-	standalone := fs.Bool("standalone", false, "创建独立单服务项目[默认: monorepo 模式]")
-	withGRPC := fs.Bool("with-grpc", false, "包含 gRPC 服务端")
-	infra := fs.String("infra", "", "基础设施组件，逗号分隔 (如 mysql,redis,kafka)")
-	fs.Usage = func() {
-		fmt.Println("用法: servex new <project-name> [options]")
-		fmt.Println()
-		fmt.Println("选项:")
-		fs.PrintDefaults()
-	}
-
-	if len(args) == 0 {
-		fs.Usage()
-		return fmt.Errorf("项目名称必填")
-	}
-
-	projectName := args[0]
-	if err := fs.Parse(args[1:]); err != nil {
-		return err
-	}
-
-	if *module == "" {
-		*module = "github.com/example/" + projectName
-	}
-
-	infraDefs := parseInfra(*infra)
-	data := ProjectData{
-		Name:          projectName,
-		Module:        *module,
-		WithGRPC:      *withGRPC,
-		Infra:         infraDefs,
-		AllComponents: infraDefs,
-	}
-
-	if *standalone {
-		return generateProject(data)
-	}
-	return generateMonorepo(data)
-}
-
 // templateFiles 定义项目模板文件与输出路径的映射.
 var templateFiles = []struct {
 	tmpl string // 模板路径[embed.FS 内]
 	out  string // 输出路径[相对于项目根目录]，支持模板变量
 }{
 	{"templates/project/go.mod.tmpl", "go.mod"},
-	{"templates/project/main.go.tmpl", "README.md"},
+	{"templates/project/readme.md.tmpl", "README.md"},
 	{"templates/project/config.yaml.tmpl", "config.yaml"},
 	{"templates/project/justfile.tmpl", "justfile"},
 	{"templates/project/Dockerfile.tmpl", "Dockerfile"},

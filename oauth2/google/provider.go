@@ -41,6 +41,10 @@ type verifierEntry struct {
 }
 
 // Provider 实现 Google OAuth2 登录.
+//
+// 注意: PKCE code_verifier 使用内存存储，不支持多实例部署.
+// 多实例场景下应确保同一用户的 AuthURL 和 Exchange 请求路由到同一实例，
+// 或使用外部存储（如 Redis）替代内存 map.
 type Provider struct {
 	opts        options
 	authBaseURL string
@@ -154,6 +158,12 @@ func (p *Provider) ExchangeWithState(ctx context.Context, code, state string) (*
 		return nil, errors.Join(oauth2.ErrExchangeFailed, err)
 	}
 	defer resp.Body.Close()
+
+	// 检查 HTTP 状态码
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("%w: HTTP %d", oauth2.ErrExchangeFailed, resp.StatusCode)
+	}
+
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBody))
 	if err != nil {
 		return nil, errors.Join(oauth2.ErrExchangeFailed, err)
@@ -206,7 +216,7 @@ func (p *Provider) Refresh(ctx context.Context, refreshToken string) (*oauth2.To
 	defer resp.Body.Close()
 
 	var result map[string]any
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxResponseBody)).Decode(&result); err != nil {
 		return nil, errors.Join(oauth2.ErrRefreshFailed, err)
 	}
 
@@ -239,8 +249,13 @@ func (p *Provider) UserInfo(ctx context.Context, token *oauth2.Token) (*oauth2.U
 	}
 	defer resp.Body.Close()
 
+	// 检查 HTTP 状态码
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("%w: HTTP %d", oauth2.ErrUserInfoFailed, resp.StatusCode)
+	}
+
 	var result map[string]any
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxResponseBody)).Decode(&result); err != nil {
 		return nil, errors.Join(oauth2.ErrUserInfoFailed, err)
 	}
 

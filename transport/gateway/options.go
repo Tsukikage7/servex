@@ -635,15 +635,3 @@ func buildCombinedSkipper(o *options) auth.Skipper {
 		return false
 	}
 }
-
-// buildMethodSkipper 构建方法跳过器.
-func buildMethodSkipper(publicMethods []string) auth.Skipper {
-	skip := transport.BuildMethodSkipper(publicMethods)
-	return func(ctx context.Context, _ any) bool {
-		method, ok := grpc.Method(ctx)
-		if !ok {
-			return false
-		}
-		return skip(method)
-	}
-}

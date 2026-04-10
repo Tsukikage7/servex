@@ -62,23 +62,32 @@ func (s *Store) Enqueue(ctx context.Context, job *jobqueue.Job) error {
 	}).Err()
 }
 
+// dequeueScript 使用 Lua 脚本原子地查询并移除到期的 job，避免 TOCTOU 竞态.
+var dequeueScript = goredis.NewScript(`
+local result = redis.call("ZRANGEBYSCORE", KEYS[1], "-inf", ARGV[1], "LIMIT", 0, 1)
+if #result == 0 then
+	return nil
+end
+local jobID = result[1]
+local removed = redis.call("ZREM", KEYS[1], jobID)
+if removed == 0 then
+	return nil
+end
+return jobID
+`)
+
 func (s *Store) Dequeue(ctx context.Context, queue string) (*jobqueue.Job, error) {
-	now := float64(time.Now().UnixMilli())
-	result, err := s.client.ZRangeByScore(ctx, s.key("queue", queue), &goredis.ZRangeBy{
-		Min:   "-inf",
-		Max:   fmt.Sprintf("%f", now),
-		Count: 1,
-	}).Result()
+	now := fmt.Sprintf("%f", float64(time.Now().UnixMilli()))
+	result, err := dequeueScript.Run(ctx, s.client, []string{s.key("queue", queue)}, now).Result()
 	if err != nil {
+		if errors.Is(err, goredis.Nil) {
+			return nil, jobqueue.ErrDequeueTimeout
+		}
 		return nil, err
 	}
-	if len(result) == 0 {
-		return nil, jobqueue.ErrDequeueTimeout
-	}
 
-	jobID := result[0]
-	removed, err := s.client.ZRem(ctx, s.key("queue", queue), jobID).Result()
-	if err != nil || removed == 0 {
+	jobID, ok := result.(string)
+	if !ok || jobID == "" {
 		return nil, jobqueue.ErrDequeueTimeout
 	}
 

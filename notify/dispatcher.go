@@ -115,10 +115,16 @@ func (d *Dispatcher) Close() error {
 	if d.closed.Swap(true) {
 		return nil
 	}
-	d.mu.RLock()
-	defer d.mu.RUnlock()
-	var firstErr error
+	// 使用写锁取出所有 senders，然后在锁外关闭，避免阻塞 Register
+	d.mu.Lock()
+	senders := make([]Sender, 0, len(d.senders))
 	for _, sender := range d.senders {
+		senders = append(senders, sender)
+	}
+	d.mu.Unlock()
+
+	var firstErr error
+	for _, sender := range senders {
 		if err := sender.Close(); err != nil && firstErr == nil {
 			firstErr = err
 		}

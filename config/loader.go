@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -18,7 +19,7 @@ func Load[T any](configPath string, opts ...Option) (*T, error) {
 	}
 
 	// 检查文件是否存在
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+	if _, err := os.Stat(configPath); errors.Is(err, os.ErrNotExist) {
 		return nil, ErrFileNotFound
 	}
 
@@ -97,7 +98,7 @@ func LoadWithSearch[T any](configName string, searchPaths []string, opts ...Opti
 
 	// 读取配置
 	if err := v.ReadInConfig(); err != nil {
-		return nil, ErrReadConfig
+		return nil, fmt.Errorf("%w: %v", ErrReadConfig, err)
 	}
 
 	// 解析并验证

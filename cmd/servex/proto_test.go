@@ -407,30 +407,6 @@ option go_package = "github.com/example/myapp/api/order/v1;orderv1";
 	}
 }
 
-// TestRunProtoNoArgs 测试无参数调用 proto.
-func TestRunProtoNoArgs(t *testing.T) {
-	err := runProto(nil)
-	if err == nil {
-		t.Error("缺少子命令时应返回错误")
-	}
-}
-
-// TestRunProtoUnknown 测试未知子命令.
-func TestRunProtoUnknown(t *testing.T) {
-	err := runProto([]string{"unknown"})
-	if err == nil {
-		t.Error("未知子命令应返回错误")
-	}
-}
-
-// TestRunProtoHelp 测试 help 子命令.
-func TestRunProtoHelp(t *testing.T) {
-	err := runProto([]string{"help"})
-	if err != nil {
-		t.Errorf("help 子命令不应返回错误: %v", err)
-	}
-}
-
 // TestProtoServerMonorepo 测试 monorepo 模式下 proto server 输出路径.
 func TestProtoServerMonorepo(t *testing.T) {
 	dir := t.TempDir()

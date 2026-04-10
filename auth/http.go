@@ -182,14 +182,15 @@ func writeHTTPError(w http.ResponseWriter, code int, message string) {
 }
 
 // HTTPSkipPaths 返回跳过指定路径的 Skipper.
+// 同时匹配有无尾部斜杠的路径（如 /health 和 /health/）.
 func HTTPSkipPaths(paths ...string) Skipper {
 	pathSet := make(map[string]bool)
 	for _, p := range paths {
-		pathSet[p] = true
+		pathSet[strings.TrimRight(p, "/")] = true
 	}
 	return func(_ context.Context, request any) bool {
 		if r, ok := request.(*http.Request); ok {
-			return pathSet[r.URL.Path]
+			return pathSet[strings.TrimRight(r.URL.Path, "/")]
 		}
 		return false
 	}

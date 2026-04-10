@@ -19,6 +19,7 @@
 package validation
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -195,7 +196,8 @@ func ParseErrors(err error, msgs ...map[string]string) *ValidationError {
 
 	var fieldErrors []FieldError
 
-	if ve, ok := err.(validator.ValidationErrors); ok {
+	var ve validator.ValidationErrors
+	if errors.As(err, &ve) {
 		for _, fe := range ve {
 			fieldErr := FieldError{
 				Field: fe.Field(),

@@ -61,6 +61,8 @@ func (b *AsyncEventBus) Publish(ctx context.Context, event DomainEvent) error {
 }
 
 // Dispatch 从聚合发布所有事件并清除.
+// 注意：采用 fail-fast 策略，任一事件发布失败时停止，已发布的事件不会回滚.
+// 调用方应结合 outbox 模式保证最终一致性.
 func (b *AsyncEventBus) Dispatch(ctx context.Context, events []DomainEvent, clear func()) error {
 	for _, event := range events {
 		if err := b.Publish(ctx, event); err != nil {

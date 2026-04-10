@@ -26,8 +26,9 @@ type gorillaClient struct {
 }
 
 // newGorillaClient 创建 gorilla 客户端.
-func newGorillaClient(h *hub, conn *websocket.Conn, config *Config) *gorillaClient {
-	ctx, cancel := context.WithCancel(context.Background())
+// parentCtx 通常为 HTTP 请求上下文，用于关联生命周期.
+func newGorillaClient(h *hub, conn *websocket.Conn, config *Config, parentCtx context.Context) *gorillaClient {
+	ctx, cancel := context.WithCancel(parentCtx)
 	return &gorillaClient{
 		id:       uuid.New().String(),
 		conn:     conn,
@@ -183,22 +184,28 @@ func NewUpgrader(config *Config) *Upgrader {
 		config = DefaultConfig()
 	}
 
-	return &Upgrader{
+	u := &Upgrader{
 		config: config,
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:    config.ReadBufferSize,
 			WriteBufferSize:   config.WriteBufferSize,
 			EnableCompression: config.EnableCompression,
-			CheckOrigin: func(r *http.Request) bool {
-				if config.CheckOrigin != nil {
-					return config.CheckOrigin(r.Header.Get("Origin"))
-				}
-				// 未配置 CheckOrigin，允许所有 Origin（仅限开发环境，生产环境请配置 CheckOrigin）
-				log.Println("[WebSocket] 警告: 未配置 CheckOrigin，默认允许所有 Origin，生产环境请务必配置")
-				return true
-			},
 		},
 	}
+
+	if config.CheckOrigin != nil {
+		u.upgrader.CheckOrigin = func(r *http.Request) bool {
+			return config.CheckOrigin(r.Header.Get("Origin"))
+		}
+	} else {
+		// 未配置 CheckOrigin 时仅在初始化时打印一次警告，不在每���请求时打印
+		log.Println("[WebSocket] 警告: 未配置 CheckOrigin，默认允许所有 Origin，生产环境请务必配置")
+		u.upgrader.CheckOrigin = func(r *http.Request) bool {
+			return true
+		}
+	}
+
+	return u
 }
 
 // Upgrade 升级 HTTP 连接为 WebSocket.
@@ -208,7 +215,7 @@ func (u *Upgrader) Upgrade(h *hub, w http.ResponseWriter, r *http.Request) (Clie
 		return nil, err
 	}
 
-	client := newGorillaClient(h, conn, u.config)
+	client := newGorillaClient(h, conn, u.config, r.Context())
 	h.Register(client)
 
 	// 启动读写协程

@@ -118,12 +118,13 @@ func (s *Store) MarkFailed(ctx context.Context, id uint64, errMsg string) error 
 		}).Error
 }
 
-// ResetStale 将超时的 Processing/Failed 消息重置为 Pending.
+// ResetStale 将超时的 Processing 消息重置为 Pending.
+// 仅重置 StatusProcessing 状态，StatusFailed 由重试逻辑单独处理，避免无限重试循环.
 func (s *Store) ResetStale(ctx context.Context, staleDuration time.Duration) (int64, error) {
 	threshold := time.Now().Add(-staleDuration)
 	result := s.db.WithContext(ctx).
 		Model(&outbox.OutboxMessage{}).
-		Where("status IN ? AND updated_at < ?", []outbox.MessageStatus{outbox.StatusProcessing, outbox.StatusFailed}, threshold).
+		Where("status = ? AND updated_at < ?", outbox.StatusProcessing, threshold).
 		Updates(map[string]any{
 			"status": outbox.StatusPending,
 		})

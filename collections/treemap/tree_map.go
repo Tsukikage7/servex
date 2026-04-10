@@ -258,8 +258,22 @@ func (m *TreeMap[K, V]) Last() (Entry[K, V], bool) {
 }
 
 // ToMap 转换为原生 map（无序）.
+// 由于 TreeMap 的 K 约束为 any，此处通过类型断言转换.
+// 若 K 实际不可比较，运行时会 panic.
+// 推荐使用独立函数 ToGoMap 来获取类型安全的 map.
 func (m *TreeMap[K, V]) ToMap() map[any]V {
 	result := make(map[any]V, m.size)
+	m.Range(func(key K, value V) bool {
+		result[key] = value
+		return true
+	})
+	return result
+}
+
+// ToGoMap 将 TreeMap 转换为类型安全的原生 map（无序）.
+// K 必须满足 comparable 约束.
+func ToGoMap[K comparable, V any](m *TreeMap[K, V]) map[K]V {
+	result := make(map[K]V, m.Len())
 	m.Range(func(key K, value V) bool {
 		result[key] = value
 		return true

@@ -21,7 +21,8 @@ type Config struct {
 }
 
 // NewFromConfig 从配置创建简单客户端（不使用服务发现）.
-func NewFromConfig(cfg *Config, additionalOpts ...Option) *Client {
+// 若 TLS 配置创建失败，返回 nil 和错误.
+func NewFromConfig(cfg *Config, additionalOpts ...Option) (*Client, error) {
 	var opts []Option
 
 	if cfg.BaseURL != "" {
@@ -47,11 +48,11 @@ func NewFromConfig(cfg *Config, additionalOpts ...Option) *Client {
 	if cfg.TLS != nil {
 		tlsCfg, err := tlsx.NewClientTLSConfig(cfg.TLS)
 		if err != nil {
-			panic(fmt.Sprintf("http client: failed to create TLS config: %v", err))
+			return nil, fmt.Errorf("http client: TLS 配置创建失败: %w", err)
 		}
 		opts = append(opts, WithTLS(tlsCfg))
 	}
 
 	opts = append(opts, additionalOpts...)
-	return NewSimple(opts...)
+	return NewSimple(opts...), nil
 }

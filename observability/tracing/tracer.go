@@ -44,7 +44,11 @@ func NewTracer(cfg *TracingConfig, serviceName, serviceVersion string) (*trace.T
 	// 创建OTLP HTTP导出器选项
 	opts := []otlptracehttp.Option{
 		otlptracehttp.WithEndpoint(endpoint),
-		otlptracehttp.WithInsecure(), // 使用HTTP而不是HTTPS
+	}
+
+	// 仅在配置为 Insecure 时使用 HTTP（不加密）
+	if cfg.OTLP.Insecure {
+		opts = append(opts, otlptracehttp.WithInsecure())
 	}
 
 	// 添加请求头

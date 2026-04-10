@@ -85,15 +85,22 @@ func HTTPMiddleware(serviceName string) func(http.Handler) http.Handler {
 	}
 }
 
-// responseWriter 包装 http.ResponseWriter 以捕获状态码.
+// responseWriter 包装 http.ResponseWriter 以捕获状态码和响应大小.
 type responseWriter struct {
 	http.ResponseWriter
-	statusCode int
+	statusCode   int
+	bytesWritten int
 }
 
 func (rw *responseWriter) WriteHeader(code int) {
 	rw.statusCode = code
 	rw.ResponseWriter.WriteHeader(code)
+}
+
+func (rw *responseWriter) Write(b []byte) (int, error) {
+	n, err := rw.ResponseWriter.Write(b)
+	rw.bytesWritten += n
+	return n, err
 }
 
 // SpanFromContext 从 context 获取当前 span.

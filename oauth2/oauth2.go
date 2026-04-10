@@ -42,6 +42,13 @@ type Provider interface {
 	UserInfo(ctx context.Context, token *Token) (*UserInfo, error)
 }
 
+// ProviderWithState 支持携带 state 参数交换令牌的 Provider.
+// 实现 PKCE 时需要 state 来查找对应的 code_verifier.
+type ProviderWithState interface {
+	Provider
+	ExchangeWithState(ctx context.Context, code, state string) (*Token, error)
+}
+
 // StateStore 管理 OAuth2 state 参数，防 CSRF.
 type StateStore interface {
 	Generate(ctx context.Context) (string, error)

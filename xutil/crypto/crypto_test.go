@@ -74,7 +74,8 @@ func (s *CryptoTestSuite) TestGenerateRandomInt64() {
 
 func (s *CryptoTestSuite) TestGenerateBusinessID() {
 	for range 100 {
-		id := GenerateBusinessID()
+		id, err := GenerateBusinessID()
+		s.Require().NoError(err)
 		s.GreaterOrEqual(id, int32(100000000))
 		s.LessOrEqual(id, int32(999999999))
 	}
@@ -82,7 +83,8 @@ func (s *CryptoTestSuite) TestGenerateBusinessID() {
 
 func (s *CryptoTestSuite) TestGenerateBusinessID64() {
 	for range 100 {
-		id := GenerateBusinessID64()
+		id, err := GenerateBusinessID64()
+		s.Require().NoError(err)
 		s.GreaterOrEqual(id, int64(100000000000000000))
 		s.LessOrEqual(id, int64(999999999999999999))
 	}

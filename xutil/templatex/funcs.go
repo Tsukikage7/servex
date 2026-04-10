@@ -6,6 +6,9 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // builtinFuncMap 返回内置模板函数集合.
@@ -40,7 +43,7 @@ func fnLower(s string) string {
 
 // fnTitle 将字符串转为标题格式.
 func fnTitle(s string) string {
-	return strings.Title(s) //nolint:staticcheck // strings.Title is simple and sufficient here.
+	return cases.Title(language.Und).String(s)
 }
 
 // fnTrim 去除字符串首尾空白.

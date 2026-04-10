@@ -68,6 +68,8 @@ type Config struct {
 	ResponseHeaderTimeout time.Duration `json:"response_header_timeout" yaml:"response_header_timeout" mapstructure:"response_header_timeout"`
 	// EnableTracing 启用链路追踪
 	EnableTracing bool `json:"enable_tracing" yaml:"enable_tracing" mapstructure:"enable_tracing"`
+	// PingTimeout Ping 超时时间
+	PingTimeout time.Duration `json:"ping_timeout" yaml:"ping_timeout" mapstructure:"ping_timeout"`
 }
 
 // DefaultConfig 返回默认配置.
@@ -77,6 +79,7 @@ func DefaultConfig() *Config {
 		MaxRetries:            3,
 		MaxIdleConnsPerHost:   10,
 		ResponseHeaderTimeout: 30 * time.Second,
+		PingTimeout:           5 * time.Second,
 	}
 }
 
@@ -99,6 +102,9 @@ func (c *Config) ApplyDefaults() {
 	}
 	if c.ResponseHeaderTimeout == 0 {
 		c.ResponseHeaderTimeout = defaults.ResponseHeaderTimeout
+	}
+	if c.PingTimeout == 0 {
+		c.PingTimeout = defaults.PingTimeout
 	}
 }
 

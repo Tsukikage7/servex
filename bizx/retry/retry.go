@@ -287,6 +287,10 @@ func (s *scheduler) processTask(ctx context.Context, task *Task) {
 			multiplier = 2.0
 		}
 		delay := initialDelay * time.Duration(math.Pow(multiplier, float64(task.Retried-1)))
+		// 防止溢出导致负数延迟
+		if delay <= 0 {
+			delay = time.Hour // 上限兜底
+		}
 		task.NextRetryAt = time.Now().Add(delay)
 	}
 	_ = s.store.Update(ctx, task)

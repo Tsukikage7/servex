@@ -57,33 +57,6 @@ type AggregateData struct {
 	HasCommands  bool         // 是否指定了 --commands
 }
 
-// runGen 执行 servex gen 命令.
-func runGen(args []string) error {
-	if len(args) == 0 {
-		fmt.Println("用法: servex gen <type> [arguments]")
-		fmt.Println()
-		fmt.Println("类型:")
-		fmt.Println("  aggregate    生成 DDD 聚合代码")
-		fmt.Println("  dockerfile   生成 Dockerfile")
-		fmt.Println("  justfile     生成 justfile")
-		fmt.Println("  k8s          生成 K8s 清单[Deployment/Service/HPA]")
-		return fmt.Errorf("必须指定生成类型")
-	}
-
-	switch args[0] {
-	case "aggregate":
-		return runGenAggregate(args[1:])
-	case "dockerfile":
-		return runGenDockerfile(args[1:])
-	case "justfile":
-		return runGenJustfile(args[1:])
-	case "k8s":
-		return runGenK8sLegacy(args[1:])
-	default:
-		return fmt.Errorf("未知生成类型: %s", args[0])
-	}
-}
-
 // runGenAggregate 执行 servex gen aggregate 命令.
 func runGenAggregate(args []string) error {
 	fs := flag.NewFlagSet("gen aggregate", flag.ExitOnError)
