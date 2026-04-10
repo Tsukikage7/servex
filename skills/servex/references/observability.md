@@ -1,6 +1,6 @@
 # servex 可观测性
 
-## observability/metrics — Prometheus 指标
+## observability/metrics — Prometheus + OpenTelemetry 指标
 
 ```go
 // MustNewMetrics 初始化失败直接 panic（适合 main 函数）
@@ -17,8 +17,33 @@ srv := httpserver.New(mux,
 )
 ```
 
+### OpenTelemetry Metrics（OTel）
+
+```go
+import "github.com/Tsukikage7/servex/observability/metrics"
+
+// 创建 OTel Metrics 收集器
+otelMetrics, err := metrics.NewOTel(
+    metrics.WithMeterProvider(meterProvider),  // 自定义 MeterProvider
+    metrics.WithExporter(exporter),            // OTLP / Prometheus 导出器
+)
+if err != nil { ... }
+
+// 与 Prometheus 共存（双后端）
+m := metrics.MustNewMetrics(metrics.DefaultConfig("my-service"))
+m.EnableOTel(otelMetrics)
+
+// HTTP 中间件（同时写入 Prometheus 和 OTel）
+srv := httpserver.New(mux,
+    httpserver.WithMiddlewares(m.HTTPMiddleware()),
+)
+```
+
 **关键选项：**
 - `metrics.DefaultConfig(serviceName)` — 默认配置，注册 HTTP/gRPC 指标
+- `metrics.NewOTel(opts...)` — 创建 OTel Metrics 收集器
+- `WithMeterProvider(mp)` — 自定义 OpenTelemetry MeterProvider
+- `WithExporter(exp)` — 指标导出器（OTLP HTTP/gRPC、Prometheus Remote Write）
 - `m.HTTPMiddleware()` — `func(http.Handler) http.Handler`
 - `m.GRPCUnaryInterceptor()` — gRPC 一元拦截器
 

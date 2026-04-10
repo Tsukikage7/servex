@@ -3,13 +3,34 @@
 ## auth/jwt — JWT 签发与验证
 
 ```go
-// 创建 JWT 服务（缺少 WithLogger 会 panic）
+// 创建 JWT 服务 — HMAC 对称签名（缺少 WithLogger 会 panic）
 jwtSrv := jwt.NewJWT(
     jwt.WithLogger(log),
     jwt.WithSecretKey("your-secret-key"),
     jwt.WithIssuer("my-service"),
     jwt.WithAccessDuration(2 * time.Hour),
     jwt.WithRefreshDuration(7 * 24 * time.Hour),
+)
+
+// RSA 非对称签名（RS256）
+rsaKey, err := jwt.LoadRSAPrivateKey("/etc/keys/private.pem")
+if err != nil { ... }
+jwtSrv := jwt.NewJWT(
+    jwt.WithLogger(log),
+    jwt.WithRSAKeys(rsaKey, &rsaKey.PublicKey),
+    jwt.WithIssuer("my-service"),
+)
+
+// ECDSA 非对称签名（ES256）
+jwtSrv := jwt.NewJWT(
+    jwt.WithLogger(log),
+    jwt.WithECDSAKeys(ecdsaPrivateKey, &ecdsaPrivateKey.PublicKey),
+)
+
+// EdDSA 签名（Ed25519）
+jwtSrv := jwt.NewJWT(
+    jwt.WithLogger(log),
+    jwt.WithEdDSAKeys(ed25519PrivateKey, ed25519PublicKey),
 )
 
 // 签发令牌
@@ -42,6 +63,13 @@ srv := httpserver.New(mux,
 **关键类型：**
 - `jwt.StandardClaims` — 标准 claims 结构（嵌入 `gojwt.RegisteredClaims`）
 - `auth.Principal` — 认证后的用户信息，含 `ID`（不是 `UserID`）
+
+**签名算法选项：**
+- `WithSecretKey(key)` — HMAC 对称签名（HS256，默认）
+- `WithRSAKeys(privateKey, publicKey)` — RSA 非对称签名（RS256）
+- `WithECDSAKeys(privateKey, publicKey)` — ECDSA 非对称签名（ES256）
+- `WithEdDSAKeys(privateKey, publicKey)` — EdDSA 签名（Ed25519）
+- `LoadRSAPrivateKey(path)` — 从 PEM 文件加载 RSA 私钥
 
 ## auth/apikey — API Key 验证
 

@@ -1,6 +1,6 @@
 # servex 中间件
 
-**组合顺序：** logging → tracing → metrics → ratelimit → circuitbreaker → retry → timeout → recovery
+**组合顺序：** waf → logging → tracing → metrics → ratelimit → circuitbreaker → retry → timeout → recovery
 
 （logging 在 tracing 之前是 servex 约定：tracing 中间件将 trace ID 写入 context，logging 在其后可提取并输出到日志）
 
@@ -434,3 +434,123 @@ ctx = trace.InjectGRPCMetadata(ctx)
 - `trace.InjectHTTPHeaders(ctx, req)` — 传播到下游 HTTP 请求
 - `trace.InjectGRPCMetadata(ctx)` — 传播到下游 gRPC 调用
 - `trace.DefaultConfig()` — 默认配置（TraceIDHeader: `X-Trace-ID`，RequestIDHeader: `X-Request-ID`）
+
+## waf — Web 应用防火墙
+
+```go
+import "github.com/Tsukikage7/servex/middleware/waf"
+
+// 使用默认规则集（SQL 注入/XSS/路径遍历/命令注入）
+mw := waf.New()
+
+// 自定义配置
+mw := waf.New(
+    waf.WithRuleSet(waf.CoreRuleSet),          // 核心规则集
+    waf.WithMode(waf.ModeBlock),               // Block（拦截） 或 Detect（仅记录）
+    waf.WithCustomRules(myRules...),           // 追加自定义规则
+    waf.WithExcludePaths("/healthz", "/metrics"), // 排除路径
+    waf.WithLogger(log),                       // 日志记录器
+)
+
+// 注入 httpserver
+srv := httpserver.New(mux,
+    httpserver.WithMiddlewares(waf.New()),
+)
+```
+
+**内置检测规则：**
+- SQL 注入（`UNION SELECT`、`OR 1=1`、注释闭合等）
+- XSS（`<script>`、`onerror=`、`javascript:` 等）
+- 路径遍历（`../`、`..%2f` 等）
+- 命令注入（`;`、`|`、`$()`、反引号等）
+
+**关键选项：**
+- `WithRuleSet(rs)` — 规则集（`CoreRuleSet` 为默认）
+- `WithMode(mode)` — `ModeBlock`（拦截并返回 403）或 `ModeDetect`（仅记录，不拦截）
+- `WithCustomRules(rules...)` — 追加自定义检测规则
+- `WithExcludePaths(paths...)` — 排除的路径前缀
+- `WithLogger(log)` — 日志记录器
+
+## version — API 版本化
+
+```go
+import "github.com/Tsukikage7/servex/middleware/version"
+
+// 路径前缀模式：/v1/users、/v2/users
+mw := version.New(
+    version.WithPathPrefix("/v"),            // 从路径提取版本号
+    version.WithDefaultVersion("1"),         // 默认版本
+)
+
+// Header 模式：Accept: application/vnd.api.v2+json
+mw := version.New(
+    version.WithHeader("Accept"),            // 从 Header 提取版本号
+    version.WithDefaultVersion("1"),
+)
+
+// 注入 httpserver
+srv := httpserver.New(mux,
+    httpserver.WithMiddlewares(mw),
+)
+
+// 在 handler 中读取版本号
+func handler(w http.ResponseWriter, r *http.Request) {
+    ver := version.FromContext(r.Context()) // "1", "2", ...
+}
+```
+
+**关键选项：**
+- `WithPathPrefix(prefix)` — 路径版本前缀（如 `/v`）
+- `WithHeader(name)` — 从指定 Header 提取版本号
+- `WithDefaultVersion(v)` — 默认版本号（未指定时使用）
+- `version.FromContext(ctx)` — 从 context 获取当前版本号
+
+## fallback — 优雅降级
+
+```go
+import "github.com/Tsukikage7/servex/middleware/fallback"
+
+// 5xx 错误自动降级
+mw := fallback.New(
+    fallback.WithHandler(func(w http.ResponseWriter, r *http.Request) {
+        w.WriteHeader(http.StatusOK)
+        json.NewEncoder(w).Encode(map[string]string{"status": "degraded"})
+    }),
+    fallback.WithStatusCodes(500, 502, 503),  // 触发降级的状态码
+    fallback.WithTimeout(3 * time.Second),     // 上游超时也触发降级
+)
+
+// 注入 httpserver
+srv := httpserver.New(mux,
+    httpserver.WithMiddlewares(mw),
+)
+```
+
+**关键选项：**
+- `WithHandler(h)` — 降级处理器（fallback 响应）
+- `WithStatusCodes(codes...)` — 触发降级的 HTTP 状态码（默认 5xx）
+- `WithTimeout(d)` — 上游超时阈值，超时后自动降级
+
+## loadshed — 负载卸载
+
+```go
+import "github.com/Tsukikage7/servex/middleware/loadshed"
+
+// 基于并发数限制
+mw := loadshed.New(
+    loadshed.WithMaxConcurrent(500),           // 最大并发请求数
+    loadshed.WithMaxQueueDepth(100),           // 等待队列深度
+    loadshed.WithLatencyThreshold(2 * time.Second), // P99 延迟阈值
+)
+
+// 注入 httpserver（超载返回 503）
+srv := httpserver.New(mux,
+    httpserver.WithMiddlewares(mw),
+)
+```
+
+**关键选项：**
+- `WithMaxConcurrent(n)` — 最大同时处理请求数，超出直接返回 503
+- `WithMaxQueueDepth(n)` — 等待队列最大深度
+- `WithLatencyThreshold(d)` — 延迟阈值，超过后开始卸载新请求
+- `WithOnShed(fn)` — 卸载回调（记录日志/指标）

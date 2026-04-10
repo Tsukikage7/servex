@@ -97,6 +97,12 @@ servex proto breaking api/ --against ".git#branch=main"
 servex gen dockerfile --name myservice --port 8080
 servex gen justfile --name myservice
 
+# 开发模式（文件变更自动重启）
+servex dev
+
+# K8s manifest 生成
+servex gen k8s --name myservice --port 8080 --replicas 3 --image myservice:latest
+
 # 运行 / 升级 / 补全
 servex run
 servex upgrade
@@ -175,6 +181,7 @@ myproject/
 | [transport/graphql](./transport/graphql/) | GraphQL 服务器适配（graphql-go/graphql） |
 | [transport/tls](./transport/tls/) | TLS 配置工具（证书/mTLS/版本控制） |
 | [transport/grpcx](./transport/grpcx/) | gRPC 工具包（流包装/Metadata/错误/健康检查） |
+| [transport/debug](./transport/debug/) | 调试面板（路由/配置/健康/指标/构建信息） |
 
 ### 中间件 (middleware/)
 
@@ -196,12 +203,16 @@ myproject/
 | [middleware/trace](./middleware/trace/) | 链路追踪增强（trace-id 传播/日志注入/下游传递） | - | Y | Y |
 | [middleware/gzip](./middleware/gzip/) | gzip 响应压缩 | - | Y | - |
 | [middleware/adaptive](./middleware/adaptive/) | 自适应限流/降级（CPU/延迟/错误率） | - | Y | Y |
+| [middleware/waf](./middleware/waf/) | Web 应用防火墙（SQL注入/XSS/路径遍历/命令注入） | - | Y | - |
+| [middleware/version](./middleware/version/) | API 版本化（路径/Header 双模式） | - | Y | - |
+| [middleware/fallback](./middleware/fallback/) | 优雅降级（5xx/panic 自动 fallback） | - | Y | - |
+| [middleware/loadshed](./middleware/loadshed/) | 负载卸载（并发/队列深度/延迟阈值） | - | Y | - |
 
 ### 认证 (auth/)
 
 | 包 | 说明 |
 | --- | --- |
-| [auth/jwt](./auth/jwt/) | JWT 认证（签发/验证/白名单） |
+| [auth/jwt](./auth/jwt/) | JWT 认证（HS256/RS256/ES256/EdDSA/签发/验证/白名单） |
 | [auth/apikey](./auth/apikey/) | API Key 认证 |
 | [auth/rbac](./auth/rbac/) | 基于角色的访问控制（RBAC） |
 
@@ -210,7 +221,7 @@ myproject/
 | 包 | 说明 | Endpoint | HTTP | gRPC |
 | --- | --- | :---: | :---: | :---: |
 | [observability/logger](./observability/logger/) | 结构化日志（Zap） | - | - | - |
-| [observability/metrics](./observability/metrics/) | Prometheus 指标收集 | Y | Y | Y |
+| [observability/metrics](./observability/metrics/) | Prometheus + OpenTelemetry 指标收集 | Y | Y | Y |
 | [observability/tracing](./observability/tracing/) | OpenTelemetry 链路追踪 | Y | Y | Y |
 | [observability/logshipper](./observability/logshipper/) | 日志投递（ES/Kafka sink，异步批量） | - | - | - |
 | [observability/slo](./observability/slo/) | SLO/SLI 追踪（错误预算/燃烧率/告警） | - | - | - |
@@ -348,7 +359,7 @@ myproject/
 
 | 包 | 说明 |
 | --- | --- |
-| [openapi](./openapi/) | Code-first OpenAPI 3.0 生成 |
+| [openapi](./openapi/) | Code-first OpenAPI 3.1 生成（含 Webhooks） |
 | [scheduler](./scheduler/) | Cron 定时任务调度 |
 | [i18n](./i18n/) | 国际化 |
 | [tenant](./tenant/) | 多租户（GORM Scope） |
@@ -377,6 +388,21 @@ myproject/
 | [bizx/workflow](./bizx/workflow/) | 工作流引擎（审批/条件分支/并行执行） |
 | [bizx/abtesting](./bizx/abtesting/) | A/B 测试（流量分桶/多变体/曝光追踪） |
 
+## v2.0.0 新特性
+
+- **WAF 中间件** — Web 应用防火墙，防护 SQL 注入/XSS/路径遍历/命令注入（[middleware/waf](./middleware/waf/)）
+- **API 版本化** — 路径/Header 双模式版本路由（[middleware/version](./middleware/version/)）
+- **优雅降级** — 5xx/panic 自动 fallback（[middleware/fallback](./middleware/fallback/)）
+- **负载卸载** — 并发/队列深度/延迟阈值卸载（[middleware/loadshed](./middleware/loadshed/)）
+- **JWT 非对称签名** — 新增 RS256/ES256/EdDSA 支持（[auth/jwt](./auth/jwt/)）
+- **OpenTelemetry Metrics** — Prometheus + OTel 双指标后端（[observability/metrics](./observability/metrics/)）
+- **调试面板** — 路由/配置/健康/指标/构建信息一览（[transport/debug](./transport/debug/)）
+- **OpenAPI 3.1** — 升级至 3.1 规范，支持 Webhooks 定义（[openapi](./openapi/)）
+- **`servex dev`** — 开发模式，文件变更自动重启
+- **`servex gen k8s`** — K8s Deployment/Service manifest 生成
+
+详细迁移指南请参阅 [MIGRATION_V2.md](./MIGRATION_V2.md)。
+
 ## 设计原则
 
 - **KISS** - 保持简单，避免过度设计
@@ -395,7 +421,7 @@ myproject/
 
 ## 中间件执行顺序
 
-推荐顺序（从外到内）：Logging → Tracing → Metrics → RateLimit → CircuitBreaker → Retry → Timeout → Recovery
+推荐顺序（从外到内）：WAF → Logging → Tracing → Metrics → RateLimit → CircuitBreaker → Retry → Timeout → Recovery
 
 详见各中间件包的 README。
 
