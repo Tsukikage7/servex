@@ -1,4 +1,4 @@
-# servex OpenAPI 文档生成
+# servex OpenAPI 文档生成（3.1）
 
 ## 核心用法
 
@@ -100,3 +100,25 @@ type CreateOrderRequest struct {
 schema := openapi.SchemaFrom(MyStruct{})
 // schema.Type, schema.Properties, schema.Required, etc.
 ```
+
+## Webhooks
+
+```go
+// 注册 Webhook 定义（OpenAPI 3.1）
+reg.AddWebhook("orderCreated",
+    openapi.POST("").
+        Summary("订单创建回调").
+        Description("当订单创建成功时，向订阅方发送回调通知").
+        Tags("webhooks").
+        Request(OrderWebhookPayload{}).
+        Response(WebhookAck{}).
+        Build(),
+)
+
+// Webhook 会出现在 openapi.json 的 webhooks 字段中
+mux.Handle("/openapi.json", reg.ServeJSON())
+```
+
+**关键 API：**
+- `reg.AddWebhook(name, operation)` — 注册 Webhook 定义
+- Webhook 请求/响应类型遵循与普通端点相同的 Schema 生成规则

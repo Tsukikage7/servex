@@ -803,3 +803,31 @@ if err := grpcx.WaitForReady(ctx, conn, 5*time.Second); err != nil {
 - 错误便捷构造：`NotFound`、`InvalidArgument`、`PermissionDenied`、`Unauthenticated`、`Internal`、`Unavailable`、`AlreadyExists`、`DeadlineExceeded`
 - `grpcx.IsCode(err, code)` / `Code(err)` / `Message(err)` — 错误检查与提取
 - `grpcx.HealthCheck(ctx, conn)` / `WaitForReady(ctx, conn, timeout)` — 健康检查
+
+## transport/debug — 调试面板
+
+```go
+import "github.com/Tsukikage7/servex/transport/debug"
+
+// 创建调试面板 handler
+handler := debug.Handler(
+    debug.WithRoutes(router),          // 注入路由表（显示已注册路由）
+    debug.WithConfig(configData),      // 注入配置信息（脱敏后显示）
+)
+
+// 注册路由（建议仅开发/内网环境启用）
+debug.RegisterRoutes(mux, handler)
+// 注册后可访问：
+//   /debug/routes  — 已注册路由列表
+//   /debug/config  — 当前配置信息
+//   /debug/health  — 健康检查汇总
+//   /debug/metrics — 关键指标快照
+//   /debug/build   — 构建信息（版本/提交/时间）
+```
+
+**关键 API：**
+- `debug.Handler(opts...) http.Handler` — 创建调试面板处理器
+- `debug.RegisterRoutes(mux, handler)` — 注册所有调试端点到 mux
+- `debug.WithRoutes(router)` — 注入路由表信息
+- `debug.WithConfig(data)` — 注入配置数据（建议脱敏敏感字段）
+- 端点：`/debug/routes`、`/debug/config`、`/debug/health`、`/debug/metrics`、`/debug/build`

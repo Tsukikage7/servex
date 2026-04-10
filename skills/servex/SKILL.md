@@ -23,7 +23,7 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 2. **模块名明确** → 直接生成该模块的示例或片段
 3. **需求模糊，无法映射** → 先问一个澄清问题，再生成
 4. **不确定 API 细节**（函数签名、选项名、默认值）→ 读取 servex 源码对应文件，不猜测
-5. **生成多中间件代码** → 严格按此顺序：logging → tracing → metrics → ratelimit → circuitbreaker → retry → timeout → recovery
+5. **生成多中间件代码** → 严格按此顺序：waf → logging → tracing → metrics → ratelimit → circuitbreaker → retry → timeout → recovery
 
 **源码定位规则：**
 - 若在 servex 仓库本身，源码根目录即为当前目录
@@ -36,8 +36,8 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 
 | 领域 | 文件路径 | 覆盖模块 |
 |------|---------|---------|
-| 传输层 | `skills/servex/references/transport.md` | httpserver/grpcserver/httpclient/grpcclient/gateway/graphql/websocket/sse/grpcx/tls |
-| 中间件 | `skills/servex/references/middleware.md` | ratelimit/circuitbreaker/retry/recovery/timeout/cors/idempotency/semaphore/logging/secure/csrf/bodylimit/signature/trace/gzip/adaptive |
+| 传输层 | `skills/servex/references/transport.md` | httpserver/grpcserver/httpclient/grpcclient/gateway/graphql/websocket/sse/grpcx/tls/debug |
+| 中间件 | `skills/servex/references/middleware.md` | ratelimit/circuitbreaker/retry/recovery/timeout/cors/idempotency/semaphore/logging/secure/csrf/bodylimit/signature/trace/gzip/adaptive/waf/version/fallback/loadshed |
 | 存储 | `skills/servex/references/storage.md` | cache/rdbms/mongodb/elasticsearch/clickhouse/s3/minio/neo4j/lock/sqlx/migration/redis |
 | 认证 | `skills/servex/references/auth.md` | jwt/apikey/rbac |
 | 可观测性 | `skills/servex/references/observability.md` | logger/metrics/tracing/logshipper/slo/alerting/profiling |
@@ -64,7 +64,7 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 
 | 模块 | 包路径 | 描述 | 核心类型/函数 |
 |------|--------|------|--------------|
-| cmd/servex | `cmd/servex` | 脚手架 CLI（交互式向导 [charmbracelet/huh, Everforest Dark 主题]、项目生成、DDD 代码生成、Proto 管理[基于 buf]） | `servex new`, `servex add service`, `servex gen aggregate/entity/valueobject/client/dockerfile/justfile`, `servex proto add/client/server/lint/breaking`, `servex run`, `servex upgrade`, `servex completion` |
+| cmd/servex | `cmd/servex` | 脚手架 CLI（交互式向导 [charmbracelet/huh, Everforest Dark 主题]、项目生成、DDD 代码生成、Proto 管理[基于 buf]） | `servex new`, `servex add service`, `servex gen aggregate/entity/valueobject/client/dockerfile/justfile`, `servex proto add/client/server/lint/breaking`, `servex run`, `servex dev`, `servex gen k8s`, `servex upgrade`, `servex completion` |
 
 **CLI 详情：**
 
@@ -80,6 +80,8 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 - **gen dockerfile / justfile：** 生成 Dockerfile / justfile
 - **proto add/client/server/lint/breaking：** Proto 模板创建（自动生成 buf.yaml + buf.gen.yaml）、buf generate 客户端代码生成、服务端桩代码生成、buf lint 规范检查、buf breaking 兼容性检测
 - **run：** 运行服务（自动检测入口）
+- **dev：** 开发模式，监听文件变更自动重启服务
+- **gen k8s：** 生成 K8s Deployment + Service manifest（`--name`、`--port`、`--replicas`、`--image`）
 - **upgrade / completion：** 自升级、Shell 自动补全（bash/zsh/fish）
 
 **可用基础设施 Flag：**
@@ -113,6 +115,7 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 | graphql | `transport/graphql` | GraphQL 服务器适配 | `New`, `Handler`, `PlaygroundHandler`, `LoggingMiddleware`, `TracingMiddleware`, `RecoveryMiddleware`, `WrapResolve` |
 | tls | `transport/tls` | TLS 配置工具（证书/mTLS/版本控制） | `NewServerTLSConfig`, `NewClientTLSConfig`, `NewTLSConfig` |
 | grpcx | `transport/grpcx` | gRPC 工具包（流包装/Metadata/错误/健康检查） | `WrapServerStream`, `GetMetadataValue`, `AppendOutgoingMetadata`, `CopyIncomingToOutgoing`, `NotFound`, `IsCode`, `HealthCheck`, `WaitForReady` |
+| debug | `transport/debug` | 调试面板（路由/配置/健康/指标/构建信息） | `Handler`, `WithRoutes`, `WithConfig`, `RegisterRoutes` |
 
 ### 中间件 → 详见 `middleware` skill
 
@@ -134,12 +137,16 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 | trace | `middleware/trace` | 链路追踪增强（trace-id 传播/日志注入/下游传递） | `HTTPMiddleware`, `GRPCUnaryInterceptor`, `GRPCStreamInterceptor`, `TraceIDFromContext`, `InjectHTTPHeaders`, `InjectGRPCMetadata` |
 | gzip | `middleware/gzip` | HTTP 响应 gzip 压缩 | `New`, `Handler`, `WithLevel`, `WithMinLength`, `WithExcludePaths`, `WithExcludeContentTypes` |
 | adaptive | `middleware/adaptive` | 自适应限流与降级（CPU/延迟/错误率） | `New`, `Limiter`, `Middleware`, `GRPCUnaryInterceptor`, `RecordLatency`, `RecordError`, `Status` |
+| waf | `middleware/waf` | Web 应用防火墙（SQL注入/XSS/路径遍历/命令注入） | `New`, `HTTPMiddleware`, `WithRuleSet`, `WithCustomRules`, `WithMode` |
+| version | `middleware/version` | API 版本化（路径/Header 双模式） | `New`, `HTTPMiddleware`, `WithPathPrefix`, `WithHeader`, `WithDefaultVersion` |
+| fallback | `middleware/fallback` | 优雅降级（5xx/panic 自动 fallback） | `New`, `HTTPMiddleware`, `WithHandler`, `WithStatusCodes`, `WithTimeout` |
+| loadshed | `middleware/loadshed` | 负载卸载（并发/队列深度/延迟阈值） | `New`, `HTTPMiddleware`, `WithMaxConcurrent`, `WithMaxQueueDepth`, `WithLatencyThreshold` |
 
 ### 认证 → 详见 `auth` skill
 
 | 模块 | 包路径 | 描述 | 核心类型/函数 |
 |------|--------|------|--------------|
-| auth/jwt | `auth/jwt` | JWT 签发与验证 | `NewJWT`, `NewAuthenticator`, `WithSecretKey`, `Generate`, `Validate` |
+| auth/jwt | `auth/jwt` | JWT 签发与验证（HS256/RS256/ES256/EdDSA） | `NewJWT`, `NewAuthenticator`, `WithSecretKey`, `WithRSAKeys`, `WithECDSAKeys`, `WithEdDSAKeys`, `LoadRSAPrivateKey`, `Generate`, `Validate` |
 | auth/apikey | `auth/apikey` | API Key 验证 | `New`, `StaticValidator`, `CacheValidator` |
 | auth/rbac | `auth/rbac` | 基于角色的访问控制（RBAC） | `NewManager`, `NewMemoryStore`, `NewGORMStore`, `AssignRole`, `HasPermission`, `HTTPMiddleware` |
 
@@ -164,9 +171,9 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 
 | 模块 | 包路径 | 描述 | 核心类型/函数 |
 |------|--------|------|--------------|
-| observability/metrics | `observability/metrics` | Prometheus 指标 | `NewMetrics`, `MustNewMetrics`, `DefaultConfig` |
+| observability/metrics | `observability/metrics` | Prometheus + OpenTelemetry 指标 | `NewMetrics`, `MustNewMetrics`, `DefaultConfig`, `NewOTel`, `WithMeterProvider`, `WithExporter` |
 | observability/tracing | `observability/tracing` | OpenTelemetry 追踪 | `NewTracer`, `TracingConfig`, `OTLPConfig` |
-| observability/logger | `observability/logger` | 结构化日志 | `NewLogger`, `NewContext`, `FromContext`, `WithLevel`, `WithOutput` |
+| observability/logger | `observability/logger` | 结构化日志 | `NewLogger`, `NewContext`, `FromContext`, `AsSlog`, `NewFromSlog`, `WithLevel`, `WithOutput` |
 | observability/logshipper | `observability/logshipper` | 日志投递（ES/Kafka sink，异步批量） | `New`, `NewElasticsearchSink`, `NewKafkaSink`, `ZapHook`, `AttachToLogger`, `NewLoggerHook` |
 | observability/slo | `observability/slo` | SLO/SLI 追踪（错误预算/告警） | `NewTracker`, `Objective`, `Record`, `Status`, `OnBreach`, `PrometheusCollector` |
 | observability/alerting | `observability/alerting` | 告警规则引擎（阈值/速率/缺失检测） | `New`, `Engine`, `AddRule`, `RemoveRule`, `Start`, `Stop`, `Evaluate`, `ActiveAlerts`, `AlertHistory` |
@@ -272,7 +279,7 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 
 | 模块 | 包路径 | 描述 | 核心类型/函数 |
 |------|--------|------|--------------|
-| openapi | `openapi` | Code-first OpenAPI 3.0 生成 | `NewRegistry`, `SchemaFrom`, `GET/POST/PUT/DELETE/PATCH`, `ServeJSON`, `ServeYAML` |
+| openapi | `openapi` | Code-first OpenAPI 3.1 生成（含 Webhooks） | `NewRegistry`, `SchemaFrom`, `GET/POST/PUT/DELETE/PATCH`, `ServeJSON`, `ServeYAML`, `AddWebhook` |
 
 ### 请求上下文
 
