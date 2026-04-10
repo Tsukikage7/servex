@@ -184,19 +184,6 @@ func lockTokenFromCtx(ctx context.Context) string {
 	return ""
 }
 
-type lockTokenCtxKey struct{}
-
-// WithLockToken 将锁令牌注入到 context，用于可重入锁身份识别.
-func WithLockToken(ctx context.Context, token string) context.Context {
-	return context.WithValue(ctx, lockTokenCtxKey{}, token)
-}
-
-func lockTokenFromCtx(ctx context.Context) string {
-	if v, ok := ctx.Value(lockTokenCtxKey{}).(string); ok {
-		return v
-	}
-	return ""
-}
 
 // reentrantLock 可重入锁，同一令牌持有者可多次获取.
 // 通过 WithLockToken(ctx, token) 注入令牌，持有相同令牌的调用可重入.
