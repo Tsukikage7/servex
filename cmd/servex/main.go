@@ -569,9 +569,6 @@ func init() {
 	protoBreakingCmd.Flags().StringVar(&protoBreakingAgainst, "against", ".git#branch=main", "对比目标 (默认: main 分支)")
 
 	// dev
-	devCmd.Flags().StringVar(&devEntry, "entry", "", "入口路径 (默认: 自动检测)")
-	devCmd.Flags().StringVar(&devWatch, "watch", ".", "监听路径，逗号分隔 (默认: .)")
-	devCmd.Flags().StringVar(&devExclude, "exclude", "vendor,node_modules,.git", "排除模式，逗号分隔")
 
 	// 注册所有顶级命令
 	rootCmd.AddCommand(newCmd, addCmd, genCmd, protoCmd, runCmdDef, devCmd, upgradeCmd, versionCmd)
