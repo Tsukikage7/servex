@@ -2,7 +2,6 @@ package httpclient
 
 import (
 	"math/rand"
-	"sync"
 	"sync/atomic"
 )
 
@@ -27,17 +26,13 @@ func (b *RoundRobinBalancer) Pick(addrs []string) string {
 }
 
 // RandomBalancer 随机负载均衡器.
-type RandomBalancer struct {
-	mu sync.Mutex
-}
+// Go 1.22+ 的 math/rand 全局函数是并发安全的，无需额外加锁.
+type RandomBalancer struct{}
 
 // Pick 随机选择地址.
 func (b *RandomBalancer) Pick(addrs []string) string {
 	if len(addrs) == 0 {
 		return ""
 	}
-	b.mu.Lock()
-	idx := rand.Intn(len(addrs))
-	b.mu.Unlock()
-	return addrs[idx]
+	return addrs[rand.Intn(len(addrs))]
 }

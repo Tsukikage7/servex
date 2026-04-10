@@ -97,6 +97,9 @@ type objectiveTracker struct {
 	bad       atomic.Int64
 	onBreach  func(status *Status)
 	mu        sync.RWMutex
+	// lastReportedGood/Bad 记录上次 Collect 时已上报的事件数，用于增量更新 Counter.
+	lastReportedGood int64
+	lastReportedBad  int64
 }
 
 // Tracker SLO 追踪器.
@@ -317,17 +320,24 @@ func (c *sloCollector) Collect(ch chan<- prometheus.Metric) {
 		good := ot.good.Load()
 		bad := ot.bad.Load()
 
-		// 重置并设置当前值
-		t.eventsTotal.WithLabelValues(name, "good").Add(0) // 确保初始化
-		t.eventsTotal.WithLabelValues(name, "bad").Add(0)
+		// 计算自上次上报以来的增量并更新 Counter.
+		ot.mu.Lock()
+		goodDelta := good - ot.lastReportedGood
+		badDelta := bad - ot.lastReportedBad
+		ot.lastReportedGood = good
+		ot.lastReportedBad = bad
+		ot.mu.Unlock()
+
+		if goodDelta > 0 {
+			t.eventsTotal.WithLabelValues(name, "good").Add(float64(goodDelta))
+		}
+		if badDelta > 0 {
+			t.eventsTotal.WithLabelValues(name, "bad").Add(float64(badDelta))
+		}
 
 		st := t.computeStatus(ot)
 		t.budgetRemGauge.WithLabelValues(name).Set(st.ErrorBudgetRemaining)
 		t.burnRateGauge.WithLabelValues(name).Set(st.BurnRate)
-
-		// 利用 counter 的 Add 特性来更新
-		_ = good
-		_ = bad
 	}
 
 	t.eventsTotal.Collect(ch)

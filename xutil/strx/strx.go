@@ -105,7 +105,9 @@ func DefaultIfEmpty(s, defaultValue string) string {
 }
 
 // UnsafeToBytes 零分配地将 string 转换为 []byte.
-// 警告：返回的 []byte 不可修改，否则行为未定义.
+//
+// UNSAFE: 返回的 []byte 共享底层内存，绝对不可修改，否则行为未定义（可能导致崩溃或数据损坏）.
+// 仅在性能关键路径且确保不会修改返回值时使用.
 func UnsafeToBytes(s string) []byte {
 	if s == "" {
 		return nil
@@ -114,7 +116,9 @@ func UnsafeToBytes(s string) []byte {
 }
 
 // UnsafeToString 零分配地将 []byte 转换为 string.
-// 警告：转换后不应再修改原 []byte，否则行为未定义.
+//
+// UNSAFE: 转换后不应再修改原 []byte，否则行为未定义（可能导致崩溃或数据损坏）.
+// 仅在性能关键路径且确保不会修改原切片时使用.
 func UnsafeToString(b []byte) string {
 	if len(b) == 0 {
 		return ""

@@ -35,16 +35,18 @@ const (
 
 // Task 重试任务.
 type Task struct {
-	ID          string          `json:"id" gorm:"primaryKey"`
-	Name        string          `json:"name" gorm:"index"`
-	Payload     json.RawMessage `json:"payload"`
-	MaxRetries  int             `json:"max_retries"`
-	Retried     int             `json:"retried"`
-	NextRetryAt time.Time       `json:"next_retry_at" gorm:"index"`
-	Status      Status          `json:"status" gorm:"index"`
-	LastError   string          `json:"last_error"`
-	CreatedAt   time.Time       `json:"created_at" gorm:"autoCreateTime"`
-	UpdatedAt   time.Time       `json:"updated_at" gorm:"autoUpdateTime"`
+	ID                string          `json:"id" gorm:"primaryKey"`
+	Name              string          `json:"name" gorm:"index"`
+	Payload           json.RawMessage `json:"payload"`
+	MaxRetries        int             `json:"max_retries"`
+	Retried           int             `json:"retried"`
+	NextRetryAt       time.Time       `json:"next_retry_at" gorm:"index"`
+	Status            Status          `json:"status" gorm:"index"`
+	LastError         string          `json:"last_error"`
+	InitialDelay      time.Duration   `json:"initial_delay"`
+	BackoffMultiplier float64         `json:"backoff_multiplier"`
+	CreatedAt         time.Time       `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedAt         time.Time       `json:"updated_at" gorm:"autoUpdateTime"`
 }
 
 // Handler 任务处理函数.
@@ -123,6 +125,7 @@ type scheduler struct {
 	cancel       context.CancelFunc
 	wg           sync.WaitGroup
 	sem          chan struct{}
+	startOnce    sync.Once
 }
 
 // NewScheduler 创建重试调度器.
@@ -168,13 +171,15 @@ func (s *scheduler) Submit(ctx context.Context, name string, payload any, opts .
 	}
 
 	task := &Task{
-		ID:          uuid.New().String(),
-		Name:        name,
-		Payload:     data,
-		MaxRetries:  o.maxRetries,
-		Retried:     0,
-		NextRetryAt: time.Now(),
-		Status:      StatusPending,
+		ID:                uuid.New().String(),
+		Name:              name,
+		Payload:           data,
+		MaxRetries:        o.maxRetries,
+		Retried:           0,
+		NextRetryAt:       time.Now(),
+		Status:            StatusPending,
+		InitialDelay:      o.initialDelay,
+		BackoffMultiplier: o.backoffMultiplier,
 	}
 
 	if err := s.store.Save(ctx, task); err != nil {
@@ -183,16 +188,19 @@ func (s *scheduler) Submit(ctx context.Context, name string, payload any, opts .
 	return task.ID, nil
 }
 
-// Start 启动调度器.
+// Start 启动调度器（多次调用仅首次生效）.
 func (s *scheduler) Start(ctx context.Context) error {
 	if s.store == nil {
 		return ErrNilStore
 	}
 
-	ctx, s.cancel = context.WithCancel(ctx)
-	s.wg.Add(1)
-	go s.poll(ctx)
-	return nil
+	var startErr error
+	s.startOnce.Do(func() {
+		ctx, s.cancel = context.WithCancel(ctx)
+		s.wg.Add(1)
+		go s.poll(ctx)
+	})
+	return startErr
 }
 
 // Stop 停止调度器.
@@ -269,8 +277,16 @@ func (s *scheduler) processTask(ctx context.Context, task *Task) {
 		task.Status = StatusDead
 	} else {
 		task.Status = StatusPending
-		// 指数退避
-		delay := time.Minute * time.Duration(math.Pow(2.0, float64(task.Retried-1)))
+		// 指数退避：使用任务自身的退避参数
+		initialDelay := task.InitialDelay
+		if initialDelay <= 0 {
+			initialDelay = time.Minute
+		}
+		multiplier := task.BackoffMultiplier
+		if multiplier <= 0 {
+			multiplier = 2.0
+		}
+		delay := initialDelay * time.Duration(math.Pow(multiplier, float64(task.Retried-1)))
 		task.NextRetryAt = time.Now().Add(delay)
 	}
 	_ = s.store.Update(ctx, task)

@@ -26,7 +26,19 @@ const (
 
 	// maxResponseBody 限制响应体最大读取大小 (1MB).
 	maxResponseBody = 1 << 20
+
+	// pkceVerifierTTL PKCE code_verifier 的过期时间.
+	pkceVerifierTTL = 10 * time.Minute
+
+	// pkceCleanupInterval PKCE code_verifier 清理间隔.
+	pkceCleanupInterval = 2 * time.Minute
 )
+
+// verifierEntry 带时间戳的 PKCE code_verifier.
+type verifierEntry struct {
+	verifier  string
+	createdAt time.Time
+}
 
 // Provider 实现 GitHub OAuth2 登录.
 type Provider struct {
@@ -36,7 +48,11 @@ type Provider struct {
 	userInfoURL string
 
 	mu        sync.Mutex
-	verifiers map[string]string // state -> code_verifier
+	verifiers map[string]verifierEntry // state -> verifierEntry
+
+	closeOnce sync.Once
+	cancel    context.CancelFunc
+	done      chan struct{}
 }
 
 // NewProvider 创建 GitHub OAuth2 Provider 实例.
@@ -47,13 +63,26 @@ func NewProvider(opts ...Option) *Provider {
 	for _, opt := range opts {
 		opt(&o)
 	}
-	return &Provider{
+	ctx, cancel := context.WithCancel(context.Background())
+	p := &Provider{
 		opts:        o,
 		authBaseURL: defaultAuthURL,
 		tokenURL:    defaultTokenURL,
 		userInfoURL: defaultUserInfoURL,
-		verifiers:   make(map[string]string),
+		verifiers:   make(map[string]verifierEntry),
+		cancel:      cancel,
+		done:        make(chan struct{}),
 	}
+	go p.cleanupLoop(ctx)
+	return p
+}
+
+// Close 停止后台清理协程.
+func (p *Provider) Close() {
+	p.closeOnce.Do(func() {
+		p.cancel()
+		<-p.done
+	})
 }
 
 // AuthURL 生成 GitHub OAuth2 授权跳转链接（含 PKCE）.
@@ -78,7 +107,7 @@ func (p *Provider) AuthURL(state string, opts ...oauth2.AuthURLOption) string {
 	params.Set("code_challenge_method", "S256")
 
 	p.mu.Lock()
-	p.verifiers[state] = verifier
+	p.verifiers[state] = verifierEntry{verifier: verifier, createdAt: time.Now()}
 	p.mu.Unlock()
 
 	return p.authBaseURL + "?" + params.Encode()
@@ -105,8 +134,8 @@ func (p *Provider) ExchangeWithState(ctx context.Context, code, state string) (*
 	// PKCE: 如果有对应 state 的 code_verifier 则附加到请求中
 	if state != "" {
 		p.mu.Lock()
-		if verifier, ok := p.verifiers[state]; ok {
-			data.Set("code_verifier", verifier)
+		if entry, ok := p.verifiers[state]; ok {
+			data.Set("code_verifier", entry.verifier)
 			delete(p.verifiers, state)
 		}
 		p.mu.Unlock()
@@ -208,4 +237,31 @@ func generateCodeVerifier() string {
 func computeCodeChallenge(verifier string) string {
 	h := sha256.Sum256([]byte(verifier))
 	return base64.RawURLEncoding.EncodeToString(h[:])
+}
+
+// cleanupLoop 定期清理过期的 PKCE code_verifier，防止未完成流程导致的内存泄漏.
+func (p *Provider) cleanupLoop(ctx context.Context) {
+	defer close(p.done)
+	ticker := time.NewTicker(pkceCleanupInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			p.removeExpiredVerifiers()
+		}
+	}
+}
+
+// removeExpiredVerifiers 删除超过 TTL 的 code_verifier.
+func (p *Provider) removeExpiredVerifiers() {
+	now := time.Now()
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	for state, entry := range p.verifiers {
+		if now.Sub(entry.createdAt) > pkceVerifierTTL {
+			delete(p.verifiers, state)
+		}
+	}
 }

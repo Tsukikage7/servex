@@ -2,10 +2,18 @@ package tenant
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"testing"
 	"time"
 )
+
+// tokenHashKey 计算 token 的 hash 缓存 key.
+func tokenHashKey(prefix, token string) string {
+	h := sha256.Sum256([]byte(token))
+	return prefix + hex.EncodeToString(h[:])
+}
 
 // mockCacheStore 模拟缓存存储.
 type mockCacheStore struct {
@@ -48,8 +56,8 @@ func TestCachedResolver_CacheMiss(t *testing.T) {
 		t.Fatalf("TenantID = %q, want %q", tn.TenantID(), "t1")
 	}
 
-	// 验证缓存写入
-	if _, ok := store.data["tenant:token-1"]; !ok {
+	// 验证缓存写入（使用 hash key）
+	if _, ok := store.data[tokenHashKey("tenant:", "token-1")]; !ok {
 		t.Fatal("应写入缓存")
 	}
 }
@@ -59,7 +67,7 @@ func TestCachedResolver_CacheHit(t *testing.T) {
 		err: errors.New("should not be called"),
 	}
 	store := newMockCacheStore()
-	store.data["tenant:token-1"] = "cached-t"
+	store.data[tokenHashKey("tenant:", "token-1")] = "cached-t"
 
 	cached := NewCachedResolver(inner, store,
 		WithMarshal(func(t Tenant) (string, error) { return t.TenantID(), nil }),
@@ -91,7 +99,7 @@ func TestCachedResolver_CustomPrefix(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if _, ok := store.data["mytenant:token-1"]; !ok {
+	if _, ok := store.data[tokenHashKey("mytenant:", "token-1")]; !ok {
 		t.Fatal("应使用自定义前缀写入缓存")
 	}
 }

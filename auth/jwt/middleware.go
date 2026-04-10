@@ -147,14 +147,16 @@ func HTTPMiddleware(j *JWT) func(http.Handler) http.Handler {
 			// 提取令牌
 			token, err := j.ExtractToken(r.Context(), r)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusUnauthorized)
+				// 不向客户端暴露内部错误细节
+				http.Error(w, "认证失败", http.StatusUnauthorized)
 				return
 			}
 
 			// 验证令牌
 			claims, err := j.Validate(r.Context(), token)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusUnauthorized)
+				// 不向客户端暴露内部错误细节
+				http.Error(w, "认证失败", http.StatusUnauthorized)
 				return
 			}
 
@@ -190,14 +192,16 @@ func HTTPMiddlewareWithClaims(j *JWT, cf ClaimsFactory) func(http.Handler) http.
 			// 提取令牌
 			token, err := j.ExtractToken(r.Context(), r)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusUnauthorized)
+				// 不向客户端暴露内部错误细节
+				http.Error(w, "认证失败", http.StatusUnauthorized)
 				return
 			}
 
 			// 验证令牌（使用自定义 Claims 类型）
 			claims, err := j.ValidateWithClaims(r.Context(), token, cf())
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusUnauthorized)
+				// 不向客户端暴露内部错误细节
+				http.Error(w, "认证失败", http.StatusUnauthorized)
 				return
 			}
 

@@ -91,16 +91,11 @@ func (dl *DistributedLimiter) AllowWithKey(ctx context.Context, key string) bool
 func (dl *DistributedLimiter) AllowNWithKey(ctx context.Context, key string, n int) bool {
 	cacheKey := fmt.Sprintf("%s:%s", dl.prefix, key)
 
-	// 使用原子递增操作
-	count, err := dl.counter.IncrementBy(ctx, cacheKey, int64(n))
+	// 使用原子递增+过期操作，避免 INCR 和 EXPIRE 之间的竞态
+	count, err := dl.counter.IncrByWithExpire(ctx, cacheKey, int64(n), dl.window)
 	if err != nil {
 		// 发生错误时根据 failOpen 配置决定是否放行
 		return dl.failOpen
-	}
-
-	// 首次设置过期时间
-	if count == int64(n) {
-		_ = dl.counter.Expire(ctx, cacheKey, dl.window)
 	}
 
 	return count <= int64(dl.limit)
@@ -214,13 +209,10 @@ func (i *keyedDistributedLimiterInstance) Allow(ctx context.Context) bool {
 }
 
 func (i *keyedDistributedLimiterInstance) AllowN(ctx context.Context, n int) bool {
-	count, err := i.counter.IncrementBy(ctx, i.key, int64(n))
+	// 使用原子递增+过期操作
+	count, err := i.counter.IncrByWithExpire(ctx, i.key, int64(n), i.window)
 	if err != nil {
 		return i.failOpen
-	}
-
-	if count == int64(n) {
-		_ = i.counter.Expire(ctx, i.key, i.window)
 	}
 
 	return count <= int64(i.limit)
@@ -279,4 +271,19 @@ func (c *cacheRateCounter) Expire(ctx context.Context, key string, ttl time.Dura
 
 func (c *cacheRateCounter) TTL(ctx context.Context, key string) (time.Duration, error) {
 	return c.cache.TTL(ctx, key)
+}
+
+// IncrByWithExpire 原子递增并设置过期时间.
+// cache.Cache 接口不提供原子 INCR+EXPIRE，此处降级为先 INCR 再 EXPIRE.
+// 如需真正原子性，请使用支持 Lua 脚本的 RateCounter 实现.
+func (c *cacheRateCounter) IncrByWithExpire(ctx context.Context, key string, n int64, ttl time.Duration) (int64, error) {
+	count, err := c.cache.IncrementBy(ctx, key, n)
+	if err != nil {
+		return 0, err
+	}
+	// 仅首次（count == n）设置过期时间
+	if count == n {
+		_ = c.cache.Expire(ctx, key, ttl)
+	}
+	return count, nil
 }

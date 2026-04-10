@@ -165,3 +165,42 @@ func (s *PriorityQueueTestSuite) TestLargeDataset() {
 		s.Equal(i, val)
 	}
 }
+
+func (s *PriorityQueueTestSuite) TestAll() {
+	pq := NewMin[int]()
+	pq.Push(3, 1, 2)
+
+	var items []int
+	for item := range pq.All() {
+		items = append(items, item)
+	}
+	// 按优先级顺序产出
+	s.Equal([]int{1, 2, 3}, items)
+	// 原队列不受影响
+	s.Equal(3, pq.Len())
+}
+
+func (s *PriorityQueueTestSuite) TestAllEmpty() {
+	pq := NewMin[int]()
+	count := 0
+	for range pq.All() {
+		count++
+	}
+	s.Equal(0, count)
+}
+
+func (s *PriorityQueueTestSuite) TestAllEarlyBreak() {
+	pq := NewMin[int]()
+	pq.Push(3, 1, 2, 4, 5)
+
+	var items []int
+	for item := range pq.All() {
+		items = append(items, item)
+		if item == 2 {
+			break
+		}
+	}
+	s.Equal([]int{1, 2}, items)
+	// 原队列不受影响
+	s.Equal(5, pq.Len())
+}

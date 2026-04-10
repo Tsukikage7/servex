@@ -131,3 +131,69 @@ func (s *LinkedMapTestSuite) TestClear() {
 	s.Empty(m.Keys())
 	s.Empty(m.Values())
 }
+
+func (s *LinkedMapTestSuite) TestAll() {
+	m := New[string, int]()
+	m.Put("a", 1)
+	m.Put("b", 2)
+	m.Put("c", 3)
+
+	var keys []string
+	var vals []int
+	for k, v := range m.All() {
+		keys = append(keys, k)
+		vals = append(vals, v)
+	}
+	s.Equal([]string{"a", "b", "c"}, keys)
+	s.Equal([]int{1, 2, 3}, vals)
+}
+
+func (s *LinkedMapTestSuite) TestAllEmpty() {
+	m := New[string, int]()
+	count := 0
+	for range m.All() {
+		count++
+	}
+	s.Equal(0, count)
+}
+
+func (s *LinkedMapTestSuite) TestAllEarlyBreak() {
+	m := New[string, int]()
+	m.Put("a", 1)
+	m.Put("b", 2)
+	m.Put("c", 3)
+
+	var keys []string
+	for k, _ := range m.All() {
+		keys = append(keys, k)
+		if k == "b" {
+			break
+		}
+	}
+	s.Equal([]string{"a", "b"}, keys)
+}
+
+func (s *LinkedMapTestSuite) TestBackward() {
+	m := New[string, int]()
+	m.Put("a", 1)
+	m.Put("b", 2)
+	m.Put("c", 3)
+
+	var keys []string
+	var vals []int
+	for k, v := range m.Backward() {
+		keys = append(keys, k)
+		vals = append(vals, v)
+	}
+	s.Equal([]string{"c", "b", "a"}, keys)
+	s.Equal([]int{3, 2, 1}, vals)
+}
+
+func (s *LinkedMapTestSuite) TestBackwardEmpty() {
+	m := New[string, int]()
+	count := 0
+	for range m.Backward() {
+		count++
+	}
+	s.Equal(0, count)
+}

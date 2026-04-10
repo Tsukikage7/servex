@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -46,7 +47,7 @@ func NewProvider(opts ...Option) *Provider {
 func (p *Provider) AuthURL(state string, _ ...oauth2.AuthURLOption) string {
 	params := url.Values{
 		"appid":         {p.opts.appID},
-		"redirect_uri":  {p.opts.appID}, // 微信在开放平台配置
+		"redirect_uri":  {p.opts.redirectURL},
 		"response_type": {"code"},
 		"scope":         {"snsapi_login"},
 		"state":         {state},
@@ -59,6 +60,8 @@ func (p *Provider) Exchange(ctx context.Context, code string) (*oauth2.Token, er
 	if code == "" {
 		return nil, oauth2.ErrInvalidCode
 	}
+	// 微信 API 要求在 URL 中传递 appSecret（而非 Header），这是微信官方接口规范要求。
+	// 参考: https://developers.weixin.qq.com/doc/oplatform/Website_App/WeChat_Login/Wechat_Login.html
 	u := fmt.Sprintf("%s?appid=%s&secret=%s&code=%s&grant_type=authorization_code",
 		p.tokenURL, p.opts.appID, p.opts.appSecret, code)
 
@@ -137,7 +140,8 @@ func (p *Provider) get(ctx context.Context, url string, result any) error {
 		return err
 	}
 	defer resp.Body.Close()
-	return json.NewDecoder(resp.Body).Decode(result)
+	// 限制响应体大小为 1MB，防止异常响应导致内存耗尽
+	return json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(result)
 }
 
 func getString(m map[string]any, key string) string {

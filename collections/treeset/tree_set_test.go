@@ -161,3 +161,51 @@ func (s *TreeSetTestSuite) TestStringSet() {
 
 	s.Equal([]string{"apple", "banana", "cherry"}, ts.ToSlice())
 }
+
+func (s *TreeSetTestSuite) TestAll() {
+	ts := FromSlice([]int{3, 1, 2})
+	var items []int
+	for item := range ts.All() {
+		items = append(items, item)
+	}
+	s.Equal([]int{1, 2, 3}, items)
+}
+
+func (s *TreeSetTestSuite) TestAllEmpty() {
+	ts := NewOrdered[int]()
+	count := 0
+	for range ts.All() {
+		count++
+	}
+	s.Equal(0, count)
+}
+
+func (s *TreeSetTestSuite) TestAllEarlyBreak() {
+	ts := FromSlice([]int{1, 2, 3, 4, 5})
+	var items []int
+	for item := range ts.All() {
+		items = append(items, item)
+		if item == 3 {
+			break
+		}
+	}
+	s.Equal([]int{1, 2, 3}, items)
+}
+
+func (s *TreeSetTestSuite) TestBackward() {
+	ts := FromSlice([]int{3, 1, 2})
+	var items []int
+	for item := range ts.Backward() {
+		items = append(items, item)
+	}
+	s.Equal([]int{3, 2, 1}, items)
+}
+
+func (s *TreeSetTestSuite) TestBackwardEmpty() {
+	ts := NewOrdered[int]()
+	count := 0
+	for range ts.Backward() {
+		count++
+	}
+	s.Equal(0, count)
+}

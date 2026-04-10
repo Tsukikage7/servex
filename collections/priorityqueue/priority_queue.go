@@ -1,7 +1,11 @@
 // Package priorityqueue 提供基于堆实现的优先队列.
+// 注意：PriorityQueue 非并发安全，如需在多 goroutine 中使用请使用 ConcurrentPriorityQueue 或自行加锁.
 package priorityqueue
 
-import "cmp"
+import (
+	"cmp"
+	"iter"
+)
 
 // LessFunc 比较函数，返回 true 表示 a 优先级高于 b.
 type LessFunc[T any] func(a, b T) bool
@@ -115,6 +119,20 @@ func (pq *PriorityQueue[T]) Clone() *PriorityQueue[T] {
 	}
 	copy(clone.data, pq.data)
 	return clone
+}
+
+// All 返回按优先级顺序遍历所有元素的迭代器.
+// 内部使用克隆队列逐个弹出，不会修改原队列.
+func (pq *PriorityQueue[T]) All() iter.Seq[T] {
+	return func(yield func(T) bool) {
+		clone := pq.Clone()
+		for clone.Len() > 0 {
+			item, _ := clone.Pop()
+			if !yield(item) {
+				return
+			}
+		}
+	}
 }
 
 // up 向上调整堆.

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -90,6 +91,9 @@ func HTTPMiddleware(authenticator Authenticator, opts ...Option) func(http.Handl
 }
 
 // DefaultHTTPCredentialsExtractor 默认的 HTTP 凭据提取器.
+//
+// 仅从 Authorization Header（Bearer）和 X-API-Key Header 中提取凭据.
+// 如需从 URL 查询参数 ?access_token= 提取，请使用 WithQueryParamExtraction() 显式启用.
 func DefaultHTTPCredentialsExtractor(_ context.Context, request any) (*Credentials, error) {
 	r, ok := request.(*http.Request)
 	if !ok {
@@ -114,7 +118,19 @@ func DefaultHTTPCredentialsExtractor(_ context.Context, request any) (*Credentia
 		}, nil
 	}
 
-	// 3. Query 参数
+	return nil, ErrCredentialsNotFound
+}
+
+// QueryParamExtractor 从 URL 查询参数 ?access_token= 中提取凭据.
+//
+// 注意: token 会出现在 URL、服务器日志和浏览器历史中，存在安全风险.
+// 仅在 WebSocket 等无法设置 Header 的场景中使用.
+func QueryParamExtractor(_ context.Context, request any) (*Credentials, error) {
+	r, ok := request.(*http.Request)
+	if !ok {
+		return nil, ErrCredentialsNotFound
+	}
+
 	if token := r.URL.Query().Get("access_token"); token != "" {
 		return &Credentials{
 			Type:  CredentialTypeBearer,
@@ -123,6 +139,20 @@ func DefaultHTTPCredentialsExtractor(_ context.Context, request any) (*Credentia
 	}
 
 	return nil, ErrCredentialsNotFound
+}
+
+// WithQueryParamExtraction 返回一个组合提取器，在默认提取器基础上额外支持 URL 查询参数 ?access_token=.
+//
+// 注意: token 会出现在 URL、服务器日志和浏览器历史中，存在安全风险.
+// 仅在 WebSocket 等无法设置 Header 的场景中显式启用.
+func WithQueryParamExtraction() Option {
+	return WithCredentialsExtractor(func(ctx context.Context, request any) (*Credentials, error) {
+		creds, err := DefaultHTTPCredentialsExtractor(ctx, request)
+		if err == nil {
+			return creds, nil
+		}
+		return QueryParamExtractor(ctx, request)
+	})
 }
 
 // BearerExtractor 仅提取 Bearer Token.
@@ -143,11 +173,12 @@ func BearerExtractor(_ context.Context, request any) (*Credentials, error) {
 	}, nil
 }
 
-// writeHTTPError 写入 HTTP 错误响应.
+// writeHTTPError 写入 HTTP 错误响应（使用 json.Marshal 防止 JSON 注入）.
 func writeHTTPError(w http.ResponseWriter, code int, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	_, _ = w.Write([]byte(`{"error":"` + message + `"}`))
+	body, _ := json.Marshal(map[string]string{"error": message})
+	_, _ = w.Write(body)
 }
 
 // HTTPSkipPaths 返回跳过指定路径的 Skipper.

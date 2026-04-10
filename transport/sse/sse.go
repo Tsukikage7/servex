@@ -315,8 +315,18 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// 创建客户端（从请求上下文派生）
 	client := newClient(s.config.BufferSize, r.Context())
 
-	// 注册客户端
-	s.register <- client
+	// 注册客户端（带超时保护，防止阻塞）
+	select {
+	case s.register <- client:
+	default:
+		// register channel 已满，直接在锁内注册
+		s.mu.Lock()
+		s.clients[client.id] = client
+		s.mu.Unlock()
+		if s.onConnect != nil {
+			s.onConnect(client)
+		}
+	}
 
 	// 发送重试间隔
 	if s.config.RetryInterval > 0 {

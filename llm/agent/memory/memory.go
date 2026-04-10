@@ -375,13 +375,55 @@ func NewSummaryMemory(model llm.ChatModel, opts ...SummaryOption) *SummaryMemory
 // Add 添加消息，若消息总数超过 maxMessages 则触发摘要压缩.
 func (m *SummaryMemory) Add(msg llm.Message) {
 	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	m.messages = append(m.messages, msg)
-	if len(m.messages) > m.maxMessages {
-		// 触发摘要：压缩前半部分消息.
-		m.summarizeLocked()
+	needSummarize := len(m.messages) > m.maxMessages
+	if !needSummarize {
+		m.mu.Unlock()
+		return
 	}
+
+	// 在持有锁时收集需要摘要的数据，然后释放锁调用 LLM.
+	keepCount := m.maxMessages / 2
+	if keepCount < 1 {
+		keepCount = 1
+	}
+	splitIdx := len(m.messages) - keepCount
+	if splitIdx <= 0 {
+		m.mu.Unlock()
+		return
+	}
+
+	// 拷贝待摘要消息和当前摘要.
+	toSummarize := make([]llm.Message, splitIdx)
+	copy(toSummarize, m.messages[:splitIdx])
+	recent := make([]llm.Message, keepCount)
+	copy(recent, m.messages[splitIdx:])
+	oldSummary := m.summary
+	prompt := m.summaryPrompt
+	model := m.model
+	m.mu.Unlock()
+
+	// 在锁外调用 LLM，避免长时间持有锁.
+	reqMsgs := make([]llm.Message, 0, len(toSummarize)+1)
+	reqMsgs = append(reqMsgs, llm.SystemMessage(prompt))
+	reqMsgs = append(reqMsgs, toSummarize...)
+
+	resp, err := model.Generate(context.Background(), reqMsgs)
+	if err != nil {
+		// 摘要失败时保持原消息不变，避免数据丢失.
+		return
+	}
+
+	newSummary := strings.TrimSpace(resp.Message.Content)
+	if oldSummary != "" {
+		newSummary = oldSummary + "\n" + newSummary
+	}
+
+	// 重新获取锁更新摘要和消息.
+	m.mu.Lock()
+	m.summary = newSummary
+	m.messages = recent
+	m.mu.Unlock()
 }
 
 // Messages 返回 [摘要系统消息（若存在）] + 当前消息列表.
@@ -403,46 +445,6 @@ func (m *SummaryMemory) Clear() {
 	defer m.mu.Unlock()
 	m.messages = nil
 	m.summary = ""
-}
-
-// summarizeLocked 对当前消息列表的前半部分生成摘要，并保留后半部分作为近期消息.
-// 调用时必须已持有 m.mu 锁.
-func (m *SummaryMemory) summarizeLocked() {
-	// 保留最近 maxMessages/2 条消息作为近期上下文.
-	keepCount := m.maxMessages / 2
-	if keepCount < 1 {
-		keepCount = 1
-	}
-	splitIdx := len(m.messages) - keepCount
-	if splitIdx <= 0 {
-		return
-	}
-	toSummarize := m.messages[:splitIdx]
-	recent := m.messages[splitIdx:]
-
-	// 构建摘要请求消息列表.
-	reqMsgs := make([]llm.Message, 0, len(toSummarize)+1)
-	reqMsgs = append(reqMsgs, llm.SystemMessage(m.summaryPrompt))
-	reqMsgs = append(reqMsgs, toSummarize...)
-
-	// 调用模型生成摘要（使用 Background，避免在请求 ctx 超时时丢失摘要）.
-	resp, err := m.model.Generate(context.Background(), reqMsgs)
-	if err != nil {
-		// 摘要失败时保持原消息不变，避免数据丢失.
-		return
-	}
-
-	newSummary := strings.TrimSpace(resp.Message.Content)
-	if m.summary != "" {
-		// 合并已有摘要.
-		newSummary = m.summary + "\n" + newSummary
-	}
-	m.summary = newSummary
-
-	// 仅保留近期消息.
-	kept := make([]llm.Message, len(recent))
-	copy(kept, recent)
-	m.messages = kept
 }
 
 // 编译期接口断言.
@@ -491,7 +493,7 @@ func NewEntityMemory(model llm.ChatModel, opts ...EntityOption) *EntityMemory {
 	return m
 }
 
-// Add 添加消息，并异步尝试从该消息中抽取实体.
+// Add 添加消息，并同步尝试从该消息中抽取实体.
 // 抽取失败时静默忽略，不影响正常对话流程.
 func (m *EntityMemory) Add(msg llm.Message) {
 	m.mu.Lock()

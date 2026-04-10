@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -111,9 +112,10 @@ func HTTPSkipPaths(paths ...string) Skipper {
 	}
 }
 
-// writeHTTPError 写入 HTTP 错误响应.
+// writeHTTPError 写入 HTTP 错误响应（使用 json.Marshal 防止 JSON 注入）.
 func writeHTTPError(w http.ResponseWriter, code int, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	_, _ = w.Write([]byte(`{"error":"` + message + `"}`))
+	body, _ := json.Marshal(map[string]string{"error": message})
+	_, _ = w.Write(body)
 }

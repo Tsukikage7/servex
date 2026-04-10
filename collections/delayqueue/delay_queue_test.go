@@ -180,3 +180,51 @@ func (s *DelayQueueTestSuite) TestConcurrentEnqueueDequeue() {
 	}
 	s.Equal(numItems, count)
 }
+
+func (s *DelayQueueTestSuite) TestAll() {
+	ctx := s.T().Context()
+	dq := New[delayItem](10)
+
+	now := time.Now()
+	s.NoError(dq.Enqueue(ctx, delayItem{"third", now.Add(30 * time.Millisecond)}))
+	s.NoError(dq.Enqueue(ctx, delayItem{"first", now.Add(10 * time.Millisecond)}))
+	s.NoError(dq.Enqueue(ctx, delayItem{"second", now.Add(20 * time.Millisecond)}))
+
+	// 按到期时间顺序遍历
+	var values []string
+	for item := range dq.All() {
+		values = append(values, item.value)
+	}
+	s.Equal([]string{"first", "second", "third"}, values)
+	// 原队列不受影响
+	s.Equal(3, dq.Len())
+}
+
+func (s *DelayQueueTestSuite) TestAllEmpty() {
+	dq := New[delayItem](10)
+	count := 0
+	for range dq.All() {
+		count++
+	}
+	s.Equal(0, count)
+}
+
+func (s *DelayQueueTestSuite) TestAllEarlyBreak() {
+	ctx := s.T().Context()
+	dq := New[delayItem](10)
+
+	now := time.Now()
+	s.NoError(dq.Enqueue(ctx, delayItem{"a", now.Add(10 * time.Millisecond)}))
+	s.NoError(dq.Enqueue(ctx, delayItem{"b", now.Add(20 * time.Millisecond)}))
+	s.NoError(dq.Enqueue(ctx, delayItem{"c", now.Add(30 * time.Millisecond)}))
+
+	count := 0
+	for range dq.All() {
+		count++
+		if count == 2 {
+			break
+		}
+	}
+	s.Equal(2, count)
+	s.Equal(3, dq.Len())
+}

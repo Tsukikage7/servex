@@ -18,6 +18,7 @@ func TestProvider_AuthURL(t *testing.T) {
 		WithRedirectURL("http://localhost/callback"),
 		WithScopes("user:email"),
 	)
+	defer p.Close()
 
 	url := p.AuthURL("test-state")
 	if !strings.Contains(url, "client_id=test-id") {
@@ -39,17 +40,18 @@ func TestProvider_AuthURL(t *testing.T) {
 
 func TestProvider_AuthURL_PKCE_StoresVerifier(t *testing.T) {
 	p := NewProvider(WithClientID("test-id"))
+	defer p.Close()
 	p.AuthURL("state-123")
 
 	p.mu.Lock()
-	verifier, ok := p.verifiers["state-123"]
+	entry, ok := p.verifiers["state-123"]
 	p.mu.Unlock()
 
 	if !ok {
 		t.Fatal("verifier should be stored for state")
 	}
-	if len(verifier) < 43 {
-		t.Errorf("verifier length = %d, want >= 43", len(verifier))
+	if len(entry.verifier) < 43 {
+		t.Errorf("verifier length = %d, want >= 43", len(entry.verifier))
 	}
 }
 
@@ -65,6 +67,7 @@ func TestProvider_Exchange(t *testing.T) {
 	defer server.Close()
 
 	p := newTestProvider(server.URL)
+	defer p.Close()
 
 	token, err := p.Exchange(t.Context(), "test-code")
 	if err != nil {
@@ -89,11 +92,12 @@ func TestProvider_ExchangeWithState_PKCE(t *testing.T) {
 	defer server.Close()
 
 	p := newTestProvider(server.URL)
+	defer p.Close()
 	// Generate AuthURL to store verifier
 	p.AuthURL("pkce-state")
 
 	p.mu.Lock()
-	storedVerifier := p.verifiers["pkce-state"]
+	storedVerifier := p.verifiers["pkce-state"].verifier
 	p.mu.Unlock()
 
 	token, err := p.ExchangeWithState(t.Context(), "test-code", "pkce-state")
@@ -118,6 +122,7 @@ func TestProvider_ExchangeWithState_PKCE(t *testing.T) {
 
 func TestProvider_Exchange_EmptyCode(t *testing.T) {
 	p := NewProvider()
+	defer p.Close()
 	_, err := p.Exchange(t.Context(), "")
 	if !errors.Is(err, oauth2.ErrInvalidCode) {
 		t.Errorf("got %v, want ErrInvalidCode", err)
@@ -136,6 +141,7 @@ func TestProvider_UserInfo(t *testing.T) {
 	defer server.Close()
 
 	p := newTestProvider(server.URL)
+	defer p.Close()
 	token := &oauth2.Token{AccessToken: "test"}
 
 	user, err := p.UserInfo(t.Context(), token)

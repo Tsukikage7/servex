@@ -62,13 +62,17 @@ func (a *Authenticator) Authenticate(ctx context.Context, creds auth.Credentials
 // StaticValidator 静态 API Key 验证器.
 //
 // 适合 Key 数量固定、部署时确定的场景.
-// 使用常量时间比较防止时序攻击.
+// 使用常量时间比较防止时序攻击，遍历所有 key 防止通过响应时间推断 key 数量.
 func StaticValidator(keys map[string]*auth.Principal) Validator {
 	return func(_ context.Context, key string) (*auth.Principal, error) {
+		var matched *auth.Principal
 		for k, principal := range keys {
 			if subtle.ConstantTimeCompare([]byte(k), []byte(key)) == 1 {
-				return principal, nil
+				matched = principal
 			}
+		}
+		if matched != nil {
+			return matched, nil
 		}
 		return nil, auth.ErrInvalidCredentials
 	}

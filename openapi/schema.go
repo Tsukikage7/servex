@@ -110,13 +110,31 @@ func parseValidateTag(tag string, s *Schema) {
 	parts := strings.Split(tag, ",")
 	for _, part := range parts {
 		if strings.HasPrefix(part, "min=") {
-			if v, err := strconv.ParseFloat(part[4:], 64); err == nil {
-				s.Minimum = &v
+			valStr := part[4:]
+			if s.Type == "string" {
+				// 字符串类型使用 minLength
+				if v, err := strconv.Atoi(valStr); err == nil {
+					s.MinLength = &v
+				}
+			} else {
+				// 数值类型使用 minimum
+				if v, err := strconv.ParseFloat(valStr, 64); err == nil {
+					s.Minimum = &v
+				}
 			}
 		}
 		if strings.HasPrefix(part, "max=") {
-			if v, err := strconv.ParseFloat(part[4:], 64); err == nil {
-				s.Maximum = &v
+			valStr := part[4:]
+			if s.Type == "string" {
+				// 字符串类型使用 maxLength
+				if v, err := strconv.Atoi(valStr); err == nil {
+					s.MaxLength = &v
+				}
+			} else {
+				// 数值类型使用 maximum
+				if v, err := strconv.ParseFloat(valStr, 64); err == nil {
+					s.Maximum = &v
+				}
 			}
 		}
 	}

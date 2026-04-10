@@ -187,7 +187,7 @@ var addProtoCmd = &cobra.Command{
 // genCmd 代码生成父命令.
 var genCmd = &cobra.Command{
 	Use:   "gen",
-	Short: "生成代码[aggregate/client/entity/valueobject/dockerfile/justfile]",
+	Short: "生成代码[aggregate/client/entity/valueobject/dockerfile/justfile/k8s]",
 }
 
 var (
@@ -302,6 +302,25 @@ var genValueObjectCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runGenValueObject(args[0], genVOAggregate, genVOFields, genVOModule, genVOOutput)
+	},
+}
+
+// --- gen k8s 命令 ---
+
+var (
+	genK8sName     string
+	genK8sPort     int
+	genK8sReplicas int
+	genK8sImage    string
+	genK8sOutput   string
+)
+
+// genK8sCmd K8s 清单生成命令.
+var genK8sCmd = &cobra.Command{
+	Use:   "k8s",
+	Short: "生成 K8s 清单[Deployment/Service/HPA]",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return runGenK8s(genK8sName, genK8sPort, genK8sReplicas, genK8sImage, genK8sOutput)
 	},
 }
 
@@ -506,7 +525,7 @@ func init() {
 	genJustfileCmd.Flags().StringVar(&genJustOut, "output", ".", "输出目录")
 
 	// gen 子命令
-	genCmd.AddCommand(genAggregateCmd, genDockerfileCmd, genJustfileCmd, genClientCmd, genEntityCmd, genValueObjectCmd)
+	genCmd.AddCommand(genAggregateCmd, genDockerfileCmd, genJustfileCmd, genClientCmd, genEntityCmd, genValueObjectCmd, genK8sCmd)
 
 	// gen client
 	genClientCmd.Flags().StringVar(&genClientService, "service", "", "调用方服务名[必填]")
@@ -525,6 +544,13 @@ func init() {
 	genValueObjectCmd.Flags().StringVar(&genVOModule, "module", "", "Go module 路径")
 	genValueObjectCmd.Flags().StringVar(&genVOOutput, "output", ".", "输出目录")
 
+	// gen k8s
+	genK8sCmd.Flags().StringVar(&genK8sName, "name", "server", "服务名称")
+	genK8sCmd.Flags().IntVar(&genK8sPort, "port", 8080, "容器端口")
+	genK8sCmd.Flags().IntVar(&genK8sReplicas, "replicas", 2, "副本数")
+	genK8sCmd.Flags().StringVar(&genK8sImage, "image", "", "容器镜像 (默认: <name>:latest)")
+	genK8sCmd.Flags().StringVar(&genK8sOutput, "output", ".", "输出目录")
+
 	// proto add
 	protoAddCmd.Flags().StringVar(&protoAddModule, "module", "", "Go module 路径 (默认: 从 go.mod 读取)")
 	protoAddCmd.Flags().StringVar(&protoAddOutput, "output", ".", "输出目录")
@@ -542,8 +568,13 @@ func init() {
 	// proto breaking
 	protoBreakingCmd.Flags().StringVar(&protoBreakingAgainst, "against", ".git#branch=main", "对比目标 (默认: main 分支)")
 
+	// dev
+	devCmd.Flags().StringVar(&devEntry, "entry", "", "入口路径 (默认: 自动检测)")
+	devCmd.Flags().StringVar(&devWatch, "watch", ".", "监听路径，逗号分隔 (默认: .)")
+	devCmd.Flags().StringVar(&devExclude, "exclude", "vendor,node_modules,.git", "排除模式，逗号分隔")
+
 	// 注册所有顶级命令
-	rootCmd.AddCommand(newCmd, addCmd, genCmd, protoCmd, runCmdDef, upgradeCmd, versionCmd)
+	rootCmd.AddCommand(newCmd, addCmd, genCmd, protoCmd, runCmdDef, devCmd, upgradeCmd, versionCmd)
 }
 
 func main() {

@@ -12,6 +12,7 @@ func ExampleNewProvider() {
 		github.WithClientSecret("client-secret"),
 		github.WithRedirectURL("https://example.com/callback"),
 	)
+	defer p.Close()
 	fmt.Println(p != nil)
 	// Output:
 	// true

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 
@@ -14,13 +15,14 @@ import (
 
 // Subscriber 通过 RabbitMQ 订阅消息.
 type Subscriber struct {
-	conn   *amqp.Connection
-	ch     *amqp.Channel
-	mu     sync.Mutex
-	closed atomic.Bool
-	wg     sync.WaitGroup
-	cancel context.CancelFunc
-	opts   subscriberOptions
+	url     string
+	conn    *amqp.Connection
+	ch      *amqp.Channel
+	mu      sync.Mutex
+	closed  atomic.Bool
+	wg      sync.WaitGroup
+	cancels []context.CancelFunc // 所有订阅的 cancel 函数
+	opts    subscriberOptions
 }
 
 // NewSubscriber 基于 AMQP URL 创建 Subscriber.
@@ -71,7 +73,78 @@ func NewSubscriber(url string, opts ...SubscriberOption) (*Subscriber, error) {
 		}
 	}
 
-	return &Subscriber{conn: conn, ch: ch, opts: o}, nil
+	s := &Subscriber{url: url, conn: conn, ch: ch, opts: o}
+
+	// 启动连接断开监听和自动重连
+	go s.reconnectLoop()
+
+	return s, nil
+}
+
+// reconnectLoop 监听连接关闭通知，自动重连（指数退避）.
+func (s *Subscriber) reconnectLoop() {
+	for {
+		s.mu.Lock()
+		conn := s.conn
+		s.mu.Unlock()
+
+		if conn == nil || s.closed.Load() {
+			return
+		}
+
+		notifyClose := conn.NotifyClose(make(chan *amqp.Error, 1))
+		amqpErr, ok := <-notifyClose
+		if !ok || s.closed.Load() {
+			return
+		}
+
+		s.logf("连接断开: %v，开始重连", amqpErr)
+
+		backoff := time.Second
+		const maxBackoff = 30 * time.Second
+		for !s.closed.Load() {
+			newConn, err := amqp.Dial(s.url)
+			if err != nil {
+				s.logf("重连失败: %v，%v 后重试", err, backoff)
+				time.Sleep(backoff)
+				backoff *= 2
+				if backoff > maxBackoff {
+					backoff = maxBackoff
+				}
+				continue
+			}
+
+			newCh, err := newConn.Channel()
+			if err != nil {
+				s.logf("重连后创建 channel 失败: %v", err)
+				newConn.Close()
+				continue
+			}
+
+			if s.opts.prefetchCount > 0 {
+				if err := newCh.Qos(s.opts.prefetchCount, 0, false); err != nil {
+					s.logf("重连后设置 QoS 失败: %v", err)
+					newCh.Close()
+					newConn.Close()
+					continue
+				}
+			}
+
+			s.mu.Lock()
+			s.conn = newConn
+			s.ch = newCh
+			s.mu.Unlock()
+
+			s.logf("重连成功")
+			break
+		}
+	}
+}
+
+func (s *Subscriber) logf(format string, args ...any) {
+	if s.opts.logger != nil {
+		s.opts.logger.Infof("[RabbitMQ/Subscriber] "+format, args...)
+	}
 }
 
 // Subscribe 订阅指定 queue/topic，返回消息 channel.
@@ -109,7 +182,7 @@ func (s *Subscriber) Subscribe(ctx context.Context, topic string) (<-chan *pubsu
 	msgCh := make(chan *pubsub.Message)
 	subCtx, cancel := context.WithCancel(ctx)
 	s.mu.Lock()
-	s.cancel = cancel
+	s.cancels = append(s.cancels, cancel)
 	s.mu.Unlock()
 
 	s.wg.Go(func() {
@@ -186,9 +259,10 @@ func (s *Subscriber) Close() error {
 		return nil
 	}
 	s.mu.Lock()
-	if s.cancel != nil {
-		s.cancel()
+	for _, cancel := range s.cancels {
+		cancel()
 	}
+	s.cancels = nil
 	s.mu.Unlock()
 	s.wg.Wait()
 	s.mu.Lock()

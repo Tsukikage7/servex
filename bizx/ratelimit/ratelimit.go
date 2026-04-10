@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"sync"
 	"time"
@@ -280,9 +281,15 @@ func (m *redisQuotaManager) Reset(ctx context.Context, key string) error {
 	pattern := fmt.Sprintf("%squota:%s:*", m.opts.keyPrefix, key)
 	iter := m.client.Scan(ctx, 0, pattern, 100).Iterator()
 	for iter.Next(ctx) {
-		m.client.Del(ctx, iter.Val())
+		if err := m.client.Del(ctx, iter.Val()).Err(); err != nil {
+			slog.ErrorContext(ctx, "ratelimit: 删除配额键失败", "key", iter.Val(), "error", err)
+		}
 	}
-	return iter.Err()
+	if err := iter.Err(); err != nil {
+		slog.ErrorContext(ctx, "ratelimit: SCAN 迭代配额键失败", "pattern", pattern, "error", err)
+		return err
+	}
+	return nil
 }
 
 func (m *redisQuotaManager) GetUsage(ctx context.Context, quota Quota) (*Usage, error) {

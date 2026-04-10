@@ -1,7 +1,11 @@
 // Package slicesx 提供切片操作的工具函数.
+// 注意：本包的函数非并发安全，如需在多 goroutine 中使用请自行加锁.
 package slicesx
 
-import "fmt"
+import (
+	"fmt"
+	"iter"
+)
 
 // Filter 过滤切片，返回满足条件的元素.
 // 示例:
@@ -730,4 +734,50 @@ func Delete[T any](slice []T, index int) ([]T, error) {
 	copy(result, slice[:index])
 	copy(result[index:], slice[index+1:])
 	return result, nil
+}
+
+// IterAll 返回遍历切片的索引-值迭代器.
+// 等价于标准库 slices.All.
+func IterAll[T any](slice []T) iter.Seq2[int, T] {
+	return func(yield func(int, T) bool) {
+		for i, v := range slice {
+			if !yield(i, v) {
+				return
+			}
+		}
+	}
+}
+
+// IterValues 返回遍历切片值的迭代器.
+// 等价于标准库 slices.Values.
+func IterValues[T any](slice []T) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		for _, v := range slice {
+			if !yield(v) {
+				return
+			}
+		}
+	}
+}
+
+// IterBackward 返回逆序遍历切片的索引-值迭代器.
+// 等价于标准库 slices.Backward.
+func IterBackward[T any](slice []T) iter.Seq2[int, T] {
+	return func(yield func(int, T) bool) {
+		for i := len(slice) - 1; i >= 0; i-- {
+			if !yield(i, slice[i]) {
+				return
+			}
+		}
+	}
+}
+
+// Collect 从迭代器收集元素到切片.
+// 等价于标准库 slices.Collect.
+func Collect[T any](seq iter.Seq[T]) []T {
+	var result []T
+	for v := range seq {
+		result = append(result, v)
+	}
+	return result
 }

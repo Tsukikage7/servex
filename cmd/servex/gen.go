@@ -66,6 +66,7 @@ func runGen(args []string) error {
 		fmt.Println("  aggregate    生成 DDD 聚合代码")
 		fmt.Println("  dockerfile   生成 Dockerfile")
 		fmt.Println("  justfile     生成 justfile")
+		fmt.Println("  k8s          生成 K8s 清单[Deployment/Service/HPA]")
 		return fmt.Errorf("必须指定生成类型")
 	}
 
@@ -76,6 +77,8 @@ func runGen(args []string) error {
 		return runGenDockerfile(args[1:])
 	case "justfile":
 		return runGenJustfile(args[1:])
+	case "k8s":
+		return runGenK8sLegacy(args[1:])
 	default:
 		return fmt.Errorf("未知生成类型: %s", args[0])
 	}

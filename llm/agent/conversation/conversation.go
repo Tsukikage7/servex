@@ -57,8 +57,6 @@ func (c *Conversation) Chat(ctx context.Context, input string, opts ...llm.CallO
 
 	resp, err := c.model.Generate(ctx, messages, opts...)
 	if err != nil {
-		// 回滚刚加入的用户消息
-		c.memory.Add(llm.UserMessage("")) // 占位，随后 trim 会处理
 		return nil, err
 	}
 

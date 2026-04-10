@@ -24,6 +24,7 @@ package jwt
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -97,27 +98,48 @@ type JWT struct {
 
 // NewJWT 创建 JWT 服务.
 //
-// 如果未设置 secretKey 或 logger，会 panic.
+// 必须设置 logger，且必须配置以下签名方式之一:
+//   - HMAC: 使用 WithSecretKey（对称签名，默认 HS256）
+//   - RSA: 使用 WithRSAKeys 或 WithRSAKeyFiles（RS256）
+//   - ECDSA: 使用 WithECDSAKeys 或 WithECDSAKeyFiles（ES256）
+//   - EdDSA: 使用 WithEdDSAKeys 或 WithEdDSAKeyFiles（Ed25519）
+//
+// HMAC 模式要求 secretKey 至少 32 字节.
+// 非对称模式至少需要 publicKey（验证），privateKey 可选（仅签名时需要）.
 func NewJWT(opts ...Option) *JWT {
 	o := defaultOptions()
 	for _, opt := range opts {
 		opt(o)
 	}
 
-	if o.secretKey == "" {
-		panic("jwt: 必须设置 secretKey")
-	}
 	if o.logger == nil {
 		panic("jwt: 必须设置 logger")
+	}
+
+	// 非对称签名模式：验证公钥是否存在
+	if o.signingMethod != nil {
+		if o.publicKey == nil {
+			panic("jwt: 非对称签名模式必须设置公钥（publicKey）")
+		}
+	} else {
+		// HMAC 对称签名模式
+		if o.secretKey == "" {
+			panic("jwt: 必须设置 secretKey 或非对称密钥对")
+		}
+		if len(o.secretKey) < 32 {
+			panic("jwt: JWT 密钥长度不足，HMAC-SHA256 至少需要 32 字节")
+		}
 	}
 
 	return &JWT{opts: o}
 }
 
 // Generate 生成 JWT 令牌.
+//
+// 使用配置的签名算法（默认 HMAC-SHA256，也支持 RS256/ES256/EdDSA）.
 func (j *JWT) Generate(ctx context.Context, claims Claims) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(j.opts.secretKey))
+	token := jwt.NewWithClaims(j.getSigningMethod(), claims)
+	tokenString, err := token.SignedString(j.signingKey())
 	if err != nil {
 		j.opts.logger.With(
 			logger.String("name", j.opts.name),
@@ -157,8 +179,8 @@ func (j *JWT) Generate(ctx context.Context, claims Claims) (string, error) {
 
 // GenerateWithDuration 使用指定有效期生成令牌.
 func (j *JWT) GenerateWithDuration(claims jwt.Claims, duration time.Duration) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(j.opts.secretKey))
+	token := jwt.NewWithClaims(j.getSigningMethod(), claims)
+	tokenString, err := token.SignedString(j.signingKey())
 	if err != nil {
 		j.opts.logger.With(
 			logger.String("name", j.opts.name),
@@ -185,6 +207,14 @@ func (j *JWT) ValidateWithClaims(ctx context.Context, tokenString string, claims
 	}
 
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
+		// 验证签名算法是否与配置一致，防止 "none" 算法攻击
+		if j.opts.signingMethod != nil {
+			if token.Method.Alg() != j.opts.signingMethod.Alg() {
+				return nil, ErrSigningMethod
+			}
+			return j.verificationKey(), nil
+		}
+		// HMAC 模式
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, ErrSigningMethod
 		}
@@ -226,9 +256,18 @@ func (j *JWT) RefreshWithClaims(ctx context.Context, tokenString string, oldClai
 		return j.Generate(ctx, newClaims)
 	}
 
-	// 如果验证失败，尝试解析过期令牌
+	// 如果验证失败，尝试解析过期令牌（仍需验证签名方法，防止 "none" 算法攻击）
 	tokenString = j.stripPrefix(tokenString)
-	token, parseErr := jwt.ParseWithClaims(tokenString, oldClaimsType, func(_ *jwt.Token) (any, error) {
+	token, parseErr := jwt.ParseWithClaims(tokenString, oldClaimsType, func(token *jwt.Token) (any, error) {
+		if j.opts.signingMethod != nil {
+			if token.Method.Alg() != j.opts.signingMethod.Alg() {
+				return nil, ErrSigningMethod
+			}
+			return j.verificationKey(), nil
+		}
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, ErrSigningMethod
+		}
 		return []byte(j.opts.secretKey), nil
 	})
 
@@ -359,6 +398,36 @@ func (j *JWT) buildCacheKey(subject string, iat int64, exp int64) string {
 	return fmt.Sprintf("%s%s:%d:%d", j.opts.cacheKeyPrefix, subject, iat, exp)
 }
 
+// getSigningMethod 获取签名算法.
+//
+// 非对称模式返回配置的算法，HMAC 模式返回 HS256.
+func (j *JWT) getSigningMethod() jwt.SigningMethod {
+	if j.opts.signingMethod != nil {
+		return j.opts.signingMethod
+	}
+	return jwt.SigningMethodHS256
+}
+
+// signingKey 获取签名密钥.
+//
+// 非对称模式返回私钥，HMAC 模式返回 secretKey 字节.
+func (j *JWT) signingKey() any {
+	if j.opts.signingMethod != nil {
+		return j.opts.privateKey
+	}
+	return []byte(j.opts.secretKey)
+}
+
+// verificationKey 获取验证密钥.
+//
+// 非对称模式返回公钥，HMAC 模式返回 secretKey 字节.
+func (j *JWT) verificationKey() any {
+	if j.opts.signingMethod != nil {
+		return j.opts.publicKey
+	}
+	return []byte(j.opts.secretKey)
+}
+
 // validateCachedToken 验证缓存中的令牌.
 func (j *JWT) validateCachedToken(ctx context.Context, tokenString string, claims jwt.Claims) error {
 	iat, err := claims.GetIssuedAt()
@@ -378,19 +447,31 @@ func (j *JWT) validateCachedToken(ctx context.Context, tokenString string, claim
 
 	// 检查撤销标记（用于不支持 Keys 查询的存储）
 	revokeKey := j.opts.cacheKeyPrefix + "revoked:" + subject
-	if val, err := j.opts.store.Get(ctx, revokeKey); err == nil && val != "" {
+	if val, revokeErr := j.opts.store.Get(ctx, revokeKey); revokeErr == nil && val != "" {
 		return ErrTokenRevoked
+	} else if revokeErr != nil && !errors.Is(revokeErr, cache.ErrNotFound) {
+		// 缓存访问错误（如 Redis 宕机），跳过撤销检查，fail-open
+		j.opts.logger.With(
+			logger.String("name", j.opts.name),
+			logger.String("subject", subject),
+			logger.Err(revokeErr),
+		).Warn("[JWT] 缓存撤销标记查询失败，跳过检查")
 	}
 
 	key := j.buildCacheKey(subject, iat.Unix(), exp.Unix())
 	storedToken, err := j.opts.store.Get(ctx, key)
 	if err != nil {
+		if errors.Is(err, cache.ErrNotFound) {
+			// 缓存中无此令牌，视为已撤销
+			return ErrTokenRevoked
+		}
+		// 缓存访问错误（如 Redis 宕机），fail-open，跳过缓存校验
 		j.opts.logger.With(
 			logger.String("name", j.opts.name),
 			logger.String("subject", subject),
 			logger.Err(err),
-		).Warn("[JWT] 缓存令牌验证失败")
-		return ErrTokenRevoked
+		).Warn("[JWT] 缓存令牌查询失败，跳过缓存校验")
+		return nil
 	}
 
 	storedToken = j.stripPrefix(storedToken)

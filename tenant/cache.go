@@ -2,6 +2,8 @@ package tenant
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"time"
 )
 
@@ -90,7 +92,9 @@ func NewCachedResolver(inner Resolver, store CacheStore, opts ...CacheOption) Re
 }
 
 func (r *cachedResolver) Resolve(ctx context.Context, token string) (Tenant, error) {
-	key := r.opts.prefix + token
+	// 使用 token 的 hash 作为缓存 key，避免在缓存中存储原始 token 值
+	h := sha256.Sum256([]byte(token))
+	key := r.opts.prefix + hex.EncodeToString(h[:])
 
 	// 尝试从缓存获取
 	val, err := r.store.Get(ctx, key)

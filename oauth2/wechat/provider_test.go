@@ -12,10 +12,13 @@ import (
 )
 
 func TestProvider_AuthURL(t *testing.T) {
-	p := NewProvider(WithAppID("wx123"))
+	p := NewProvider(WithAppID("wx123"), WithRedirectURL("https://example.com/callback"))
 	url := p.AuthURL("state1")
 	if !strings.Contains(url, "appid=wx123") {
 		t.Error("missing appid")
+	}
+	if !strings.Contains(url, "redirect_uri=https") {
+		t.Error("missing redirect_uri")
 	}
 	if !strings.HasSuffix(url, "#wechat_redirect") {
 		t.Error("missing #wechat_redirect")

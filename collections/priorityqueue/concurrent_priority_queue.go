@@ -2,6 +2,7 @@ package priorityqueue
 
 import (
 	"cmp"
+	"iter"
 	"sync"
 )
 
@@ -80,4 +81,20 @@ func (cpq *ConcurrentPriorityQueue[T]) Clone() *ConcurrentPriorityQueue[T] {
 	cpq.mu.RLock()
 	defer cpq.mu.RUnlock()
 	return &ConcurrentPriorityQueue[T]{pq: cpq.pq.Clone()}
+}
+
+// All 返回按优先级顺序遍历所有元素的迭代器.
+// 内部持有读锁并使用克隆队列，不会修改原队列.
+func (cpq *ConcurrentPriorityQueue[T]) All() iter.Seq[T] {
+	return func(yield func(T) bool) {
+		cpq.mu.RLock()
+		clone := cpq.pq.Clone()
+		cpq.mu.RUnlock()
+		for clone.Len() > 0 {
+			item, _ := clone.Pop()
+			if !yield(item) {
+				return
+			}
+		}
+	}
 }

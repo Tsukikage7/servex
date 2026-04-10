@@ -45,7 +45,8 @@ func TestHTTPMiddleware_Valid(t *testing.T) {
 	cfg := DefaultConfig(testSecret)
 	body := []byte(`{"action":"test"}`)
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
-	sig := Sign(body, timestamp, testSecret)
+	// 中间件验签包含 method+path，因此签名也需包含
+	sig := SignWithMethodPath(body, http.MethodPost, "/api/test", timestamp, testSecret)
 
 	handler := HTTPMiddleware(cfg)(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -163,7 +164,7 @@ func TestSignRequest(t *testing.T) {
 		}),
 	)
 
-	// 需要重新构造 request（因为 body 已被读取）
+	// 需要重新构造 request（因为 body 已被读取），路径须与原始请求一致
 	req2 := httptest.NewRequest(http.MethodPost, "/api", bytes.NewReader(body))
 	req2.Header = req.Header
 

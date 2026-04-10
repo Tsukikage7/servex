@@ -2,6 +2,7 @@ package tracing
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"go.opentelemetry.io/otel"
@@ -54,7 +55,7 @@ func NewTracer(cfg *TracingConfig, serviceName, serviceVersion string) (*trace.T
 	// 创建OTLP导出器
 	exp, err := otlptracehttp.New(context.Background(), opts...)
 	if err != nil {
-		return nil, ErrCreateExporter
+		return nil, fmt.Errorf("%w: %v", ErrCreateExporter, err)
 	}
 
 	// 创建资源
@@ -65,7 +66,7 @@ func NewTracer(cfg *TracingConfig, serviceName, serviceVersion string) (*trace.T
 		),
 	)
 	if err != nil {
-		return nil, ErrCreateResource
+		return nil, fmt.Errorf("%w: %v", ErrCreateResource, err)
 	}
 
 	// 设置采样率，默认100%

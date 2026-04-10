@@ -91,7 +91,8 @@ func writeError(w http.ResponseWriter, code int, msg string) {
 
 // handleChatCompletion 处理 POST /v1/chat/completions 请求.
 func (p *Proxy) handleChatCompletion(w http.ResponseWriter, r *http.Request) {
-	// 1. 解析 JSON 请求体
+	// 1. 限制请求体大小（10MB）并解析 JSON
+	r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
 	var req chatCompletionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "无效的请求体: "+err.Error())
@@ -170,7 +171,7 @@ func (p *Proxy) handleGenerate(
 		if p.log != nil {
 			p.log.Errorf("模型调用失败 model=%s: %v", modelName, err)
 		}
-		writeError(w, http.StatusInternalServerError, "模型调用失败: "+err.Error())
+		writeError(w, http.StatusInternalServerError, "模型调用失败，请稍后重试")
 		return
 	}
 
@@ -221,7 +222,7 @@ func (p *Proxy) handleStream(
 		if p.log != nil {
 			p.log.Errorf("流式模型调用失败 model=%s: %v", modelName, err)
 		}
-		writeError(w, http.StatusInternalServerError, "流式模型调用失败: "+err.Error())
+		writeError(w, http.StatusInternalServerError, "流式模型调用失败，请稍后重试")
 		return
 	}
 	defer reader.Close()

@@ -14,6 +14,7 @@ func TestHTTPMiddleware_DefaultConfig(t *testing.T) {
 	}))
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Header.Set("X-Forwarded-Proto", "https") // 模拟 HTTPS 请求
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 
@@ -125,6 +126,7 @@ func TestHTTPMiddleware_HSTSPreload(t *testing.T) {
 	}))
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Header.Set("X-Forwarded-Proto", "https") // 模拟 HTTPS 请求
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 
@@ -138,6 +140,19 @@ func TestHTTPMiddleware_HSTSDisabled(t *testing.T) {
 	cfg.HSTSMaxAge = 0
 
 	handler := HTTPMiddleware(cfg)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	assert.Empty(t, w.Header().Get("Strict-Transport-Security"))
+}
+
+func TestHTTPMiddleware_HSTSNotSetOnHTTP(t *testing.T) {
+	// HSTS 不应在 HTTP 请求上设置
+	handler := HTTPMiddleware(DefaultConfig())(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 

@@ -428,3 +428,77 @@ func (s *ConfigTestSuite) TestErrors() {
 	s.Equal("配置文件不存在", ErrFileNotFound.Error())
 	s.Equal("不支持的配置文件类型", ErrInvalidType.Error())
 }
+
+// === ConfigFieldError 测试 ===
+
+func (s *ConfigTestSuite) TestConfigFieldError_Error() {
+	err := &ConfigFieldError{
+		Field:   "database.host",
+		Source:  "file:config.yaml",
+		Message: "类型不匹配",
+	}
+	s.Contains(err.Error(), "database.host")
+	s.Contains(err.Error(), "file:config.yaml")
+	s.Contains(err.Error(), "类型不匹配")
+}
+
+func (s *ConfigTestSuite) TestConfigFieldError_ErrorWithExpectedActual() {
+	err := &ConfigFieldError{
+		Field:    "server.port",
+		Source:   "env:SERVER_PORT",
+		Message:  "类型不匹配",
+		Expected: "int",
+		Actual:   "\"abc\"",
+	}
+	s.Contains(err.Error(), "期望: int")
+	s.Contains(err.Error(), "实际: \"abc\"")
+}
+
+func (s *ConfigTestSuite) TestConfigFieldError_Unwrap_Default() {
+	err := &ConfigFieldError{
+		Field:   "test",
+		Source:  "test",
+		Message: "test",
+	}
+	s.ErrorIs(err, ErrValidation)
+}
+
+func (s *ConfigTestSuite) TestConfigFieldError_Unwrap_Custom() {
+	err := &ConfigFieldError{
+		Field:   "test",
+		Source:  "test",
+		Message: "test",
+		Err:     ErrUnmarshal,
+	}
+	s.ErrorIs(err, ErrUnmarshal)
+}
+
+func (s *ConfigTestSuite) TestNewFieldError() {
+	err := NewFieldError("db.port", "file:app.yaml", "字段缺失")
+	s.Equal("db.port", err.Field)
+	s.Equal("file:app.yaml", err.Source)
+	s.Equal("字段缺失", err.Message)
+}
+
+func (s *ConfigTestSuite) TestNewFieldTypeError() {
+	err := NewFieldTypeError("db.port", "env:DB_PORT", "int", "\"hello\"")
+	s.Equal("db.port", err.Field)
+	s.Equal("env:DB_PORT", err.Source)
+	s.Equal("类型不匹配", err.Message)
+	s.Equal("int", err.Expected)
+	s.Equal("\"hello\"", err.Actual)
+}
+
+func (s *ConfigTestSuite) TestLoad_ValidationError_IsConfigFieldError() {
+	content := `name: ""
+port: 8080`
+	path := s.createYAMLFile("field_error_test.yaml", content)
+
+	_, err := Load[ValidatableConfig](path)
+	s.Error(err)
+
+	var fieldErr *ConfigFieldError
+	s.ErrorAs(err, &fieldErr)
+	s.Contains(fieldErr.Source, "file:")
+	s.ErrorIs(err, ErrValidation)
+}

@@ -18,7 +18,7 @@ type Subscriber struct {
 	group   sarama.ConsumerGroup
 	closed  atomic.Bool
 	mu      sync.Mutex
-	cancel  context.CancelFunc
+	cancels []context.CancelFunc // 所有订阅的 cancel 函数
 	wg      sync.WaitGroup
 	opts    subscriberOptions
 }
@@ -63,7 +63,7 @@ func (s *Subscriber) Subscribe(ctx context.Context, topic string) (<-chan *pubsu
 	ch := make(chan *pubsub.Message)
 	subCtx, cancel := context.WithCancel(ctx)
 	s.mu.Lock()
-	s.cancel = cancel
+	s.cancels = append(s.cancels, cancel)
 	s.mu.Unlock()
 
 	handler := &consumerGroupHandler{ch: ch}
@@ -117,9 +117,10 @@ func (s *Subscriber) Close() error {
 		return nil
 	}
 	s.mu.Lock()
-	if s.cancel != nil {
-		s.cancel()
+	for _, cancel := range s.cancels {
+		cancel()
 	}
+	s.cancels = nil
 	s.mu.Unlock()
 	s.wg.Wait()
 	return s.group.Close()
@@ -134,24 +135,35 @@ func (h *consumerGroupHandler) Setup(_ sarama.ConsumerGroupSession) error   { re
 func (h *consumerGroupHandler) Cleanup(_ sarama.ConsumerGroupSession) error { return nil }
 
 func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
-	for msg := range claim.Messages() {
-		headers := make(map[string]string, len(msg.Headers))
-		for _, rh := range msg.Headers {
-			headers[string(rh.Key)] = string(rh.Value)
+	for {
+		select {
+		case msg, ok := <-claim.Messages():
+			if !ok {
+				return nil
+			}
+			headers := make(map[string]string, len(msg.Headers))
+			for _, rh := range msg.Headers {
+				headers[string(rh.Key)] = string(rh.Value)
+			}
+			pm := &pubsub.Message{
+				Topic:   msg.Topic,
+				Key:     msg.Key,
+				Body:    msg.Value,
+				Headers: headers,
+				Metadata: map[string]any{
+					"partition":        msg.Partition,
+					"offset":           msg.Offset,
+					"session":          session,
+					"consumer_message": msg,
+				},
+			}
+			select {
+			case h.ch <- pm:
+			case <-session.Context().Done():
+				return nil
+			}
+		case <-session.Context().Done():
+			return nil
 		}
-		pm := &pubsub.Message{
-			Topic:   msg.Topic,
-			Key:     msg.Key,
-			Body:    msg.Value,
-			Headers: headers,
-			Metadata: map[string]any{
-				"partition":        msg.Partition,
-				"offset":           msg.Offset,
-				"session":          session,
-				"consumer_message": msg,
-			},
-		}
-		h.ch <- pm
 	}
-	return nil
 }

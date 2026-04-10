@@ -2,6 +2,7 @@ package mongodb
 
 import (
 	"context"
+	"net/url"
 
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -63,10 +64,18 @@ func newMongoClient(config *Config, log logger.Logger) (*mongoClient, error) {
 	}, nil
 }
 
-// maskURI 遮盖 URI 中的敏感信息.
+// maskURI 遮盖 URI 中的密码信息.
 func maskURI(uri string) string {
-	// 简单处理，实际应该解析 URI 并遮盖密码
-	return uri
+	u, err := url.Parse(uri)
+	if err != nil {
+		return "***"
+	}
+	if u.User != nil {
+		if _, hasPass := u.User.Password(); hasPass {
+			u.User = url.UserPassword(u.User.Username(), "***")
+		}
+	}
+	return u.String()
 }
 
 func (c *mongoClient) Database(name ...string) Database {

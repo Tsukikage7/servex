@@ -2,7 +2,9 @@ package s3
 
 import (
 	"context"
+	"errors"
 	"io"
+	"net/http"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -10,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	smithyhttp "github.com/aws/smithy-go/transport/http"
 
 	"github.com/Tsukikage7/servex/observability/logger"
 )
@@ -107,7 +110,11 @@ func (c *s3Client) BucketExists(ctx context.Context, bucket string) (bool, error
 		Bucket: aws.String(bucket),
 	})
 	if err != nil {
-		return false, nil
+		// 404/NotFound 表示桶不存在，其他错误向上传播
+		if isNotFound(err) {
+			return false, nil
+		}
+		return false, err
 	}
 	return true, nil
 }
@@ -263,7 +270,11 @@ func (c *s3Client) HeadObject(ctx context.Context, key string) (*ObjectInfo, err
 func (c *s3Client) ObjectExists(ctx context.Context, key string) (bool, error) {
 	_, err := c.HeadObject(ctx, key)
 	if err != nil {
-		return false, nil
+		// 404/NotFound 表示对象不存在，其他错误向上传播
+		if isNotFound(err) {
+			return false, nil
+		}
+		return false, err
 	}
 	return true, nil
 }
@@ -499,4 +510,27 @@ func (c *s3Client) UseBucket(bucket string) Client {
 func (c *s3Client) Close() error {
 	c.log.Info("s3 client closed")
 	return nil
+}
+
+// isNotFound 判断 S3 错误是否为 404 Not Found.
+func isNotFound(err error) bool {
+	// 检查 AWS SDK 特定的 NotFound 错误类型
+	var nsk *types.NotFound
+	if errors.As(err, &nsk) {
+		return true
+	}
+	var nsb *types.NoSuchBucket
+	if errors.As(err, &nsb) {
+		return true
+	}
+	var nso *types.NoSuchKey
+	if errors.As(err, &nso) {
+		return true
+	}
+	// 检查 HTTP 状态码 404
+	var re *smithyhttp.ResponseError
+	if errors.As(err, &re) {
+		return re.HTTPStatusCode() == http.StatusNotFound
+	}
+	return false
 }

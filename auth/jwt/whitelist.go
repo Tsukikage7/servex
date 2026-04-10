@@ -120,9 +120,15 @@ func (w *Whitelist) isInternalService(ctx context.Context) bool {
 }
 
 // isHTTPPathWhitelisted 检查 HTTP 路径是否在白名单.
+// 使用精确匹配或 "/" 分隔符边界匹配，防止 "/api/public" 意外匹配 "/api/publicData".
 func (w *Whitelist) isHTTPPathWhitelisted(path string) bool {
 	for _, whitelistPath := range w.HTTPPaths {
-		if strings.HasPrefix(path, whitelistPath) {
+		if path == whitelistPath {
+			return true
+		}
+		// 前缀匹配要求下一个字符为 "/" 或路径已到尽头
+		if strings.HasPrefix(path, whitelistPath) &&
+			(strings.HasSuffix(whitelistPath, "/") || len(path) > len(whitelistPath) && path[len(whitelistPath)] == '/') {
 			return true
 		}
 	}
@@ -130,9 +136,14 @@ func (w *Whitelist) isHTTPPathWhitelisted(path string) bool {
 }
 
 // isGRPCMethodWhitelisted 检查 gRPC 方法是否在白名单.
+// 使用精确匹配或 "/" 分隔符边界匹配.
 func (w *Whitelist) isGRPCMethodWhitelisted(method string) bool {
 	for _, whitelistMethod := range w.GRPCMethods {
-		if strings.HasPrefix(method, whitelistMethod) {
+		if method == whitelistMethod {
+			return true
+		}
+		if strings.HasPrefix(method, whitelistMethod) &&
+			(strings.HasSuffix(whitelistMethod, "/") || len(method) > len(whitelistMethod) && method[len(whitelistMethod)] == '/') {
 			return true
 		}
 	}

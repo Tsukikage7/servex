@@ -57,40 +57,34 @@ func TestNew(t *testing.T) {
 		}
 	})
 
-	t.Run("未设置serviceName时panic", func(t *testing.T) {
-		defer func() {
-			if r := recover(); r == nil {
-				t.Error("expected panic when serviceName not set")
-			}
-		}()
-		New(
+	t.Run("未设置serviceName时返回错误", func(t *testing.T) {
+		_, err := New(
 			WithDiscovery(&mockDiscovery{addrs: []string{"localhost:8080"}}),
 			WithLogger(testx.NopLogger()),
 		)
+		if err == nil {
+			t.Error("expected error when serviceName not set")
+		}
 	})
 
-	t.Run("未设置discovery时panic", func(t *testing.T) {
-		defer func() {
-			if r := recover(); r == nil {
-				t.Error("expected panic when discovery not set")
-			}
-		}()
-		New(
+	t.Run("未设置discovery时返回错误", func(t *testing.T) {
+		_, err := New(
 			WithServiceName("test-service"),
 			WithLogger(testx.NopLogger()),
 		)
+		if err == nil {
+			t.Error("expected error when discovery not set")
+		}
 	})
 
-	t.Run("未设置logger时panic", func(t *testing.T) {
-		defer func() {
-			if r := recover(); r == nil {
-				t.Error("expected panic when logger not set")
-			}
-		}()
-		New(
+	t.Run("未设置logger时返回错误", func(t *testing.T) {
+		_, err := New(
 			WithServiceName("test-service"),
 			WithDiscovery(&mockDiscovery{addrs: []string{"localhost:8080"}}),
 		)
+		if err == nil {
+			t.Error("expected error when logger not set")
+		}
 	})
 
 	t.Run("服务发现失败", func(t *testing.T) {

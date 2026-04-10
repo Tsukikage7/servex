@@ -16,6 +16,7 @@ import (
 
 // Publisher 通过 RabbitMQ 发布消息.
 type Publisher struct {
+	url    string
 	conn   *amqp.Connection
 	ch     *amqp.Channel
 	mu     sync.Mutex
@@ -45,13 +46,71 @@ func NewPublisher(url string, opts ...PublisherOption) (*Publisher, error) {
 		return nil, fmt.Errorf("pubsub/rabbitmq: 连接失败: %w", err)
 	}
 
-	p := &Publisher{conn: conn, opts: o}
+	p := &Publisher{url: url, conn: conn, opts: o}
 	if err := p.setupChannel(); err != nil {
 		conn.Close()
 		return nil, err
 	}
 
+	// 启动连接断开监听和自动重连
+	go p.reconnectLoop()
+
 	return p, nil
+}
+
+// reconnectLoop 监听连接关闭通知，自动重连（指数退避）.
+func (p *Publisher) reconnectLoop() {
+	for {
+		p.mu.Lock()
+		conn := p.conn
+		p.mu.Unlock()
+
+		if conn == nil || p.closed.Load() {
+			return
+		}
+
+		notifyClose := conn.NotifyClose(make(chan *amqp.Error, 1))
+		amqpErr, ok := <-notifyClose
+		if !ok || p.closed.Load() {
+			return
+		}
+
+		p.logf("连接断开: %v，开始重连", amqpErr)
+
+		backoff := time.Second
+		const maxBackoff = 30 * time.Second
+		for !p.closed.Load() {
+			newConn, err := amqp.Dial(p.url)
+			if err != nil {
+				p.logf("重连失败: %v，%v 后重试", err, backoff)
+				time.Sleep(backoff)
+				backoff *= 2
+				if backoff > maxBackoff {
+					backoff = maxBackoff
+				}
+				continue
+			}
+
+			p.mu.Lock()
+			p.conn = newConn
+			p.mu.Unlock()
+
+			if err := p.setupChannel(); err != nil {
+				p.logf("重连后创建 channel 失败: %v", err)
+				newConn.Close()
+				continue
+			}
+
+			p.logf("重连成功")
+			break
+		}
+	}
+}
+
+func (p *Publisher) logf(format string, args ...any) {
+	if p.opts.logger != nil {
+		p.opts.logger.Infof("[RabbitMQ/Publisher] "+format, args...)
+	}
 }
 
 func (p *Publisher) setupChannel() error {

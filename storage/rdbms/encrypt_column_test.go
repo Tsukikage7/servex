@@ -18,19 +18,41 @@ func TestEncryptColumnSuite(t *testing.T) {
 const testKey = "01234567890123456789012345678901"
 
 func (s *EncryptColumnTestSuite) TestNewEncryptColumn() {
-	ec := NewEncryptColumn("secret-ssn", testKey)
+	ec, err := NewEncryptColumn("secret-ssn", testKey)
+	s.NoError(err)
 	s.True(ec.Valid)
 	s.Equal("secret-ssn", ec.Val)
 	s.Equal(testKey, ec.Key)
 }
 
+func (s *EncryptColumnTestSuite) TestNewEncryptColumn_InvalidKeyLength() {
+	_, err := NewEncryptColumn("data", "short-key")
+	s.Error(err)
+	s.Contains(err.Error(), "无效的 AES 密钥长度")
+}
+
 func (s *EncryptColumnTestSuite) TestNullEncryptColumn() {
-	ec := NullEncryptColumn[string](testKey)
+	ec, err := NullEncryptColumn[string](testKey)
+	s.NoError(err)
 	s.False(ec.Valid)
 }
 
+func (s *EncryptColumnTestSuite) TestNullEncryptColumn_EmptyKey() {
+	// 空 key 允许（延迟注入密钥场景）
+	ec, err := NullEncryptColumn[string]("")
+	s.NoError(err)
+	s.False(ec.Valid)
+}
+
+func (s *EncryptColumnTestSuite) TestNullEncryptColumn_InvalidKeyLength() {
+	_, err := NullEncryptColumn[string]("short-key")
+	s.Error(err)
+	s.Contains(err.Error(), "无效的 AES 密钥长度")
+}
+
 func (s *EncryptColumnTestSuite) TestValue_Valid() {
-	ec := NewEncryptColumn("hello", testKey)
+	ec, err := NewEncryptColumn("hello", testKey)
+	s.NoError(err)
 	val, err := ec.Value()
 	s.NoError(err)
 	s.NotNil(val)
@@ -38,19 +60,22 @@ func (s *EncryptColumnTestSuite) TestValue_Valid() {
 }
 
 func (s *EncryptColumnTestSuite) TestValue_Null() {
-	ec := NullEncryptColumn[string](testKey)
+	ec, err := NullEncryptColumn[string](testKey)
+	s.NoError(err)
 	val, err := ec.Value()
 	s.NoError(err)
 	s.Nil(val)
 }
 
 func (s *EncryptColumnTestSuite) TestRoundTrip_String() {
-	original := NewEncryptColumn("sensitive-data-123", testKey)
+	original, err := NewEncryptColumn("sensitive-data-123", testKey)
+	s.NoError(err)
 
 	val, err := original.Value()
 	s.NoError(err)
 
-	restored := NullEncryptColumn[string](testKey)
+	restored, err := NullEncryptColumn[string](testKey)
+	s.NoError(err)
 	err = restored.Scan(val)
 	s.NoError(err)
 	s.True(restored.Valid)
@@ -63,12 +88,14 @@ func (s *EncryptColumnTestSuite) TestRoundTrip_Struct() {
 		Code int    `json:"code"`
 	}
 
-	original := NewEncryptColumn(secret{SSN: "123-45-6789", Code: 42}, testKey)
+	original, err := NewEncryptColumn(secret{SSN: "123-45-6789", Code: 42}, testKey)
+	s.NoError(err)
 
 	val, err := original.Value()
 	s.NoError(err)
 
-	restored := NullEncryptColumn[secret](testKey)
+	restored, err := NullEncryptColumn[secret](testKey)
+	s.NoError(err)
 	err = restored.Scan(val)
 	s.NoError(err)
 	s.True(restored.Valid)
@@ -77,24 +104,28 @@ func (s *EncryptColumnTestSuite) TestRoundTrip_Struct() {
 }
 
 func (s *EncryptColumnTestSuite) TestScan_Nil() {
-	ec := NewEncryptColumn("old", testKey)
-	err := ec.Scan(nil)
+	ec, err := NewEncryptColumn("old", testKey)
+	s.NoError(err)
+	err = ec.Scan(nil)
 	s.NoError(err)
 	s.False(ec.Valid)
 }
 
 func (s *EncryptColumnTestSuite) TestScan_UnsupportedType() {
-	ec := NullEncryptColumn[string](testKey)
-	err := ec.Scan(42)
+	ec, err := NullEncryptColumn[string](testKey)
+	s.NoError(err)
+	err = ec.Scan(42)
 	s.Error(err)
 }
 
 func (s *EncryptColumnTestSuite) TestScan_WithoutKey() {
-	original := NewEncryptColumn("data", testKey)
+	original, err := NewEncryptColumn("data", testKey)
+	s.NoError(err)
 	val, err := original.Value()
 	s.NoError(err)
 
-	noKey := NullEncryptColumn[string]("")
+	noKey, err := NullEncryptColumn[string]("")
+	s.NoError(err)
 	err = noKey.Scan(val)
 	s.NoError(err)
 	s.False(noKey.Valid)
@@ -102,11 +133,13 @@ func (s *EncryptColumnTestSuite) TestScan_WithoutKey() {
 }
 
 func (s *EncryptColumnTestSuite) TestDecrypt_AfterScanWithoutKey() {
-	original := NewEncryptColumn("secret-data", testKey)
+	original, err := NewEncryptColumn("secret-data", testKey)
+	s.NoError(err)
 	val, err := original.Value()
 	s.NoError(err)
 
-	ec := NullEncryptColumn[string]("")
+	ec, err := NullEncryptColumn[string]("")
+	s.NoError(err)
 	err = ec.Scan(val)
 	s.NoError(err)
 	s.False(ec.Valid)
@@ -120,8 +153,9 @@ func (s *EncryptColumnTestSuite) TestDecrypt_AfterScanWithoutKey() {
 }
 
 func (s *EncryptColumnTestSuite) TestDecrypt_AlreadyValid() {
-	ec := NewEncryptColumn("data", testKey)
-	err := ec.Decrypt()
+	ec, err := NewEncryptColumn("data", testKey)
+	s.NoError(err)
+	err = ec.Decrypt()
 	s.NoError(err)
 }
 
@@ -138,28 +172,33 @@ func (s *EncryptColumnTestSuite) TestDecrypt_NoCiphertext() {
 }
 
 func (s *EncryptColumnTestSuite) TestScan_WrongKey() {
-	original := NewEncryptColumn("data", testKey)
+	original, err := NewEncryptColumn("data", testKey)
+	s.NoError(err)
 	val, err := original.Value()
 	s.NoError(err)
 
 	wrongKey := "99999999999999999999999999999999"
-	restored := NullEncryptColumn[string](wrongKey)
+	restored, err := NullEncryptColumn[string](wrongKey)
+	s.NoError(err)
 	err = restored.Scan(val)
 	s.Error(err)
 }
 
 func (s *EncryptColumnTestSuite) TestScan_InvalidBase64() {
-	ec := NullEncryptColumn[string](testKey)
-	err := ec.Scan("not-valid-base64!!!")
+	ec, err := NullEncryptColumn[string](testKey)
+	s.NoError(err)
+	err = ec.Scan("not-valid-base64!!!")
 	s.Error(err)
 }
 
 func (s *EncryptColumnTestSuite) TestScan_ByteInput() {
-	original := NewEncryptColumn("test", testKey)
+	original, err := NewEncryptColumn("test", testKey)
+	s.NoError(err)
 	val, err := original.Value()
 	s.NoError(err)
 
-	restored := NullEncryptColumn[string](testKey)
+	restored, err := NullEncryptColumn[string](testKey)
+	s.NoError(err)
 	err = restored.Scan([]byte(val.(string)))
 	s.NoError(err)
 	s.True(restored.Valid)
@@ -167,16 +206,17 @@ func (s *EncryptColumnTestSuite) TestScan_ByteInput() {
 }
 
 func (s *EncryptColumnTestSuite) TestValue_InvalidKey() {
-	// Key 长度不合法（非 16/24/32 字节）
-	ec := NewEncryptColumn("data", "short-key")
-	_, err := ec.Value()
+	// 构造时就应该校验密钥长度
+	_, err := NewEncryptColumn("data", "short-key")
 	s.Error(err)
 }
 
 func (s *EncryptColumnTestSuite) TestDifferentEncryptions() {
 	// 相同数据加密两次，密文应不同（随机 nonce）
-	ec1 := NewEncryptColumn("same-data", testKey)
-	ec2 := NewEncryptColumn("same-data", testKey)
+	ec1, err := NewEncryptColumn("same-data", testKey)
+	s.NoError(err)
+	ec2, err := NewEncryptColumn("same-data", testKey)
+	s.NoError(err)
 
 	val1, err1 := ec1.Value()
 	val2, err2 := ec2.Value()

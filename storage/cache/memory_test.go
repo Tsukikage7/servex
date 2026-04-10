@@ -317,7 +317,8 @@ func (s *MemoryCacheTestSuite) TestPing() {
 
 func (s *MemoryCacheTestSuite) TestClient() {
 	client := s.cache.Client()
-	s.NotNil(client)
+	// 内存缓存无外部客户端，返回 nil 以避免暴露内部 map
+	s.Nil(client)
 }
 
 func (s *MemoryCacheTestSuite) TestSize() {

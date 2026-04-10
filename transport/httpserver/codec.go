@@ -41,11 +41,13 @@ func DecodeCodecRequest[T any]() DecodeRequestFunc {
 			return nil, encoding.ErrCodecNotFound
 		}
 
-		data, err := io.ReadAll(r.Body)
+		// 限制请求体大小，防止超大请求导致 OOM（默认 10MB）
+		const maxBodySize = 10 << 20
+		defer r.Body.Close()
+		data, err := io.ReadAll(io.LimitReader(r.Body, maxBodySize))
 		if err != nil {
 			return nil, err
 		}
-		defer r.Body.Close()
 
 		var req T
 		if err := codec.Unmarshal(data, &req); err != nil {

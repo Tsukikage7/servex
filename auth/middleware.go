@@ -48,6 +48,16 @@ func Middleware(authenticator Authenticator, opts ...Option) endpoint.Middleware
 				return nil, handleError(ctx, err, o)
 			}
 
+			// 检查主体是否已过期
+			if principal.IsExpired() {
+				if o.logger != nil {
+					logger.FromContext(ctx).Warn("[Auth] 主体已过期",
+						logger.String("principal_id", principal.ID),
+					)
+				}
+				return nil, handleError(ctx, ErrCredentialsExpired, o)
+			}
+
 			// 将主体存入 context
 			ctx = WithPrincipal(ctx, principal)
 

@@ -3,6 +3,7 @@ package eventsourcing
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 )
 
 // Repository 事件溯源聚合仓库.
@@ -13,6 +14,7 @@ type Repository[T Aggregate] struct {
 	snapshotStore SnapshotStore // 可选
 	factory       func() T      // 创建空聚合的工厂函数
 	snapshotEvery int64         // 每 N 个事件保存快照，0 表示不保存
+	logger        *slog.Logger  // 可选，用于记录快照操作日志
 }
 
 // RepositoryOption 仓库配置选项.
@@ -30,6 +32,13 @@ func WithSnapshotStore[T Aggregate](store SnapshotStore) RepositoryOption[T] {
 func WithSnapshotEvery[T Aggregate](n int64) RepositoryOption[T] {
 	return func(r *Repository[T]) {
 		r.snapshotEvery = n
+	}
+}
+
+// WithLogger 设置日志记录器.
+func WithLogger[T Aggregate](l *slog.Logger) RepositoryOption[T] {
+	return func(r *Repository[T]) {
+		r.logger = l
 	}
 }
 
@@ -65,16 +74,29 @@ func (r *Repository[T]) Save(ctx context.Context, aggregate T) error {
 		return err
 	}
 
-	// 尝试保存快照
+	// 尝试保存快照（失败仅记录日志，不影响主流程）
 	if r.snapshotStore != nil && r.snapshotEvery > 0 && aggregate.Version()%r.snapshotEvery == 0 {
 		data, err := json.Marshal(aggregate)
-		if err == nil {
-			_ = r.snapshotStore.Save(ctx, Snapshot{
-				AggregateID:   aggregate.AggregateID(),
-				AggregateType: aggregate.AggregateType(),
-				Version:       aggregate.Version(),
-				Data:          data,
-			})
+		if err != nil {
+			if r.logger != nil {
+				r.logger.Warn("[EventSourcing] 快照序列化失败",
+					"aggregate_id", aggregate.AggregateID(),
+					"error", err,
+				)
+			}
+		} else if err := r.snapshotStore.Save(ctx, Snapshot{
+			AggregateID:   aggregate.AggregateID(),
+			AggregateType: aggregate.AggregateType(),
+			Version:       aggregate.Version(),
+			Data:          data,
+		}); err != nil {
+			if r.logger != nil {
+				r.logger.Warn("[EventSourcing] 快照保存失败",
+					"aggregate_id", aggregate.AggregateID(),
+					"version", aggregate.Version(),
+					"error", err,
+				)
+			}
 		}
 	}
 
@@ -94,20 +116,31 @@ func (r *Repository[T]) Load(ctx context.Context, aggregateID string) (T, error)
 	aggregate := r.factory()
 	var fromVersion int64
 
-	// 尝试从快照恢复
+	// 尝试从快照恢复（失败时 fallback 从头加载）
 	if r.snapshotStore != nil {
 		snapshot, err := r.snapshotStore.Load(ctx, aggregateID)
 		if err != nil {
-			var zero T
-			return zero, err
-		}
-		if snapshot != nil {
-			if err := json.Unmarshal(snapshot.Data, aggregate); err != nil {
-				var zero T
-				return zero, err
+			if r.logger != nil {
+				r.logger.Warn("[EventSourcing] 快照加载失败，将从头重放事件",
+					"aggregate_id", aggregateID,
+					"error", err,
+				)
 			}
-			aggregate.SetVersion(snapshot.Version)
-			fromVersion = snapshot.Version
+			// fallback: 忽略快照错误，从头加载
+		} else if snapshot != nil {
+			if err := json.Unmarshal(snapshot.Data, aggregate); err != nil {
+				if r.logger != nil {
+					r.logger.Warn("[EventSourcing] 快照反序列化失败，将从头重放事件",
+						"aggregate_id", aggregateID,
+						"error", err,
+					)
+				}
+				// fallback: 重建空聚合，从头加载
+				aggregate = r.factory()
+			} else {
+				aggregate.SetVersion(snapshot.Version)
+				fromVersion = snapshot.Version
+			}
 		}
 	}
 

@@ -3,6 +3,7 @@ package delayqueue
 
 import (
 	"context"
+	"iter"
 	"sync"
 	"time"
 
@@ -15,9 +16,15 @@ type Delayable interface {
 	Delay() time.Duration
 }
 
+// entry 内部包装，在入队时记录固定 deadline，避免动态 Delay() 破坏堆不变式.
+type entry[T Delayable] struct {
+	item     T
+	deadline time.Time
+}
+
 // DelayQueue 延迟队列，元素只有在到期后才能被出队.
 type DelayQueue[T Delayable] struct {
-	pq     *priorityqueue.PriorityQueue[T]
+	pq     *priorityqueue.PriorityQueue[entry[T]]
 	mu     sync.Mutex
 	signal chan struct{}
 }
@@ -25,8 +32,8 @@ type DelayQueue[T Delayable] struct {
 // New 创建延迟队列，capacity 预留兼容性（当前未使用）.
 func New[T Delayable](capacity int) *DelayQueue[T] {
 	return &DelayQueue[T]{
-		pq: priorityqueue.New(func(a, b T) bool {
-			return a.Delay() < b.Delay()
+		pq: priorityqueue.New(func(a, b entry[T]) bool {
+			return a.deadline.Before(b.deadline)
 		}),
 		signal: make(chan struct{}, 1),
 	}
@@ -40,11 +47,14 @@ func (dq *DelayQueue[T]) Enqueue(ctx context.Context, item T) error {
 	default:
 	}
 
+	// 入队时记录固定 deadline，排序基于该值而非动态 Delay()
+	e := entry[T]{item: item, deadline: time.Now().Add(item.Delay())}
+
 	dq.mu.Lock()
 	oldTop, hadTop := dq.pq.Peek()
-	dq.pq.Push(item)
+	dq.pq.Push(e)
 	newTop, _ := dq.pq.Peek()
-	shouldSignal := !hadTop || newTop.Delay() < oldTop.Delay()
+	shouldSignal := !hadTop || newTop.deadline.Before(oldTop.deadline)
 	dq.mu.Unlock()
 
 	if shouldSignal {
@@ -76,11 +86,11 @@ func (dq *DelayQueue[T]) Dequeue(ctx context.Context) (T, error) {
 			}
 		}
 
-		delay := top.Delay()
+		delay := time.Until(top.deadline)
 		if delay <= 0 {
-			item, _ := dq.pq.Pop()
+			e, _ := dq.pq.Pop()
 			dq.mu.Unlock()
-			return item, nil
+			return e.item, nil
 		}
 		dq.mu.Unlock()
 
@@ -115,5 +125,21 @@ func (dq *DelayQueue[T]) notify() {
 	select {
 	case dq.signal <- struct{}{}:
 	default:
+	}
+}
+
+// All 返回按到期时间顺序遍历所有待处理元素的迭代器（快照，不出队）.
+// 遍历期间持有锁的快照副本，不会修改原队列.
+func (dq *DelayQueue[T]) All() iter.Seq[T] {
+	return func(yield func(T) bool) {
+		dq.mu.Lock()
+		clone := dq.pq.Clone()
+		dq.mu.Unlock()
+		for clone.Len() > 0 {
+			e, _ := clone.Pop()
+			if !yield(e.item) {
+				return
+			}
+		}
 	}
 }

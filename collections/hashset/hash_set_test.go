@@ -196,3 +196,34 @@ func (s *HashSetTestSuite) TestStringSet() {
 	s.True(hs.Contains("apple"))
 	s.False(hs.Contains("grape"))
 }
+
+func (s *HashSetTestSuite) TestAll() {
+	hs := New(1, 2, 3)
+	var items []int
+	for item := range hs.All() {
+		items = append(items, item)
+	}
+	sort.Ints(items)
+	s.Equal([]int{1, 2, 3}, items)
+}
+
+func (s *HashSetTestSuite) TestAllEmpty() {
+	hs := New[int]()
+	count := 0
+	for range hs.All() {
+		count++
+	}
+	s.Equal(0, count)
+}
+
+func (s *HashSetTestSuite) TestAllEarlyBreak() {
+	hs := New(1, 2, 3, 4, 5)
+	count := 0
+	for range hs.All() {
+		count++
+		if count == 2 {
+			break
+		}
+	}
+	s.Equal(2, count)
+}

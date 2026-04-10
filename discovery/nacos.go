@@ -172,6 +172,13 @@ func (n *nacosDiscovery) Unregister(ctx context.Context, serviceID string) error
 		return ErrEmptyServiceID
 	}
 
+	// 检查 ctx 是否已取消
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	n.mu.Lock()
 	info, ok := n.instances[serviceID]
 	if ok {
@@ -183,13 +190,31 @@ func (n *nacosDiscovery) Unregister(ctx context.Context, serviceID string) error
 		return nil
 	}
 
-	success, err := n.client.DeregisterInstance(vo.DeregisterInstanceParam{
-		Ip:          info.ip,
-		Port:        info.port,
-		ServiceName: info.serviceName,
-		GroupName:   n.groupName,
-		Ephemeral:   true,
-	})
+	// 通过 goroutine + select 传递 ctx 超时控制
+	type result struct {
+		success bool
+		err     error
+	}
+	ch := make(chan result, 1)
+	go func() {
+		s, e := n.client.DeregisterInstance(vo.DeregisterInstanceParam{
+			Ip:          info.ip,
+			Port:        info.port,
+			ServiceName: info.serviceName,
+			GroupName:   n.groupName,
+			Ephemeral:   true,
+		})
+		ch <- result{s, e}
+	}()
+
+	var success bool
+	var err error
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case r := <-ch:
+		success, err = r.success, r.err
+	}
 	if err != nil || !success {
 		n.logger.With(
 			logger.String("serviceID", serviceID),

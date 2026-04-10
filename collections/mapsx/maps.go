@@ -1,5 +1,8 @@
 // Package mapsx 提供 map 操作的工具函数.
+// 注意：本包的函数非并发安全，如需在多 goroutine 中使用请自行加锁.
 package mapsx
+
+import "iter"
 
 // Keys 返回 map 的所有键.
 // 示例:
@@ -385,6 +388,52 @@ func MergeFunc[K comparable, V any](mergeFunc func(v1, v2 V) V, maps ...map[K]V)
 				result[k] = v
 			}
 		}
+	}
+	return result
+}
+
+// IterAll 返回遍历 map 所有键值对的迭代器（顺序不确定）.
+// 等价于标准库 maps.All.
+func IterAll[K comparable, V any](m map[K]V) iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		for k, v := range m {
+			if !yield(k, v) {
+				return
+			}
+		}
+	}
+}
+
+// IterKeys 返回遍历 map 所有键的迭代器（顺序不确定）.
+// 等价于标准库 maps.Keys.
+func IterKeys[K comparable, V any](m map[K]V) iter.Seq[K] {
+	return func(yield func(K) bool) {
+		for k := range m {
+			if !yield(k) {
+				return
+			}
+		}
+	}
+}
+
+// IterValues 返回遍历 map 所有值的迭代器（顺序不确定）.
+// 等价于标准库 maps.Values.
+func IterValues[K comparable, V any](m map[K]V) iter.Seq[V] {
+	return func(yield func(V) bool) {
+		for _, v := range m {
+			if !yield(v) {
+				return
+			}
+		}
+	}
+}
+
+// Collect 从键值对迭代器收集到 map.
+// 等价于标准库 maps.Collect.
+func Collect[K comparable, V any](seq iter.Seq2[K, V]) map[K]V {
+	result := make(map[K]V)
+	for k, v := range seq {
+		result[k] = v
 	}
 	return result
 }

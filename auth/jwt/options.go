@@ -1,7 +1,13 @@
 package jwt
 
 import (
+	"crypto"
+	"crypto/ecdsa"
+	"crypto/ed25519"
+	"crypto/rsa"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/Tsukikage7/servex/observability/logger"
 )
@@ -22,6 +28,11 @@ type options struct {
 	store           TokenStore
 	logger          logger.Logger
 	whitelist       *Whitelist
+
+	// 非对称签名相关字段
+	signingMethod jwt.SigningMethod // 签名算法（nil 表示使用默认的 HS256）
+	privateKey    crypto.PrivateKey // 签名私钥（用于生成令牌）
+	publicKey     crypto.PublicKey  // 验证公钥（用于验证令牌）
 }
 
 // defaultOptions 返回默认配置.
@@ -124,5 +135,113 @@ func WithLogger(log logger.Logger) Option {
 func WithWhitelist(w *Whitelist) Option {
 	return func(o *options) {
 		o.whitelist = w
+	}
+}
+
+// WithRSAKeys 使用 RSA 密钥对进行签名和验证（RS256）.
+//
+// privateKey 用于签名（可为 nil，仅验证时），publicKey 用于验证.
+func WithRSAKeys(privateKey *rsa.PrivateKey, publicKey *rsa.PublicKey) Option {
+	return func(o *options) {
+		o.signingMethod = jwt.SigningMethodRS256
+		if privateKey != nil {
+			o.privateKey = privateKey
+		}
+		if publicKey != nil {
+			o.publicKey = publicKey
+		}
+	}
+}
+
+// WithECDSAKeys 使用 ECDSA 密钥对进行签名和验证（ES256）.
+//
+// privateKey 用于签名（可为 nil，仅验证时），publicKey 用于验证.
+func WithECDSAKeys(privateKey *ecdsa.PrivateKey, publicKey *ecdsa.PublicKey) Option {
+	return func(o *options) {
+		o.signingMethod = jwt.SigningMethodES256
+		if privateKey != nil {
+			o.privateKey = privateKey
+		}
+		if publicKey != nil {
+			o.publicKey = publicKey
+		}
+	}
+}
+
+// WithEdDSAKeys 使用 Ed25519 密钥对进行签名和验证（EdDSA）.
+//
+// privateKey 用于签名（可为 nil，仅验证时），publicKey 用于验证.
+func WithEdDSAKeys(privateKey ed25519.PrivateKey, publicKey ed25519.PublicKey) Option {
+	return func(o *options) {
+		o.signingMethod = jwt.SigningMethodEdDSA
+		if privateKey != nil {
+			o.privateKey = privateKey
+		}
+		if publicKey != nil {
+			o.publicKey = publicKey
+		}
+	}
+}
+
+// WithRSAKeyFiles 从 PEM 文件加载 RSA 密钥对（RS256）.
+//
+// 如果 privateKeyPath 为空，则只加载公钥（仅验证模式）.
+func WithRSAKeyFiles(privateKeyPath, publicKeyPath string) Option {
+	return func(o *options) {
+		o.signingMethod = jwt.SigningMethodRS256
+		if privateKeyPath != "" {
+			privKey, err := LoadRSAPrivateKeyFile(privateKeyPath)
+			if err != nil {
+				panic("jwt: 加载 RSA 私钥文件失败: " + err.Error())
+			}
+			o.privateKey = privKey
+		}
+		pubKey, err := LoadRSAPublicKeyFile(publicKeyPath)
+		if err != nil {
+			panic("jwt: 加载 RSA 公钥文件失败: " + err.Error())
+		}
+		o.publicKey = pubKey
+	}
+}
+
+// WithECDSAKeyFiles 从 PEM 文件加载 ECDSA 密钥对（ES256）.
+//
+// 如果 privateKeyPath 为空，则只加载公钥（仅验证模式）.
+func WithECDSAKeyFiles(privateKeyPath, publicKeyPath string) Option {
+	return func(o *options) {
+		o.signingMethod = jwt.SigningMethodES256
+		if privateKeyPath != "" {
+			privKey, err := LoadECDSAPrivateKeyFile(privateKeyPath)
+			if err != nil {
+				panic("jwt: 加载 ECDSA 私钥文件失败: " + err.Error())
+			}
+			o.privateKey = privKey
+		}
+		pubKey, err := LoadECDSAPublicKeyFile(publicKeyPath)
+		if err != nil {
+			panic("jwt: 加载 ECDSA 公钥文件失败: " + err.Error())
+		}
+		o.publicKey = pubKey
+	}
+}
+
+// WithEdDSAKeyFiles 从 PEM 文件加载 Ed25519 密钥对（EdDSA）.
+//
+// 如果 privateKeyPath 为空，则只加载公钥（仅验证模式）.
+func WithEdDSAKeyFiles(privateKeyPath, publicKeyPath string) Option {
+	return func(o *options) {
+		o.signingMethod = jwt.SigningMethodEdDSA
+		if privateKeyPath != "" {
+			privKey, err := LoadEdDSAPrivateKeyFile(privateKeyPath)
+			if err != nil {
+				panic("jwt: 加载 Ed25519 私钥文件失败: " + err.Error())
+			}
+			o.privateKey = privKey
+		}
+		pubKey, err := LoadEdDSAPublicKeyFile(publicKeyPath)
+		if err != nil {
+			panic("jwt: 加载 Ed25519 公钥文件失败: " + err.Error())
+		}
+		o.publicKey = pubKey
 	}
 }

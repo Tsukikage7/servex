@@ -156,6 +156,9 @@ func ContextWithSpanID(ctx context.Context, spanID string) context.Context {
 	return context.WithValue(ctx, SpanIDKey, spanID)
 }
 
+// Nop 返回空日志实现，不输出任何内容.
+func Nop() Logger { return &nopLogger{} }
+
 // nopLogger 空日志实现，FromContext 在 context 中找不到 logger 时的回退.
 type nopLogger struct{}
 

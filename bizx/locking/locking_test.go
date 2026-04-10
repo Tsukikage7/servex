@@ -94,12 +94,15 @@ func TestReentrantLock(t *testing.T) {
 	locker := newMockLocker()
 	rl := NewReentrantLock(locker, "test:reentrant", WithTTL(5*time.Second))
 
+	// 使用 token 标识持有者
+	ctx = WithLockToken(ctx, "holder-1")
+
 	// 第一次加锁
 	err := rl.Lock(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 1, rl.LockCount())
 
-	// 第二次加锁（可重入）
+	// 第二次加锁（相同 token 可重入）
 	err = rl.Lock(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 2, rl.LockCount())

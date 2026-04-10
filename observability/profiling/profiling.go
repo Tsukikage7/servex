@@ -74,16 +74,23 @@ type Config struct {
 	OutputDir string
 	// Labels 附加标签（如 service、env）.
 	Labels map[string]string
+	// BlockProfileRate 阻塞剖析采样率（默认 1000000，即每百万次阻塞事件采样一次）.
+	// 设为 1 可获得最精确的数据，但生产环境开销较大.
+	BlockProfileRate int
+	// MutexProfileFraction 互斥锁剖析采样分数（默认 100）.
+	MutexProfileFraction int
 }
 
 // DefaultConfig 返回默认配置.
 func DefaultConfig() *Config {
 	return &Config{
-		Enabled:  true,
-		Types:    []ProfileType{ProfileCPU, ProfileHeap, ProfileGoroutine},
-		Interval: 60 * time.Second,
-		Duration: 10 * time.Second,
-		Labels:   make(map[string]string),
+		Enabled:              true,
+		Types:                []ProfileType{ProfileCPU, ProfileHeap, ProfileGoroutine},
+		Interval:             60 * time.Second,
+		Duration:             10 * time.Second,
+		Labels:               make(map[string]string),
+		BlockProfileRate:     1000000, // 每百万次阻塞事件采样一次，适用于生产环境
+		MutexProfileFraction: 100,
 	}
 }
 
@@ -160,6 +167,7 @@ type Profiler struct {
 	mu             sync.RWMutex
 	running        bool
 	cancel         context.CancelFunc
+	wg             sync.WaitGroup
 	lastCollected  time.Time
 	collectedCount atomic.Int64
 	errorCount     atomic.Int64
@@ -216,13 +224,21 @@ func (p *Profiler) Start(ctx context.Context) error {
 		return nil
 	}
 
-	// 开启 block 和 mutex 剖析
+	// 开启 block 和 mutex 剖析，使用可配置的采样率
 	for _, t := range p.config.Types {
 		switch t {
 		case ProfileBlock:
-			runtime.SetBlockProfileRate(1)
+			rate := p.config.BlockProfileRate
+			if rate <= 0 {
+				rate = 1000000
+			}
+			runtime.SetBlockProfileRate(rate)
 		case ProfileMutex:
-			runtime.SetMutexProfileFraction(1)
+			frac := p.config.MutexProfileFraction
+			if frac <= 0 {
+				frac = 100
+			}
+			runtime.SetMutexProfileFraction(frac)
 		}
 	}
 
@@ -230,7 +246,11 @@ func (p *Profiler) Start(ctx context.Context) error {
 	p.cancel = cancel
 	p.running = true
 
-	go p.loop(ctx)
+	p.wg.Add(1)
+	go func() {
+		defer p.wg.Done()
+		p.loop(ctx)
+	}()
 
 	p.printf("profiling: 已启动，间隔=%s, 类型=%v", p.config.Interval, p.config.Types)
 	return nil
@@ -239,14 +259,17 @@ func (p *Profiler) Start(ctx context.Context) error {
 // Stop 停止周期采集.
 func (p *Profiler) Stop(_ context.Context) error {
 	p.mu.Lock()
-	defer p.mu.Unlock()
-
 	if !p.running {
+		p.mu.Unlock()
 		return ErrNotRunning
 	}
 
 	p.cancel()
 	p.running = false
+	p.mu.Unlock()
+
+	// 等待采集 goroutine 退出.
+	p.wg.Wait()
 
 	// 重置 block 和 mutex 剖析率
 	runtime.SetBlockProfileRate(0)

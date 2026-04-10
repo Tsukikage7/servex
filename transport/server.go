@@ -56,7 +56,7 @@ type HTTPConfig struct {
 type GRPCConfig struct {
 	Name             string        `json:"name" yaml:"name" mapstructure:"name"`
 	Addr             string        `json:"addr" yaml:"addr" mapstructure:"addr"`
-	EnableReflection bool          `json:"enable_reflection" yaml:"enable_reflection" mapstructure:"enable_reflection"`
+	EnableReflection *bool        `json:"enable_reflection" yaml:"enable_reflection" mapstructure:"enable_reflection"`
 	KeepaliveTime    time.Duration `json:"keepalive_time" yaml:"keepalive_time" mapstructure:"keepalive_time"`
 	KeepaliveTimeout time.Duration `json:"keepalive_timeout" yaml:"keepalive_timeout" mapstructure:"keepalive_timeout"`
 	PublicMethods    []string      `json:"public_methods" yaml:"public_methods" mapstructure:"public_methods"`

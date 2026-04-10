@@ -149,6 +149,7 @@ func (c *memoryCounter) MGet(_ context.Context, keys ...string) (map[string]int6
 }
 
 // filterAfter 返回在 cutoff 之后（含）的时间戳.
+// 当有效元素不足底层数组容量一半时，重新分配切片以释放内存.
 func filterAfter(times []time.Time, cutoff time.Time) []time.Time {
 	n := 0
 	for _, t := range times {
@@ -157,7 +158,14 @@ func filterAfter(times []time.Time, cutoff time.Time) []time.Time {
 			n++
 		}
 	}
-	return times[:n]
+	times = times[:n]
+	// 有效元素不足底层容量一半时，拷贝到新切片释放旧数组
+	if n > 0 && n < cap(times)/2 {
+		shrunk := make([]time.Time, n)
+		copy(shrunk, times)
+		return shrunk
+	}
+	return times
 }
 
 // ---- Redis 实现 ----

@@ -24,7 +24,7 @@ type Client struct {
 	opts *options
 }
 
-// New 创建 gRPC 客户端，必需设置 serviceName、discovery、logger，否则会 panic.
+// New 创建 gRPC 客户端，必需设置 serviceName、discovery、logger，否则返回错误.
 func New(opts ...Option) (*Client, error) {
 	o := defaultOptions()
 	for _, opt := range opts {
@@ -33,13 +33,13 @@ func New(opts ...Option) (*Client, error) {
 
 	// 验证必需参数
 	if o.serviceName == "" {
-		panic("grpc client: 必须设置 serviceName")
+		return nil, fmt.Errorf("grpc client: 必须设置 serviceName")
 	}
 	if o.discovery == nil {
-		panic("grpc client: 必须设置 discovery")
+		return nil, fmt.Errorf("grpc client: 必须设置 discovery")
 	}
 	if o.logger == nil {
-		panic("grpc client: 必须设置 logger")
+		return nil, fmt.Errorf("grpc client: 必须设置 logger")
 	}
 
 	// 服务发现
@@ -165,9 +165,9 @@ func buildDialOptions(o *options) []grpc.DialOption {
 // dialWithTimeout 使用可选超时创建 gRPC 连接.
 func dialWithTimeout(target string, timeout time.Duration, dialOpts ...grpc.DialOption) (*grpc.ClientConn, error) {
 	if timeout > 0 {
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
-		defer cancel()
-		return grpc.DialContext(ctx, target, dialOpts...)
+		dialOpts = append(dialOpts, grpc.WithConnectParams(grpc.ConnectParams{
+			MinConnectTimeout: timeout,
+		}))
 	}
 	return grpc.NewClient(target, dialOpts...)
 }

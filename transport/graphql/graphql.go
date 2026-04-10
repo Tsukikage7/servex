@@ -4,7 +4,9 @@ package graphql
 import (
 	"context"
 	"encoding/json"
+	"html/template"
 	"net/http"
+	"strings"
 
 	gql "github.com/graphql-go/graphql"
 	"github.com/graphql-go/graphql/gqlerrors"
@@ -173,9 +175,8 @@ func (s *Server) writeError(w http.ResponseWriter, err error, status int) {
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
-// playgroundHTML 生成 GraphiQL playground 的 HTML 页面.
-func playgroundHTML(endpoint string) string {
-	return `<!DOCTYPE html>
+// playgroundTmpl GraphiQL playground HTML 模板，endpoint 经过安全转义.
+var playgroundTmpl = template.Must(template.New("graphiql").Parse(`<!DOCTYPE html>
 <html>
 <head>
   <title>GraphiQL</title>
@@ -192,7 +193,7 @@ func playgroundHTML(endpoint string) string {
   <script crossorigin src="https://unpkg.com/graphiql/graphiql.min.js"></script>
   <script>
     const graphQLFetcher = graphQLParams =>
-      fetch('` + endpoint + `', {
+      fetch({{.Endpoint}}, {
         method: 'post',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(graphQLParams),
@@ -203,5 +204,11 @@ func playgroundHTML(endpoint string) string {
     );
   </script>
 </body>
-</html>`
+</html>`))
+
+// playgroundHTML 生成 GraphiQL playground 的 HTML 页面，endpoint 经过 JS 转义防止 XSS.
+func playgroundHTML(endpoint string) string {
+	var b strings.Builder
+	_ = playgroundTmpl.Execute(&b, struct{ Endpoint string }{Endpoint: endpoint})
+	return b.String()
 }

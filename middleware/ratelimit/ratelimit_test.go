@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 	"testing"
+	"testing/synctest"
 	"time"
 )
 
@@ -27,20 +28,22 @@ func TestTokenBucket(t *testing.T) {
 	})
 
 	t.Run("令牌补充", func(t *testing.T) {
-		limiter := NewTokenBucket(10, 2)
-		ctx := t.Context()
+		synctest.Test(t, func(t *testing.T) {
+			limiter := NewTokenBucket(10, 2)
+			ctx := t.Context()
 
-		// 消耗所有令牌
-		limiter.Allow(ctx)
-		limiter.Allow(ctx)
+			// 消耗所有令牌
+			limiter.Allow(ctx)
+			limiter.Allow(ctx)
 
-		// 等待令牌补充
-		time.Sleep(200 * time.Millisecond)
+			// synctest 虚拟时钟：立即推进，无需真实等待
+			time.Sleep(200 * time.Millisecond)
 
-		// 应该可以通过
-		if !limiter.Allow(ctx) {
-			t.Error("等待后应该有令牌")
-		}
+			// 应该可以通过
+			if !limiter.Allow(ctx) {
+				t.Error("等待后应该有令牌")
+			}
+		})
 	})
 
 	t.Run("AllowN", func(t *testing.T) {
@@ -111,18 +114,20 @@ func TestSlidingWindow(t *testing.T) {
 	})
 
 	t.Run("窗口滑动", func(t *testing.T) {
-		limiter := NewSlidingWindow(2, 100*time.Millisecond)
-		ctx := t.Context()
+		synctest.Test(t, func(t *testing.T) {
+			limiter := NewSlidingWindow(2, 100*time.Millisecond)
+			ctx := t.Context()
 
-		limiter.Allow(ctx)
-		limiter.Allow(ctx)
+			limiter.Allow(ctx)
+			limiter.Allow(ctx)
 
-		// 等待窗口过期
-		time.Sleep(150 * time.Millisecond)
+			// synctest 虚拟时钟：立即推进，无需真实等待
+			time.Sleep(150 * time.Millisecond)
 
-		if !limiter.Allow(ctx) {
-			t.Error("窗口过期后应该允许请求")
-		}
+			if !limiter.Allow(ctx) {
+				t.Error("窗口过期后应该允许请求")
+			}
+		})
 	})
 
 	t.Run("并发安全", func(t *testing.T) {
@@ -167,18 +172,20 @@ func TestFixedWindow(t *testing.T) {
 	})
 
 	t.Run("窗口重置", func(t *testing.T) {
-		limiter := NewFixedWindow(2, 100*time.Millisecond)
-		ctx := t.Context()
+		synctest.Test(t, func(t *testing.T) {
+			limiter := NewFixedWindow(2, 100*time.Millisecond)
+			ctx := t.Context()
 
-		limiter.Allow(ctx)
-		limiter.Allow(ctx)
+			limiter.Allow(ctx)
+			limiter.Allow(ctx)
 
-		// 等待窗口重置
-		time.Sleep(150 * time.Millisecond)
+			// synctest 虚拟时钟：立即推进，无需真实等待
+			time.Sleep(150 * time.Millisecond)
 
-		if !limiter.Allow(ctx) {
-			t.Error("窗口重置后应该允许请求")
-		}
+			if !limiter.Allow(ctx) {
+				t.Error("窗口重置后应该允许请求")
+			}
+		})
 	})
 }
 

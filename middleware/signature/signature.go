@@ -50,6 +50,7 @@ type Config struct {
 	TimestampHeader string        // 时间戳头名，默认 "X-Timestamp"
 	MaxAge          time.Duration // 签名最大有效期，默认 5 分钟（防重放）
 	Algorithm       string        // "sha256" (默认) 或 "sha512"
+	MaxBodySize     int64         // 请求体最大字节数，默认 1MB（0 表示不限制）
 }
 
 // DefaultConfig 创建默认签名配置.
@@ -60,6 +61,7 @@ func DefaultConfig(secret string) *Config {
 		TimestampHeader: "X-Timestamp",
 		MaxAge:          5 * time.Minute,
 		Algorithm:       "sha256",
+		MaxBodySize:     1 << 20, // 1MB
 	}
 }
 
@@ -90,14 +92,29 @@ func newHMAC(algorithm string, secret []byte) hash.Hash {
 }
 
 // Sign 对请求体签名.
-// 签名算法: HMAC-SHA256(secret, timestamp + "." + body)
+// 签名算法: HMAC-SHA256(secret, method + "." + path + "." + timestamp + "." + body)
 func Sign(body []byte, timestamp string, secret string) string {
-	return signWithAlgorithm(body, timestamp, secret, "sha256")
+	return signWithAlgorithm(body, "", "", timestamp, secret, "sha256")
+}
+
+// SignWithMethodPath 对请求体签名，包含 HTTP 方法和路径.
+// 签名算法: HMAC-SHA256(secret, method + "." + path + "." + timestamp + "." + body)
+func SignWithMethodPath(body []byte, method, path, timestamp, secret string) string {
+	return signWithAlgorithm(body, method, path, timestamp, secret, "sha256")
 }
 
 // signWithAlgorithm 使用指定算法签名.
-func signWithAlgorithm(body []byte, timestamp string, secret string, algorithm string) string {
+// 签名内容包含 method、path、timestamp 和 body，防止跨方法/路径重放.
+func signWithAlgorithm(body []byte, method, path, timestamp string, secret string, algorithm string) string {
 	h := newHMAC(algorithm, []byte(secret))
+	if method != "" {
+		h.Write([]byte(method))
+		h.Write([]byte("."))
+	}
+	if path != "" {
+		h.Write([]byte(path))
+		h.Write([]byte("."))
+	}
 	h.Write([]byte(timestamp))
 	h.Write([]byte("."))
 	h.Write(body)
@@ -108,6 +125,12 @@ func signWithAlgorithm(body []byte, timestamp string, secret string, algorithm s
 // 使用常量时间比较防止时序攻击.
 func Verify(body []byte, timestamp, sig, secret string) bool {
 	expected := Sign(body, timestamp, secret)
+	return hmac.Equal([]byte(expected), []byte(sig))
+}
+
+// VerifyWithMethodPath 验证包含 HTTP 方法和路径的签名.
+func VerifyWithMethodPath(body []byte, method, path, timestamp, sig, secret string) bool {
+	expected := SignWithMethodPath(body, method, path, timestamp, secret)
 	return hmac.Equal([]byte(expected), []byte(sig))
 }
 
@@ -152,17 +175,25 @@ func HTTPMiddleware(cfg *Config) func(http.Handler) http.Handler {
 				return
 			}
 
-			// 读取 body
-			body, err := io.ReadAll(r.Body)
+			// 读取 body（限制大小）
+			var bodyReader io.Reader = r.Body
+			if cfg.MaxBodySize > 0 {
+				bodyReader = io.LimitReader(r.Body, cfg.MaxBodySize+1)
+			}
+			body, err := io.ReadAll(bodyReader)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("failed to read body: %v", err), http.StatusBadRequest)
+				return
+			}
+			if cfg.MaxBodySize > 0 && int64(len(body)) > cfg.MaxBodySize {
+				http.Error(w, "request body too large", http.StatusRequestEntityTooLarge)
 				return
 			}
 			// 恢复 body
 			r.Body = io.NopCloser(bytes.NewReader(body))
 
-			// 验证签名
-			expected := signWithAlgorithm(body, tsStr, cfg.Secret, cfg.Algorithm)
+			// 验证签名（包含 HTTP 方法和路径）
+			expected := signWithAlgorithm(body, r.Method, r.URL.Path, tsStr, cfg.Secret, cfg.Algorithm)
 			if !hmac.Equal([]byte(expected), []byte(sig)) {
 				http.Error(w, ErrInvalidSignature.Error(), http.StatusUnauthorized)
 				return
@@ -197,8 +228,8 @@ func SignRequestWithConfig(req *http.Request, cfg *Config) error {
 	// 生成时间戳
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 
-	// 计算签名
-	sig := signWithAlgorithm(body, timestamp, cfg.Secret, cfg.Algorithm)
+	// 计算签名（包含 HTTP 方法和路径）
+	sig := signWithAlgorithm(body, req.Method, req.URL.Path, timestamp, cfg.Secret, cfg.Algorithm)
 
 	// 设置 headers
 	req.Header.Set(cfg.TimestampHeader, timestamp)

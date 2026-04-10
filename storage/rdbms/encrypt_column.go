@@ -33,13 +33,23 @@ type EncryptColumn[T any] struct {
 }
 
 // NewEncryptColumn 创建有效的加密列值.
-func NewEncryptColumn[T any](val T, key string) EncryptColumn[T] {
-	return EncryptColumn[T]{Val: val, Valid: true, Key: key}
+// key 必须为 16/24/32 字节（分别对应 AES-128/192/256）.
+func NewEncryptColumn[T any](val T, key string) (EncryptColumn[T], error) {
+	if err := validateAESKey(key); err != nil {
+		return EncryptColumn[T]{}, err
+	}
+	return EncryptColumn[T]{Val: val, Valid: true, Key: key}, nil
 }
 
 // NullEncryptColumn 创建空值的加密列.
-func NullEncryptColumn[T any](key string) EncryptColumn[T] {
-	return EncryptColumn[T]{Key: key}
+// key 为空时允许（用于延迟注入密钥场景），非空时必须为 16/24/32 字节.
+func NullEncryptColumn[T any](key string) (EncryptColumn[T], error) {
+	if key != "" {
+		if err := validateAESKey(key); err != nil {
+			return EncryptColumn[T]{}, err
+		}
+	}
+	return EncryptColumn[T]{Key: key}, nil
 }
 
 func (ec EncryptColumn[T]) Value() (driver.Value, error) {
@@ -132,6 +142,14 @@ func (ec *EncryptColumn[T]) Decrypt() error {
 
 func (EncryptColumn[T]) GormDBDataType(_ *gorm.DB, _ *schema.Field) string {
 	return "TEXT"
+}
+
+// validateAESKey 校验 AES 密钥长度.
+func validateAESKey(key string) error {
+	if n := len(key); n != 16 && n != 24 && n != 32 {
+		return fmt.Errorf("database: 无效的 AES 密钥长度 %d，必须为 16/24/32 字节", n)
+	}
+	return nil
 }
 
 func aesGCMEncrypt(plaintext, key []byte) ([]byte, error) {

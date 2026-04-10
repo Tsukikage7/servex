@@ -42,7 +42,7 @@ var (
 // Config Redis 配置.
 type Config struct {
 	Addr          string        `json:"addr" yaml:"addr" mapstructure:"addr"`
-	Password      string        `json:"password" yaml:"password" mapstructure:"password"`
+	Password      string        `json:"-" yaml:"password" mapstructure:"password"`
 	DB            int           `json:"db" yaml:"db" mapstructure:"db"`
 	MaxRetries    int           `json:"max_retries" yaml:"max_retries" mapstructure:"max_retries"`
 	PoolSize      int           `json:"pool_size" yaml:"pool_size" mapstructure:"pool_size"`
@@ -186,11 +186,12 @@ func NewClient(config *Config, log logger.Logger) (Client, error) {
 	if log == nil {
 		return nil, ErrNilLogger
 	}
+	// 先填充默认值，再校验
+	config.ApplyDefaults()
+
 	if err := config.Validate(); err != nil {
 		return nil, err
 	}
-
-	config.ApplyDefaults()
 
 	rdb := goredis.NewClient(&goredis.Options{
 		Addr:         config.Addr,

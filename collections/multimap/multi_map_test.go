@@ -160,3 +160,40 @@ func (s *MultiMapTestSuite) TestClear() {
 	s.Equal(0, m.KeyLen())
 	s.Nil(m.Get("a"))
 }
+
+func (s *MultiMapTestSuite) TestAll() {
+	m := New[string, int]()
+	m.PutAll("a", 1, 2)
+	m.Put("b", 3)
+
+	total := 0
+	for _, vals := range m.All() {
+		total += len(vals)
+	}
+	s.Equal(3, total)
+}
+
+func (s *MultiMapTestSuite) TestAllEmpty() {
+	m := New[string, int]()
+	count := 0
+	for range m.All() {
+		count++
+	}
+	s.Equal(0, count)
+}
+
+func (s *MultiMapTestSuite) TestAllEarlyBreak() {
+	m := New[string, int]()
+	m.Put("a", 1)
+	m.Put("b", 2)
+	m.Put("c", 3)
+
+	count := 0
+	for range m.All() {
+		count++
+		if count == 1 {
+			break
+		}
+	}
+	s.Equal(1, count)
+}

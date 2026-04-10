@@ -1,5 +1,8 @@
 // Package deque 提供双端队列实现.
+// 注意：本包的数据结构非并发安全，如需在多 goroutine 中使用请自行加锁.
 package deque
+
+import "iter"
 
 const minCapacity = 8
 
@@ -216,6 +219,39 @@ func (d *Deque[T]) Reverse() {
 		idxI := (d.head + i) & (len(d.buf) - 1)
 		idxJ := (d.head + j) & (len(d.buf) - 1)
 		d.buf[idxI], d.buf[idxJ] = d.buf[idxJ], d.buf[idxI]
+	}
+}
+
+// All 返回从头到尾遍历所有元素的迭代器，产出 (索引, 值).
+func (d *Deque[T]) All() iter.Seq2[int, T] {
+	return func(yield func(int, T) bool) {
+		for i := range d.count {
+			if !yield(i, d.buf[(d.head+i)&(len(d.buf)-1)]) {
+				return
+			}
+		}
+	}
+}
+
+// Backward 返回从尾到头遍历所有元素的迭代器，产出 (索引, 值).
+func (d *Deque[T]) Backward() iter.Seq2[int, T] {
+	return func(yield func(int, T) bool) {
+		for i := d.count - 1; i >= 0; i-- {
+			if !yield(i, d.buf[(d.head+i)&(len(d.buf)-1)]) {
+				return
+			}
+		}
+	}
+}
+
+// Values 返回从头到尾遍历所有元素值的迭代器.
+func (d *Deque[T]) Values() iter.Seq[T] {
+	return func(yield func(T) bool) {
+		for i := range d.count {
+			if !yield(d.buf[(d.head+i)&(len(d.buf)-1)]) {
+				return
+			}
+		}
 	}
 }
 

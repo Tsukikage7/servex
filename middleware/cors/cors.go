@@ -150,10 +150,26 @@ func HTTPMiddleware(opts ...Option) func(http.Handler) http.Handler {
 }
 
 // isOriginAllowed 检查 origin 是否在白名单中.
+// 支持精确匹配和子域名通配符（如 "*.example.com"）.
 func isOriginAllowed(origin string, allowed []string) bool {
 	for _, a := range allowed {
 		if a == "*" || strings.EqualFold(a, origin) {
 			return true
+		}
+		// 支持子域名通配符，如 "*.example.com" 匹配 "foo.example.com"
+		if strings.HasPrefix(a, "*.") {
+			// 提取通配符的域名后缀，如 "*.example.com" -> ".example.com"
+			suffix := a[1:] // ".example.com"
+			if strings.HasSuffix(strings.ToLower(origin), strings.ToLower(suffix)) {
+				// 确保 origin 中包含协议头，提取 host 部分
+				// origin 格式通常为 "https://sub.example.com"
+				if idx := strings.Index(origin, "://"); idx != -1 {
+					host := origin[idx+3:]
+					if strings.HasSuffix(strings.ToLower(host), strings.ToLower(suffix)) {
+						return true
+					}
+				}
+			}
 		}
 	}
 	return false

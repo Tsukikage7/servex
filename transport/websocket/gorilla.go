@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -82,6 +83,8 @@ func (c *gorillaClient) Context() context.Context {
 
 // SetContext 设置上下文.
 func (c *gorillaClient) SetContext(ctx context.Context) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.ctx = ctx
 }
 
@@ -190,6 +193,8 @@ func NewUpgrader(config *Config) *Upgrader {
 				if config.CheckOrigin != nil {
 					return config.CheckOrigin(r.Header.Get("Origin"))
 				}
+				// 未配置 CheckOrigin，允许所有 Origin（仅限开发环境，生产环境请配置 CheckOrigin）
+				log.Println("[WebSocket] 警告: 未配置 CheckOrigin，默认允许所有 Origin，生产环境请务必配置")
 				return true
 			},
 		},

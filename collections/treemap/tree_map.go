@@ -1,7 +1,11 @@
 // Package treemap 提供基于红黑树实现的有序 Map.
+// 注意：本包的数据结构非并发安全，如需在多 goroutine 中使用请自行加锁.
 package treemap
 
-import "cmp"
+import (
+	"cmp"
+	"iter"
+)
 
 // 红黑树节点颜色.
 const (
@@ -187,6 +191,32 @@ func (m *TreeMap[K, V]) Range(fn func(key K, value V) bool) {
 	})
 }
 
+// RangeReverse 按逆序遍历所有键值对.
+// fn 返回 false 时停止遍历.
+func (m *TreeMap[K, V]) RangeReverse(fn func(key K, value V) bool) {
+	m.reverseInorderTraversal(m.root, func(n *node[K, V]) bool {
+		return fn(n.key, n.value)
+	})
+}
+
+// All 返回按键排序顺序遍历所有键值对的迭代器.
+func (m *TreeMap[K, V]) All() iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		m.inorderTraversal(m.root, func(n *node[K, V]) bool {
+			return yield(n.key, n.value)
+		})
+	}
+}
+
+// Backward 返回按键逆序遍历所有键值对的迭代器.
+func (m *TreeMap[K, V]) Backward() iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		m.reverseInorderTraversal(m.root, func(n *node[K, V]) bool {
+			return yield(n.key, n.value)
+		})
+	}
+}
+
 // FirstKey 返回最小的键.
 func (m *TreeMap[K, V]) FirstKey() (K, bool) {
 	if m.root == nil {
@@ -294,6 +324,20 @@ func (m *TreeMap[K, V]) inorderTraversal(n *node[K, V], fn func(*node[K, V]) boo
 		return false
 	}
 	return m.inorderTraversal(n.right, fn)
+}
+
+// reverseInorderTraversal 逆中序遍历（从大到小）.
+func (m *TreeMap[K, V]) reverseInorderTraversal(n *node[K, V], fn func(*node[K, V]) bool) bool {
+	if n == nil {
+		return true
+	}
+	if !m.reverseInorderTraversal(n.right, fn) {
+		return false
+	}
+	if !fn(n) {
+		return false
+	}
+	return m.reverseInorderTraversal(n.left, fn)
 }
 
 // 红黑树操作

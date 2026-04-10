@@ -36,6 +36,11 @@ type RateCounter interface {
 
 	// TTL 获取键的剩余过期时间.
 	TTL(ctx context.Context, key string) (time.Duration, error)
+
+	// IncrByWithExpire 原子增加计数并设置过期时间，返回新值.
+	// 实现应保证 INCR 和 EXPIRE 的原子性（如使用 Lua 脚本）.
+	// 如果底层不支持原子操作，可降级为先 IncrementBy 再 Expire.
+	IncrByWithExpire(ctx context.Context, key string, n int64, ttl time.Duration) (int64, error)
 }
 
 // TokenBucket 令牌桶限流器.

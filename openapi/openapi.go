@@ -1,12 +1,13 @@
-// Package openapi 提供 OpenAPI 3.0 文档的生成与注册能力.
+// Package openapi 提供 OpenAPI 3.1 文档的生成与注册能力.
 package openapi
 
-// Spec 表示一个 OpenAPI 3.0 文档.
+// Spec 表示一个 OpenAPI 3.1 文档.
 type Spec struct {
-	OpenAPI string               `json:"openapi" yaml:"openapi"`
-	Info    Info                 `json:"info" yaml:"info"`
-	Servers []Server             `json:"servers,omitzero" yaml:"servers,omitempty"`
-	Paths   map[string]*PathItem `json:"paths" yaml:"paths"`
+	OpenAPI  string               `json:"openapi" yaml:"openapi"`
+	Info     Info                 `json:"info" yaml:"info"`
+	Servers  []Server             `json:"servers,omitzero" yaml:"servers,omitempty"`
+	Paths    map[string]*PathItem `json:"paths" yaml:"paths"`
+	Webhooks map[string]*PathItem `json:"webhooks,omitzero" yaml:"webhooks,omitempty"`
 }
 
 // Info 表示 OpenAPI 文档的基本信息.

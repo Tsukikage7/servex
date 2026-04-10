@@ -36,7 +36,7 @@ type Config struct {
 	// Username 用户名
 	Username string `json:"username" yaml:"username" mapstructure:"username"`
 	// Password 密码
-	Password string `json:"password" yaml:"password" mapstructure:"password"`
+	Password string `json:"-" yaml:"password" mapstructure:"password"`
 	// MaxOpenConns 最大打开连接数
 	MaxOpenConns int `json:"max_open_conns" yaml:"max_open_conns" mapstructure:"max_open_conns"`
 	// MaxIdleConns 最大空闲连接数

@@ -24,6 +24,7 @@ package neo4j
 import (
 	"context"
 	"errors"
+	"net/url"
 	"time"
 
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
@@ -52,7 +53,7 @@ type Config struct {
 	// Username 用户名.
 	Username string `json:"username" yaml:"username" mapstructure:"username"`
 	// Password 密码.
-	Password string `json:"password" yaml:"password" mapstructure:"password"`
+	Password string `json:"-" yaml:"password" mapstructure:"password"`
 	// Database 数据库名.
 	Database string `json:"database" yaml:"database" mapstructure:"database"`
 	// MaxConnectionPoolSize 最大连接池大小.
@@ -202,7 +203,7 @@ func NewClient(cfg *Config, opts ...Option) (*Client, error) {
 	}
 
 	if client.log != nil {
-		client.log.Info("neo4j connected", "uri", cfg.URI, "database", cfg.Database)
+		client.log.Info("neo4j connected", "host", maskNeo4jURI(cfg.URI), "database", cfg.Database)
 	}
 
 	return client, nil
@@ -217,6 +218,18 @@ func (c *Client) Close(ctx context.Context) error {
 		c.log.Info("neo4j disconnecting")
 	}
 	return c.driver.Close(ctx)
+}
+
+// maskNeo4jURI 遮盖 URI 中的认证信息，仅保留 host 部分.
+func maskNeo4jURI(uri string) string {
+	u, err := url.Parse(uri)
+	if err != nil {
+		return "***"
+	}
+	u.User = nil
+	u.RawQuery = ""
+	u.Fragment = ""
+	return u.String()
 }
 
 // Driver 获取原生驱动.

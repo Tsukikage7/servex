@@ -23,4 +23,7 @@ var (
 
 	// ErrNilDB 数据库实例为空.
 	ErrNilDB = errors.New("outbox: 数据库实例为空")
+
+	// ErrMaxRetriesExceeded 消息已达最大重试次数.
+	ErrMaxRetriesExceeded = errors.New("outbox: 消息已达最大重试次数")
 )

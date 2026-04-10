@@ -3,10 +3,14 @@ package toolcall
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Tsukikage7/servex/llm"
 )
+
+// ErrMaxRounds 超过最大工具调用轮次.
+var ErrMaxRounds = errors.New("toolcall: 超过最大工具调用轮次")
 
 // ExecutorOption 执行器选项.
 type ExecutorOption func(*executorOptions)
@@ -127,5 +131,5 @@ func (e *Executor) Run(ctx context.Context, messages []llm.Message, opts ...llm.
 		}
 	}
 
-	return nil, fmt.Errorf("toolcall: 超过最大工具调用轮次 %d", e.opts.maxRounds)
+	return nil, fmt.Errorf("%w: %d", ErrMaxRounds, e.opts.maxRounds)
 }

@@ -300,6 +300,9 @@ func (l *Limiter) cpuLoad() float64 {
 
 // sampleCPU 采样 CPU 使用率.
 // 使用 goroutine 数量与可用 CPU 数的比值作为跨平台估算.
+// 注意：此方法为近似值，适用于自适应限流的粗粒度判断。
+// 在 Linux 平台可考虑读取 /proc/stat 获取更精确的 CPU 使用率。
+// 当前实现通过后台每秒定时采样（cpuSamplerLoop），避免在请求热路径中实时计算。
 func (l *Limiter) sampleCPU() {
 	numCPU := runtime.NumCPU()
 	numGoroutine := runtime.NumGoroutine()

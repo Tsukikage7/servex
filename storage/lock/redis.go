@@ -112,8 +112,6 @@ func (r *Redis) TryLock(ctx context.Context, key string, ttl time.Duration) (boo
 // Lock 获取锁（阻塞）.
 func (r *Redis) Lock(ctx context.Context, key string, ttl time.Duration) error {
 	retries := 0
-	timer := time.NewTimer(r.retryWait)
-	defer timer.Stop()
 
 	for {
 		acquired, err := r.TryLock(ctx, key, ttl)
@@ -129,9 +127,11 @@ func (r *Redis) Lock(ctx context.Context, key string, ttl time.Duration) error {
 			return ErrLockNotAcquired
 		}
 
-		timer.Reset(r.retryWait)
+		// 每次循环创建新 timer，避免 Reset 竞态
+		timer := time.NewTimer(r.retryWait)
 		select {
 		case <-ctx.Done():
+			timer.Stop()
 			return ctx.Err()
 		case <-timer.C:
 			// 重试

@@ -1,5 +1,8 @@
 // Package linkedmap 提供维护插入顺序的 Map 实现.
+// 注意：本包的数据结构非并发安全，如需在多 goroutine 中使用请自行加锁.
 package linkedmap
+
+import "iter"
 
 // entry 双向链表节点.
 type entry[K comparable, V any] struct {
@@ -109,4 +112,26 @@ func (m *LinkedMap[K, V]) Clear() {
 	m.table = make(map[K]*entry[K, V])
 	m.head.next = m.tail
 	m.tail.prev = m.head
+}
+
+// All 返回按插入顺序遍历所有键值对的迭代器.
+func (m *LinkedMap[K, V]) All() iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		for e := m.head.next; e != m.tail; e = e.next {
+			if !yield(e.key, e.value) {
+				return
+			}
+		}
+	}
+}
+
+// Backward 返回按插入逆序遍历所有键值对的迭代器.
+func (m *LinkedMap[K, V]) Backward() iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		for e := m.tail.prev; e != m.head; e = e.prev {
+			if !yield(e.key, e.value) {
+				return
+			}
+		}
+	}
 }

@@ -1,7 +1,9 @@
 package ratelimit
 
 import (
+	"net"
 	"net/http"
+	"strings"
 )
 
 // HTTPMiddleware 创建 HTTP 限流中间件.
@@ -56,6 +58,10 @@ func KeyedHTTPMiddleware(keyFunc HTTPKeyFunc, getLimiter KeyedLimiterFunc) func(
 }
 
 // IPKeyFunc 返回基于客户端 IP 的键提取函数.
+//
+// 警告: 此函数直接信任 X-Forwarded-For 和 X-Real-IP 请求头，
+// 在不受信任的代理后面使用时，客户端可以伪造这些头部来绕过限流.
+// 如需在反向代理后安全使用，请改用 TrustedProxyIPKeyFunc.
 func IPKeyFunc() HTTPKeyFunc {
 	return func(r *http.Request) string {
 		// 优先使用 X-Forwarded-For
@@ -68,6 +74,67 @@ func IPKeyFunc() HTTPKeyFunc {
 		}
 		// 使用 RemoteAddr
 		return r.RemoteAddr
+	}
+}
+
+// TrustedProxyIPKeyFunc 返回仅信任指定代理 IP 转发头的客户端 IP 提取函数.
+//
+// 当请求来自受信任的代理时，才使用 X-Forwarded-For / X-Real-IP 头部提取客户端 IP.
+// 否则直接使用 RemoteAddr，防止客户端伪造头部绕过限流.
+//
+// trustedProxies 为可信代理的 IP 地址或 CIDR 列表（如 "10.0.0.0/8", "192.168.1.1"）.
+func TrustedProxyIPKeyFunc(trustedProxies ...string) HTTPKeyFunc {
+	// 预解析 CIDR 和 IP
+	var cidrs []*net.IPNet
+	var ips []net.IP
+	for _, proxy := range trustedProxies {
+		if _, cidr, err := net.ParseCIDR(proxy); err == nil {
+			cidrs = append(cidrs, cidr)
+		} else if ip := net.ParseIP(proxy); ip != nil {
+			ips = append(ips, ip)
+		}
+	}
+
+	isTrusted := func(addr string) bool {
+		// 分离 host:port
+		host, _, err := net.SplitHostPort(addr)
+		if err != nil {
+			host = addr
+		}
+		ip := net.ParseIP(host)
+		if ip == nil {
+			return false
+		}
+		for _, cidr := range cidrs {
+			if cidr.Contains(ip) {
+				return true
+			}
+		}
+		for _, trusted := range ips {
+			if trusted.Equal(ip) {
+				return true
+			}
+		}
+		return false
+	}
+
+	return func(r *http.Request) string {
+		if isTrusted(r.RemoteAddr) {
+			// 来自受信任代理，取 X-Forwarded-For 最左侧（原始客户端 IP）
+			if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+				parts := strings.SplitN(xff, ",", 2)
+				return strings.TrimSpace(parts[0])
+			}
+			if xri := r.Header.Get("X-Real-IP"); xri != "" {
+				return strings.TrimSpace(xri)
+			}
+		}
+		// 非受信任代理或无转发头，直接使用 RemoteAddr
+		host, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			return r.RemoteAddr
+		}
+		return host
 	}
 }
 

@@ -1,5 +1,8 @@
 // Package multimap 提供一对多映射（MultiMap）实现.
+// 注意：本包的数据结构非并发安全，如需在多 goroutine 中使用请自行加锁.
 package multimap
+
+import "iter"
 
 // MultiMap 一个键对应多个值的 Map.
 // 零值不可用，需通过 New 创建.
@@ -108,4 +111,15 @@ func (m *MultiMap[K, V]) Range(fn func(K, []V) bool) {
 func (m *MultiMap[K, V]) Clear() {
 	m.m = make(map[K][]V)
 	m.size = 0
+}
+
+// All 返回遍历所有键及其值切片的迭代器（顺序不确定）.
+func (m *MultiMap[K, V]) All() iter.Seq2[K, []V] {
+	return func(yield func(K, []V) bool) {
+		for k, vals := range m.m {
+			if !yield(k, vals) {
+				return
+			}
+		}
+	}
 }
