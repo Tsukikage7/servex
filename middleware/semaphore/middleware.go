@@ -45,6 +45,7 @@ func WithBlock(block bool) MiddlewareOption {
 // EndpointMiddleware 返回 Endpoint 信号量中间件.
 // 限制 endpoint 的并发调用数量.
 // 示例:
+//
 //	sem := semaphore.NewLocal(10)
 //	endpoint = semaphore.EndpointMiddleware(sem)(endpoint)
 func EndpointMiddleware(sem Semaphore, opts ...MiddlewareOption) endpoint.Middleware {
@@ -60,7 +61,7 @@ func EndpointMiddleware(sem Semaphore, opts ...MiddlewareOption) endpoint.Middle
 			if o.block {
 				if err := sem.Acquire(ctx); err != nil {
 					if o.logger != nil {
-						o.logger.WithContext(ctx).Warn(
+						logger.FromContext(ctx).Warn(
 							"[Semaphore] 获取许可失败",
 							logger.Err(err),
 						)
@@ -72,7 +73,7 @@ func EndpointMiddleware(sem Semaphore, opts ...MiddlewareOption) endpoint.Middle
 				acquired = sem.TryAcquire(ctx)
 				if !acquired {
 					if o.logger != nil {
-						o.logger.WithContext(ctx).Debug("[Semaphore] 无可用许可")
+						logger.FromContext(ctx).Debug("[Semaphore] 无可用许可")
 					}
 					return nil, ErrNoPermit
 				}
@@ -92,6 +93,7 @@ func EndpointMiddleware(sem Semaphore, opts ...MiddlewareOption) endpoint.Middle
 // HTTPMiddleware 返回 HTTP 信号量中间件.
 // 限制 HTTP 请求的并发处理数量.
 // 示例:
+//
 //	sem := semaphore.NewLocal(100)
 //	handler = semaphore.HTTPMiddleware(sem)(handler)
 func HTTPMiddleware(sem Semaphore, opts ...MiddlewareOption) func(http.Handler) http.Handler {
@@ -108,7 +110,7 @@ func HTTPMiddleware(sem Semaphore, opts ...MiddlewareOption) func(http.Handler) 
 			if o.block {
 				if err := sem.Acquire(ctx); err != nil {
 					if o.logger != nil {
-						o.logger.WithContext(ctx).Warn(
+						logger.FromContext(ctx).Warn(
 							"[Semaphore] 获取许可失败",
 							logger.String("method", r.Method),
 							logger.String("path", r.URL.Path),
@@ -123,7 +125,7 @@ func HTTPMiddleware(sem Semaphore, opts ...MiddlewareOption) func(http.Handler) 
 				acquired = sem.TryAcquire(ctx)
 				if !acquired {
 					if o.logger != nil {
-						o.logger.WithContext(ctx).Debug(
+						logger.FromContext(ctx).Debug(
 							"[Semaphore] 无可用许可",
 							logger.String("method", r.Method),
 							logger.String("path", r.URL.Path),
@@ -148,6 +150,7 @@ func HTTPMiddleware(sem Semaphore, opts ...MiddlewareOption) func(http.Handler) 
 // UnaryServerInterceptor 返回 gRPC 一元服务器信号量拦截器.
 // 限制 gRPC 请求的并发处理数量.
 // 示例:
+//
 //	sem := semaphore.NewLocal(100)
 //	srv := grpc.NewServer(
 //	    grpc.ChainUnaryInterceptor(
@@ -171,7 +174,7 @@ func UnaryServerInterceptor(sem Semaphore, opts ...MiddlewareOption) grpc.UnaryS
 		if o.block {
 			if err := sem.Acquire(ctx); err != nil {
 				if o.logger != nil {
-					o.logger.WithContext(ctx).Warn(
+					logger.FromContext(ctx).Warn(
 						"[Semaphore] 获取许可失败",
 						logger.String("method", info.FullMethod),
 						logger.Err(err),
@@ -184,7 +187,7 @@ func UnaryServerInterceptor(sem Semaphore, opts ...MiddlewareOption) grpc.UnaryS
 			acquired = sem.TryAcquire(ctx)
 			if !acquired {
 				if o.logger != nil {
-					o.logger.WithContext(ctx).Debug(
+					logger.FromContext(ctx).Debug(
 						"[Semaphore] 无可用许可",
 						logger.String("method", info.FullMethod),
 					)
@@ -223,7 +226,7 @@ func StreamServerInterceptor(sem Semaphore, opts ...MiddlewareOption) grpc.Strea
 		if o.block {
 			if err := sem.Acquire(ctx); err != nil {
 				if o.logger != nil {
-					o.logger.WithContext(ctx).Warn(
+					logger.FromContext(ctx).Warn(
 						"[Semaphore] 获取许可失败",
 						logger.String("method", info.FullMethod),
 						logger.Err(err),
@@ -236,7 +239,7 @@ func StreamServerInterceptor(sem Semaphore, opts ...MiddlewareOption) grpc.Strea
 			acquired = sem.TryAcquire(ctx)
 			if !acquired {
 				if o.logger != nil {
-					o.logger.WithContext(ctx).Debug(
+					logger.FromContext(ctx).Debug(
 						"[Semaphore] 无可用许可",
 						logger.String("method", info.FullMethod),
 					)

@@ -10,13 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Tsukikage7/servex/auth"
-	"github.com/Tsukikage7/servex/httpx/clientip"
-	"github.com/Tsukikage7/servex/middleware/logging"
-	"github.com/Tsukikage7/servex/middleware/recovery"
 	"github.com/Tsukikage7/servex/observability/logger"
-	"github.com/Tsukikage7/servex/observability/tracing"
-	"github.com/Tsukikage7/servex/tenant"
 	"github.com/Tsukikage7/servex/transport"
 	"github.com/Tsukikage7/servex/transport/health"
 )
@@ -37,9 +31,8 @@ type Server struct {
 //	server := httpserver.New(mux,
 //	    httpserver.WithLogger(log),
 //	    httpserver.WithAddr(":8080"),
-//	    httpserver.WithAuth(authenticator, "/api/login", "/api/register"),
-//	    httpserver.WithRecovery(),
 //	    httpserver.WithProfiling("/debug/pprof"),
+//	    httpserver.WithMiddlewares(recovery.HTTPMiddleware(), logging.HTTPMiddleware()),
 //	)
 func New(handler http.Handler, opts ...Option) *Server {
 	o := defaultOptions()
@@ -70,38 +63,25 @@ func New(handler http.Handler, opts ...Option) *Server {
 	// 中间件包装（由内到外）
 	wrapped := health.Middleware(h)(handler)
 
-	if o.clientIP {
-		wrapped = clientip.HTTPMiddleware(o.clientIPOpts...)(wrapped)
-	}
-
-	if o.tenantResolver != nil {
-		wrapped = tenant.HTTPMiddleware(o.tenantResolver, o.tenantOpts...)(wrapped)
-	}
-
-	if o.authenticator != nil {
-		wrapped = auth.HTTPMiddleware(o.authenticator, o.authOpts...)(wrapped)
-	}
-
-	if o.traceName != "" {
-		wrapped = tracing.HTTPMiddleware(o.traceName)(wrapped)
-	}
-
-	if o.recovery {
-		wrapped = recovery.HTTPMiddleware(recovery.WithLogger(o.logger))(wrapped)
-	}
-
-	if o.loggingEnabled {
-		wrapped = logging.HTTPMiddleware(
-			logging.WithLogger(o.logger),
-			logging.WithSkipPaths(o.loggingSkipPaths...),
-		)(wrapped)
-	}
-
 	if o.profiling != "" {
 		wrapped = wrapProfiling(wrapped, o.profiling, o.profilingAuth)
 	}
 
+	// logger 注入（最外层，保证所有中间件和业务代码都能用 logger.FromContext(ctx)）
+	wrapped = injectLogger(o.logger)(wrapped)
+
 	return &Server{opts: o, router: router, handler: wrapped, health: h}
+}
+
+// injectLogger 返回一个中间件，将 logger 注入到每个请求的 context 中.
+// 后续中间件（如 trace）可通过 logger.FromContext(ctx).With(...) 追加字段后覆盖.
+func injectLogger(log logger.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := logger.NewContext(r.Context(), log)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
 }
 
 func wrapProfiling(next http.Handler, prefix string, authFn func(*http.Request) bool) http.Handler {
@@ -223,19 +203,9 @@ type options struct {
 	healthTimeout time.Duration
 	healthOptions []health.Option
 
-	// Middleware
-	recovery         bool
-	loggingEnabled   bool
-	loggingSkipPaths []string
-	traceName        string
-	clientIP         bool
-	clientIPOpts     []clientip.Option
-	authenticator    auth.Authenticator
-	authOpts         []auth.Option
-	tenantResolver   tenant.Resolver
-	tenantOpts       []tenant.Option
-	profiling        string
-	profilingAuth    func(*http.Request) bool
+	// Profiling
+	profiling     string
+	profilingAuth func(*http.Request) bool
 
 	// 用户自定义中间件
 	middlewares []func(http.Handler) http.Handler
@@ -285,82 +255,6 @@ func WithTimeout(read, write, idle time.Duration) Option {
 	}
 }
 
-// WithRecovery 启用 panic 恢复.
-func WithRecovery() Option {
-	return func(o *options) { o.recovery = true }
-}
-
-// WithLogging 启用 HTTP 请求访问日志.
-//
-// 日志中间件位于 recovery 之外，可记录每个请求的方法、路径、状态码、耗时和响应字节数.
-// 可通过 skipPaths 跳过不需要记录的路径（如 /health、/metrics）.
-//
-// 示例:
-//
-//	httpserver.New(mux,
-//	    httpserver.WithLogging("/health", "/metrics"),
-//	)
-func WithLogging(skipPaths ...string) Option {
-	return func(o *options) {
-		o.loggingEnabled = true
-		o.loggingSkipPaths = skipPaths
-	}
-}
-
-// WithTrace 启用链路追踪.
-func WithTrace(serviceName string) Option {
-	return func(o *options) { o.traceName = serviceName }
-}
-
-// WithClientIP 启用客户端 IP 提取.
-func WithClientIP(opts ...clientip.Option) Option {
-	return func(o *options) {
-		o.clientIP = true
-		o.clientIPOpts = opts
-	}
-}
-
-// WithAuth 启用认证，可选指定公开路径.
-//
-// 示例:
-//
-//	httpserver.WithAuth(authenticator)                           // 所有路径都需认证
-//	httpserver.WithAuth(authenticator, "/login", "/register")    // 指定公开路径
-//	httpserver.WithAuth(authenticator, "/api/public/*")          // 前缀匹配
-func WithAuth(authenticator auth.Authenticator, publicPaths ...string) Option {
-	return func(o *options) {
-		o.authenticator = authenticator
-		if o.logger != nil {
-			o.authOpts = append(o.authOpts, auth.WithLogger(o.logger))
-		}
-		if len(publicPaths) > 0 {
-			o.authOpts = append(o.authOpts, auth.WithSkipper(buildPathSkipper(publicPaths)))
-		}
-	}
-}
-
-// WithTenant 启用多租户解析.
-//
-// 租户中间件位于 auth 之后（更靠近 handler），确保先完成认证再解析租户.
-//
-// 示例:
-//
-//	httpserver.New(mux,
-//	    httpserver.WithAuth(authenticator),
-//	    httpserver.WithTenant(resolver,
-//	        tenant.WithTokenExtractor(tenant.HeaderTokenExtractor("X-Tenant-ID")),
-//	    ),
-//	)
-func WithTenant(resolver tenant.Resolver, opts ...tenant.Option) Option {
-	return func(o *options) {
-		o.tenantResolver = resolver
-		o.tenantOpts = opts
-		if o.logger != nil {
-			o.tenantOpts = append(o.tenantOpts, tenant.WithLogger(o.logger))
-		}
-	}
-}
-
 // WithProfiling 启用 pprof 端点.
 //
 // 示例:
@@ -373,7 +267,7 @@ func WithProfiling(pathPrefix string) Option {
 // WithMiddlewares 注册用户自定义 HTTP 中间件.
 //
 // 中间件按声明顺序执行：WithMiddlewares(cors, ratelimit) 的执行顺序为
-// cors → ratelimit → 路由，位于框架内置中间件（recovery、认证等）之后.
+// cors → ratelimit → 路由.
 //
 // 示例:
 //
@@ -423,36 +317,6 @@ func WithHealthTimeout(d time.Duration) Option {
 func WithHealthChecker(checkers ...health.Checker) Option {
 	return func(o *options) {
 		o.healthOptions = append(o.healthOptions, health.WithReadinessChecker(checkers...))
-	}
-}
-
-// buildPathSkipper 构建路径跳过器.
-func buildPathSkipper(paths []string) auth.Skipper {
-	exact := make(map[string]bool)
-	var prefixes []string
-
-	for _, p := range paths {
-		if len(p) > 0 && p[len(p)-1] == '*' {
-			prefixes = append(prefixes, p[:len(p)-1])
-		} else {
-			exact[p] = true
-		}
-	}
-
-	return func(_ context.Context, req any) bool {
-		r, ok := req.(*http.Request)
-		if !ok {
-			return false
-		}
-		if exact[r.URL.Path] {
-			return true
-		}
-		for _, prefix := range prefixes {
-			if strings.HasPrefix(r.URL.Path, prefix) {
-				return true
-			}
-		}
-		return false
 	}
 }
 

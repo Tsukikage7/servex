@@ -2,6 +2,7 @@
 // Saga 模式用于管理跨服务的分布式事务，通过编排一系列本地事务，
 // 并在失败时执行补偿操作来保证最终一致性。
 // 基本用法:
+//
 //	saga := saga.New("create-order").
 //	    Step("reserve-inventory", reserveInventory, compensateInventory).
 //	    Step("charge-payment", chargePayment, refundPayment).
@@ -11,7 +12,9 @@
 //	    // 失败时会自动执行补偿
 //	    log.Error("saga failed", err)
 //	}
+//
 // 数据传递:
+//
 //	reserveInventory := func(ctx context.Context, data *saga.Data) error {
 //	    orderID := data.GetString("order_id")
 //	    // 执行业务逻辑
@@ -117,7 +120,7 @@ func (s *Saga) ExecuteWithData(ctx context.Context, data *Data) error {
 	state.Status = SagaStatusRunning
 	if err := s.opts.store.Save(ctx, state); err != nil {
 		if s.opts.logger != nil {
-			s.opts.logger.WithContext(ctx).Warn(
+			logger.FromContext(ctx).Warn(
 				"[Saga] 保存初始状态失败",
 				logger.String("saga", s.name),
 				logger.Err(err),
@@ -172,7 +175,7 @@ func (s *Saga) ExecuteWithData(ctx context.Context, data *Data) error {
 			lastErr = err
 
 			if s.opts.logger != nil {
-				s.opts.logger.WithContext(ctx).Error(
+				logger.FromContext(ctx).Error(
 					"[Saga] 步骤执行失败",
 					logger.String("saga", s.name),
 					logger.String("step", step.Name),
@@ -187,7 +190,7 @@ func (s *Saga) ExecuteWithData(ctx context.Context, data *Data) error {
 		completedSteps = i + 1
 
 		if s.opts.logger != nil {
-			s.opts.logger.WithContext(ctx).Debug(
+			logger.FromContext(ctx).Debug(
 				"[Saga] 步骤执行完成",
 				logger.String("saga", s.name),
 				logger.String("step", step.Name),
@@ -204,7 +207,7 @@ func (s *Saga) ExecuteWithData(ctx context.Context, data *Data) error {
 		s.saveState(ctx, state)
 
 		if s.opts.logger != nil {
-			s.opts.logger.WithContext(ctx).Info(
+			logger.FromContext(ctx).Info(
 				"[Saga] 执行成功",
 				logger.String("saga", s.name),
 			)
@@ -219,7 +222,7 @@ func (s *Saga) ExecuteWithData(ctx context.Context, data *Data) error {
 	s.saveState(ctx, state)
 
 	if s.opts.logger != nil {
-		s.opts.logger.WithContext(ctx).Info(
+		logger.FromContext(ctx).Info(
 			"[Saga] 开始执行补偿",
 			logger.String("saga", s.name),
 			logger.Int("completed_steps", completedSteps),
@@ -256,7 +259,7 @@ func (s *Saga) executeStepWithRetry(ctx context.Context, step Step, data *Data) 
 			}
 
 			if s.opts.logger != nil {
-				s.opts.logger.WithContext(ctx).Debug(
+				logger.FromContext(ctx).Debug(
 					"[Saga] 重试步骤",
 					logger.String("step", step.Name),
 					logger.Int("attempt", attempt+1),
@@ -298,7 +301,7 @@ func (s *Saga) compensate(ctx context.Context, data *Data, state *State, complet
 			lastErr = err
 
 			if s.opts.logger != nil {
-				s.opts.logger.WithContext(ctx).Error(
+				logger.FromContext(ctx).Error(
 					"[Saga] 补偿执行失败",
 					logger.String("saga", s.name),
 					logger.String("step", step.Name),
@@ -313,7 +316,7 @@ func (s *Saga) compensate(ctx context.Context, data *Data, state *State, complet
 		state.StepResults[i].Status = StepStatusCompensated
 
 		if s.opts.logger != nil {
-			s.opts.logger.WithContext(ctx).Debug(
+			logger.FromContext(ctx).Debug(
 				"[Saga] 步骤已补偿",
 				logger.String("saga", s.name),
 				logger.String("step", step.Name),
@@ -328,7 +331,7 @@ func (s *Saga) compensate(ctx context.Context, data *Data, state *State, complet
 func (s *Saga) saveState(ctx context.Context, state *State) {
 	if err := s.opts.store.Save(ctx, state); err != nil {
 		if s.opts.logger != nil {
-			s.opts.logger.WithContext(ctx).Warn(
+			logger.FromContext(ctx).Warn(
 				"[Saga] 保存状态失败",
 				logger.String("saga", s.name),
 				logger.String("status", string(state.Status)),

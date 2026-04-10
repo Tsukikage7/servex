@@ -662,61 +662,57 @@ func (s *BuildCoresTestSuite) TestBuildCores_InvalidFileDir() {
 	s.Nil(writers)
 }
 
-// WithContextTestSuite WithContext 测试套件.
-type WithContextTestSuite struct {
+// ContextTestSuite NewContext/FromContext 测试套件.
+type ContextTestSuite struct {
 	suite.Suite
 }
 
-func TestWithContextSuite(t *testing.T) {
-	suite.Run(t, new(WithContextTestSuite))
+func TestContextSuite(t *testing.T) {
+	suite.Run(t, new(ContextTestSuite))
 }
 
-func (s *WithContextTestSuite) TestWithContext_NilContext() {
+func (s *ContextTestSuite) TestFromContext_EmptyContext() {
+	// 空 context（没有注入 logger）应该返回 nopLogger
+	result := FromContext(s.T().Context())
+	s.NotNil(result)
+	// nopLogger 不应该 panic
+	result.Info("测试空 context")
+}
+
+func (s *ContextTestSuite) TestNewContext_FromContext_RoundTrip() {
 	log, err := NewLogger(DefaultConfig())
 	s.Require().NoError(err)
 	defer log.Close()
 
-	// nil context 应该返回原 logger
-	result := log.WithContext(nil)
+	// 将 logger 存入 context
+	ctx := NewContext(s.T().Context(), log)
+
+	// 从 context 取出
+	result := FromContext(ctx)
 	s.Equal(log, result)
 }
 
-func (s *WithContextTestSuite) TestWithContext_EmptyContext() {
+func (s *ContextTestSuite) TestNewContext_WithTraceFields() {
 	log, err := NewLogger(DefaultConfig())
 	s.Require().NoError(err)
 	defer log.Close()
 
-	// 空 context（没有 trace 信息）应该返回原 logger
-	result := log.WithContext(s.T().Context())
-	s.Equal(log, result)
+	// 模拟中间件行为：将带 traceId 的 logger 存入 context
+	logWithTrace := log.With(String("traceId", "trace-abc123"), String("spanId", "span-def456"))
+	ctx := NewContext(s.T().Context(), logWithTrace)
+
+	// 业务代码取出的 logger 已经带 trace 信息，无需额外操作
+	result := FromContext(ctx)
+	s.NotEqual(log, result)  // 带了字段，是新实例
+	s.Equal(logWithTrace, result)
 }
 
-func (s *WithContextTestSuite) TestWithContext_WithTraceID() {
-	log, err := NewLogger(DefaultConfig())
-	s.Require().NoError(err)
-	defer log.Close()
-
-	// context 中有 traceId
-	ctx := ContextWithTraceID(s.T().Context(), "trace-abc123")
-	result := log.WithContext(ctx)
-
-	// 应该返回新的 logger（带 traceId 字段）
-	s.NotEqual(log, result)
-}
-
-func (s *WithContextTestSuite) TestWithContext_WithTraceIDAndSpanID() {
-	log, err := NewLogger(DefaultConfig())
-	s.Require().NoError(err)
-	defer log.Close()
-
-	// context 中有 traceId 和 spanId
-	ctx := s.T().Context()
-	ctx = ContextWithTraceID(ctx, "trace-abc123")
-	ctx = ContextWithSpanID(ctx, "span-def456")
-	result := log.WithContext(ctx)
-
-	// 应该返回新的 logger（带 traceId 和 spanId 字段）
-	s.NotEqual(log, result)
+func (s *ContextTestSuite) TestFromContext_NilContext() {
+	// nil context 不应该 panic，应返回 nopLogger
+	s.NotPanics(func() {
+		result := FromContext(nil)
+		s.NotNil(result)
+	})
 }
 
 // CloseTestSuite Close 测试套件.

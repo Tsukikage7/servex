@@ -125,33 +125,36 @@ import (
 logger.SetTraceExtractor(tracing.NewLoggerExtractor())
 
 // 使用 trace 中间件
-handler := tracing.HTTPMiddleware("my-service")(mux)
+handler := trace.HTTPMiddleware(&trace.Config{Logger: log})(mux)
 
 // 在业务代码中
 func handleRequest(w http.ResponseWriter, r *http.Request) {
     ctx := r.Context()
 
     // 日志自动携带 traceId 和 spanId
-    log.WithContext(ctx).Info("处理请求")
+    logger.FromContext(ctx).Info("处理请求")
     // 输出: {"level":"INFO","timestamp":"...","msg":"处理请求","traceId":"abc123...","spanId":"def456..."}
 }
 ```
 
 ### 不使用 trace 包的方式
 
-如果不需要 OpenTelemetry 追踪，可以手动设置 context 值：
+如果不需要 OpenTelemetry 追踪，可以手动将 logger 注入 context：
 
 ```go
-import "context"
+import "github.com/Tsukikage7/servex/observability/logger"
 
-// 手动设置 context 值
+// 手动将带 trace 信息的 logger 存入 context
 ctx := context.Background()
-ctx = context.WithValue(ctx, logger.TraceIDKey, "trace-abc123")
-ctx = context.WithValue(ctx, logger.SpanIDKey, "span-xyz789")
+log := logger.MustNewLogger(logger.DefaultConfig())
+ctxLog := log.With(
+    logger.String("traceId", "trace-abc123"),
+    logger.String("spanId", "span-xyz789"),
+)
+ctx = logger.NewContext(ctx, ctxLog)
 
-// 从 context 创建 logger
-ctxLog := log.WithContext(ctx)
-ctxLog.Info("request processed")
+// 业务代码通过 FromContext 取出
+logger.FromContext(ctx).Info("request processed")
 // 输出: {"level":"INFO","timestamp":"...","msg":"request processed","traceId":"trace-abc123","spanId":"span-xyz789"}
 ```
 
@@ -162,16 +165,15 @@ ctxLog.Info("request processed")
 ```go
 import (
     "github.com/Tsukikage7/servex/observability/logger"
-    "github.com/Tsukikage7/servex/tracing"
+    "github.com/Tsukikage7/servex/middleware/trace"
 )
 
 func main() {
-    // 启用 trace 集成
-    logger.SetTraceExtractor(tracing.NewLoggerExtractor())
+    log, _ := logger.NewLogger(logger.DefaultConfig())
 
-    // 使用 trace 中间件（自动生成 traceId）
+    // 使用 trace 中间件（自动生成 traceId 并注入 logger 到 context）
     mux := http.NewServeMux()
-    handler := tracing.HTTPMiddleware("my-service")(mux)
+    handler := trace.HTTPMiddleware(&trace.Config{Logger: log})(mux)
 
     http.ListenAndServe(":8080", handler)
 }
@@ -180,7 +182,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
     ctx := r.Context()
 
     // 自动携带 traceId 和 spanId
-    log.WithContext(ctx).Info("request started",
+    logger.FromContext(ctx).Info("request started",
         logger.String("method", r.Method),
         logger.String("path", r.URL.Path),
     )
@@ -267,12 +269,14 @@ func main() {
 }
 ```
 
-### 2. 在请求处理中传递 logger
+### 2. 在请求处理中使用 logger
 
 ```go
-func HandleRequest(ctx context.Context, log logger.Logger) {
-    // 添加请求相关字段
-    reqLog := log.WithContext(ctx).With(
+func HandleRequest(ctx context.Context) {
+    // 从 context 取出 logger（已由 trace 中间件注入 traceId）
+    log := logger.FromContext(ctx)
+
+    reqLog := log.With(
         logger.String("handler", "HandleRequest"),
     )
 

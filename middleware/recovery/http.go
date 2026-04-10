@@ -11,7 +11,9 @@ import (
 //  1. 捕获 panic 并记录堆栈信息
 //  2. 调用自定义 Handler（如果设置）
 //  3. 返回 500 Internal Server Error
+//
 // 示例:
+//
 //	mux := http.NewServeMux()
 //	mux.HandleFunc("/", handler)
 //	wrapped := recovery.HTTPMiddleware(recovery.WithLogger(log))(mux)
@@ -29,7 +31,7 @@ func HTTPMiddleware(opts ...Option) func(http.Handler) http.Handler {
 					stack := captureStack(o.StackSize, o.StackAll)
 
 					// 记录 panic 日志
-					o.Logger.WithContext(r.Context()).Error(
+					logger.FromContext(r.Context()).Error(
 						"http panic recovered",
 						logger.Any("panic", p),
 						logger.String("method", r.Method),
@@ -54,6 +56,7 @@ func HTTPMiddleware(opts ...Option) func(http.Handler) http.Handler {
 
 // HTTPRecoverFunc 是简化版 HTTP 恢复函数，用于单个 handler.
 // 示例:
+//
 //	http.HandleFunc("/", recovery.HTTPRecoverFunc(log, myHandler))
 func HTTPRecoverFunc(l logger.Logger, handler http.HandlerFunc) http.HandlerFunc {
 	return HTTPMiddleware(WithLogger(l))(http.HandlerFunc(handler)).ServeHTTP

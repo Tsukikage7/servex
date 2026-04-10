@@ -45,6 +45,7 @@ const TraceIDMetadataKey = "x-trace-id"
 // 拦截器会自动从请求 metadata 提取或生成 traceId，并通过响应 header 返回.
 // traceId 同时作为请求的唯一标识（requestId），可通过 TraceID(ctx) 获取.
 // 使用示例:
+//
 //	server := grpc.NewServer(
 //	    grpc.UnaryInterceptor(trace.UnaryServerInterceptor("my-service")),
 //	)
@@ -78,7 +79,7 @@ func UnaryServerInterceptor(serviceName string) grpc.UnaryServerInterceptor {
 		)
 		defer span.End()
 
-		// 注入 trace 信息到 context，供 logger.WithContext 使用
+		// 注入 trace 信息到 context（供 middleware/trace 读取）
 		spanCtx := span.SpanContext()
 		if spanCtx.HasTraceID() {
 			ctx = logger.ContextWithTraceID(ctx, spanCtx.TraceID().String())
@@ -114,6 +115,7 @@ func UnaryServerInterceptor(serviceName string) grpc.UnaryServerInterceptor {
 // 拦截器会自动从请求 metadata 提取或生成 traceId，并通过响应 header 返回.
 // traceId 同时作为请求的唯一标识（requestId），可通过 TraceID(ctx) 获取.
 // 使用示例:
+//
 //	server := grpc.NewServer(
 //	    grpc.StreamInterceptor(trace.StreamServerInterceptor("my-service")),
 //	)
@@ -146,7 +148,7 @@ func StreamServerInterceptor(serviceName string) grpc.StreamServerInterceptor {
 		)
 		defer span.End()
 
-		// 注入 trace 信息到 context，供 logger.WithContext 使用
+		// 注入 trace 信息到 context（供 middleware/trace 读取）
 		spanCtx := span.SpanContext()
 		if spanCtx.HasTraceID() {
 			ctx = logger.ContextWithTraceID(ctx, spanCtx.TraceID().String())
@@ -196,6 +198,7 @@ func (w *serverStreamWrapper) Context() context.Context {
 
 // UnaryClientInterceptor 返回 gRPC 一元客户端拦截器.
 // 使用示例:
+//
 //	conn, err := grpc.Dial(address,
 //	    grpc.WithUnaryInterceptor(tracing.UnaryClientInterceptor("my-service")),
 //	)
@@ -248,6 +251,7 @@ func UnaryClientInterceptor(serviceName string) grpc.UnaryClientInterceptor {
 
 // StreamClientInterceptor 返回 gRPC 流式客户端拦截器.
 // 使用示例:
+//
 //	conn, err := grpc.Dial(address,
 //	    grpc.WithStreamInterceptor(tracing.StreamClientInterceptor("my-service")),
 //	)
@@ -329,6 +333,7 @@ func (w *clientStreamWrapper) RecvMsg(m any) error {
 // InjectGRPCMetadata 将追踪信息注入到 gRPC metadata.
 // 用于手动传播追踪上下文.
 // 使用示例:
+//
 //	ctx = tracing.InjectGRPCMetadata(ctx)
 //	client.SomeMethod(ctx, req)
 func InjectGRPCMetadata(ctx context.Context) context.Context {
@@ -345,6 +350,7 @@ func InjectGRPCMetadata(ctx context.Context) context.Context {
 // ExtractGRPCMetadata 从 gRPC metadata 提取追踪信息.
 // 用于手动提取追踪上下文.
 // 使用示例:
+//
 //	ctx = tracing.ExtractGRPCMetadata(ctx)
 //	span := tracing.SpanFromContext(ctx)
 func ExtractGRPCMetadata(ctx context.Context) context.Context {

@@ -2,7 +2,7 @@
 
 `github.com/Tsukikage7/servex/middleware/trace` — 请求链路追踪增强中间件。
 
-统一 trace-id 在日志、响应头、下游调用中的传播，构建于 `middleware/requestid` 和 `observability/logger` 之上。
+统一 trace-id 在日志、响应头、下游调用中的传播，构建于 `observability/logger` 之上。
 
 ## 功能
 

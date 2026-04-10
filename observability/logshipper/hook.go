@@ -1,7 +1,6 @@
 package logshipper
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -59,6 +58,7 @@ func (c *shipperCore) Sync() error { return nil }
 
 // ZapHook 返回一个 zapcore.Core，将日志同时投递到 Shipper.
 // 用法示例:
+//
 //	hook := ZapHook(shipper)
 //	logger := zap.New(zapcore.NewTee(originalCore, hook))
 func ZapHook(shipper *Shipper) zapcore.Core {
@@ -236,16 +236,6 @@ func (h *loggerHook) With(fields ...logger.Field) logger.Logger {
 		shipper:  h.shipper,
 		minLevel: h.minLevel,
 		fields:   merged,
-	}
-}
-
-// WithContext 返回带有 context 信息的新 loggerHook.
-func (h *loggerHook) WithContext(ctx context.Context) logger.Logger {
-	return &loggerHook{
-		inner:    h.inner.WithContext(ctx),
-		shipper:  h.shipper,
-		minLevel: h.minLevel,
-		fields:   h.fields,
 	}
 }
 

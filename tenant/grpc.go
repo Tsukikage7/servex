@@ -14,6 +14,7 @@ import (
 // UnaryServerInterceptor 返回 gRPC 一元服务器租户拦截器.
 // 默认 TokenExtractor 为 MetadataTokenExtractor("x-tenant-token").
 // 示例:
+//
 //	srv := grpc.NewServer(
 //	    grpc.UnaryInterceptor(tenant.UnaryServerInterceptor(resolver)),
 //	)
@@ -43,7 +44,7 @@ func UnaryServerInterceptor(resolver Resolver, opts ...Option) grpc.UnaryServerI
 		token, err := o.tokenExtractor(ctx, req)
 		if err != nil {
 			if o.logger != nil {
-				o.logger.WithContext(ctx).Debug("[Tenant] gRPC令牌提取失败",
+				logger.FromContext(ctx).Debug("[Tenant] gRPC令牌提取失败",
 					logger.String("method", info.FullMethod),
 					logger.Err(err),
 				)
@@ -55,7 +56,7 @@ func UnaryServerInterceptor(resolver Resolver, opts ...Option) grpc.UnaryServerI
 		t, err := resolver.Resolve(ctx, token)
 		if err != nil {
 			if o.logger != nil {
-				o.logger.WithContext(ctx).Warn("[Tenant] gRPC解析失败",
+				logger.FromContext(ctx).Warn("[Tenant] gRPC解析失败",
 					logger.String("method", info.FullMethod),
 					logger.Err(err),
 				)
@@ -66,7 +67,7 @@ func UnaryServerInterceptor(resolver Resolver, opts ...Option) grpc.UnaryServerI
 		// 检查租户是否启用
 		if !t.TenantEnabled() {
 			if o.logger != nil {
-				o.logger.WithContext(ctx).Warn("[Tenant] gRPC租户已禁用",
+				logger.FromContext(ctx).Warn("[Tenant] gRPC租户已禁用",
 					logger.String("tenant_id", t.TenantID()),
 					logger.String("method", info.FullMethod),
 				)
@@ -108,7 +109,7 @@ func StreamServerInterceptor(resolver Resolver, opts ...Option) grpc.StreamServe
 		token, err := o.tokenExtractor(ctx, nil)
 		if err != nil {
 			if o.logger != nil {
-				o.logger.WithContext(ctx).Debug("[Tenant] gRPC流令牌提取失败",
+				logger.FromContext(ctx).Debug("[Tenant] gRPC流令牌提取失败",
 					logger.String("method", info.FullMethod),
 					logger.Err(err),
 				)
@@ -120,7 +121,7 @@ func StreamServerInterceptor(resolver Resolver, opts ...Option) grpc.StreamServe
 		t, err := resolver.Resolve(ctx, token)
 		if err != nil {
 			if o.logger != nil {
-				o.logger.WithContext(ctx).Warn("[Tenant] gRPC流解析失败",
+				logger.FromContext(ctx).Warn("[Tenant] gRPC流解析失败",
 					logger.String("method", info.FullMethod),
 					logger.Err(err),
 				)
@@ -131,7 +132,7 @@ func StreamServerInterceptor(resolver Resolver, opts ...Option) grpc.StreamServe
 		// 检查租户是否启用
 		if !t.TenantEnabled() {
 			if o.logger != nil {
-				o.logger.WithContext(ctx).Warn("[Tenant] gRPC流租户已禁用",
+				logger.FromContext(ctx).Warn("[Tenant] gRPC流租户已禁用",
 					logger.String("tenant_id", t.TenantID()),
 					logger.String("method", info.FullMethod),
 				)

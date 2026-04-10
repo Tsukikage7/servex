@@ -1,6 +1,12 @@
 // Package trace 提供请求链路追踪增强中间件.
-// 统一 trace-id 在日志、响应头、下游调用中的传播，
-// 构建于 middleware/requestid 和 observability/tracing 之上.
+// 统一 trace-id 在日志、响应头、下游调用中的传播.
+//
+// 与 observability/tracing 的关系:
+//   - observability/tracing: OTel 全量链路追踪（Span/Export/Jaeger），重依赖
+//   - middleware/trace: 轻量级 trace-id 传播 + logger 注入，零外部依赖（仅 UUID）
+//
+// 两者可共存: 若 OTel span 已存在，本中间件优先使用 OTel 的 traceId/spanId，
+// 不再自行生成，避免覆盖.
 package trace
 
 import (
@@ -8,10 +14,10 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	otelTrace "go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
-	"github.com/Tsukikage7/servex/middleware/requestid"
 	"github.com/Tsukikage7/servex/observability/logger"
 	"github.com/Tsukikage7/servex/transport/grpcx"
 )
@@ -21,26 +27,22 @@ type ctxKey int
 
 const (
 	traceIDKey ctxKey = iota
-	requestIDKey
 )
 
 // Config 链路追踪增强配置.
 type Config struct {
 	// TraceIDHeader HTTP 响应头中的 trace ID 字段名，默认 "X-Trace-ID"
 	TraceIDHeader string
-	// RequestIDHeader HTTP 响应头中的 request ID 字段名，默认 "X-Request-ID"
-	RequestIDHeader string
 	// PropagateHeaders 需要传播到下游的 header 列表
 	PropagateHeaders []string
-	// Logger 日志器（自动注入 trace_id 和 request_id 字段）
+	// Logger 日志器（自动注入 traceId/spanId 字段）
 	Logger logger.Logger
 }
 
 // DefaultConfig 返回默认配置.
 func DefaultConfig() *Config {
 	return &Config{
-		TraceIDHeader:   "X-Trace-ID",
-		RequestIDHeader: "X-Request-ID",
+		TraceIDHeader: "X-Trace-ID",
 	}
 }
 
@@ -49,9 +51,6 @@ func (c *Config) applyDefaults() {
 	if c.TraceIDHeader == "" {
 		c.TraceIDHeader = "X-Trace-ID"
 	}
-	if c.RequestIDHeader == "" {
-		c.RequestIDHeader = "X-Request-ID"
-	}
 }
 
 // generateID 生成新的 UUID.
@@ -59,11 +58,35 @@ func generateID() string {
 	return uuid.New().String()
 }
 
+// extractOrGenerateTraceID 从 OTel span 或 header 中提取 traceId，都没有则生成新的.
+// 优先级: OTel span > header > 新生成 UUID.
+func extractOrGenerateTraceID(ctx context.Context, headerValue string) (traceID, spanID string) {
+	// 优先从 OTel span 提取（observability/tracing 中间件已创建）
+	span := otelTrace.SpanFromContext(ctx)
+	if span.SpanContext().HasTraceID() {
+		traceID = span.SpanContext().TraceID().String()
+		if span.SpanContext().HasSpanID() {
+			spanID = span.SpanContext().SpanID().String()
+		}
+		return
+	}
+
+	// 其次从 header 提取
+	if headerValue != "" {
+		traceID = headerValue
+		return
+	}
+
+	// 最后自行生成
+	traceID = generateID()
+	return
+}
+
 // HTTPMiddleware HTTP 链路追踪中间件.
 // 功能：
-//  1. 从请求中提取或生成 trace-id 和 request-id
+//  1. 从 OTel span / 请求头提取或生成 trace-id
 //  2. 注入到 response header
-//  3. 注入到 logger context（后续日志自动带 trace_id）
+//  3. 注入到 logger context（后续日志自动带 traceId/spanId）
 //  4. 注入到 context 供下游使用
 func HTTPMiddleware(cfg *Config) func(http.Handler) http.Handler {
 	if cfg == nil {
@@ -75,31 +98,29 @@ func HTTPMiddleware(cfg *Config) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			// 提取或生成 trace-id
-			traceID := r.Header.Get(cfg.TraceIDHeader)
-			if traceID == "" {
-				traceID = generateID()
-			}
-
-			// 提取 request-id（优先从 requestid 中间件获取，其次从 header，最后生成）
-			reqID, ok := requestid.FromContext(ctx)
-			if !ok || reqID == "" {
-				reqID = r.Header.Get(cfg.RequestIDHeader)
-				if reqID == "" {
-					reqID = generateID()
-				}
-			}
+			// 提取或生成 trace-id（优先复用 OTel span）
+			traceID, spanID := extractOrGenerateTraceID(ctx, r.Header.Get(cfg.TraceIDHeader))
 
 			// 注入到 context
 			ctx = withTraceID(ctx, traceID)
-			ctx = withRequestID(ctx, reqID)
-
-			// 注入到 logger context（便于后续日志自动带 trace 信息）
 			ctx = logger.ContextWithTraceID(ctx, traceID)
+			if spanID != "" {
+				ctx = logger.ContextWithSpanID(ctx, spanID)
+			}
+
+			// 将带 trace 信息的 logger 存入 context
+			if cfg.Logger != nil {
+				fields := []logger.Field{
+					logger.String("traceId", traceID),
+				}
+				if spanID != "" {
+					fields = append(fields, logger.String("spanId", spanID))
+				}
+				ctx = logger.NewContext(ctx, cfg.Logger.With(fields...))
+			}
 
 			// 设置响应头
 			w.Header().Set(cfg.TraceIDHeader, traceID)
-			w.Header().Set(cfg.RequestIDHeader, reqID)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
@@ -107,7 +128,7 @@ func HTTPMiddleware(cfg *Config) func(http.Handler) http.Handler {
 }
 
 // GRPCUnaryInterceptor gRPC 一元拦截器.
-// 从入站 metadata 中提取或生成 trace-id 和 request-id，
+// 从入站 metadata 中提取或生成 trace-id，
 // 注入到 context 和响应 metadata.
 func GRPCUnaryInterceptor(cfg *Config) grpc.UnaryServerInterceptor {
 	if cfg == nil {
@@ -127,7 +148,7 @@ func GRPCUnaryInterceptor(cfg *Config) grpc.UnaryServerInterceptor {
 }
 
 // GRPCStreamInterceptor gRPC 流式拦截器.
-// 从入站 metadata 中提取或生成 trace-id 和 request-id，
+// 从入站 metadata 中提取或生成 trace-id，
 // 注入到 context 和响应 metadata.
 func GRPCStreamInterceptor(cfg *Config) grpc.StreamServerInterceptor {
 	if cfg == nil {
@@ -147,31 +168,32 @@ func GRPCStreamInterceptor(cfg *Config) grpc.StreamServerInterceptor {
 	}
 }
 
-// injectTraceContext 从 gRPC metadata 提取或生成 trace/request ID 并注入 context.
+// injectTraceContext 从 gRPC metadata 提取或生成 traceId 并注入 context.
 func injectTraceContext(ctx context.Context, cfg *Config) context.Context {
-	// metadata key 需要小写
 	traceKey := grpcMetaKey(cfg.TraceIDHeader)
-	reqKey := grpcMetaKey(cfg.RequestIDHeader)
 
-	traceID := grpcx.GetMetadataValue(ctx, traceKey)
-	if traceID == "" {
-		traceID = generateID()
-	}
-
-	reqID, ok := requestid.FromContext(ctx)
-	if !ok || reqID == "" {
-		reqID = grpcx.GetMetadataValue(ctx, reqKey)
-		if reqID == "" {
-			reqID = generateID()
-		}
-	}
+	// 提取或生成 trace-id（优先复用 OTel span）
+	traceID, spanID := extractOrGenerateTraceID(ctx, grpcx.GetMetadataValue(ctx, traceKey))
 
 	ctx = withTraceID(ctx, traceID)
-	ctx = withRequestID(ctx, reqID)
 	ctx = logger.ContextWithTraceID(ctx, traceID)
+	if spanID != "" {
+		ctx = logger.ContextWithSpanID(ctx, spanID)
+	}
+
+	// 将带 trace 信息的 logger 存入 context
+	if cfg.Logger != nil {
+		fields := []logger.Field{
+			logger.String("traceId", traceID),
+		}
+		if spanID != "" {
+			fields = append(fields, logger.String("spanId", spanID))
+		}
+		ctx = logger.NewContext(ctx, cfg.Logger.With(fields...))
+	}
 
 	// 设置响应 metadata
-	_ = grpc.SetHeader(ctx, metadata.Pairs(traceKey, traceID, reqKey, reqID))
+	_ = grpc.SetHeader(ctx, metadata.Pairs(traceKey, traceID))
 
 	return ctx
 }
@@ -196,43 +218,22 @@ func TraceIDFromContext(ctx context.Context) string {
 	return id
 }
 
-// RequestIDFromContext 从 context 获取 request ID.
-func RequestIDFromContext(ctx context.Context) string {
-	id, _ := ctx.Value(requestIDKey).(string)
-	return id
-}
-
 // InjectHTTPHeaders 将 trace context 注入到 HTTP 请求头（用于客户端调用下游）.
 func InjectHTTPHeaders(ctx context.Context, req *http.Request) {
 	if traceID := TraceIDFromContext(ctx); traceID != "" {
 		req.Header.Set("X-Trace-ID", traceID)
 	}
-	if reqID := RequestIDFromContext(ctx); reqID != "" {
-		req.Header.Set("X-Request-ID", reqID)
-	}
 }
 
 // InjectGRPCMetadata 将 trace context 注入到 gRPC metadata（用于客户端调用下游）.
 func InjectGRPCMetadata(ctx context.Context) context.Context {
-	pairs := make([]string, 0, 4)
 	if traceID := TraceIDFromContext(ctx); traceID != "" {
-		pairs = append(pairs, "x-trace-id", traceID)
+		return grpcx.AppendOutgoingMetadata(ctx, "x-trace-id", traceID)
 	}
-	if reqID := RequestIDFromContext(ctx); reqID != "" {
-		pairs = append(pairs, "x-request-id", reqID)
-	}
-	if len(pairs) == 0 {
-		return ctx
-	}
-	return grpcx.AppendOutgoingMetadata(ctx, pairs...)
+	return ctx
 }
 
 // withTraceID 将 trace ID 存入 context.
 func withTraceID(ctx context.Context, id string) context.Context {
 	return context.WithValue(ctx, traceIDKey, id)
-}
-
-// withRequestID 将 request ID 存入 context.
-func withRequestID(ctx context.Context, id string) context.Context {
-	return context.WithValue(ctx, requestIDKey, id)
 }

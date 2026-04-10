@@ -15,17 +15,15 @@ import (
 type UserClient struct {
 	baseURL    string
 	httpClient *http.Client
-	log        logger.Logger
 }
 
 // NewUserClient 创建用户服务客户端.
-func NewUserClient(baseURL string, log logger.Logger) *UserClient {
+func NewUserClient(baseURL string) *UserClient {
 	return &UserClient{
 		baseURL: baseURL,
 		httpClient: &http.Client{
 			Timeout: 5 * time.Second,
 		},
-		log: log,
 	}
 }
 
@@ -46,7 +44,7 @@ func (c *UserClient) UserExists(ctx context.Context, userID uint64) (bool, error
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		c.log.With(
+		logger.FromContext(ctx).With(
 			logger.String("url", url),
 			logger.Err(err),
 		).Error("[UserClient] 请求用户服务失败")

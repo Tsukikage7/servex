@@ -84,7 +84,7 @@ func (c *Config) ApplyDefaults() {
 		c.Level = LevelInfo
 	}
 	if c.Format == "" {
-		c.Format = FormatJSON
+		c.Format = FormatConsole
 	}
 	if c.Output == "" {
 		c.Output = OutputConsole

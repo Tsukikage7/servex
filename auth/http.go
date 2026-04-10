@@ -44,7 +44,7 @@ func HTTPMiddleware(authenticator Authenticator, opts ...Option) func(http.Handl
 			creds, err := o.credentialsExtractor(ctx, r)
 			if err != nil {
 				if o.logger != nil {
-					o.logger.WithContext(ctx).Debug("[Auth] HTTP凭据提取失败",
+					logger.FromContext(ctx).Debug("[Auth] HTTP凭据提取失败",
 						logger.String("path", r.URL.Path),
 						logger.Err(err),
 					)
@@ -57,7 +57,7 @@ func HTTPMiddleware(authenticator Authenticator, opts ...Option) func(http.Handl
 			principal, err := authenticator.Authenticate(ctx, *creds)
 			if err != nil {
 				if o.logger != nil {
-					o.logger.WithContext(ctx).Warn("[Auth] HTTP认证失败",
+					logger.FromContext(ctx).Warn("[Auth] HTTP认证失败",
 						logger.String("path", r.URL.Path),
 						logger.Err(err),
 					)
@@ -73,7 +73,7 @@ func HTTPMiddleware(authenticator Authenticator, opts ...Option) func(http.Handl
 			if o.authorizer != nil {
 				if err := o.authorizer.Authorize(ctx, principal, "", r.URL.Path); err != nil {
 					if o.logger != nil {
-						o.logger.WithContext(ctx).Warn("[Auth] HTTP授权失败",
+						logger.FromContext(ctx).Warn("[Auth] HTTP授权失败",
 							logger.String("principal_id", principal.ID),
 							logger.String("path", r.URL.Path),
 							logger.Err(err),

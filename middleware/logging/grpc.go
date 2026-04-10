@@ -25,7 +25,7 @@ func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor {
 		start := time.Now()
 		resp, err := handler(ctx, req)
 
-		o.Logger.WithContext(ctx).Info("[grpc]",
+		logger.FromContext(ctx).Info("[grpc]",
 			logger.String("method", info.FullMethod),
 			logger.String("code", status.Code(err).String()),
 			logger.String("duration", time.Since(start).String()),
@@ -49,7 +49,7 @@ func StreamServerInterceptor(opts ...Option) grpc.StreamServerInterceptor {
 		start := time.Now()
 		err := handler(srv, ss)
 
-		o.Logger.WithContext(ss.Context()).Info("[grpc stream]",
+		logger.FromContext(ss.Context()).Info("[grpc stream]",
 			logger.String("method", info.FullMethod),
 			logger.String("code", status.Code(err).String()),
 			logger.String("duration", time.Since(start).String()),

@@ -23,7 +23,7 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 2. **模块名明确** → 直接生成该模块的示例或片段
 3. **需求模糊，无法映射** → 先问一个澄清问题，再生成
 4. **不确定 API 细节**（函数签名、选项名、默认值）→ 读取 servex 源码对应文件，不猜测
-5. **生成多中间件代码** → 严格按此顺序：requestid → logging → tracing → metrics → ratelimit → circuitbreaker → retry → timeout → recovery
+5. **生成多中间件代码** → 严格按此顺序：logging → tracing → metrics → ratelimit → circuitbreaker → retry → timeout → recovery
 
 **源码定位规则：**
 - 若在 servex 仓库本身，源码根目录即为当前目录
@@ -37,7 +37,7 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 | 领域 | 文件路径 | 覆盖模块 |
 |------|---------|---------|
 | 传输层 | `skills/servex/references/transport.md` | httpserver/grpcserver/httpclient/grpcclient/gateway/graphql/websocket/sse/grpcx/tls |
-| 中间件 | `skills/servex/references/middleware.md` | ratelimit/circuitbreaker/retry/recovery/timeout/cors/requestid/idempotency/semaphore/logging/secure/csrf/bodylimit/signature/trace/gzip/adaptive |
+| 中间件 | `skills/servex/references/middleware.md` | ratelimit/circuitbreaker/retry/recovery/timeout/cors/idempotency/semaphore/logging/secure/csrf/bodylimit/signature/trace/gzip/adaptive |
 | 存储 | `skills/servex/references/storage.md` | cache/rdbms/mongodb/elasticsearch/clickhouse/s3/minio/neo4j/lock/sqlx/migration/redis |
 | 认证 | `skills/servex/references/auth.md` | jwt/apikey/rbac |
 | 可观测性 | `skills/servex/references/observability.md` | logger/metrics/tracing/logshipper/slo/alerting/profiling |
@@ -64,7 +64,7 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 
 | 模块 | 包路径 | 描述 | 核心类型/函数 |
 |------|--------|------|--------------|
-| cmd/servex | `cmd/servex` | 脚手架 CLI（交互式向导 [charmbracelet/huh, Everforest Dark 主题]、项目生成、DDD 代码生成、Proto 管理） | `servex new`, `servex add service`, `servex gen aggregate/entity/valueobject/client/dockerfile/justfile`, `servex proto add/client/server`, `servex run`, `servex upgrade`, `servex completion` |
+| cmd/servex | `cmd/servex` | 脚手架 CLI（交互式向导 [charmbracelet/huh, Everforest Dark 主题]、项目生成、DDD 代码生成、Proto 管理[基于 buf]） | `servex new`, `servex add service`, `servex gen aggregate/entity/valueobject/client/dockerfile/justfile`, `servex proto add/client/server/lint/breaking`, `servex run`, `servex upgrade`, `servex completion` |
 
 **CLI 详情：**
 
@@ -78,7 +78,7 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 - **gen valueobject：** 生成 DDD 值对象（无 ID，不可变，属于聚合），需 `--aggregate`
 - **gen client：** 生成外部服务客户端适配器（防腐层 + gRPC client），需 `--service`
 - **gen dockerfile / justfile：** 生成 Dockerfile / justfile
-- **proto add/client/server：** Proto 模板创建、客户端代码生成、服务端桩代码生成
+- **proto add/client/server/lint/breaking：** Proto 模板创建（自动生成 buf.yaml + buf.gen.yaml）、buf generate 客户端代码生成、服务端桩代码生成、buf lint 规范检查、buf breaking 兼容性检测
 - **run：** 运行服务（自动检测入口）
 - **upgrade / completion：** 自升级、Shell 自动补全（bash/zsh/fish）
 
@@ -124,7 +124,6 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 | recovery | `middleware/recovery` | Panic 恢复 | `New` |
 | timeout | `middleware/timeout` | 超时控制 | `New`, `WithTimeout` |
 | cors | `middleware/cors` | 跨域 | `New`, `WithAllowOrigins` |
-| requestid | `middleware/requestid` | 请求 ID 注入 | `New`, `FromContext` |
 | idempotency | `middleware/idempotency` | 幂等性保证 | `New`, `WithStore` |
 | semaphore | `middleware/semaphore` | 并发控制 | `New`, `WithLimit` |
 | logging | `middleware/logging` | 结构化请求日志 | `NewHTTP`, `NewGRPC` |
@@ -167,7 +166,7 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 |------|--------|------|--------------|
 | observability/metrics | `observability/metrics` | Prometheus 指标 | `NewMetrics`, `MustNewMetrics`, `DefaultConfig` |
 | observability/tracing | `observability/tracing` | OpenTelemetry 追踪 | `NewTracer`, `TracingConfig`, `OTLPConfig` |
-| observability/logger | `observability/logger` | 结构化日志 | `NewLogger`, `WithLevel`, `WithOutput` |
+| observability/logger | `observability/logger` | 结构化日志 | `NewLogger`, `NewContext`, `FromContext`, `WithLevel`, `WithOutput` |
 | observability/logshipper | `observability/logshipper` | 日志投递（ES/Kafka sink，异步批量） | `New`, `NewElasticsearchSink`, `NewKafkaSink`, `ZapHook`, `AttachToLogger`, `NewLoggerHook` |
 | observability/slo | `observability/slo` | SLO/SLI 追踪（错误预算/告警） | `NewTracker`, `Objective`, `Record`, `Status`, `OnBreach`, `PrometheusCollector` |
 | observability/alerting | `observability/alerting` | 告警规则引擎（阈值/速率/缺失检测） | `New`, `Engine`, `AddRule`, `RemoveRule`, `Start`, `Stop`, `Evaluate`, `ActiveAlerts`, `AlertHistory` |

@@ -18,7 +18,9 @@ import (
 //  2. 记录超时日志（如果设置了 logger）
 //  3. 调用超时回调（如果设置了 onTimeout）
 //  4. 返回 codes.DeadlineExceeded 错误
+//
 // 示例:
+//
 //	srv := grpc.NewServer(
 //	    grpc.ChainUnaryInterceptor(
 //	        timeout.UnaryServerInterceptor(5*time.Second),
@@ -54,7 +56,7 @@ func UnaryServerInterceptor(timeout time.Duration, opts ...Option) grpc.UnarySer
 		select {
 		case <-ctx.Done():
 			if o.logger != nil {
-				o.logger.WithContext(ctx).Warn(
+				logger.FromContext(ctx).Warn(
 					"[Timeout] gRPC一元请求超时",
 					logger.String("method", info.FullMethod),
 					logger.Duration("timeout", o.timeout),
@@ -75,6 +77,7 @@ func UnaryServerInterceptor(timeout time.Duration, opts ...Option) grpc.UnarySer
 // 注意: 流超时比较复杂，此拦截器只设置初始超时。
 // 对于长时间运行的流，建议在业务逻辑中自行管理超时.
 // 示例:
+//
 //	srv := grpc.NewServer(
 //	    grpc.ChainStreamInterceptor(
 //	        timeout.StreamServerInterceptor(30*time.Second),
@@ -112,7 +115,7 @@ func StreamServerInterceptor(timeout time.Duration, opts ...Option) grpc.StreamS
 		select {
 		case <-ctx.Done():
 			if o.logger != nil {
-				o.logger.WithContext(ctx).Warn(
+				logger.FromContext(ctx).Warn(
 					"[Timeout] gRPC流请求超时",
 					logger.String("method", info.FullMethod),
 					logger.Duration("timeout", o.timeout),
@@ -132,6 +135,7 @@ func StreamServerInterceptor(timeout time.Duration, opts ...Option) grpc.StreamS
 // UnaryClientInterceptor 返回 gRPC 一元客户端超时拦截器.
 // 为所有出站请求设置默认超时（如果未设置）.
 // 示例:
+//
 //	conn, _ := grpc.Dial(target,
 //	    grpc.WithUnaryInterceptor(timeout.UnaryClientInterceptor(5*time.Second)),
 //	)
@@ -160,7 +164,7 @@ func UnaryClientInterceptor(timeout time.Duration, opts ...Option) grpc.UnaryCli
 		err := invoker(ctx, method, req, reply, cc, callOpts...)
 		if err != nil && ctx.Err() == context.DeadlineExceeded {
 			if o.logger != nil {
-				o.logger.WithContext(ctx).Warn(
+				logger.FromContext(ctx).Warn(
 					"[Timeout] gRPC客户端请求超时",
 					logger.String("method", method),
 					logger.Duration("timeout", o.timeout),
@@ -201,7 +205,7 @@ func StreamClientInterceptor(timeout time.Duration, opts ...Option) grpc.StreamC
 		stream, err := streamer(ctx, desc, cc, method, callOpts...)
 		if err != nil && ctx.Err() == context.DeadlineExceeded {
 			if o.logger != nil {
-				o.logger.WithContext(ctx).Warn(
+				logger.FromContext(ctx).Warn(
 					"[Timeout] gRPC客户端流超时",
 					logger.String("method", method),
 					logger.Duration("timeout", o.timeout),

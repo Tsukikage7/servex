@@ -10,6 +10,8 @@ import (
 	"github.com/Tsukikage7/servex/app"
 	"github.com/Tsukikage7/servex/auth/jwt"
 	"github.com/Tsukikage7/servex/domain"
+	"github.com/Tsukikage7/servex/middleware/logging"
+	"github.com/Tsukikage7/servex/middleware/recovery"
 	"github.com/Tsukikage7/servex/observability/logger"
 	"github.com/Tsukikage7/servex/storage/rdbms"
 	"github.com/Tsukikage7/servex/transport/httpserver"
@@ -78,8 +80,10 @@ func main() {
 	httpSrv := httpserver.New(router,
 		httpserver.WithLogger(l),
 		httpserver.WithAddr(":8081"),
-		httpserver.WithRecovery(),
-		httpserver.WithLogging(),
+		httpserver.WithMiddlewares(
+			recovery.HTTPMiddleware(recovery.WithLogger(l)),
+			logging.HTTPMiddleware(logging.WithLogger(l)),
+		),
 	)
 
 	// 启动应用

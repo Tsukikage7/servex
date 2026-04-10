@@ -21,12 +21,12 @@ import (
 	"github.com/Tsukikage7/servex/middleware/logging"
 	"github.com/Tsukikage7/servex/middleware/ratelimit"
 	"github.com/Tsukikage7/servex/middleware/recovery"
-	"github.com/Tsukikage7/servex/middleware/requestid"
 	"github.com/Tsukikage7/servex/observability/logger"
 	"github.com/Tsukikage7/servex/observability/metrics"
 	"github.com/Tsukikage7/servex/observability/tracing"
 	"github.com/Tsukikage7/servex/tenant"
 	"github.com/Tsukikage7/servex/transport"
+	"github.com/Tsukikage7/servex/transport/grpcx"
 	"github.com/Tsukikage7/servex/transport/health"
 	"github.com/Tsukikage7/servex/transport/response"
 )
@@ -250,12 +250,14 @@ func (s *Server) startGRPC() error {
 			Timeout: s.opts.keepaliveTimeout,
 		}),
 	}
-	if len(s.opts.unaryInterceptors) > 0 {
-		serverOpts = append(serverOpts, grpc.ChainUnaryInterceptor(s.opts.unaryInterceptors...))
-	}
-	if len(s.opts.streamInterceptors) > 0 {
-		serverOpts = append(serverOpts, grpc.ChainStreamInterceptor(s.opts.streamInterceptors...))
-	}
+	// logger 注入拦截器（最前面，保证所有拦截器和业务代码都能用 logger.FromContext）
+	allUnary := []grpc.UnaryServerInterceptor{loggerUnaryInterceptor(s.opts.logger)}
+	allUnary = append(allUnary, s.opts.unaryInterceptors...)
+	serverOpts = append(serverOpts, grpc.ChainUnaryInterceptor(allUnary...))
+
+	allStream := []grpc.StreamServerInterceptor{loggerStreamInterceptor(s.opts.logger)}
+	allStream = append(allStream, s.opts.streamInterceptors...)
+	serverOpts = append(serverOpts, grpc.ChainStreamInterceptor(allStream...))
 	serverOpts = append(serverOpts, s.opts.grpcServerOpts...)
 
 	s.grpcServer = grpc.NewServer(serverOpts...)
@@ -379,10 +381,7 @@ func (s *Server) startHTTP(ctx context.Context) error {
 		)(handler)
 	}
 
-	// 2. RequestID（HTTP 端）
-	if s.opts.enableRequestID {
-		handler = requestid.HTTPMiddleware(s.opts.requestIDOpts...)(handler)
-	}
+	// 2. RequestID（已由 trace 中间件统一处理，保留开关兼容）
 
 	// 1. Recovery（HTTP 端，最外层）
 	if s.opts.enableRecovery {
@@ -393,6 +392,9 @@ func (s *Server) startHTTP(ctx context.Context) error {
 	for i := len(s.opts.httpMiddlewares) - 1; i >= 0; i-- {
 		handler = s.opts.httpMiddlewares[i](handler)
 	}
+
+	// logger 注入（最外层，保证所有中间件和业务代码都能用 logger.FromContext(ctx)）
+	handler = injectLogger(s.opts.logger)(handler)
 
 	s.httpHandler = handler
 
@@ -434,3 +436,30 @@ func (s *Server) startHTTP(ctx context.Context) error {
 
 // 确保 Server 实现了 transport.HealthCheckable 接口.
 var _ transport.HealthCheckable = (*Server)(nil)
+
+// injectLogger 返回 HTTP 中间件，将 logger 注入到每个请求的 context 中.
+func injectLogger(log logger.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := logger.NewContext(r.Context(), log)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+// loggerUnaryInterceptor 将 logger 注入到每个 gRPC 请求的 context 中.
+func loggerUnaryInterceptor(log logger.Logger) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		ctx = logger.NewContext(ctx, log)
+		return handler(ctx, req)
+	}
+}
+
+// loggerStreamInterceptor 将 logger 注入到每个 gRPC 流的 context 中.
+func loggerStreamInterceptor(log logger.Logger) grpc.StreamServerInterceptor {
+	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		ctx := logger.NewContext(ss.Context(), log)
+		wrapped := grpcx.WrapServerStream(ss, ctx)
+		return handler(srv, wrapped)
+	}
+}

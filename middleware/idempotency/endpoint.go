@@ -20,8 +20,10 @@ type IdempotentRequest interface {
 //  1. 检查该键是否已有结果
 //  2. 如果有，直接返回之前的结果
 //  3. 如果没有，执行请求并保存结果
+//
 // 请求类型需要实现 IdempotentRequest 接口，或通过 WithKeyExtractor 自定义提取逻辑.
 // 示例:
+//
 //	store := idempotency.NewRedisStore(redisClient)
 //	endpoint = idempotency.EndpointMiddleware(store)(endpoint)
 func EndpointMiddleware(store Store, opts ...Option) endpoint.Middleware {
@@ -51,7 +53,7 @@ func EndpointMiddleware(store Store, opts ...Option) endpoint.Middleware {
 			if err != nil {
 				if o.skipOnError {
 					if o.logger != nil {
-						o.logger.WithContext(ctx).Warn(
+						logger.FromContext(ctx).Warn(
 							"[Idempotency] 存储获取失败，跳过检查",
 							logger.String("key", key),
 							logger.Err(err),
@@ -65,7 +67,7 @@ func EndpointMiddleware(store Store, opts ...Option) endpoint.Middleware {
 			if result != nil {
 				// 返回之前的结果
 				if o.logger != nil {
-					o.logger.WithContext(ctx).Debug(
+					logger.FromContext(ctx).Debug(
 						"[Idempotency] 缓存命中",
 						logger.String("key", key),
 					)
@@ -78,7 +80,7 @@ func EndpointMiddleware(store Store, opts ...Option) endpoint.Middleware {
 			if err != nil {
 				if o.skipOnError {
 					if o.logger != nil {
-						o.logger.WithContext(ctx).Warn(
+						logger.FromContext(ctx).Warn(
 							"[Idempotency] 获取锁失败，跳过检查",
 							logger.String("key", key),
 							logger.Err(err),
@@ -109,7 +111,7 @@ func EndpointMiddleware(store Store, opts ...Option) endpoint.Middleware {
 
 			if saveErr := store.Set(ctx, key, saveResult, o.ttl); saveErr != nil {
 				if o.logger != nil {
-					o.logger.WithContext(ctx).Warn(
+					logger.FromContext(ctx).Warn(
 						"[Idempotency] 存储写入失败",
 						logger.String("key", key),
 						logger.Err(saveErr),

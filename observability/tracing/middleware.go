@@ -22,6 +22,7 @@ const TraceIDHeader = "X-Trace-Id"
 // 中间件会自动从请求头提取或生成 traceId，并通过响应头 X-Trace-Id 返回.
 // traceId 同时作为请求的唯一标识（requestId），可通过 TraceID(ctx) 获取.
 // 使用示例:
+//
 //	mux := http.NewServeMux()
 //	mux.HandleFunc("/api/users", handleUsers)
 //	handler := trace.HTTPMiddleware("my-service")(mux)
@@ -53,7 +54,7 @@ func HTTPMiddleware(serviceName string) func(http.Handler) http.Handler {
 			)
 			defer span.End()
 
-			// 注入 trace 信息到 context，供 logger.WithContext 使用
+			// 注入 trace 信息到 context（供 middleware/trace 读取）
 			spanCtx := span.SpanContext()
 			if spanCtx.HasTraceID() {
 				ctx = logger.ContextWithTraceID(ctx, spanCtx.TraceID().String())
@@ -102,6 +103,7 @@ func SpanFromContext(ctx context.Context) trace.Span {
 
 // StartSpan 在当前 context 中创建新的 span.
 // 使用示例:
+//
 //	ctx, span := tracing.StartSpan(ctx, "my-service", "process-order")
 //	defer span.End()
 func StartSpan(ctx context.Context, tracerName, spanName string, opts ...trace.SpanStartOption) (context.Context, trace.Span) {
@@ -131,6 +133,7 @@ func SetSpanAttributes(ctx context.Context, attrs ...attribute.KeyValue) {
 // InjectHTTPHeaders 将追踪信息注入到 HTTP 请求头.
 // 用于向下游服务传播追踪上下文.
 // 使用示例:
+//
 //	req, _ := http.NewRequestWithContext(ctx, "GET", "http://service-b/api", nil)
 //	tracing.InjectHTTPHeaders(ctx, req)
 //	resp, err := client.Do(req)
@@ -158,6 +161,7 @@ func SpanID(ctx context.Context) string {
 
 // EndpointMiddleware 返回 Endpoint 链路追踪中间件.
 // 使用示例:
+//
 //	endpoint = trace.EndpointMiddleware("my-service", "GetUser")(endpoint)
 func EndpointMiddleware(serviceName, operationName string) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {

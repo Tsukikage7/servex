@@ -182,21 +182,21 @@ func (l *gormLoggerAdapter) LogMode(level gormlogger.LogLevel) gormlogger.Interf
 // Info 信息日志.
 func (l *gormLoggerAdapter) Info(ctx context.Context, msg string, data ...any) {
 	if l.logLevel >= gormlogger.Info {
-		l.logger.WithContext(ctx).Infof(msg, data...)
+		logger.FromContext(ctx).Infof(msg, data...)
 	}
 }
 
 // Warn 警告日志.
 func (l *gormLoggerAdapter) Warn(ctx context.Context, msg string, data ...any) {
 	if l.logLevel >= gormlogger.Warn {
-		l.logger.WithContext(ctx).Warnf(msg, data...)
+		logger.FromContext(ctx).Warnf(msg, data...)
 	}
 }
 
 // Error 错误日志.
 func (l *gormLoggerAdapter) Error(ctx context.Context, msg string, data ...any) {
 	if l.logLevel >= gormlogger.Error {
-		l.logger.WithContext(ctx).Errorf(msg, data...)
+		logger.FromContext(ctx).Errorf(msg, data...)
 	}
 }
 
@@ -211,11 +211,11 @@ func (l *gormLoggerAdapter) Trace(ctx context.Context, begin time.Time, fc func(
 
 	// 使用结构化字段，让 logger 根据 Format 配置自动格式化
 	// 先添加业务字段，再添加 trace 信息，保持 traceId/spanId 在最后
-	log := l.logger.With(
+	log := logger.FromContext(ctx).With(
 		logger.Duration("elapsed", elapsed),
 		logger.Int64("rows", rows),
 		logger.String("sql", sql),
-	).WithContext(ctx)
+	)
 
 	switch {
 	case err != nil && !errors.Is(err, gorm.ErrRecordNotFound):

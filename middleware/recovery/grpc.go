@@ -15,7 +15,9 @@ import (
 //  1. 捕获 panic 并记录堆栈信息
 //  2. 调用自定义 Handler（如果设置）
 //  3. 返回 codes.Internal 错误
+//
 // 示例:
+//
 //	srv := grpc.NewServer(
 //	    grpc.ChainUnaryInterceptor(
 //	        recovery.UnaryServerInterceptor(recovery.WithLogger(log)),
@@ -38,7 +40,7 @@ func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor {
 				stack := captureStack(o.StackSize, o.StackAll)
 
 				// 记录 panic 日志
-				o.Logger.WithContext(ctx).Error(
+				logger.FromContext(ctx).Error(
 					"grpc unary panic recovered",
 					logger.Any("panic", p),
 					logger.String("method", info.FullMethod),
@@ -64,7 +66,9 @@ func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor {
 //  1. 捕获 panic 并记录堆栈信息
 //  2. 调用自定义 Handler（如果设置）
 //  3. 返回 codes.Internal 错误
+//
 // 示例:
+//
 //	srv := grpc.NewServer(
 //	    grpc.ChainStreamInterceptor(
 //	        recovery.StreamServerInterceptor(recovery.WithLogger(log)),
@@ -87,7 +91,7 @@ func StreamServerInterceptor(opts ...Option) grpc.StreamServerInterceptor {
 				stack := captureStack(o.StackSize, o.StackAll)
 
 				// 记录 panic 日志
-				o.Logger.WithContext(ss.Context()).Error(
+				logger.FromContext(ss.Context()).Error(
 					"grpc stream panic recovered",
 					logger.Any("panic", p),
 					logger.String("method", info.FullMethod),

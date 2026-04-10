@@ -14,10 +14,14 @@ import (
 //  2. 记录超时日志（如果设置了 logger）
 //  3. 调用超时回调（如果设置了 onTimeout）
 //  4. 返回 ErrTimeout 或 context.DeadlineExceeded
+//
 // 示例:
+//
 //	endpoint := myEndpoint
 //	endpoint = timeout.EndpointMiddleware(5*time.Second)(endpoint)
+//
 // 带日志:
+//
 //	endpoint = timeout.EndpointMiddleware(5*time.Second,
 //	    timeout.WithLogger(log),
 //	)(endpoint)
@@ -50,7 +54,7 @@ func EndpointMiddleware(timeout time.Duration, opts ...Option) endpoint.Middlewa
 			case <-ctx.Done():
 				// 超时或取消
 				if o.logger != nil {
-					o.logger.WithContext(ctx).Warn(
+					logger.FromContext(ctx).Warn(
 						"[Timeout] 端点执行超时",
 						logger.Duration("timeout", o.timeout),
 					)
@@ -70,6 +74,7 @@ func EndpointMiddleware(timeout time.Duration, opts ...Option) endpoint.Middlewa
 // EndpointMiddlewareWithFallback 返回带降级的超时中间件.
 // 当请求超时时，调用 fallback 函数返回降级响应，而不是返回错误.
 // 示例:
+//
 //	endpoint = timeout.EndpointMiddlewareWithFallback(
 //	    5*time.Second,
 //	    func(ctx context.Context, request any) (any, error) {
@@ -109,7 +114,7 @@ func EndpointMiddlewareWithFallback(
 			select {
 			case <-ctx.Done():
 				if o.logger != nil {
-					o.logger.WithContext(ctx).Warn(
+					logger.FromContext(ctx).Warn(
 						"[Timeout] 端点执行超时，使用降级响应",
 						logger.Duration("timeout", o.timeout),
 					)

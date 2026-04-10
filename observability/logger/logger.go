@@ -89,6 +89,8 @@ const (
 	TraceIDKey contextKey = "logger:traceId"
 	// SpanIDKey 用于在 context 中存储 spanId.
 	SpanIDKey contextKey = "logger:spanId"
+	// loggerKey 用于在 context 中存储 Logger 实例.
+	loggerKey contextKey = "logger:instance"
 )
 
 // Field 表示一个日志字段.
@@ -115,11 +117,33 @@ type Logger interface {
 
 	// 结构化日志方法
 	With(fields ...Field) Logger
-	WithContext(ctx context.Context) Logger
 
 	// 生命周期管理
 	Sync() error
 	Close() error
+}
+
+// NewContext 将 Logger 存入 context.
+// 通常在中间件中调用，将带 traceId 等字段的 logger 注入到 context，
+// 业务代码通过 FromContext 取出即可自动携带链路信息.
+func NewContext(ctx context.Context, l Logger) context.Context {
+	return context.WithValue(ctx, loggerKey, l)
+}
+
+// FromContext 从 context 中取出 Logger.
+// 如果 context 中没有 Logger（中间件未注入），回退到从 context 中提取
+// traceId/spanId 构建一个带链路信息的 nop logger.
+// 业务代码推荐用法:
+//
+//	logger.FromContext(ctx).Info("处理请求")
+func FromContext(ctx context.Context) Logger {
+	if ctx == nil {
+		return &nopLogger{}
+	}
+	if l, ok := ctx.Value(loggerKey).(Logger); ok {
+		return l
+	}
+	return &nopLogger{}
 }
 
 // ContextWithTraceID 将 traceId 注入到 context.
@@ -131,6 +155,25 @@ func ContextWithTraceID(ctx context.Context, traceID string) context.Context {
 func ContextWithSpanID(ctx context.Context, spanID string) context.Context {
 	return context.WithValue(ctx, SpanIDKey, spanID)
 }
+
+// nopLogger 空日志实现，FromContext 在 context 中找不到 logger 时的回退.
+type nopLogger struct{}
+
+func (n *nopLogger) Debug(...any)          {}
+func (n *nopLogger) Debugf(string, ...any) {}
+func (n *nopLogger) Info(...any)           {}
+func (n *nopLogger) Infof(string, ...any)  {}
+func (n *nopLogger) Warn(...any)           {}
+func (n *nopLogger) Warnf(string, ...any)  {}
+func (n *nopLogger) Error(...any)          {}
+func (n *nopLogger) Errorf(string, ...any) {}
+func (n *nopLogger) Fatal(...any)          {}
+func (n *nopLogger) Fatalf(string, ...any) {}
+func (n *nopLogger) Panic(...any)          {}
+func (n *nopLogger) Panicf(string, ...any) {}
+func (n *nopLogger) With(...Field) Logger  { return n }
+func (n *nopLogger) Sync() error           { return nil }
+func (n *nopLogger) Close() error          { return nil }
 
 // NewLogger 创建 logger 实例.
 func NewLogger(config *Config) (Logger, error) {

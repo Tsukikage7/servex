@@ -73,14 +73,17 @@ func (c *consoleEncoder) EncodeEntry(entry zapcore.Entry, fields []zapcore.Field
 	buf.AppendString(entry.Message)
 
 	// 编码通过 With() 添加的字段
-	if c.fields.Len() > 0 {
+	hasWithFields := c.fields.Len() > 0
+	hasCallFields := len(fields) > 0
+
+	if hasWithFields {
 		buf.AppendString(c.config.ConsoleSeparator)
 		buf.AppendString(c.fields.String())
 	}
 
 	// 编码本次调用传入的字段
-	if len(fields) > 0 {
-		if c.fields.Len() == 0 {
+	if hasCallFields {
+		if !hasWithFields {
 			buf.AppendString(c.config.ConsoleSeparator)
 		}
 		for i, field := range fields {

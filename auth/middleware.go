@@ -34,7 +34,7 @@ func Middleware(authenticator Authenticator, opts ...Option) endpoint.Middleware
 			creds, err := extractCredentials(ctx, request, o)
 			if err != nil {
 				if o.logger != nil {
-					o.logger.WithContext(ctx).Debug("[Auth] 凭据提取失败", logger.Err(err))
+					logger.FromContext(ctx).Debug("[Auth] 凭据提取失败", logger.Err(err))
 				}
 				return nil, handleError(ctx, ErrCredentialsNotFound, o)
 			}
@@ -43,7 +43,7 @@ func Middleware(authenticator Authenticator, opts ...Option) endpoint.Middleware
 			principal, err := authenticator.Authenticate(ctx, *creds)
 			if err != nil {
 				if o.logger != nil {
-					o.logger.WithContext(ctx).Warn("[Auth] 认证失败", logger.Err(err))
+					logger.FromContext(ctx).Warn("[Auth] 认证失败", logger.Err(err))
 				}
 				return nil, handleError(ctx, err, o)
 			}
@@ -55,7 +55,7 @@ func Middleware(authenticator Authenticator, opts ...Option) endpoint.Middleware
 			if o.authorizer != nil {
 				if err := o.authorizer.Authorize(ctx, principal, "", ""); err != nil {
 					if o.logger != nil {
-						o.logger.WithContext(ctx).Warn("[Auth] 授权失败",
+						logger.FromContext(ctx).Warn("[Auth] 授权失败",
 							logger.String("principal_id", principal.ID),
 							logger.Err(err),
 						)

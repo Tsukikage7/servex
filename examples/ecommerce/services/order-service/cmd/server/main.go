@@ -9,6 +9,8 @@ import (
 
 	"github.com/Tsukikage7/servex/app"
 	"github.com/Tsukikage7/servex/domain"
+	"github.com/Tsukikage7/servex/middleware/logging"
+	"github.com/Tsukikage7/servex/middleware/recovery"
 	"github.com/Tsukikage7/servex/observability/logger"
 	"github.com/Tsukikage7/servex/storage/rdbms"
 	"github.com/Tsukikage7/servex/transport/httpserver"
@@ -70,7 +72,7 @@ func main() {
 	})
 
 	// 初始化外部服务客户端
-	userClient := external.NewUserClient("http://127.0.0.1:8081", l)
+	userClient := external.NewUserClient("http://127.0.0.1:8081")
 
 	// 初始化仓储与应用服务
 	orderRepo := persistence.NewOrderRepository(gormDB)
@@ -84,8 +86,10 @@ func main() {
 	httpSrv := httpserver.New(router,
 		httpserver.WithLogger(l),
 		httpserver.WithAddr(":8082"),
-		httpserver.WithRecovery(),
-		httpserver.WithLogging(),
+		httpserver.WithMiddlewares(
+			recovery.HTTPMiddleware(recovery.WithLogger(l)),
+			logging.HTTPMiddleware(logging.WithLogger(l)),
+		),
 	)
 
 	// 启动应用

@@ -11,6 +11,7 @@ import (
 // HTTPMiddleware 返回 HTTP 租户解析中间件.
 // 默认 TokenExtractor 为 BearerTokenExtractor().
 // 示例:
+//
 //	handler = tenant.HTTPMiddleware(resolver)(handler)
 func HTTPMiddleware(resolver Resolver, opts ...Option) func(http.Handler) http.Handler {
 	if resolver == nil {
@@ -37,7 +38,7 @@ func HTTPMiddleware(resolver Resolver, opts ...Option) func(http.Handler) http.H
 			token, err := o.tokenExtractor(ctx, r)
 			if err != nil {
 				if o.logger != nil {
-					o.logger.WithContext(ctx).Debug("[Tenant] HTTP令牌提取失败",
+					logger.FromContext(ctx).Debug("[Tenant] HTTP令牌提取失败",
 						logger.String("path", r.URL.Path),
 						logger.Err(err),
 					)
@@ -50,7 +51,7 @@ func HTTPMiddleware(resolver Resolver, opts ...Option) func(http.Handler) http.H
 			t, err := resolver.Resolve(ctx, token)
 			if err != nil {
 				if o.logger != nil {
-					o.logger.WithContext(ctx).Warn("[Tenant] HTTP解析失败",
+					logger.FromContext(ctx).Warn("[Tenant] HTTP解析失败",
 						logger.String("path", r.URL.Path),
 						logger.Err(err),
 					)
@@ -62,7 +63,7 @@ func HTTPMiddleware(resolver Resolver, opts ...Option) func(http.Handler) http.H
 			// 检查租户是否启用
 			if !t.TenantEnabled() {
 				if o.logger != nil {
-					o.logger.WithContext(ctx).Warn("[Tenant] HTTP租户已禁用",
+					logger.FromContext(ctx).Warn("[Tenant] HTTP租户已禁用",
 						logger.String("tenant_id", t.TenantID()),
 						logger.String("path", r.URL.Path),
 					)
@@ -79,6 +80,7 @@ func HTTPMiddleware(resolver Resolver, opts ...Option) func(http.Handler) http.H
 
 // HTTPSkipPaths 返回跳过指定路径的 Skipper（精确匹配 + 通配前缀）.
 // 示例:
+//
 //	tenant.HTTPSkipPaths("/health", "/api/public/*")
 func HTTPSkipPaths(paths ...string) Skipper {
 	exact := make(map[string]bool)

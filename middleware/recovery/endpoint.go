@@ -12,7 +12,9 @@ import (
 //  1. 捕获 panic 并记录堆栈信息
 //  2. 调用自定义 Handler（如果设置）
 //  3. 返回 PanicError
+//
 // 示例:
+//
 //	endpoint := myEndpoint
 //	endpoint = recovery.EndpointMiddleware(recovery.WithLogger(log))(endpoint)
 func EndpointMiddleware(opts ...Option) endpoint.Middleware {
@@ -28,7 +30,7 @@ func EndpointMiddleware(opts ...Option) endpoint.Middleware {
 					stack := captureStack(o.StackSize, o.StackAll)
 
 					// 记录 panic 日志
-					o.Logger.WithContext(ctx).Error(
+					logger.FromContext(ctx).Error(
 						"endpoint panic recovered",
 						logger.Any("panic", p),
 						logger.String("stack", string(stack)),

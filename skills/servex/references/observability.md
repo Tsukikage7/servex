@@ -88,17 +88,18 @@ log.With(
     logger.Field{Key: "latency_ms", Value: 42},
 ).Info("请求完成")
 
-// 注入 context（自动提取 traceId/spanId）
-log.WithContext(ctx).Info("带链路追踪的日志")
+// 从 context 取出 logger（trace 中间件已注入 traceId/spanId）
+logger.FromContext(ctx).Info("带链路追踪的日志")
 ```
 
 **Logger 接口方法：**
 - 级别方法：`Debug`/`Info`/`Warn`/`Error`/`Fatal`/`Panic`（及 `f` 格式化版本）
 - `With(fields...) Logger` — 附加结构化字段
-- `WithContext(ctx) Logger` — 注入 context（自动提取 traceId）
 - `Sync() error` / `Close() error` — 刷新/关闭
 
-**辅助函数：**
+**Context 集成函数：**
+- `logger.NewContext(ctx, l)` — 将 logger 存入 context（中间件层调用）
+- `logger.FromContext(ctx)` — 从 context 取出 logger（业务层调用）
 - `logger.ContextWithTraceID(ctx, traceID)` — 注入 traceId 到 context
 - `logger.ContextWithSpanID(ctx, spanID)` — 注入 spanId 到 context
 

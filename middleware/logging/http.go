@@ -11,6 +11,7 @@ import (
 // 每次请求结束后记录方法、路径、状态码、耗时和响应字节数.
 // 可通过 WithSkipPaths 跳过探活等不需要记录的路径.
 // 示例:
+//
 //	handler = logging.HTTPMiddleware(
 //	    logging.WithLogger(log),
 //	    logging.WithSkipPaths("/health", "/metrics"),
@@ -33,7 +34,7 @@ func HTTPMiddleware(opts ...Option) func(http.Handler) http.Handler {
 
 			next.ServeHTTP(rec, r)
 
-			o.Logger.WithContext(r.Context()).Info("[http]",
+			logger.FromContext(r.Context()).Info("[http]",
 				logger.String("method", r.Method),
 				logger.String("path", r.URL.Path),
 				logger.Int("status", rec.status),

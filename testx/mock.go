@@ -2,7 +2,6 @@
 package testx
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -12,22 +11,21 @@ import (
 // nopLogger 空操作日志记录器，丢弃所有日志输出.
 type nopLogger struct{}
 
-func (n *nopLogger) Debug(_ ...any)                              {}
-func (n *nopLogger) Debugf(_ string, _ ...any)                   {}
-func (n *nopLogger) Info(_ ...any)                               {}
-func (n *nopLogger) Infof(_ string, _ ...any)                    {}
-func (n *nopLogger) Warn(_ ...any)                               {}
-func (n *nopLogger) Warnf(_ string, _ ...any)                    {}
-func (n *nopLogger) Error(_ ...any)                              {}
-func (n *nopLogger) Errorf(_ string, _ ...any)                   {}
-func (n *nopLogger) Fatal(_ ...any)                              {}
-func (n *nopLogger) Fatalf(_ string, _ ...any)                   {}
-func (n *nopLogger) Panic(_ ...any)                              {}
-func (n *nopLogger) Panicf(_ string, _ ...any)                   {}
-func (n *nopLogger) With(_ ...logger.Field) logger.Logger        { return n }
-func (n *nopLogger) WithContext(_ context.Context) logger.Logger { return n }
-func (n *nopLogger) Sync() error                                 { return nil }
-func (n *nopLogger) Close() error                                { return nil }
+func (n *nopLogger) Debug(_ ...any)                       {}
+func (n *nopLogger) Debugf(_ string, _ ...any)            {}
+func (n *nopLogger) Info(_ ...any)                        {}
+func (n *nopLogger) Infof(_ string, _ ...any)             {}
+func (n *nopLogger) Warn(_ ...any)                        {}
+func (n *nopLogger) Warnf(_ string, _ ...any)             {}
+func (n *nopLogger) Error(_ ...any)                       {}
+func (n *nopLogger) Errorf(_ string, _ ...any)            {}
+func (n *nopLogger) Fatal(_ ...any)                       {}
+func (n *nopLogger) Fatalf(_ string, _ ...any)            {}
+func (n *nopLogger) Panic(_ ...any)                       {}
+func (n *nopLogger) Panicf(_ string, _ ...any)            {}
+func (n *nopLogger) With(_ ...logger.Field) logger.Logger { return n }
+func (n *nopLogger) Sync() error                          { return nil }
+func (n *nopLogger) Close() error                         { return nil }
 
 // NopLogger 返回一个空操作日志记录器，实现了 logger.Logger 的所有方法但不产生任何输出.
 func NopLogger() logger.Logger {
@@ -98,9 +96,8 @@ func (l *testLogger) With(fields ...logger.Field) logger.Logger {
 	return &testLogger{t: l.t, fields: merged}
 }
 
-func (l *testLogger) WithContext(_ context.Context) logger.Logger { return l }
-func (l *testLogger) Sync() error                                 { return nil }
-func (l *testLogger) Close() error                                { return nil }
+func (l *testLogger) Sync() error  { return nil }
+func (l *testLogger) Close() error { return nil }
 
 // TestLogger 返回一个将日志输出到 testing.T 的日志记录器.
 func TestLogger(t *testing.T) logger.Logger {

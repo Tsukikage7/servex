@@ -10,15 +10,9 @@ import (
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/Tsukikage7/servex/auth"
-	"github.com/Tsukikage7/servex/httpx/clientip"
-	"github.com/Tsukikage7/servex/middleware/logging"
-	"github.com/Tsukikage7/servex/middleware/ratelimit"
-	"github.com/Tsukikage7/servex/middleware/recovery"
 	"github.com/Tsukikage7/servex/observability/logger"
-	"github.com/Tsukikage7/servex/observability/metrics"
-	"github.com/Tsukikage7/servex/tenant"
 	"github.com/Tsukikage7/servex/transport"
+	"github.com/Tsukikage7/servex/transport/grpcx"
 	"github.com/Tsukikage7/servex/transport/health"
 )
 
@@ -113,11 +107,6 @@ func (s *Server) Start(ctx context.Context) error {
 	s.healthServer = health.NewGRPCServer(s.health)
 	s.healthServer.Register(s.server)
 
-	// 如果启用自动发现，扫描注册的服务并填充 discoveredMethods
-	if s.opts.enableAutoDiscovery && s.opts.discoveredMethods != nil {
-		s.discoverPublicMethods()
-	}
-
 	// 启用反射
 	if s.opts.enableReflection {
 		reflection.Register(s.server)
@@ -195,99 +184,13 @@ func (s *Server) buildServerOptions() []grpc.ServerOption {
 		}),
 	}
 
-	// 构建拦截器链
-	unaryInterceptors := s.opts.unaryInterceptors
-	streamInterceptors := s.opts.streamInterceptors
+	// 构建拦截器链：logger 注入在最前面，保证所有拦截器和业务代码都能用 logger.FromContext(ctx)
+	unaryInterceptors := []grpc.UnaryServerInterceptor{loggerUnaryInterceptor(s.opts.logger)}
+	streamInterceptors := []grpc.StreamServerInterceptor{loggerStreamInterceptor(s.opts.logger)}
 
-	// 如果启用指标收集，添加 metrics 拦截器
-	if s.opts.metricsCollector != nil {
-		unaryInterceptors = append(
-			unaryInterceptors,
-			metrics.UnaryServerInterceptor(s.opts.metricsCollector),
-		)
-		streamInterceptors = append(
-			streamInterceptors,
-			metrics.StreamServerInterceptor(s.opts.metricsCollector),
-		)
-	}
-
-	// 如果启用限流，添加 ratelimit 拦截器
-	if s.opts.rateLimiter != nil {
-		unaryInterceptors = append(
-			unaryInterceptors,
-			ratelimit.UnaryServerInterceptor(s.opts.rateLimiter),
-		)
-		streamInterceptors = append(
-			streamInterceptors,
-			ratelimit.StreamServerInterceptor(s.opts.rateLimiter),
-		)
-	}
-
-	// 如果启用客户端 IP 提取，添加 clientip 拦截器
-	if s.opts.enableClientIP {
-		unaryInterceptors = append(
-			unaryInterceptors,
-			clientip.UnaryServerInterceptor(s.opts.clientIPOptions...),
-		)
-		streamInterceptors = append(
-			streamInterceptors,
-			clientip.StreamServerInterceptor(s.opts.clientIPOptions...),
-		)
-	}
-
-	// 如果启用认证，添加 auth 拦截器
-	if s.opts.authenticator != nil {
-		authOpts := s.buildAuthOptions()
-		unaryInterceptors = append(
-			unaryInterceptors,
-			auth.UnaryServerInterceptor(s.opts.authenticator, authOpts...),
-		)
-		streamInterceptors = append(
-			streamInterceptors,
-			auth.StreamServerInterceptor(s.opts.authenticator, authOpts...),
-		)
-	}
-
-	// 如果启用租户解析，添加 tenant 拦截器（在 auth 之后）
-	if s.opts.tenantResolver != nil {
-		tenantOpts := s.buildTenantOptions()
-		unaryInterceptors = append(
-			unaryInterceptors,
-			tenant.UnaryServerInterceptor(s.opts.tenantResolver, tenantOpts...),
-		)
-		streamInterceptors = append(
-			streamInterceptors,
-			tenant.StreamServerInterceptor(s.opts.tenantResolver, tenantOpts...),
-		)
-	}
-
-	// 如果启用 panic 恢复，将 recovery 拦截器添加到最前面（最外层）
-	if s.opts.enableRecovery {
-		unaryInterceptors = append(
-			[]grpc.UnaryServerInterceptor{recovery.UnaryServerInterceptor(recovery.WithLogger(s.opts.logger))},
-			unaryInterceptors...,
-		)
-		streamInterceptors = append(
-			[]grpc.StreamServerInterceptor{recovery.StreamServerInterceptor(recovery.WithLogger(s.opts.logger))},
-			streamInterceptors...,
-		)
-	}
-
-	// 如果启用日志，将 logging 拦截器添加到最前面（最外层，包裹 recovery）
-	if s.opts.enableLogging {
-		logOpts := []logging.Option{logging.WithLogger(s.opts.logger)}
-		if len(s.opts.loggingSkipPaths) > 0 {
-			logOpts = append(logOpts, logging.WithSkipPaths(s.opts.loggingSkipPaths...))
-		}
-		unaryInterceptors = append(
-			[]grpc.UnaryServerInterceptor{logging.UnaryServerInterceptor(logOpts...)},
-			unaryInterceptors...,
-		)
-		streamInterceptors = append(
-			[]grpc.StreamServerInterceptor{logging.StreamServerInterceptor(logOpts...)},
-			streamInterceptors...,
-		)
-	}
+	// 用户自定义拦截器
+	unaryInterceptors = append(unaryInterceptors, s.opts.unaryInterceptors...)
+	streamInterceptors = append(streamInterceptors, s.opts.streamInterceptors...)
 
 	// 添加拦截器
 	if len(unaryInterceptors) > 0 {
@@ -309,61 +212,22 @@ func (s *Server) buildServerOptions() []grpc.ServerOption {
 	return opts
 }
 
-// buildAuthOptions 构建 auth 选项.
-func (s *Server) buildAuthOptions() []auth.Option {
-	var authOpts []auth.Option
-
-	// 添加 logger
-	if s.opts.logger != nil {
-		authOpts = append(authOpts, auth.WithLogger(s.opts.logger))
-	}
-
-	// 添加用户配置的选项
-	authOpts = append(authOpts, s.opts.authOptions...)
-
-	// 构建 skipper
-	if len(s.opts.publicMethods) > 0 {
-		authOpts = append(authOpts, auth.WithSkipper(buildMethodSkipper(s.opts.publicMethods)))
-	}
-
-	return authOpts
-}
-
-// buildTenantOptions 构建 tenant 选项.
-func (s *Server) buildTenantOptions() []tenant.Option {
-	var tenantOpts []tenant.Option
-
-	if s.opts.logger != nil {
-		tenantOpts = append(tenantOpts, tenant.WithLogger(s.opts.logger))
-	}
-
-	tenantOpts = append(tenantOpts, s.opts.tenantOptions...)
-	return tenantOpts
-}
-
-// discoverPublicMethods 从注册的服务中发现公开方法.
-func (s *Server) discoverPublicMethods() {
-	result := auth.DiscoverFromServer(s.server)
-
-	// 填充 discoveredMethods map
-	for _, method := range result.PublicMethods {
-		s.opts.discoveredMethods[method] = true
-	}
-
-	if len(result.PublicMethods) > 0 {
-		s.opts.logger.With(
-			logger.String("name", s.opts.name),
-			logger.Int("count", len(result.PublicMethods)),
-		).Info("[gRPC] 自动发现公开方法")
-
-		for _, method := range result.PublicMethods {
-			s.opts.logger.With(
-				logger.String("name", s.opts.name),
-				logger.String("method", method),
-			).Debug("[gRPC] 发现公开方法")
-		}
-	}
-}
-
 // 确保 Server 实现了 transport.HealthCheckable 接口.
 var _ transport.HealthCheckable = (*Server)(nil)
+
+// loggerUnaryInterceptor 将 logger 注入到每个请求的 context 中.
+func loggerUnaryInterceptor(log logger.Logger) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		ctx = logger.NewContext(ctx, log)
+		return handler(ctx, req)
+	}
+}
+
+// loggerStreamInterceptor 将 logger 注入到每个流的 context 中.
+func loggerStreamInterceptor(log logger.Logger) grpc.StreamServerInterceptor {
+	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		ctx := logger.NewContext(ss.Context(), log)
+		wrapped := grpcx.WrapServerStream(ss, ctx)
+		return handler(srv, wrapped)
+	}
+}

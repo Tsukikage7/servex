@@ -101,7 +101,7 @@ func (s *ConfigTestSuite) TestApplyDefaults() {
 
 	s.Equal(TypeZap, config.Type)
 	s.Equal(LevelInfo, config.Level)
-	s.Equal(FormatJSON, config.Format)
+	s.Equal(FormatConsole, config.Format)
 	s.Equal(OutputConsole, config.Output)
 	s.Equal("service", config.ServiceName)
 	s.Equal("timestamp", config.TimeKey)

@@ -10,6 +10,7 @@ import (
 // Middleware 返回 Endpoint 租户解析中间件.
 // 流程：skipper → 提取 token → resolve → 检查 enabled → WithTenant(ctx) → next.
 // 示例:
+//
 //	endpoint = tenant.Middleware(resolver)(endpoint)
 func Middleware(resolver Resolver, opts ...Option) endpoint.Middleware {
 	if resolver == nil {
@@ -29,7 +30,7 @@ func Middleware(resolver Resolver, opts ...Option) endpoint.Middleware {
 			token, err := extractToken(ctx, request, o)
 			if err != nil {
 				if o.logger != nil {
-					o.logger.WithContext(ctx).Debug("[Tenant] 令牌提取失败", logger.Err(err))
+					logger.FromContext(ctx).Debug("[Tenant] 令牌提取失败", logger.Err(err))
 				}
 				return nil, handleError(ctx, ErrMissingToken, o)
 			}
@@ -38,7 +39,7 @@ func Middleware(resolver Resolver, opts ...Option) endpoint.Middleware {
 			t, err := resolver.Resolve(ctx, token)
 			if err != nil {
 				if o.logger != nil {
-					o.logger.WithContext(ctx).Warn("[Tenant] 解析失败",
+					logger.FromContext(ctx).Warn("[Tenant] 解析失败",
 						logger.String("token", token),
 						logger.Err(err),
 					)
@@ -49,7 +50,7 @@ func Middleware(resolver Resolver, opts ...Option) endpoint.Middleware {
 			// 检查租户是否启用
 			if !t.TenantEnabled() {
 				if o.logger != nil {
-					o.logger.WithContext(ctx).Warn("[Tenant] 租户已禁用",
+					logger.FromContext(ctx).Warn("[Tenant] 租户已禁用",
 						logger.String("tenant_id", t.TenantID()),
 					)
 				}

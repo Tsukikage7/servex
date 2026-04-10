@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 	"time"
@@ -55,7 +54,13 @@ func newZapLogger(config *Config) (Logger, error) {
 func buildOptions(config *Config) []zap.Option {
 	var options []zap.Option
 
-	if config.EnableCaller {
+	// Console 格式默认开启 caller（更易读）
+	enableCaller := config.EnableCaller
+	if config.Format == FormatConsole && !config.EnableCaller {
+		enableCaller = true
+	}
+
+	if enableCaller {
 		options = append(options, zap.AddCaller())
 		if config.CallerSkip > 0 {
 			options = append(options, zap.AddCallerSkip(config.CallerSkip))
@@ -301,38 +306,6 @@ func toZapField(f Field) zap.Field {
 		// 对于 slice、map、struct 等复杂类型，使用 Reflect 确保走 AddReflected 路径
 		return zap.Reflect(f.Key, v)
 	}
-}
-
-// WithContext 返回带有 context 中 trace 信息的 logger.
-// 从 context 中提取 traceId 和 spanId，返回带有这些字段的新 logger.
-// 如果 context 中没有 trace 信息，返回当前 logger.
-// 使用示例:
-//	func (s *Service) Handle(ctx context.Context) {
-//	    s.log.WithContext(ctx).Info("处理请求")
-//	    // 输出: {"msg":"处理请求","traceId":"abc...","spanId":"def..."}
-//	}
-func (z *zapLogger) WithContext(ctx context.Context) Logger {
-	if ctx == nil {
-		return z
-	}
-
-	var fields []Field
-
-	// 从 context 获取 traceId
-	if traceID, ok := ctx.Value(TraceIDKey).(string); ok && traceID != "" {
-		fields = append(fields, Field{Key: "traceId", Value: traceID})
-	}
-
-	// 从 context 获取 spanId
-	if spanID, ok := ctx.Value(SpanIDKey).(string); ok && spanID != "" {
-		fields = append(fields, Field{Key: "spanId", Value: spanID})
-	}
-
-	if len(fields) == 0 {
-		return z
-	}
-
-	return z.With(fields...)
 }
 
 // Sync 同步日志缓冲区.

@@ -10,13 +10,11 @@ import (
 )
 
 func ExampleHTTPMiddleware() {
-	// Create trace middleware with default config.
+	// 使用默认配置创建 trace 中间件.
 	handler := trace.HTTPMiddleware(nil)(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			traceID := trace.TraceIDFromContext(r.Context())
-			reqID := trace.RequestIDFromContext(r.Context())
 			fmt.Println("trace id set:", traceID != "")
-			fmt.Println("request id set:", reqID != "")
 		}),
 	)
 
@@ -25,25 +23,20 @@ func ExampleHTTPMiddleware() {
 	handler.ServeHTTP(rec, req)
 
 	fmt.Println("X-Trace-ID set:", rec.Header().Get("X-Trace-ID") != "")
-	fmt.Println("X-Request-ID set:", rec.Header().Get("X-Request-ID") != "")
 	// Output:
 	// trace id set: true
-	// request id set: true
 	// X-Trace-ID set: true
-	// X-Request-ID set: true
 }
 
 func ExampleDefaultConfig() {
 	cfg := trace.DefaultConfig()
 	fmt.Println("trace header:", cfg.TraceIDHeader)
-	fmt.Println("request header:", cfg.RequestIDHeader)
 	// Output:
 	// trace header: X-Trace-ID
-	// request header: X-Request-ID
 }
 
 func ExampleTraceIDFromContext() {
-	// Empty context returns empty string.
+	// 空 context 返回空字符串.
 	fmt.Println("empty:", trace.TraceIDFromContext(context.Background()))
 	// Output:
 	// empty:

@@ -14,9 +14,11 @@ import (
 //  2. 记录超时日志（如果设置了 logger）
 //  3. 调用超时回调（如果设置了 onTimeout）
 //  4. 返回 503 Service Unavailable
+//
 // 注意: 此中间件不会中断正在执行的 handler，只是不再等待其响应.
 // 如果需要强制中断，handler 应该检查 ctx.Done().
 // 示例:
+//
 //	mux := http.NewServeMux()
 //	handler := timeout.HTTPMiddleware(10*time.Second)(mux)
 //	http.ListenAndServe(":8080", handler)
@@ -56,7 +58,7 @@ func HTTPMiddleware(timeout time.Duration, opts ...Option) func(http.Handler) ht
 				if !tw.written {
 					// 还没写入响应，返回超时错误
 					if o.logger != nil {
-						o.logger.WithContext(ctx).Warn(
+						logger.FromContext(ctx).Warn(
 							"[Timeout] HTTP请求超时",
 							logger.String("method", r.Method),
 							logger.String("path", r.URL.Path),
@@ -126,6 +128,7 @@ func (tw *timeoutWriter) Write(b []byte) (int, error) {
 // HTTPTimeoutHandler 返回带超时的 http.Handler.
 // 这是标准库 http.TimeoutHandler 的增强版，支持日志记录和回调.
 // 示例:
+//
 //	handler := timeout.HTTPTimeoutHandler(myHandler, 10*time.Second, "请求超时")
 func HTTPTimeoutHandler(h http.Handler, dt time.Duration, msg string, opts ...Option) http.Handler {
 	if dt <= 0 {
@@ -160,7 +163,7 @@ func HTTPTimeoutHandler(h http.Handler, dt time.Duration, msg string, opts ...Op
 
 			if !tw.written {
 				if o.logger != nil {
-					o.logger.WithContext(ctx).Warn(
+					logger.FromContext(ctx).Warn(
 						"[Timeout] HTTP处理器超时",
 						logger.String("method", r.Method),
 						logger.String("path", r.URL.Path),
