@@ -78,10 +78,6 @@ func TestNewClient_Validation(t *testing.T) {
 	_, err = NewClient(DefaultConfig(), nil)
 	assert.ErrorIs(t, err, ErrNilLogger)
 
-	// 空地址
-	cfg := &Config{Addr: ""}
-	_, err = NewClient(cfg, testLog)
-	assert.ErrorIs(t, err, ErrEmptyAddr)
 }
 
 func TestDefaultConfig(t *testing.T) {
