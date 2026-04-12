@@ -90,7 +90,7 @@ func TestLLMReranker(t *testing.T) {
 	}
 
 	reranker := NewLLMReranker(chat)
-	result, err := reranker.Rerank(context.Background(), "测试查询", docs)
+	result, err := reranker.Rerank(t.Context(), "测试查询", docs)
 	if err != nil {
 		t.Fatalf("Rerank 失败: %v", err)
 	}
@@ -130,7 +130,7 @@ func TestLLMReranker_WithTopN(t *testing.T) {
 
 	// 仅返回前 2 条.
 	reranker := NewLLMReranker(chat, WithTopN(2))
-	result, err := reranker.Rerank(context.Background(), "测试查询", docs)
+	result, err := reranker.Rerank(t.Context(), "测试查询", docs)
 	if err != nil {
 		t.Fatalf("Rerank 失败: %v", err)
 	}
@@ -175,7 +175,7 @@ func TestEmbeddingReranker(t *testing.T) {
 	}
 
 	reranker := NewEmbeddingReranker(embed)
-	result, err := reranker.Rerank(context.Background(), "查询", docs)
+	result, err := reranker.Rerank(t.Context(), "查询", docs)
 	if err != nil {
 		t.Fatalf("Rerank 失败: %v", err)
 	}
@@ -221,7 +221,7 @@ func TestEmbeddingReranker_WithTopN(t *testing.T) {
 
 	// 仅返回前 2 条.
 	reranker := NewEmbeddingReranker(embed, WithTopN(2))
-	result, err := reranker.Rerank(context.Background(), "查询", docs)
+	result, err := reranker.Rerank(t.Context(), "查询", docs)
 	if err != nil {
 		t.Fatalf("Rerank 失败: %v", err)
 	}
@@ -247,7 +247,7 @@ func TestEmbeddingReranker_WithTopN(t *testing.T) {
 // TestLLMReranker_NilModel 验证传入 nil 模型时返回 ErrNilModel.
 func TestLLMReranker_NilModel(t *testing.T) {
 	reranker := NewLLMReranker(nil)
-	_, err := reranker.Rerank(context.Background(), "查询", makeDocs("文档A"))
+	_, err := reranker.Rerank(t.Context(), "查询", makeDocs("文档A"))
 	if err != ErrNilModel {
 		t.Fatalf("期望 ErrNilModel，实际: %v", err)
 	}
@@ -260,7 +260,7 @@ func TestLLMReranker_NilModel(t *testing.T) {
 // TestLLMReranker_EmptyDocs 验证传入空文档列表时返回 ErrEmptyDocs.
 func TestLLMReranker_EmptyDocs(t *testing.T) {
 	reranker := NewLLMReranker(&mockChat{})
-	_, err := reranker.Rerank(context.Background(), "查询", nil)
+	_, err := reranker.Rerank(t.Context(), "查询", nil)
 	if err != ErrEmptyDocs {
 		t.Fatalf("期望 ErrEmptyDocs，实际: %v", err)
 	}
@@ -298,7 +298,7 @@ func TestCrossEncoderReranker(t *testing.T) {
 	defer server.Close()
 
 	reranker := NewCrossEncoderReranker(server.URL)
-	result, err := reranker.Rerank(context.Background(), "测试查询", docs)
+	result, err := reranker.Rerank(t.Context(), "测试查询", docs)
 	if err != nil {
 		t.Fatalf("Rerank 失败: %v", err)
 	}
@@ -320,7 +320,7 @@ func TestCrossEncoderReranker(t *testing.T) {
 // TestCrossEncoderReranker_EmptyEndpoint 验证端点为空时返回 ErrEmptyEndpoint.
 func TestCrossEncoderReranker_EmptyEndpoint(t *testing.T) {
 	reranker := NewCrossEncoderReranker("")
-	_, err := reranker.Rerank(context.Background(), "查询", makeDocs("文档A"))
+	_, err := reranker.Rerank(t.Context(), "查询", makeDocs("文档A"))
 	if err != ErrEmptyEndpoint {
 		t.Fatalf("期望 ErrEmptyEndpoint，实际: %v", err)
 	}

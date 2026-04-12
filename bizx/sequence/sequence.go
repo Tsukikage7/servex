@@ -191,7 +191,7 @@ func (s *redisStore) Reset(ctx context.Context, key string) error {
 
 func (s *redisStore) Current(ctx context.Context, key string) (int64, error) {
 	val, err := s.client.Get(ctx, key).Result()
-	if err == redis.Nil {
+	if errors.Is(err, redis.Nil) {
 		return 0, nil
 	}
 	if err != nil {

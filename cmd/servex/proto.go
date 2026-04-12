@@ -528,14 +528,12 @@ func findGoModule(dir string) (string, error) {
 		modPath := filepath.Join(dir, "go.mod")
 		f, err := os.Open(modPath)
 		if err == nil {
-			defer f.Close()
-			scanner := bufio.NewScanner(f)
-			for scanner.Scan() {
-				if m := goModPattern.FindStringSubmatch(scanner.Text()); m != nil {
-					return strings.TrimSpace(m[1]), nil
-				}
+			mod, fErr := readModuleLine(f, modPath)
+			f.Close()
+			if fErr != nil {
+				return "", fErr
 			}
-			return "", fmt.Errorf("在 %s 中未找到 module 行", modPath)
+			return mod, nil
 		}
 
 		parent := filepath.Dir(dir)
@@ -545,4 +543,15 @@ func findGoModule(dir string) (string, error) {
 		dir = parent
 	}
 	return "", fmt.Errorf("未找到 go.mod")
+}
+
+// readModuleLine 从已打开的 go.mod 文件中读取 module 行.
+func readModuleLine(f *os.File, modPath string) (string, error) {
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		if m := goModPattern.FindStringSubmatch(scanner.Text()); m != nil {
+			return strings.TrimSpace(m[1]), nil
+		}
+	}
+	return "", fmt.Errorf("在 %s 中未找到 module 行", modPath)
 }

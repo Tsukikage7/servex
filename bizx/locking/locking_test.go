@@ -59,7 +59,7 @@ func (m *mockLocker) Extend(_ context.Context, _ string, _ time.Duration) error 
 }
 
 func TestLock_Unlock(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	locker := newMockLocker()
 	l := NewLock(locker, "test:key", WithTTL(5*time.Second), WithRetryTimeout(1*time.Second))
 
@@ -76,7 +76,7 @@ func TestLock_Unlock(t *testing.T) {
 }
 
 func TestWithLock(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	locker := newMockLocker()
 	l := NewLock(locker, "test:with", WithTTL(5*time.Second))
 
@@ -90,7 +90,7 @@ func TestWithLock(t *testing.T) {
 }
 
 func TestReentrantLock(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	locker := newMockLocker()
 	rl := NewReentrantLock(locker, "test:reentrant", WithTTL(5*time.Second))
 
@@ -123,7 +123,7 @@ func TestReentrantLock(t *testing.T) {
 }
 
 func TestRWLock_ReadConcurrent(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	locker := newMockLocker()
 	rwl := NewRWLock(locker, "test:rw", WithTTL(5*time.Second))
 
@@ -133,9 +133,7 @@ func TestRWLock_ReadConcurrent(t *testing.T) {
 	mu := sync.Mutex{}
 
 	for i := 0; i < 5; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			err := rwl.RLock(ctx)
 			require.NoError(t, err)
 			mu.Lock()
@@ -144,7 +142,7 @@ func TestRWLock_ReadConcurrent(t *testing.T) {
 			time.Sleep(10 * time.Millisecond)
 			err = rwl.RUnlock(ctx)
 			require.NoError(t, err)
-		}()
+		})
 	}
 
 	wg.Wait()

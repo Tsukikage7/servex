@@ -307,7 +307,7 @@ func TestGRPCUnaryInterceptor(t *testing.T) {
 		return "ok", nil
 	}
 
-	resp, err := interceptor(context.Background(), nil, &grpc.UnaryServerInfo{}, handler)
+	resp, err := interceptor(t.Context(), nil, &grpc.UnaryServerInfo{}, handler)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -337,7 +337,7 @@ func TestGRPCUnaryInterceptor_Denied(t *testing.T) {
 		return "ok", nil
 	}
 
-	_, err = interceptor(context.Background(), nil, &grpc.UnaryServerInfo{}, handler)
+	_, err = interceptor(t.Context(), nil, &grpc.UnaryServerInfo{}, handler)
 	if err == nil {
 		t.Fatal("expected error")
 	}

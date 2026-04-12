@@ -2,6 +2,7 @@ package lock
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
@@ -154,7 +155,7 @@ func (r *Redis) Unlock(ctx context.Context, key string) error {
 	err := r.cache.Unlock(ctx, fullKey, r.ownerID)
 	if err != nil {
 		// 如果是锁不存在或不是持有者，可能已过期
-		if err == cache.ErrLockNotHeld {
+		if errors.Is(err, cache.ErrLockNotHeld) {
 			r.heldMu.Lock()
 			delete(r.held, key)
 			r.heldMu.Unlock()

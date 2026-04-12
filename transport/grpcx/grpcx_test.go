@@ -16,7 +16,7 @@ import (
 func TestGetMetadataValue(t *testing.T) {
 	t.Run("存在的 key 返回第一个值", func(t *testing.T) {
 		md := metadata.Pairs("x-request-id", "abc123", "x-request-id", "def456")
-		ctx := metadata.NewIncomingContext(context.Background(), md)
+		ctx := metadata.NewIncomingContext(t.Context(), md)
 
 		val := GetMetadataValue(ctx, "x-request-id")
 		assert.Equal(t, "abc123", val)
@@ -24,14 +24,14 @@ func TestGetMetadataValue(t *testing.T) {
 
 	t.Run("不存在的 key 返回空字符串", func(t *testing.T) {
 		md := metadata.Pairs("x-request-id", "abc123")
-		ctx := metadata.NewIncomingContext(context.Background(), md)
+		ctx := metadata.NewIncomingContext(t.Context(), md)
 
 		val := GetMetadataValue(ctx, "x-trace-id")
 		assert.Empty(t, val)
 	})
 
 	t.Run("无 metadata 的 context 返回空字符串", func(t *testing.T) {
-		val := GetMetadataValue(context.Background(), "x-request-id")
+		val := GetMetadataValue(t.Context(), "x-request-id")
 		assert.Empty(t, val)
 	})
 }
@@ -39,7 +39,7 @@ func TestGetMetadataValue(t *testing.T) {
 func TestGetMetadataValues(t *testing.T) {
 	t.Run("存在的 key 返回所有值", func(t *testing.T) {
 		md := metadata.Pairs("x-tag", "tag1", "x-tag", "tag2", "x-tag", "tag3")
-		ctx := metadata.NewIncomingContext(context.Background(), md)
+		ctx := metadata.NewIncomingContext(t.Context(), md)
 
 		values := GetMetadataValues(ctx, "x-tag")
 		assert.Equal(t, []string{"tag1", "tag2", "tag3"}, values)
@@ -47,20 +47,20 @@ func TestGetMetadataValues(t *testing.T) {
 
 	t.Run("不存在的 key 返回 nil", func(t *testing.T) {
 		md := metadata.Pairs("x-tag", "tag1")
-		ctx := metadata.NewIncomingContext(context.Background(), md)
+		ctx := metadata.NewIncomingContext(t.Context(), md)
 
 		values := GetMetadataValues(ctx, "x-other")
 		assert.Nil(t, values)
 	})
 
 	t.Run("无 metadata 的 context 返回 nil", func(t *testing.T) {
-		values := GetMetadataValues(context.Background(), "x-tag")
+		values := GetMetadataValues(t.Context(), "x-tag")
 		assert.Nil(t, values)
 	})
 }
 
 func TestSetOutgoingMetadata(t *testing.T) {
-	ctx := SetOutgoingMetadata(context.Background(), "x-key", "value1")
+	ctx := SetOutgoingMetadata(t.Context(), "x-key", "value1")
 	md, ok := metadata.FromOutgoingContext(ctx)
 	require.True(t, ok)
 	assert.Equal(t, []string{"value1"}, md.Get("x-key"))
@@ -68,14 +68,14 @@ func TestSetOutgoingMetadata(t *testing.T) {
 
 func TestAppendOutgoingMetadata(t *testing.T) {
 	t.Run("追加到空 context", func(t *testing.T) {
-		ctx := AppendOutgoingMetadata(context.Background(), "x-key", "value1")
+		ctx := AppendOutgoingMetadata(t.Context(), "x-key", "value1")
 		md, ok := metadata.FromOutgoingContext(ctx)
 		require.True(t, ok)
 		assert.Equal(t, []string{"value1"}, md.Get("x-key"))
 	})
 
 	t.Run("追加到已有 metadata", func(t *testing.T) {
-		ctx := AppendOutgoingMetadata(context.Background(), "x-key", "value1")
+		ctx := AppendOutgoingMetadata(t.Context(), "x-key", "value1")
 		ctx = AppendOutgoingMetadata(ctx, "x-key", "value2")
 		md, ok := metadata.FromOutgoingContext(ctx)
 		require.True(t, ok)
@@ -86,7 +86,7 @@ func TestAppendOutgoingMetadata(t *testing.T) {
 func TestCopyIncomingToOutgoing(t *testing.T) {
 	t.Run("复制全部 metadata", func(t *testing.T) {
 		inMD := metadata.Pairs("x-a", "1", "x-b", "2")
-		ctx := metadata.NewIncomingContext(context.Background(), inMD)
+		ctx := metadata.NewIncomingContext(t.Context(), inMD)
 
 		ctx = CopyIncomingToOutgoing(ctx)
 		outMD, ok := metadata.FromOutgoingContext(ctx)
@@ -97,7 +97,7 @@ func TestCopyIncomingToOutgoing(t *testing.T) {
 
 	t.Run("复制指定 key", func(t *testing.T) {
 		inMD := metadata.Pairs("x-a", "1", "x-b", "2", "x-c", "3")
-		ctx := metadata.NewIncomingContext(context.Background(), inMD)
+		ctx := metadata.NewIncomingContext(t.Context(), inMD)
 
 		ctx = CopyIncomingToOutgoing(ctx, "x-a", "x-c")
 		outMD, ok := metadata.FromOutgoingContext(ctx)
@@ -108,14 +108,14 @@ func TestCopyIncomingToOutgoing(t *testing.T) {
 	})
 
 	t.Run("无入站 metadata 时不修改 context", func(t *testing.T) {
-		ctx := CopyIncomingToOutgoing(context.Background())
+		ctx := CopyIncomingToOutgoing(t.Context())
 		_, ok := metadata.FromOutgoingContext(ctx)
 		assert.False(t, ok)
 	})
 
 	t.Run("指定不存在的 key 不修改 context", func(t *testing.T) {
 		inMD := metadata.Pairs("x-a", "1")
-		ctx := metadata.NewIncomingContext(context.Background(), inMD)
+		ctx := metadata.NewIncomingContext(t.Context(), inMD)
 
 		ctx = CopyIncomingToOutgoing(ctx, "x-nonexistent")
 		_, ok := metadata.FromOutgoingContext(ctx)
@@ -207,10 +207,10 @@ func (m *mockServerStream) Context() context.Context {
 }
 
 func TestWrapServerStream(t *testing.T) {
-	originalCtx := context.WithValue(context.Background(), struct{ key string }{"original"}, "value")
+	originalCtx := context.WithValue(t.Context(), struct{ key string }{"original"}, "value")
 	mock := &mockServerStream{ctx: originalCtx}
 
-	newCtx := context.WithValue(context.Background(), struct{ key string }{"new"}, "new-value")
+	newCtx := context.WithValue(t.Context(), struct{ key string }{"new"}, "new-value")
 	wrapped := WrapServerStream(mock, newCtx)
 
 	// 验证包装后的 stream 返回新的 context

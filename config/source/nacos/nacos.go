@@ -3,7 +3,7 @@ package nacos
 
 import (
 	"context"
-	"log"
+	"log/slog"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/config_client"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
@@ -97,7 +97,7 @@ func (s *Source) Watch() (config.Watcher, error) {
 			case w.ch <- data:
 			default:
 				// channel 满，丢弃本次变更通知（下次变更会携带最新配置）
-				log.Printf("nacos: watcher channel 已满，丢弃变更通知 dataId=%s group=%s", dataId, group)
+				slog.Warn("nacos: watcher channel 已满，丢弃变更通知", slog.String("dataId", dataId), slog.String("group", group))
 			}
 		},
 	})

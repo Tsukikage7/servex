@@ -62,11 +62,13 @@ func (w *worker) Start(ctx context.Context) error {
 
 		job := w.fetchJob(ctx)
 		if job == nil {
+			pollTimer := time.NewTimer(w.opts.pollInterval)
 			select {
 			case <-ctx.Done():
+				pollTimer.Stop()
 				wg.Wait()
 				return nil
-			case <-time.After(w.opts.pollInterval):
+			case <-pollTimer.C:
 				continue
 			}
 		}

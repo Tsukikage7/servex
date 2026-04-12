@@ -197,8 +197,7 @@ func (s *scheduler) Start(ctx context.Context) error {
 	var startErr error
 	s.startOnce.Do(func() {
 		ctx, s.cancel = context.WithCancel(ctx)
-		s.wg.Add(1)
-		go s.poll(ctx)
+		s.wg.Go(func() { s.poll(ctx) })
 	})
 	return startErr
 }
@@ -214,7 +213,6 @@ func (s *scheduler) Stop(_ context.Context) error {
 
 // poll 轮询待处理任务.
 func (s *scheduler) poll(ctx context.Context) {
-	defer s.wg.Done()
 	ticker := time.NewTicker(s.pollInterval)
 	defer ticker.Stop()
 
@@ -238,12 +236,10 @@ func (s *scheduler) processBatch(ctx context.Context) {
 	for _, task := range tasks {
 		task := task
 		s.sem <- struct{}{}
-		s.wg.Add(1)
-		go func() {
-			defer s.wg.Done()
+		s.wg.Go(func() {
 			defer func() { <-s.sem }()
 			s.processTask(ctx, &task)
-		}()
+		})
 	}
 }
 

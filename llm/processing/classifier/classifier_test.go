@@ -39,7 +39,7 @@ func TestIntentClassifier(t *testing.T) {
 		"refund": "用户想申请退款",
 	}
 	c := classifier.NewIntentClassifier(model, intents)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	result, err := c.Classify(ctx, "我想买一台手机")
 	if err != nil {
@@ -68,7 +68,7 @@ func TestSentimentClassifier(t *testing.T) {
 		},
 	}
 	c := classifier.NewSentimentClassifier(model)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	result, err := c.Classify(ctx, "今天天气真棒，心情超好！")
 	if err != nil {
@@ -91,7 +91,7 @@ func TestTopicClassifier(t *testing.T) {
 	}
 	topics := []string{"technology", "sports", "finance"}
 	c := classifier.NewTopicClassifier(model, topics)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	result, err := c.Classify(ctx, "人工智能正在改变软件开发方式")
 	if err != nil {
@@ -110,7 +110,7 @@ func TestLanguageClassifier(t *testing.T) {
 		},
 	}
 	c := classifier.NewLanguageClassifier(model)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	result, err := c.Classify(ctx, "你好世界")
 	if err != nil {
@@ -133,7 +133,7 @@ func TestRouterClassifier(t *testing.T) {
 		"calculator":    "执行数学计算",
 	}
 	c := classifier.NewRouterClassifier(model, routes)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	result, err := c.Classify(ctx, "北京今天天气怎么样？")
 	if err != nil {
@@ -153,7 +153,7 @@ func TestCustomClassifier(t *testing.T) {
 	}
 	labels := []string{"urgent", "normal", "low"}
 	c := classifier.NewCustomClassifier(model, labels, "根据工单内容判断优先级")
-	ctx := context.Background()
+	ctx := t.Context()
 
 	result, err := c.Classify(ctx, "系统崩溃了，无法登录！")
 	if err != nil {
@@ -176,7 +176,7 @@ func TestClassifyMessages(t *testing.T) {
 		"inquiry":   "一般咨询",
 	}
 	c := classifier.NewIntentClassifier(model, intents)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	messages := []llm.Message{
 		llm.UserMessage("你们的服务太差了"),
@@ -197,7 +197,7 @@ func TestClassifyMessages(t *testing.T) {
 func TestEmptyText(t *testing.T) {
 	model := &mockModel{fn: func(_ []llm.Message) string { return "[]" }}
 	c := classifier.NewSentimentClassifier(model)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := c.Classify(ctx, "")
 	if !errors.Is(err, classifier.ErrEmptyText) {
@@ -218,7 +218,7 @@ func TestWithTopN(t *testing.T) {
 		},
 	}
 	c := classifier.NewSentimentClassifier(model, classifier.WithTopN(2))
-	ctx := context.Background()
+	ctx := t.Context()
 
 	result, err := c.Classify(ctx, "some text")
 	if err != nil {
@@ -238,7 +238,7 @@ func TestWithTopN(t *testing.T) {
 // TestNoLabels 验证空标签时返回 ErrNoLabels.
 func TestNoLabels(t *testing.T) {
 	model := &mockModel{fn: func(_ []llm.Message) string { return "[]" }}
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("IntentClassifier", func(t *testing.T) {
 		c := classifier.NewIntentClassifier(model, map[string]string{})

@@ -1,7 +1,6 @@
 package jwt_test
 
 import (
-	"context"
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/elliptic"
@@ -56,7 +55,7 @@ func TestRSA_GenerateAndValidate(t *testing.T) {
 		jwt.WithTokenPrefix(""),
 	)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	claims := newTestClaims()
 
 	// 生成令牌
@@ -96,7 +95,7 @@ func TestRSA_PublicKeyOnlyValidation(t *testing.T) {
 		jwt.WithTokenPrefix(""),
 	)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	token, err := signer.Generate(ctx, newTestClaims())
 	if err != nil {
 		t.Fatalf("生成令牌失败: %v", err)
@@ -133,7 +132,7 @@ func TestRSA_WrongKeyRejectsToken(t *testing.T) {
 		jwt.WithTokenPrefix(""),
 	)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	token, err := signer.Generate(ctx, newTestClaims())
 	if err != nil {
 		t.Fatalf("生成令牌失败: %v", err)
@@ -168,7 +167,7 @@ func TestECDSA_GenerateAndValidate(t *testing.T) {
 		jwt.WithTokenPrefix(""),
 	)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	claims := newTestClaims()
 
 	token, err := j.Generate(ctx, claims)
@@ -199,7 +198,7 @@ func TestECDSA_WrongKeyRejectsToken(t *testing.T) {
 		jwt.WithTokenPrefix(""),
 	)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	token, _ := signer.Generate(ctx, newTestClaims())
 
 	verifier := jwt.NewJWT(
@@ -230,7 +229,7 @@ func TestEdDSA_GenerateAndValidate(t *testing.T) {
 		jwt.WithTokenPrefix(""),
 	)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	claims := newTestClaims()
 
 	token, err := j.Generate(ctx, claims)
@@ -259,7 +258,7 @@ func TestEdDSA_PublicKeyOnlyValidation(t *testing.T) {
 		jwt.WithTokenPrefix(""),
 	)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	token, _ := signer.Generate(ctx, newTestClaims())
 
 	// 仅公钥验证
@@ -293,7 +292,7 @@ func TestRSA_RefreshWithClaims(t *testing.T) {
 		jwt.WithRefreshWindow(1*time.Hour),
 	)
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 创建一个即将过期的令牌
 	now := time.Now()
@@ -346,7 +345,7 @@ func TestHMAC_BackwardCompatibility(t *testing.T) {
 		jwt.WithTokenPrefix(""),
 	)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	claims := newTestClaims()
 
 	token, err := j.Generate(ctx, claims)
@@ -378,7 +377,7 @@ func TestAlgorithmMismatchRejected(t *testing.T) {
 		jwt.WithTokenPrefix(""),
 	)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	token, _ := rsaSigner.Generate(ctx, newTestClaims())
 
 	hmacVerifier := jwt.NewJWT(
@@ -432,7 +431,7 @@ func TestLoadRSAKeysFromPEM(t *testing.T) {
 		jwt.WithTokenPrefix(""),
 	)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	token, err := j.Generate(ctx, newTestClaims())
 	if err != nil {
 		t.Fatalf("生成令牌失败: %v", err)
@@ -482,7 +481,7 @@ func TestLoadECDSAKeysFromPEM(t *testing.T) {
 		jwt.WithTokenPrefix(""),
 	)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	token, err := j.Generate(ctx, newTestClaims())
 	if err != nil {
 		t.Fatalf("生成令牌失败: %v", err)
@@ -532,7 +531,7 @@ func TestLoadEdDSAKeysFromPEM(t *testing.T) {
 		jwt.WithTokenPrefix(""),
 	)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	token, err := j.Generate(ctx, newTestClaims())
 	if err != nil {
 		t.Fatalf("生成令牌失败: %v", err)
@@ -579,7 +578,7 @@ func TestRSAKeyFiles(t *testing.T) {
 		jwt.WithTokenPrefix(""),
 	)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	token, err := j.Generate(ctx, newTestClaims())
 	if err != nil {
 		t.Fatalf("生成令牌失败: %v", err)

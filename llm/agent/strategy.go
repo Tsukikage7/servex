@@ -92,6 +92,11 @@ func (s *reActStrategy) ExecuteStream(ctx context.Context, model llm.ChatModel, 
 
 	go func() {
 		defer close(ch)
+		defer func() {
+			if r := recover(); r != nil {
+				ch <- Event{Type: EventError, Content: fmt.Sprintf("goroutine panic: %v", r)}
+			}
+		}()
 
 		// 无工具时直接调用模型
 		if tools == nil {
@@ -269,6 +274,11 @@ func (s *planExecuteStrategy) ExecuteStream(ctx context.Context, model llm.ChatM
 
 	go func() {
 		defer close(ch)
+		defer func() {
+			if r := recover(); r != nil {
+				ch <- Event{Type: EventError, Content: fmt.Sprintf("goroutine panic: %v", r)}
+			}
+		}()
 
 		// 复用同步执行逻辑，将中间过程以事件方式发送
 		userInput := extractUserInput(messages)

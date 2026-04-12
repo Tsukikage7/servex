@@ -229,9 +229,11 @@ func retryUnaryInterceptor(maxAttempts int, backoff time.Duration) grpc.UnaryCli
 
 			// 最后一次不等待
 			if attempt < maxAttempts-1 {
+				retryTimer := time.NewTimer(backoff)
 				select {
-				case <-time.After(backoff):
+				case <-retryTimer.C:
 				case <-ctx.Done():
+					retryTimer.Stop()
 					return ctx.Err()
 				}
 			}

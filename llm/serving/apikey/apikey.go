@@ -326,7 +326,7 @@ func HTTPMiddleware(mgr Manager) func(http.Handler) http.Handler {
 				case errors.Is(err, ErrQuotaExceeded):
 					code = http.StatusForbidden
 				}
-				http.Error(w, err.Error(), code)
+				http.Error(w, "认证失败", code)
 				return
 			}
 

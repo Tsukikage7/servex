@@ -3,7 +3,6 @@
 package integration
 
 import (
-	"context"
 	"os"
 	"testing"
 	"time"
@@ -63,7 +62,7 @@ func newPostgresDB(t *testing.T) rdbms.Database {
 
 func TestRDBMS_Integration(t *testing.T) {
 	database := newPostgresDB(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// AutoMigrate
 	err := database.AutoMigrate(&testUser{})
@@ -195,7 +194,7 @@ func TestRDBMS_Integration(t *testing.T) {
 
 func TestRDBMS_BaseModel(t *testing.T) {
 	database := newPostgresDB(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := database.AutoMigrate(&testUser{})
 	require.NoError(t, err)

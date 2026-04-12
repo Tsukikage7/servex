@@ -281,7 +281,7 @@ func (w *k8sWatcher) startWatch() (watch.Interface, error) {
 }
 
 // extractData 从 Watch 事件对象中提取配置数据.
-func (w *k8sWatcher) extractData(obj interface{}) ([]*config.KeyValue, error) {
+func (w *k8sWatcher) extractData(obj any) ([]*config.KeyValue, error) {
 	var data map[string]string
 
 	switch o := obj.(type) {

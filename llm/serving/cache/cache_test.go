@@ -50,7 +50,7 @@ func TestMemoryStore_PutAndSearch(t *testing.T) {
 	t.Parallel()
 
 	store := cache.NewMemoryStore()
-	ctx := context.Background()
+	ctx := t.Context()
 	vec := []float32{1, 0, 0}
 	resp := &llm.ChatResponse{Message: llm.AssistantMessage("hello")}
 
@@ -75,7 +75,7 @@ func TestMemoryStore_Threshold(t *testing.T) {
 	t.Parallel()
 
 	store := cache.NewMemoryStore()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 存入 [1,0,0]
 	if err := store.Put(ctx, []float32{1, 0, 0}, &llm.ChatResponse{Message: llm.AssistantMessage("a")}, time.Minute); err != nil {
@@ -97,7 +97,7 @@ func TestMemoryStore_TTL(t *testing.T) {
 	t.Parallel()
 
 	store := cache.NewMemoryStore()
-	ctx := context.Background()
+	ctx := t.Context()
 	vec := []float32{1, 0, 0}
 	resp := &llm.ChatResponse{Message: llm.AssistantMessage("ttl-test")}
 
@@ -123,7 +123,7 @@ func TestMemoryStore_Clear(t *testing.T) {
 	t.Parallel()
 
 	store := cache.NewMemoryStore()
-	ctx := context.Background()
+	ctx := t.Context()
 	vec := []float32{1, 0, 0}
 
 	if err := store.Put(ctx, vec, &llm.ChatResponse{Message: llm.AssistantMessage("x")}, time.Minute); err != nil {
@@ -168,7 +168,7 @@ func TestNewCachedModel(t *testing.T) {
 		TTL:            time.Minute,
 	})
 
-	ctx := context.Background()
+	ctx := t.Context()
 	msgs := []llm.Message{llm.UserMessage("你好")}
 
 	// 第一次调用：缓存未命中，应透传到底层模型.

@@ -1,7 +1,6 @@
 package audit
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -24,11 +23,11 @@ func TestLog(t *testing.T) {
 		},
 	}
 
-	err := l.Log(context.Background(), entry)
+	err := l.Log(t.Context(), entry)
 	require.NoError(t, err)
 	assert.NotEmpty(t, entry.ID)
 
-	entries, err := l.Query(context.Background(), nil)
+	entries, err := l.Query(t.Context(), nil)
 	require.NoError(t, err)
 	assert.Len(t, entries, 1)
 	assert.Equal(t, "user-1", entries[0].Actor)
@@ -38,11 +37,11 @@ func TestQuery_ByActor(t *testing.T) {
 	store := NewMemoryStore()
 	l := NewLogger(store)
 
-	_ = l.Log(context.Background(), &Entry{Actor: "alice", Action: "create", Resource: "order"})
-	_ = l.Log(context.Background(), &Entry{Actor: "bob", Action: "update", Resource: "order"})
-	_ = l.Log(context.Background(), &Entry{Actor: "alice", Action: "delete", Resource: "order"})
+	_ = l.Log(t.Context(), &Entry{Actor: "alice", Action: "create", Resource: "order"})
+	_ = l.Log(t.Context(), &Entry{Actor: "bob", Action: "update", Resource: "order"})
+	_ = l.Log(t.Context(), &Entry{Actor: "alice", Action: "delete", Resource: "order"})
 
-	entries, err := l.Query(context.Background(), &Filter{Actor: "alice"})
+	entries, err := l.Query(t.Context(), &Filter{Actor: "alice"})
 	require.NoError(t, err)
 	assert.Len(t, entries, 2)
 }
@@ -51,10 +50,10 @@ func TestQuery_ByResource(t *testing.T) {
 	store := NewMemoryStore()
 	l := NewLogger(store)
 
-	_ = l.Log(context.Background(), &Entry{Actor: "alice", Action: "create", Resource: "order"})
-	_ = l.Log(context.Background(), &Entry{Actor: "alice", Action: "create", Resource: "product"})
+	_ = l.Log(t.Context(), &Entry{Actor: "alice", Action: "create", Resource: "order"})
+	_ = l.Log(t.Context(), &Entry{Actor: "alice", Action: "create", Resource: "product"})
 
-	entries, err := l.Query(context.Background(), &Filter{Resource: "product"})
+	entries, err := l.Query(t.Context(), &Filter{Resource: "product"})
 	require.NoError(t, err)
 	assert.Len(t, entries, 1)
 	assert.Equal(t, "product", entries[0].Resource)
@@ -68,11 +67,11 @@ func TestQuery_DateRange(t *testing.T) {
 	past := now.Add(-2 * time.Hour)
 	future := now.Add(2 * time.Hour)
 
-	_ = l.Log(context.Background(), &Entry{Actor: "alice", Action: "create", Resource: "order", CreatedAt: past})
-	_ = l.Log(context.Background(), &Entry{Actor: "alice", Action: "update", Resource: "order", CreatedAt: now})
-	_ = l.Log(context.Background(), &Entry{Actor: "alice", Action: "delete", Resource: "order", CreatedAt: future})
+	_ = l.Log(t.Context(), &Entry{Actor: "alice", Action: "create", Resource: "order", CreatedAt: past})
+	_ = l.Log(t.Context(), &Entry{Actor: "alice", Action: "update", Resource: "order", CreatedAt: now})
+	_ = l.Log(t.Context(), &Entry{Actor: "alice", Action: "delete", Resource: "order", CreatedAt: future})
 
-	entries, err := l.Query(context.Background(), &Filter{
+	entries, err := l.Query(t.Context(), &Filter{
 		From: now.Add(-time.Minute),
 		To:   now.Add(time.Minute),
 	})
@@ -103,7 +102,7 @@ func TestHTTPMiddleware(t *testing.T) {
 	handler.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	entries, err := l.Query(context.Background(), nil)
+	entries, err := l.Query(t.Context(), nil)
 	require.NoError(t, err)
 	assert.Len(t, entries, 1)
 	assert.Equal(t, "alice", entries[0].Actor)
@@ -117,14 +116,14 @@ func TestAsync(t *testing.T) {
 	l := NewLogger(store, WithAsync(100))
 
 	for i := 0; i < 10; i++ {
-		err := l.Log(context.Background(), &Entry{Actor: "alice", Action: "create", Resource: "order"})
+		err := l.Log(t.Context(), &Entry{Actor: "alice", Action: "create", Resource: "order"})
 		require.NoError(t, err)
 	}
 
 	// 等待异步写入完成
 	time.Sleep(100 * time.Millisecond)
 
-	entries, err := l.Query(context.Background(), nil)
+	entries, err := l.Query(t.Context(), nil)
 	require.NoError(t, err)
 	assert.Len(t, entries, 10)
 }

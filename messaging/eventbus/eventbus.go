@@ -109,8 +109,7 @@ func New(opts ...Option) *Bus {
 
 	// 启动异步工作协程.
 	for range o.asyncWorkers {
-		b.wg.Add(1)
-		go b.worker()
+		b.wg.Go(func() { b.worker() })
 	}
 
 	return b
@@ -118,7 +117,6 @@ func New(opts ...Option) *Bus {
 
 // worker 异步工作协程.
 func (b *Bus) worker() {
-	defer b.wg.Done()
 	for task := range b.asyncCh {
 		if err := task.handler(task.ctx, task.event); err != nil {
 			b.opts.errorHandler(err)

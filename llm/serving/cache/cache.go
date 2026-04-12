@@ -6,6 +6,7 @@ package cache
 
 import (
 	"context"
+	"errors"
 	"io"
 	"sync"
 	"time"
@@ -274,7 +275,7 @@ type cachingStreamReader struct {
 // Recv 透传内部 StreamReader 的 Recv，遇到 EOF 时触发缓存写入.
 func (r *cachingStreamReader) Recv() (llm.StreamChunk, error) {
 	chunk, err := r.inner.Recv()
-	if err == io.EOF && !r.stored {
+	if errors.Is(err, io.EOF) && !r.stored {
 		r.stored = true
 		if resp := r.inner.Response(); resp != nil {
 			_ = r.store.Put(r.ctx, r.queryVec, resp, r.ttl)

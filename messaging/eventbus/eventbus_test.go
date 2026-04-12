@@ -30,7 +30,7 @@ func TestSubscribeAndPublish(t *testing.T) {
 		return nil
 	})
 
-	err := bus.Publish(context.Background(), testEvent{topic: "user.created", payload: "alice"})
+	err := bus.Publish(t.Context(), testEvent{topic: "user.created", payload: "alice"})
 	require.NoError(t, err)
 	assert.Equal(t, "alice", received)
 }
@@ -39,7 +39,7 @@ func TestPublishNoSubscribers(t *testing.T) {
 	bus := New()
 	defer bus.Close()
 
-	err := bus.Publish(context.Background(), testEvent{topic: "nothing", payload: "x"})
+	err := bus.Publish(t.Context(), testEvent{topic: "nothing", payload: "x"})
 	assert.NoError(t, err)
 }
 
@@ -52,7 +52,7 @@ func TestPublishHandlerError(t *testing.T) {
 		return want
 	})
 
-	err := bus.Publish(context.Background(), testEvent{topic: "fail"})
+	err := bus.Publish(t.Context(), testEvent{topic: "fail"})
 	assert.ErrorIs(t, err, want)
 }
 
@@ -68,7 +68,7 @@ func TestMultipleSubscribers(t *testing.T) {
 		})
 	}
 
-	err := bus.Publish(context.Background(), testEvent{topic: "inc"})
+	err := bus.Publish(t.Context(), testEvent{topic: "inc"})
 	require.NoError(t, err)
 	assert.Equal(t, int32(3), count.Load())
 }
@@ -83,12 +83,12 @@ func TestUnsubscribe(t *testing.T) {
 		return nil
 	})
 
-	_ = bus.Publish(context.Background(), testEvent{topic: "topic"})
+	_ = bus.Publish(t.Context(), testEvent{topic: "topic"})
 	assert.Equal(t, int32(1), count.Load())
 
 	unsub()
 
-	_ = bus.Publish(context.Background(), testEvent{topic: "topic"})
+	_ = bus.Publish(t.Context(), testEvent{topic: "topic"})
 	assert.Equal(t, int32(1), count.Load())
 }
 
@@ -102,8 +102,8 @@ func TestSubscribeAll(t *testing.T) {
 		return nil
 	})
 
-	_ = bus.Publish(context.Background(), testEvent{topic: "a"})
-	_ = bus.Publish(context.Background(), testEvent{topic: "b"})
+	_ = bus.Publish(t.Context(), testEvent{topic: "a"})
+	_ = bus.Publish(t.Context(), testEvent{topic: "b"})
 
 	assert.Equal(t, []string{"a", "b"}, topics)
 }
@@ -118,12 +118,12 @@ func TestSubscribeAllUnsubscribe(t *testing.T) {
 		return nil
 	})
 
-	_ = bus.Publish(context.Background(), testEvent{topic: "x"})
+	_ = bus.Publish(t.Context(), testEvent{topic: "x"})
 	assert.Equal(t, int32(1), count.Load())
 
 	unsub()
 
-	_ = bus.Publish(context.Background(), testEvent{topic: "y"})
+	_ = bus.Publish(t.Context(), testEvent{topic: "y"})
 	assert.Equal(t, int32(1), count.Load())
 }
 
@@ -137,7 +137,7 @@ func TestPublishAsync(t *testing.T) {
 	})
 
 	for range 10 {
-		bus.PublishAsync(context.Background(), testEvent{topic: "async"})
+		bus.PublishAsync(t.Context(), testEvent{topic: "async"})
 	}
 
 	bus.Close()
@@ -157,7 +157,7 @@ func TestPublishAsyncErrorHandler(t *testing.T) {
 		return errors.New("boom")
 	})
 
-	bus.PublishAsync(context.Background(), testEvent{topic: "err"})
+	bus.PublishAsync(t.Context(), testEvent{topic: "err"})
 	bus.Close()
 
 	assert.Equal(t, int32(1), errCount.Load())
@@ -167,7 +167,7 @@ func TestClosedBusPublish(t *testing.T) {
 	bus := New()
 	bus.Close()
 
-	err := bus.Publish(context.Background(), testEvent{topic: "x"})
+	err := bus.Publish(t.Context(), testEvent{topic: "x"})
 	assert.ErrorIs(t, err, ErrBusClosed)
 }
 
@@ -176,7 +176,7 @@ func TestClosedBusPublishAsync(t *testing.T) {
 	bus.Close()
 
 	// 不应 panic.
-	bus.PublishAsync(context.Background(), testEvent{topic: "x"})
+	bus.PublishAsync(t.Context(), testEvent{topic: "x"})
 }
 
 func TestDoubleClose(t *testing.T) {
@@ -193,9 +193,7 @@ func TestConcurrentSafety(t *testing.T) {
 
 	// 并发订阅.
 	for i := range 10 {
-		wg.Add(1)
-		go func(i int) {
-			defer wg.Done()
+		wg.Go(func() {
 			unsub := bus.Subscribe("concurrent", func(_ context.Context, _ Event) error {
 				count.Add(1)
 				return nil
@@ -204,17 +202,15 @@ func TestConcurrentSafety(t *testing.T) {
 			if i%2 == 0 {
 				unsub()
 			}
-		}(i)
+		})
 	}
 	wg.Wait()
 
 	// 并发发布.
 	for range 20 {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			_ = bus.Publish(context.Background(), testEvent{topic: "concurrent"})
-		}()
+		wg.Go(func() {
+			_ = bus.Publish(t.Context(), testEvent{topic: "concurrent"})
+		})
 	}
 	wg.Wait()
 
@@ -237,7 +233,7 @@ func TestWithAsyncWorkersZero(t *testing.T) {
 		called.Store(true)
 		return nil
 	})
-	bus.PublishAsync(context.Background(), testEvent{topic: "test"})
+	bus.PublishAsync(t.Context(), testEvent{topic: "test"})
 	bus.Close()
 	assert.True(t, called.Load())
 }
@@ -256,7 +252,7 @@ func TestWildcardAndTopicCombined(t *testing.T) {
 		return nil
 	})
 
-	_ = bus.Publish(context.Background(), testEvent{topic: "order"})
+	_ = bus.Publish(t.Context(), testEvent{topic: "order"})
 	assert.Equal(t, []string{"topic:order", "wildcard:order"}, results)
 }
 
@@ -271,7 +267,7 @@ func TestPublishAsyncClose(t *testing.T) {
 	})
 
 	for range 5 {
-		bus.PublishAsync(context.Background(), testEvent{topic: "slow"})
+		bus.PublishAsync(t.Context(), testEvent{topic: "slow"})
 	}
 
 	bus.Close() // 应等待所有异步任务完成.

@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"sync"
 	"sync/atomic"
 
@@ -197,19 +198,19 @@ func (m *Manager[T]) watchLoop(w Watcher) {
 		// 重新从所有源加载（确保合并一致性）
 		kvs, err := m.loadAll()
 		if err != nil {
-			fmt.Printf("[config] 热加载失败: 加载数据源出错: %v\n", err)
+			slog.Error("[config] 热加载失败: 加载数据源出错", slog.Any("error", err))
 			continue
 		}
 		cfg, err := m.decoder(kvs)
 		if err != nil {
-			fmt.Printf("[config] 热加载失败: 解码配置出错: %v\n", err)
+			slog.Error("[config] 热加载失败: 解码配置出错", slog.Any("error", err))
 			continue
 		}
 
 		// 验证
 		if v, ok := any(cfg).(Validatable); ok {
 			if err := v.Validate(); err != nil {
-				fmt.Printf("[config] 热加载失败: 配置验证出错: %v\n", err)
+				slog.Error("[config] 热加载失败: 配置验证出错", slog.Any("error", err))
 				continue
 			}
 		}
@@ -220,7 +221,7 @@ func (m *Manager[T]) watchLoop(w Watcher) {
 			func() {
 				defer func() {
 					if r := recover(); r != nil {
-						fmt.Printf("[config] 观察者回调 panic: %v\n", r)
+						slog.Error("[config] 观察者回调 panic", slog.Any("recover", r))
 					}
 				}()
 				obs(old, cfg)

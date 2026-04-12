@@ -362,9 +362,7 @@ func (e *Engine) executeParallel(ctx context.Context, instance *Instance, node *
 
 	for _, h := range handlers {
 		h := h
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			sem <- struct{}{}
 			defer func() { <-sem }()
 			if err := h(ctx, instance); err != nil {
@@ -374,7 +372,7 @@ func (e *Engine) executeParallel(ctx context.Context, instance *Instance, node *
 				}
 				mu.Unlock()
 			}
-		}()
+		})
 	}
 
 	wg.Wait()

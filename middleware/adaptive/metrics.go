@@ -3,7 +3,7 @@ package adaptive
 
 import (
 	"math"
-	"sort"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -119,7 +119,7 @@ func (lt *latencyTracker) percentile(p float64) time.Duration {
 	for i, s := range lt.samples {
 		sorted[i] = s.d
 	}
-	sort.Slice(sorted, func(i, j int) bool { return sorted[i] < sorted[j] })
+	slices.Sort(sorted)
 	idx := int(math.Ceil(p*float64(n))) - 1
 	if idx < 0 {
 		idx = 0

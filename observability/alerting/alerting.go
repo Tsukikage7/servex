@@ -575,6 +575,13 @@ func (e *Engine) notify(alert *Alert) {
 	}
 	a := copyAlert(alert)
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				if e.printf != nil {
+					e.printf("alerting: 发送通知 panic: %v", r)
+				}
+			}
+		}()
 		if err := e.notifier.Notify(context.Background(), a); err != nil {
 			if e.printf != nil {
 				e.printf("alerting: 发送通知失败: %v", err)

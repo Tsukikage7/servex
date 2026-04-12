@@ -33,7 +33,7 @@ func TestToGRPCStatus(t *testing.T) {
 	t.Run("from standard error", func(t *testing.T) {
 		st := ToGRPCStatus(fmt.Errorf("plain error"))
 		assert.Equal(t, codes.Internal, st.Code())
-		assert.Equal(t, "plain error", st.Message())
+		assert.Equal(t, "内部错误", st.Message())
 	})
 
 	t.Run("from nil", func(t *testing.T) {

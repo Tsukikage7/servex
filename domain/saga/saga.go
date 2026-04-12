@@ -253,10 +253,12 @@ func (s *Saga) executeStepWithRetry(ctx context.Context, step Step, data *Data) 
 	for attempt := 0; attempt <= s.opts.retryCount; attempt++ {
 		if attempt > 0 {
 			// 等待重试
+			retryTimer := time.NewTimer(s.opts.retryDelay)
 			select {
 			case <-ctx.Done():
+				retryTimer.Stop()
 				return ctx.Err()
-			case <-time.After(s.opts.retryDelay):
+			case <-retryTimer.C:
 			}
 
 			if s.opts.logger != nil {

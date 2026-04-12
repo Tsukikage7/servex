@@ -2,7 +2,6 @@ package sse
 
 import (
 	"encoding/json"
-	"fmt"
 	"sync"
 )
 
@@ -100,7 +99,7 @@ func (b *EventBuilder) Text(text string) *EventBuilder {
 func (b *EventBuilder) JSON(data any) *EventBuilder {
 	bytes, err := json.Marshal(data)
 	if err != nil {
-		b.event.Data = []byte(fmt.Sprintf(`{"error":"%s"}`, err.Error()))
+		b.event.Data = []byte(`{"error":"序列化失败"}`)
 	} else {
 		b.event.Data = bytes
 	}

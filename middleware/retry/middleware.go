@@ -96,10 +96,12 @@ func EndpointMiddleware(cfg *Config) endpoint.Middleware {
 				// 如果不是最后一次尝试，则等待
 				if attempt < cfg.MaxAttempts-1 {
 					wait := cfg.Backoff(attempt, cfg.Delay)
+					retryTimer := time.NewTimer(wait)
 					select {
-					case <-time.After(wait):
+					case <-retryTimer.C:
 						continue
 					case <-ctx.Done():
+						retryTimer.Stop()
 						return nil, ctx.Err()
 					}
 				}

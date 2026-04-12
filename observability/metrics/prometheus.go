@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"sort"
+	"slices"
 	"sync"
 	"time"
 
@@ -333,7 +333,7 @@ func extractLabels(labels map[string]string) ([]string, []string) {
 	for k := range labels {
 		labelNames = append(labelNames, k)
 	}
-	sort.Strings(labelNames)
+	slices.Sort(labelNames)
 
 	labelValues := make([]string, 0, len(labels))
 	for _, k := range labelNames {

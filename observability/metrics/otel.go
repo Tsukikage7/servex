@@ -3,7 +3,7 @@ package metrics
 import (
 	"context"
 	"net/http"
-	"sort"
+	"slices"
 	"sync"
 	"time"
 
@@ -380,7 +380,7 @@ func mapToAttributes(labels map[string]string) []attribute.KeyValue {
 	for k := range labels {
 		keys = append(keys, k)
 	}
-	sort.Strings(keys)
+	slices.Sort(keys)
 
 	attrs := make([]attribute.KeyValue, 0, len(labels))
 	for _, k := range keys {

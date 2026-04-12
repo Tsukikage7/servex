@@ -196,8 +196,7 @@ func ParseErrors(err error, msgs ...map[string]string) *ValidationError {
 
 	var fieldErrors []FieldError
 
-	var ve validator.ValidationErrors
-	if errors.As(err, &ve) {
+	if ve, ok := errors.AsType[validator.ValidationErrors](err); ok {
 		for _, fe := range ve {
 			fieldErr := FieldError{
 				Field: fe.Field(),

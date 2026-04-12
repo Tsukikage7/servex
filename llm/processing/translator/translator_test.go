@@ -39,7 +39,7 @@ func TestTranslate(t *testing.T) {
 		},
 	}
 	tr := translator.NewTranslator(model)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	result, err := tr.Translate(ctx, "你好，世界！", "en")
 	if err != nil {
@@ -67,7 +67,7 @@ func TestTranslate_WithGlossary(t *testing.T) {
 		"PR": "Pull Request",
 	}
 	tr := translator.NewTranslator(model, translator.WithGlossary(glossary))
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := tr.Translate(ctx, "请提交PR", "en")
 	if err != nil {
@@ -92,7 +92,7 @@ func TestTranslateBatch(t *testing.T) {
 		},
 	}
 	tr := translator.NewTranslator(model)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	texts := []string{"你好", "再见", "谢谢"}
 	result, err := tr.TranslateBatch(ctx, texts, "en")
@@ -118,7 +118,7 @@ func TestDetectLanguage(t *testing.T) {
 		},
 	}
 	tr := translator.NewTranslator(model)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	lang, err := tr.DetectLanguage(ctx, "こんにちは")
 	if err != nil {
@@ -133,7 +133,7 @@ func TestDetectLanguage(t *testing.T) {
 func TestEmptyText(t *testing.T) {
 	model := &mockModel{fn: func(_ []llm.Message) string { return "{}" }}
 	tr := translator.NewTranslator(model)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("Translate", func(t *testing.T) {
 		_, err := tr.Translate(ctx, "", "en")
@@ -161,7 +161,7 @@ func TestEmptyText(t *testing.T) {
 func TestEmptyTarget(t *testing.T) {
 	model := &mockModel{fn: func(_ []llm.Message) string { return "{}" }}
 	tr := translator.NewTranslator(model)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("Translate", func(t *testing.T) {
 		_, err := tr.Translate(ctx, "hello", "")

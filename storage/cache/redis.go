@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -85,7 +86,7 @@ func (r *redisCache) Set(ctx context.Context, key string, value any, ttl time.Du
 func (r *redisCache) Get(ctx context.Context, key string) (string, error) {
 	result, err := r.client.Get(ctx, key).Result()
 	if err != nil {
-		if err == redis.Nil {
+		if errors.Is(err, redis.Nil) {
 			return "", ErrNotFound
 		}
 		r.logger.With(

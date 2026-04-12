@@ -1,7 +1,6 @@
 package apikey
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -21,7 +20,7 @@ func newTestManager(t *testing.T) (Manager, *MemoryStore) {
 func TestManager_Create(t *testing.T) {
 	mgr, _ := newTestManager(t)
 
-	rawKey, key, err := mgr.Create(context.Background(),
+	rawKey, key, err := mgr.Create(t.Context(),
 		WithName("test-key"),
 		WithOwnerID("owner1"),
 	)
@@ -63,7 +62,7 @@ func TestManager_Create(t *testing.T) {
 func TestManager_Validate(t *testing.T) {
 	mgr, _ := newTestManager(t)
 
-	rawKey, created, err := mgr.Create(context.Background(),
+	rawKey, created, err := mgr.Create(t.Context(),
 		WithName("validate-key"),
 		WithOwnerID("owner1"),
 	)
@@ -71,7 +70,7 @@ func TestManager_Validate(t *testing.T) {
 		t.Fatalf("Create 失败: %v", err)
 	}
 
-	key, err := mgr.Validate(context.Background(), rawKey)
+	key, err := mgr.Validate(t.Context(), rawKey)
 	if err != nil {
 		t.Fatalf("Validate 失败: %v", err)
 	}
@@ -86,23 +85,23 @@ func TestManager_Validate(t *testing.T) {
 func TestManager_Validate_Disabled(t *testing.T) {
 	mgr, _ := newTestManager(t)
 
-	rawKey, _, err := mgr.Create(context.Background(), WithOwnerID("owner1"))
+	rawKey, _, err := mgr.Create(t.Context(), WithOwnerID("owner1"))
 	if err != nil {
 		t.Fatalf("Create 失败: %v", err)
 	}
 
 	// 先验证正常
-	key, err := mgr.Validate(context.Background(), rawKey)
+	key, err := mgr.Validate(t.Context(), rawKey)
 	if err != nil {
 		t.Fatalf("首次 Validate 失败: %v", err)
 	}
 
 	// 撤销后验证
-	if err := mgr.Revoke(context.Background(), key.ID); err != nil {
+	if err := mgr.Revoke(t.Context(), key.ID); err != nil {
 		t.Fatalf("Revoke 失败: %v", err)
 	}
 
-	_, err = mgr.Validate(context.Background(), rawKey)
+	_, err = mgr.Validate(t.Context(), rawKey)
 	if err != ErrKeyDisabled {
 		t.Errorf("验证已撤销的 Key 应返回 ErrKeyDisabled, got: %v", err)
 	}
@@ -112,7 +111,7 @@ func TestManager_Validate_Expired(t *testing.T) {
 	mgr, _ := newTestManager(t)
 
 	past := time.Now().Add(-time.Hour)
-	rawKey, _, err := mgr.Create(context.Background(),
+	rawKey, _, err := mgr.Create(t.Context(),
 		WithOwnerID("owner1"),
 		WithExpiresAt(past),
 	)
@@ -120,7 +119,7 @@ func TestManager_Validate_Expired(t *testing.T) {
 		t.Fatalf("Create 失败: %v", err)
 	}
 
-	_, err = mgr.Validate(context.Background(), rawKey)
+	_, err = mgr.Validate(t.Context(), rawKey)
 	if err != ErrKeyExpired {
 		t.Errorf("验证已过期的 Key 应返回 ErrKeyExpired, got: %v", err)
 	}
@@ -129,7 +128,7 @@ func TestManager_Validate_Expired(t *testing.T) {
 func TestManager_Validate_QuotaExceeded(t *testing.T) {
 	mgr, _ := newTestManager(t)
 
-	rawKey, created, err := mgr.Create(context.Background(),
+	rawKey, created, err := mgr.Create(t.Context(),
 		WithOwnerID("owner1"),
 		WithQuotaLimit(100),
 	)
@@ -138,11 +137,11 @@ func TestManager_Validate_QuotaExceeded(t *testing.T) {
 	}
 
 	// 先用完配额
-	if err := mgr.UpdateQuota(context.Background(), created.ID, 100); err != nil {
+	if err := mgr.UpdateQuota(t.Context(), created.ID, 100); err != nil {
 		t.Fatalf("UpdateQuota 失败: %v", err)
 	}
 
-	_, err = mgr.Validate(context.Background(), rawKey)
+	_, err = mgr.Validate(t.Context(), rawKey)
 	if err != ErrQuotaExceeded {
 		t.Errorf("验证超额 Key 应返回 ErrQuotaExceeded, got: %v", err)
 	}
@@ -151,17 +150,17 @@ func TestManager_Validate_QuotaExceeded(t *testing.T) {
 func TestManager_Revoke(t *testing.T) {
 	mgr, store := newTestManager(t)
 
-	_, created, err := mgr.Create(context.Background(), WithOwnerID("owner1"))
+	_, created, err := mgr.Create(t.Context(), WithOwnerID("owner1"))
 	if err != nil {
 		t.Fatalf("Create 失败: %v", err)
 	}
 
-	if err := mgr.Revoke(context.Background(), created.ID); err != nil {
+	if err := mgr.Revoke(t.Context(), created.ID); err != nil {
 		t.Fatalf("Revoke 失败: %v", err)
 	}
 
 	// 从 Store 检查 Enabled 状态
-	key, err := store.GetByID(context.Background(), created.ID)
+	key, err := store.GetByID(t.Context(), created.ID)
 	if err != nil {
 		t.Fatalf("GetByID 失败: %v", err)
 	}
@@ -175,16 +174,16 @@ func TestManager_List(t *testing.T) {
 
 	// 为 owner1 创建 2 个 Key
 	for range 2 {
-		if _, _, err := mgr.Create(context.Background(), WithOwnerID("owner1")); err != nil {
+		if _, _, err := mgr.Create(t.Context(), WithOwnerID("owner1")); err != nil {
 			t.Fatalf("Create 失败: %v", err)
 		}
 	}
 	// 为 owner2 创建 1 个 Key
-	if _, _, err := mgr.Create(context.Background(), WithOwnerID("owner2")); err != nil {
+	if _, _, err := mgr.Create(t.Context(), WithOwnerID("owner2")); err != nil {
 		t.Fatalf("Create 失败: %v", err)
 	}
 
-	keys1, err := mgr.List(context.Background(), "owner1")
+	keys1, err := mgr.List(t.Context(), "owner1")
 	if err != nil {
 		t.Fatalf("List 失败: %v", err)
 	}
@@ -192,7 +191,7 @@ func TestManager_List(t *testing.T) {
 		t.Errorf("owner1 应有 2 个 Key, got %d", len(keys1))
 	}
 
-	keys2, err := mgr.List(context.Background(), "owner2")
+	keys2, err := mgr.List(t.Context(), "owner2")
 	if err != nil {
 		t.Fatalf("List 失败: %v", err)
 	}
@@ -204,7 +203,7 @@ func TestManager_List(t *testing.T) {
 func TestManager_UpdateQuota(t *testing.T) {
 	mgr, store := newTestManager(t)
 
-	_, created, err := mgr.Create(context.Background(),
+	_, created, err := mgr.Create(t.Context(),
 		WithOwnerID("owner1"),
 		WithQuotaLimit(1000),
 	)
@@ -212,14 +211,14 @@ func TestManager_UpdateQuota(t *testing.T) {
 		t.Fatalf("Create 失败: %v", err)
 	}
 
-	if err := mgr.UpdateQuota(context.Background(), created.ID, 250); err != nil {
+	if err := mgr.UpdateQuota(t.Context(), created.ID, 250); err != nil {
 		t.Fatalf("UpdateQuota 失败: %v", err)
 	}
-	if err := mgr.UpdateQuota(context.Background(), created.ID, 150); err != nil {
+	if err := mgr.UpdateQuota(t.Context(), created.ID, 150); err != nil {
 		t.Fatalf("UpdateQuota 第二次失败: %v", err)
 	}
 
-	key, err := store.GetByID(context.Background(), created.ID)
+	key, err := store.GetByID(t.Context(), created.ID)
 	if err != nil {
 		t.Fatalf("GetByID 失败: %v", err)
 	}
@@ -231,7 +230,7 @@ func TestManager_UpdateQuota(t *testing.T) {
 func TestHTTPMiddleware(t *testing.T) {
 	mgr, _ := newTestManager(t)
 
-	rawKey, _, err := mgr.Create(context.Background(), WithOwnerID("owner1"))
+	rawKey, _, err := mgr.Create(t.Context(), WithOwnerID("owner1"))
 	if err != nil {
 		t.Fatalf("Create 失败: %v", err)
 	}

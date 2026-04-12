@@ -1,7 +1,6 @@
 package document
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,7 +15,7 @@ func TestTextLoader(t *testing.T) {
 	content := "这是一段测试文本内容"
 	loader := NewTextLoader(strings.NewReader(content))
 
-	docs, err := loader.Load(context.Background())
+	docs, err := loader.Load(t.Context())
 	require.NoError(t, err)
 	require.Len(t, docs, 1)
 	assert.Equal(t, content, docs[0].Content)
@@ -35,7 +34,7 @@ func TestCSVLoader(t *testing.T) {
 		WithCSVMetadataColumns("title", "author"),
 	)
 
-	docs, err := loader.Load(context.Background())
+	docs, err := loader.Load(t.Context())
 	require.NoError(t, err)
 	require.Len(t, docs, 3)
 
@@ -62,7 +61,7 @@ func TestJSONLoader(t *testing.T) {
 		WithJSONMetadataFields("title", "category"),
 	)
 
-	docs, err := loader.Load(context.Background())
+	docs, err := loader.Load(t.Context())
 	require.NoError(t, err)
 	require.Len(t, docs, 2)
 
@@ -85,7 +84,7 @@ func TestJSONLoader_JSONL(t *testing.T) {
 		WithJSONMetadataFields("source"),
 	)
 
-	docs, err := loader.Load(context.Background())
+	docs, err := loader.Load(t.Context())
 	require.NoError(t, err)
 	require.Len(t, docs, 3)
 
@@ -114,7 +113,7 @@ func TestMarkdownLoader(t *testing.T) {
 
 	loader := NewMarkdownLoader(strings.NewReader(mdContent))
 
-	docs, err := loader.Load(context.Background())
+	docs, err := loader.Load(t.Context())
 	require.NoError(t, err)
 	require.Len(t, docs, 3)
 
@@ -145,7 +144,7 @@ func TestDirectoryLoader(t *testing.T) {
 
 	loader := NewDirectoryLoader(tmpDir, "*.txt")
 
-	docs, err := loader.Load(context.Background())
+	docs, err := loader.Load(t.Context())
 	require.NoError(t, err)
 	require.Len(t, docs, 2)
 
@@ -172,7 +171,7 @@ func TestWithMetadata(t *testing.T) {
 		WithMetadata(userMeta),
 	)
 
-	docs, err := loader.Load(context.Background())
+	docs, err := loader.Load(t.Context())
 	require.NoError(t, err)
 	require.Len(t, docs, 1)
 
@@ -194,7 +193,7 @@ func TestWithIDPrefix(t *testing.T) {
 		WithIDPrefix("doc_"),
 	)
 
-	docs, err := loader.Load(context.Background())
+	docs, err := loader.Load(t.Context())
 	require.NoError(t, err)
 	require.Len(t, docs, 2)
 

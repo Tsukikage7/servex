@@ -63,7 +63,7 @@ func TestKeywordModerator_Flagged(t *testing.T) {
 		moderation.CategorySpam:     {"buy now", "click here"},
 	}
 	mod := moderation.NewKeywordModerator(rules)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	result, err := mod.Moderate(ctx, "I will kill you")
 	if err != nil {
@@ -94,7 +94,7 @@ func TestKeywordModerator_Clean(t *testing.T) {
 		moderation.CategoryHate:     {"hate", "racist"},
 	}
 	mod := moderation.NewKeywordModerator(rules)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	result, err := mod.Moderate(ctx, "Today is a beautiful day")
 	if err != nil {
@@ -126,7 +126,7 @@ func TestLLMModerator(t *testing.T) {
 	}
 	model := newScoreModel(scores, "包含暴力内容")
 	mod := moderation.NewLLMModerator(model)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	result, err := mod.Moderate(ctx, "I will hurt you badly")
 	if err != nil {
@@ -160,7 +160,7 @@ func TestLLMModerator_WithThreshold(t *testing.T) {
 	model := newScoreModel(scores, "内容较为正常")
 	// 阈值设为 0.8，所有分数均低于此阈值，不应被标记.
 	mod := moderation.NewLLMModerator(model, moderation.WithThreshold(0.8))
-	ctx := context.Background()
+	ctx := t.Context()
 
 	result, err := mod.Moderate(ctx, "some borderline content")
 	if err != nil {
@@ -188,7 +188,7 @@ func TestLLMModerator_WithCategories(t *testing.T) {
 		model,
 		moderation.WithCategories(moderation.CategorySpam),
 	)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	result, err := mod.Moderate(ctx, "buy now click here spam content")
 	if err != nil {
@@ -223,7 +223,7 @@ func TestCompositeModerator(t *testing.T) {
 	llmMod := moderation.NewLLMModerator(llmModel)
 
 	composite := moderation.NewCompositeModerator(keywordMod, llmMod)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	result, err := composite.Moderate(ctx, "I want to kill someone")
 	if err != nil {
@@ -247,7 +247,7 @@ func TestModerateMessages(t *testing.T) {
 		moderation.CategoryHate: {"hate", "racist"},
 	}
 	mod := moderation.NewKeywordModerator(rules)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	messages := []llm.Message{
 		llm.UserMessage("hello world"),
@@ -269,7 +269,7 @@ func TestModerateMessages(t *testing.T) {
 
 // TestEmptyText 验证空文本时返回 ErrEmptyText.
 func TestEmptyText(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 关键词审核器空文本.
 	t.Run("KeywordModerator", func(t *testing.T) {

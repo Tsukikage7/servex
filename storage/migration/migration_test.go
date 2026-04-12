@@ -1,7 +1,6 @@
 package migration
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -90,7 +89,7 @@ func TestRunner_Up(t *testing.T) {
 	db := testDB(t)
 	log := testLogger(t)
 	registry := testRegistry()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	rn, err := NewRunner(db, registry, log)
 	require.NoError(t, err)
@@ -122,7 +121,7 @@ func TestRunner_Down(t *testing.T) {
 	db := testDB(t)
 	log := testLogger(t)
 	registry := testRegistry()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	rn, err := NewRunner(db, registry, log)
 	require.NoError(t, err)
@@ -153,7 +152,7 @@ func TestRunner_UpTo(t *testing.T) {
 	db := testDB(t)
 	log := testLogger(t)
 	registry := testRegistry()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	rn, err := NewRunner(db, registry, log)
 	require.NoError(t, err)
@@ -184,7 +183,7 @@ func TestRunner_Status(t *testing.T) {
 	db := testDB(t)
 	log := testLogger(t)
 	registry := testRegistry()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	rn, err := NewRunner(db, registry, log)
 	require.NoError(t, err)
@@ -209,7 +208,7 @@ func TestRunner_CurrentVersion(t *testing.T) {
 	db := testDB(t)
 	log := testLogger(t)
 	registry := testRegistry()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	rn, err := NewRunner(db, registry, log)
 	require.NoError(t, err)

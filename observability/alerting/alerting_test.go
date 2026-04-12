@@ -253,7 +253,7 @@ func TestThresholdAlert(t *testing.T) {
 		For: 0, // 立即触发
 	})
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 值低于阈值，不触发.
 	alerts, err := e.Evaluate(ctx)
@@ -311,7 +311,7 @@ func TestThresholdAlertWithPendingDuration(t *testing.T) {
 		For: 100 * time.Millisecond,
 	})
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 第一次评估：进入 Pending.
 	alerts, _ := e.Evaluate(ctx)
@@ -362,7 +362,7 @@ func TestRateAlert(t *testing.T) {
 		For: 0,
 	})
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 低于阈值.
 	alerts, _ := e.Evaluate(ctx)
@@ -407,7 +407,7 @@ func TestAbsenceAlert(t *testing.T) {
 		For: 0,
 	})
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 指标缺失 → 第一次 Pending.
 	alerts, _ := e.Evaluate(ctx)
@@ -462,7 +462,7 @@ func TestAlertResolution(t *testing.T) {
 		For: 0,
 	})
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 触发告警：第一次 Pending，第二次 Firing (For=0).
 	e.Evaluate(ctx)              // → Pending
@@ -519,7 +519,7 @@ func TestNotifierIntegration(t *testing.T) {
 		For: 0,
 	})
 
-	ctx := context.Background()
+	ctx := t.Context()
 	e.Evaluate(ctx) // → Pending
 	e.Evaluate(ctx) // → Firing, triggers notify
 
@@ -576,7 +576,7 @@ func TestEvaluateMultipleRules(t *testing.T) {
 		For: 0,
 	})
 
-	ctx := context.Background()
+	ctx := t.Context()
 	e.Evaluate(ctx)              // first eval → Pending for cpu and memory
 	alerts, _ := e.Evaluate(ctx) // second eval → Firing for cpu and memory
 
@@ -614,7 +614,7 @@ func TestStartStop(t *testing.T) {
 		},
 	})
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 启动.
 	if err := e.Start(ctx); err != nil {
@@ -642,14 +642,14 @@ func TestStartStop(t *testing.T) {
 
 func TestStartNilProvider(t *testing.T) {
 	e := New(nil)
-	if err := e.Start(context.Background()); !errors.Is(err, ErrNilProvider) {
+	if err := e.Start(t.Context()); !errors.Is(err, ErrNilProvider) {
 		t.Errorf("nil provider 启动期望 ErrNilProvider, 实际 %v", err)
 	}
 }
 
 func TestEvaluateNilProvider(t *testing.T) {
 	e := New(nil)
-	_, err := e.Evaluate(context.Background())
+	_, err := e.Evaluate(t.Context())
 	if !errors.Is(err, ErrNilProvider) {
 		t.Errorf("nil provider 评估期望 ErrNilProvider, 实际 %v", err)
 	}
@@ -673,7 +673,7 @@ func TestAlertHistory(t *testing.T) {
 		For: 0,
 	})
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 触发告警：两次评估 Pending → Firing.
 	e.Evaluate(ctx)
@@ -721,7 +721,7 @@ func TestActiveAlerts(t *testing.T) {
 		For: 0,
 	})
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 触发告警：两次评估 Pending → Firing.
 	e.Evaluate(ctx)

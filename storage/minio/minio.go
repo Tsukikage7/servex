@@ -54,9 +54,9 @@ type Config struct {
 	// Endpoint MinIO 端点地址（不含协议前缀，如 "localhost:9000"）.
 	Endpoint string `json:"endpoint" yaml:"endpoint" mapstructure:"endpoint"`
 	// AccessKey 访问密钥 ID.
-	AccessKey string `json:"access_key" yaml:"access_key" mapstructure:"access_key"`
+	AccessKey string `json:"-" yaml:"access_key" mapstructure:"access_key"`
 	// SecretKey 访问密钥.
-	SecretKey string `json:"secret_key" yaml:"secret_key" mapstructure:"secret_key"`
+	SecretKey string `json:"-" yaml:"secret_key" mapstructure:"secret_key"`
 	// Bucket 默认桶名.
 	Bucket string `json:"bucket" yaml:"bucket" mapstructure:"bucket"`
 	// UseSSL 是否使用 SSL.

@@ -203,7 +203,7 @@ func TestPingChecker(t *testing.T) {
 
 		result := checker.Check(t.Context())
 		assert.Equal(t, StatusDown, result.Status)
-		assert.Equal(t, "connection refused", result.Message)
+		assert.Equal(t, "检查失败", result.Message)
 	})
 }
 

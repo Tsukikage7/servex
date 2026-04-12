@@ -1,7 +1,6 @@
 package feature
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,7 +10,7 @@ import (
 func TestEnabled_Global(t *testing.T) {
 	store := NewMemoryStore()
 	mgr := NewManager(store)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 全局启用，无限制条件
 	err := mgr.SetFlag(ctx, &Flag{Name: "feature-a", Enabled: true})
@@ -23,7 +22,7 @@ func TestEnabled_Global(t *testing.T) {
 func TestDisabled(t *testing.T) {
 	store := NewMemoryStore()
 	mgr := NewManager(store)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 全局禁用
 	err := mgr.SetFlag(ctx, &Flag{Name: "feature-b", Enabled: false})
@@ -38,7 +37,7 @@ func TestDisabled(t *testing.T) {
 func TestEnabled_UserWhitelist(t *testing.T) {
 	store := NewMemoryStore()
 	mgr := NewManager(store)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := mgr.SetFlag(ctx, &Flag{
 		Name:    "feature-c",
@@ -57,7 +56,7 @@ func TestEnabled_UserWhitelist(t *testing.T) {
 func TestEnabled_GroupWhitelist(t *testing.T) {
 	store := NewMemoryStore()
 	mgr := NewManager(store)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := mgr.SetFlag(ctx, &Flag{
 		Name:    "feature-d",
@@ -73,7 +72,7 @@ func TestEnabled_GroupWhitelist(t *testing.T) {
 func TestEnabled_Percentage(t *testing.T) {
 	store := NewMemoryStore()
 	mgr := NewManager(store)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 50% 放量
 	err := mgr.SetFlag(ctx, &Flag{
@@ -110,7 +109,7 @@ func TestEnabled_Percentage(t *testing.T) {
 func TestSetAndGet(t *testing.T) {
 	store := NewMemoryStore()
 	mgr := NewManager(store)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	flag := &Flag{
 		Name:    "feature-g",
@@ -135,7 +134,7 @@ func TestSetAndGet(t *testing.T) {
 func TestDelete(t *testing.T) {
 	store := NewMemoryStore()
 	mgr := NewManager(store)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := mgr.SetFlag(ctx, &Flag{Name: "feature-h", Enabled: true})
 	require.NoError(t, err)

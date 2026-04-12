@@ -21,7 +21,7 @@ func TestPublish_Subscribe(t *testing.T) {
 		return nil
 	})
 
-	err := b.Publish(context.Background(), "user.created", "alice")
+	err := b.Publish(t.Context(), "user.created", "alice")
 	require.NoError(t, err)
 	assert.Equal(t, "alice", received)
 }
@@ -41,10 +41,10 @@ func TestWildcard(t *testing.T) {
 		return nil
 	})
 
-	_ = b.Publish(context.Background(), "user.created", nil)
-	_ = b.Publish(context.Background(), "user.deleted", nil)
-	_ = b.Publish(context.Background(), "order.created", nil)        // 不应匹配
-	_ = b.Publish(context.Background(), "user.profile.updated", nil) // 不应匹配（多层）
+	_ = b.Publish(t.Context(), "user.created", nil)
+	_ = b.Publish(t.Context(), "user.deleted", nil)
+	_ = b.Publish(t.Context(), "order.created", nil)        // 不应匹配
+	_ = b.Publish(t.Context(), "user.profile.updated", nil) // 不应匹配（多层）
 
 	assert.Len(t, events, 2)
 	assert.Contains(t, events, "user.created")
@@ -59,7 +59,7 @@ func TestWildcard(t *testing.T) {
 		return nil
 	})
 
-	_ = b.Publish(context.Background(), "anything", nil)
+	_ = b.Publish(t.Context(), "anything", nil)
 	assert.Len(t, allEvents, 1)
 }
 
@@ -91,7 +91,7 @@ func TestPriority(t *testing.T) {
 		return nil
 	}, WithPriority(2))
 
-	err := b.Publish(context.Background(), "test", nil)
+	err := b.Publish(t.Context(), "test", nil)
 	require.NoError(t, err)
 
 	assert.Equal(t, []int{1, 2, 3}, order)
@@ -109,7 +109,7 @@ func TestAsync(t *testing.T) {
 	}, WithAsync(true))
 
 	for i := 0; i < 10; i++ {
-		err := b.Publish(context.Background(), "async-event", i)
+		err := b.Publish(t.Context(), "async-event", i)
 		require.NoError(t, err)
 	}
 
@@ -131,7 +131,7 @@ func TestUnsubscribe(t *testing.T) {
 
 	b.Unsubscribe("test")
 
-	err := b.Publish(context.Background(), "test", nil)
+	err := b.Publish(t.Context(), "test", nil)
 	require.NoError(t, err)
 	assert.False(t, called)
 }
@@ -142,6 +142,6 @@ func TestClose(t *testing.T) {
 	err := b.Close()
 	require.NoError(t, err)
 
-	err = b.Publish(context.Background(), "test", nil)
+	err = b.Publish(t.Context(), "test", nil)
 	assert.ErrorIs(t, err, ErrBusClosed)
 }

@@ -200,7 +200,7 @@ func (m *redisQuotaManager) redisKey(quota Quota) string {
 func (m *redisQuotaManager) Check(ctx context.Context, quota Quota) (*Usage, error) {
 	key := m.redisKey(quota)
 	val, err := m.client.Get(ctx, key).Result()
-	if err == redis.Nil {
+	if errors.Is(err, redis.Nil) {
 		return &Usage{
 			Used:      0,
 			Remaining: quota.Limit,

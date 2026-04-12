@@ -13,8 +13,9 @@
 package leaderboard
 
 import (
+	"cmp"
 	"context"
-	"sort"
+	"slices"
 	"sync"
 
 	"github.com/redis/go-redis/v9"
@@ -127,18 +128,18 @@ func (lb *memoryLeaderboard) sorted() []memEntry {
 		entries = append(entries, memEntry{member: m, score: s})
 	}
 	if lb.opts.order == Descending {
-		sort.Slice(entries, func(i, j int) bool {
-			if entries[i].score != entries[j].score {
-				return entries[i].score > entries[j].score
+		slices.SortFunc(entries, func(a, b memEntry) int {
+			if a.score != b.score {
+				return cmp.Compare(b.score, a.score)
 			}
-			return entries[i].member < entries[j].member
+			return cmp.Compare(a.member, b.member)
 		})
 	} else {
-		sort.Slice(entries, func(i, j int) bool {
-			if entries[i].score != entries[j].score {
-				return entries[i].score < entries[j].score
+		slices.SortFunc(entries, func(a, b memEntry) int {
+			if a.score != b.score {
+				return cmp.Compare(a.score, b.score)
 			}
-			return entries[i].member < entries[j].member
+			return cmp.Compare(a.member, b.member)
 		})
 	}
 	return entries

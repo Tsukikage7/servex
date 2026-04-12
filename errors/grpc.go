@@ -32,7 +32,7 @@ func ToGRPCStatus(err error) *status.Status {
 
 	e, ok := FromError(err)
 	if !ok {
-		return status.New(codes.Internal, err.Error())
+		return status.New(codes.Internal, "内部错误")
 	}
 
 	code := e.GRPC

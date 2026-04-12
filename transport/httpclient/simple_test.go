@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	stderrors "errors"
+	"errors"
 
 	servexerrors "github.com/Tsukikage7/servex/errors"
 	"github.com/Tsukikage7/servex/middleware/retry"
@@ -78,7 +78,7 @@ func TestNewSimple_MarshalError(t *testing.T) {
 		Method: http.MethodPost, Path: "/api",
 		Body: make(chan int),
 	})
-	if !stderrors.Is(err, ErrMarshalBody) {
+	if !errors.Is(err, ErrMarshalBody) {
 		t.Errorf("got %v, want ErrMarshalBody", err)
 	}
 }
@@ -142,8 +142,8 @@ func TestNewSimple_CheckStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 	err = resp.CheckStatus()
-	var e *servexerrors.Error
-	if !stderrors.As(err, &e) {
+	e, ok := errors.AsType[*servexerrors.Error](err)
+	if !ok {
 		t.Fatalf("expected *errors.Error, got %T", err)
 	}
 	if e.Code != 404 {

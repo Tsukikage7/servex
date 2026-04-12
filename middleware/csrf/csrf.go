@@ -177,7 +177,7 @@ func handleError(w http.ResponseWriter, r *http.Request, cfg *Config, err error)
 		cfg.ErrorHandler(w, r, err)
 		return
 	}
-	http.Error(w, err.Error(), http.StatusForbidden)
+	http.Error(w, "CSRF 验证失败", http.StatusForbidden)
 }
 
 // isValidHex 检查字符串是否为合法的 hex 编码.
