@@ -2,8 +2,9 @@
 package migration
 
 import (
+	"cmp"
 	"context"
-	"sort"
+	"slices"
 	"sync"
 	"time"
 
@@ -49,8 +50,8 @@ func (r *Registry) Migrations() []Migration {
 	defer r.mu.Unlock()
 	result := make([]Migration, len(r.migrations))
 	copy(result, r.migrations)
-	sort.Slice(result, func(i, j int) bool {
-		return result[i].Version < result[j].Version
+	slices.SortFunc(result, func(a, b Migration) int {
+		return cmp.Compare(a.Version, b.Version)
 	})
 	return result
 }
@@ -97,10 +98,14 @@ func NewRunner(db *gorm.DB, registry *Registry, log logger.Logger) (Runner, erro
 
 	store := newGORMStore(db)
 
-	return &runner{
+	r := &runner{
 		db:       db,
 		registry: registry,
 		store:    store,
 		log:      log,
-	}, nil
+	}
+	r.ensureMigrated = sync.OnceValue(func() error {
+		return store.AutoMigrate(context.Background())
+	})
+	return r, nil
 }

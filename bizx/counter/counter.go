@@ -16,6 +16,7 @@ package counter
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"sync"
@@ -199,7 +200,7 @@ func (c *redisCounter) Incr(ctx context.Context, key string, delta int64) (int64
 
 func (c *redisCounter) Get(ctx context.Context, key string) (int64, error) {
 	val, err := c.client.Get(ctx, c.fullKey(key)).Result()
-	if err == redis.Nil {
+	if errors.Is(err, redis.Nil) {
 		return 0, nil
 	}
 	if err != nil {

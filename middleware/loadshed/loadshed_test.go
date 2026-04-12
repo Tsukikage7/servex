@@ -39,28 +39,24 @@ func TestHTTPMiddleware_并发超限(t *testing.T) {
 	var wg sync.WaitGroup
 
 	// 启动第一个请求（阻塞中）
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, req)
-	}()
+	})
 
 	// 等待第一个请求进入处理
 	time.Sleep(10 * time.Millisecond)
 
 	// 第二个请求应被拒绝
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, req)
 		if rec.Code == http.StatusServiceUnavailable {
 			shedded.Add(1)
 		}
-	}()
+	})
 
 	// 等待第二个请求完成
 	time.Sleep(10 * time.Millisecond)
@@ -88,28 +84,24 @@ func TestHTTPMiddleware_队列深度超限(t *testing.T) {
 	var wg sync.WaitGroup
 
 	// 启动第一个请求（占用排队位置）
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, req)
-	}()
+	})
 
 	// 等待第一个请求进入
 	time.Sleep(10 * time.Millisecond)
 
 	// 第二个请求应超过排队深度
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, req)
 		if rec.Code == http.StatusServiceUnavailable {
 			shedded.Add(1)
 		}
-	}()
+	})
 
 	time.Sleep(10 * time.Millisecond)
 	close(blocker)

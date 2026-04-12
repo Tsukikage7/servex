@@ -31,7 +31,7 @@ func (m *mockModel) Stream(ctx context.Context, messages []llm.Message, opts ...
 // TestMaxLength 验证长度限制护栏.
 func TestMaxLength(t *testing.T) {
 	guard := guardrail.MaxLength(10)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 未超出限制，应通过.
 	msgs := []llm.Message{llm.UserMessage("hello")}
@@ -64,7 +64,7 @@ func TestMaxLength(t *testing.T) {
 // TestMaxMessages 验证消息数量限制护栏.
 func TestMaxMessages(t *testing.T) {
 	guard := guardrail.MaxMessages(3)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 未超出数量，应通过.
 	msgs := []llm.Message{
@@ -86,7 +86,7 @@ func TestMaxMessages(t *testing.T) {
 // TestKeywordFilter 验证关键词过滤护栏.
 func TestKeywordFilter(t *testing.T) {
 	guard := guardrail.KeywordFilter([]string{"spam", "violence"})
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 不含关键词，应通过.
 	msgs := []llm.Message{llm.UserMessage("hello world")}
@@ -116,7 +116,7 @@ func TestKeywordFilter(t *testing.T) {
 // TestRegexFilter 验证正则过滤护栏.
 func TestRegexFilter(t *testing.T) {
 	guard := guardrail.RegexFilter([]string{`\b(bad|evil)\b`, `\d{3}-\d{4}`})
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 不匹配任何模式，应通过.
 	msgs := []llm.Message{llm.UserMessage("hello world")}
@@ -140,7 +140,7 @@ func TestRegexFilter(t *testing.T) {
 // TestPIIDetector_Email 验证邮箱 PII 检测.
 func TestPIIDetector_Email(t *testing.T) {
 	guard := guardrail.PIIDetector(guardrail.PIIEmail)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 不含邮箱，应通过.
 	msgs := []llm.Message{llm.UserMessage("hello world")}
@@ -158,7 +158,7 @@ func TestPIIDetector_Email(t *testing.T) {
 // TestPIIDetector_Phone 验证中国手机号 PII 检测.
 func TestPIIDetector_Phone(t *testing.T) {
 	guard := guardrail.PIIDetector(guardrail.PIIPhone)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 不含手机号，应通过.
 	msgs := []llm.Message{llm.UserMessage("call me")}
@@ -176,7 +176,7 @@ func TestPIIDetector_Phone(t *testing.T) {
 // TestPIIDetector_IDCard 验证身份证号 PII 检测.
 func TestPIIDetector_IDCard(t *testing.T) {
 	guard := guardrail.PIIDetector(guardrail.PIIIDCard)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 不含身份证号，应通过.
 	msgs := []llm.Message{llm.UserMessage("no id here")}
@@ -194,7 +194,7 @@ func TestPIIDetector_IDCard(t *testing.T) {
 // TestPIIDetector_CreditCard 验证信用卡号 PII 检测.
 func TestPIIDetector_CreditCard(t *testing.T) {
 	guard := guardrail.PIIDetector(guardrail.PIICreditCard)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 不含信用卡号，应通过.
 	msgs := []llm.Message{llm.UserMessage("no card here")}
@@ -223,7 +223,7 @@ func TestPIIDetector_CreditCard(t *testing.T) {
 
 // TestMiddleware 验证护栏中间件：输入护栏拦截后不应调用底层模型.
 func TestMiddleware(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 输入护栏拦截，不应调用底层模型.
 	t.Run("输入护栏拦截", func(t *testing.T) {

@@ -167,12 +167,15 @@ func (s *Server) PlaygroundHandler() http.Handler {
 
 // writeError 向客户端写入错误响应.
 func (s *Server) writeError(w http.ResponseWriter, err error, status int) {
+	if s.log != nil {
+		s.log.Error("GraphQL 请求处理失败", logger.Err(err))
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
 	resp := map[string]any{
 		"errors": []map[string]any{
-			{"message": err.Error()},
+			{"message": "内部服务器错误"},
 		},
 	}
 	_ = json.NewEncoder(w).Encode(resp)

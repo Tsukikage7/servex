@@ -27,7 +27,7 @@ type Variant struct {
 	ID       string         `json:"id"`
 	Name     string         `json:"name"`
 	Weight   int            `json:"weight"`
-	Metadata map[string]any `json:"metadata,omitempty"`
+	Metadata map[string]any `json:"metadata,omitzero"`
 }
 
 // Experiment A/B 实验.

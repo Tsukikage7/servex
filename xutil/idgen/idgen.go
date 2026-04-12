@@ -271,20 +271,18 @@ var (
 	defaultSnowflake Generator
 	defaultULID      Generator
 	defaultNanoID    Generator
-	initOnce         sync.Once
 )
 
-func initDefaults() {
-	initOnce.Do(func() {
-		var err error
-		defaultSnowflake, err = NewSnowflake(&SnowflakeConfig{})
-		if err != nil {
-			panic(fmt.Sprintf("idgen: failed to init default snowflake: %v", err))
-		}
-		defaultULID = NewULID()
-		defaultNanoID = NewNanoID()
-	})
-}
+// initDefaults 初始化默认生成器（只执行一次）.
+var initDefaults = sync.OnceFunc(func() {
+	var err error
+	defaultSnowflake, err = NewSnowflake(&SnowflakeConfig{})
+	if err != nil {
+		panic(fmt.Sprintf("idgen: failed to init default snowflake: %v", err))
+	}
+	defaultULID = NewULID()
+	defaultNanoID = NewNanoID()
+})
 
 // Snowflake 使用默认配置生成 Snowflake ID.
 // 出错时 panic.

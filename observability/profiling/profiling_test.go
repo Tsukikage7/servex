@@ -1,7 +1,6 @@
 package profiling
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -80,7 +79,7 @@ func TestCollect_Heap(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	prof, err := p.Collect(context.Background(), ProfileHeap)
+	prof, err := p.Collect(t.Context(), ProfileHeap)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -102,7 +101,7 @@ func TestCollect_Goroutine(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	prof, err := p.Collect(context.Background(), ProfileGoroutine)
+	prof, err := p.Collect(t.Context(), ProfileGoroutine)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -121,7 +120,7 @@ func TestCollect_Allocs(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	prof, err := p.Collect(context.Background(), ProfileAllocs)
+	prof, err := p.Collect(t.Context(), ProfileAllocs)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -140,7 +139,7 @@ func TestCollect_Block(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	prof, err := p.Collect(context.Background(), ProfileBlock)
+	prof, err := p.Collect(t.Context(), ProfileBlock)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -156,7 +155,7 @@ func TestCollect_Mutex(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	prof, err := p.Collect(context.Background(), ProfileMutex)
+	prof, err := p.Collect(t.Context(), ProfileMutex)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -172,7 +171,7 @@ func TestCollect_ThreadCreate(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	prof, err := p.Collect(context.Background(), ProfileThreadCreate)
+	prof, err := p.Collect(t.Context(), ProfileThreadCreate)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -194,7 +193,7 @@ func TestCollect_CPU(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	prof, err := p.Collect(context.Background(), ProfileCPU)
+	prof, err := p.Collect(t.Context(), ProfileCPU)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -216,7 +215,7 @@ func TestCollect_InvalidType(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	_, err = p.Collect(context.Background(), "invalid")
+	_, err = p.Collect(t.Context(), "invalid")
 	if err == nil {
 		t.Fatal("expected error for invalid profile type")
 	}
@@ -234,7 +233,7 @@ func TestCollect_Labels(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	prof, err := p.Collect(context.Background(), ProfileHeap)
+	prof, err := p.Collect(t.Context(), ProfileHeap)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -257,7 +256,7 @@ func TestStartStop(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 启动
 	if err := p.Start(ctx); err != nil {
@@ -310,7 +309,7 @@ func TestStart_Disabled(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if err := p.Start(context.Background()); err != nil {
+	if err := p.Start(t.Context()); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if logged == "" {
@@ -329,7 +328,7 @@ func TestFileExporter(t *testing.T) {
 		Labels:    map[string]string{"service": "test"},
 	}
 
-	if err := e.Export(context.Background(), prof); err != nil {
+	if err := e.Export(t.Context(), prof); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -354,7 +353,7 @@ func TestFileExporter_NestedDir(t *testing.T) {
 		Labels:    map[string]string{},
 	}
 
-	if err := e.Export(context.Background(), prof); err != nil {
+	if err := e.Export(t.Context(), prof); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -460,7 +459,7 @@ func TestStartWithExporter(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 	if err := p.Start(ctx); err != nil {
 		t.Fatalf("unexpected error on start: %v", err)
 	}

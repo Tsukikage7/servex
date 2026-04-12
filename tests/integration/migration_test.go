@@ -3,7 +3,6 @@
 package integration
 
 import (
-	"context"
 	"os"
 	"testing"
 
@@ -87,7 +86,7 @@ func testRegistry() *migration.Registry {
 
 func TestMigration_Integration(t *testing.T) {
 	db := newMigrationDB(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("Up_All", func(t *testing.T) {
 		registry := testRegistry()

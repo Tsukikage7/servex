@@ -3,7 +3,6 @@
 package integration
 
 import (
-	"context"
 	"os"
 	"testing"
 	"time"
@@ -36,7 +35,7 @@ func newRedisCache(t *testing.T) cache.Cache {
 
 func TestCache_Integration(t *testing.T) {
 	c := newRedisCache(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("SetGetDel", func(t *testing.T) {
 		key := testKey("cache:basic")

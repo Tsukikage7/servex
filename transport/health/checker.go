@@ -53,7 +53,7 @@ func (c *PingChecker) Check(ctx context.Context) CheckResult {
 	if err := c.pinger.Ping(ctx); err != nil {
 		return CheckResult{
 			Status:  StatusDown,
-			Message: err.Error(),
+			Message: "检查失败",
 		}
 	}
 	return CheckResult{
@@ -98,7 +98,7 @@ func (c *DBChecker) Check(ctx context.Context) CheckResult {
 	if err := c.pinger.Ping(ctx); err != nil {
 		return CheckResult{
 			Status:  StatusDown,
-			Message: err.Error(),
+			Message: "检查失败",
 			Details: map[string]any{
 				"type": "database",
 			},
@@ -139,7 +139,7 @@ func (c *RedisChecker) Check(ctx context.Context) CheckResult {
 	if err := c.pinger.Ping(ctx); err != nil {
 		return CheckResult{
 			Status:  StatusDown,
-			Message: err.Error(),
+			Message: "检查失败",
 			Details: map[string]any{
 				"type": "redis",
 			},

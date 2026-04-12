@@ -17,7 +17,7 @@ import (
 
 // mockCache 模拟 Apollo 缓存.
 type mockCache struct {
-	data map[string]interface{}
+	data map[string]any
 }
 
 func (c *mockCache) Get(key string) (interface{}, error) {
@@ -104,7 +104,7 @@ func (m *mockClient) fireChange(namespace string, changes map[string]*storage.Co
 
 func TestLoad(t *testing.T) {
 	mc := &mockClient{
-		cache: &mockCache{data: map[string]interface{}{
+		cache: &mockCache{data: map[string]any{
 			"content": `{"host":"localhost","port":8080}`,
 		}},
 	}
@@ -137,7 +137,7 @@ func TestLoad(t *testing.T) {
 
 func TestLoad_EmptyCache(t *testing.T) {
 	mc := &mockClient{
-		cache: &mockCache{data: map[string]interface{}{}},
+		cache: &mockCache{data: map[string]any{}},
 	}
 
 	s := &Source{
@@ -169,7 +169,7 @@ func TestLoad_NilCache(t *testing.T) {
 
 func TestWatch(t *testing.T) {
 	mc := &mockClient{
-		cache: &mockCache{data: map[string]interface{}{
+		cache: &mockCache{data: map[string]any{
 			"content": `{"updated":true}`,
 		}},
 	}
@@ -224,7 +224,7 @@ func TestWatch(t *testing.T) {
 
 func TestWatch_IgnoreOtherNamespace(t *testing.T) {
 	mc := &mockClient{
-		cache: &mockCache{data: map[string]interface{}{
+		cache: &mockCache{data: map[string]any{
 			"content": `{"v":1}`,
 		}},
 	}
@@ -274,7 +274,7 @@ func TestWatch_IgnoreOtherNamespace(t *testing.T) {
 
 func TestWatch_Stop(t *testing.T) {
 	mc := &mockClient{
-		cache: &mockCache{data: map[string]interface{}{}},
+		cache: &mockCache{data: map[string]any{}},
 	}
 
 	s := &Source{
@@ -352,7 +352,7 @@ func TestConfig_Defaults(t *testing.T) {
 
 func TestOnNewestChange(t *testing.T) {
 	mc := &mockClient{
-		cache: &mockCache{data: map[string]interface{}{}},
+		cache: &mockCache{data: map[string]any{}},
 	}
 
 	s := &Source{
@@ -404,7 +404,7 @@ func TestOnChange_LoadError(t *testing.T) {
 
 func TestOnChange_ChannelFullOverwrite(t *testing.T) {
 	mc := &mockClient{
-		cache: &mockCache{data: map[string]interface{}{
+		cache: &mockCache{data: map[string]any{
 			"content": `{"v":1}`,
 		}},
 	}
@@ -427,7 +427,7 @@ func TestOnChange_ChannelFullOverwrite(t *testing.T) {
 	})
 
 	// Update cache value then fire again
-	mc.cache = &mockCache{data: map[string]interface{}{
+	mc.cache = &mockCache{data: map[string]any{
 		"content": `{"v":2}`,
 	}}
 	mc.fireChange("application", map[string]*storage.ConfigChange{
@@ -459,7 +459,7 @@ func TestOnChange_ChannelFullOverwrite(t *testing.T) {
 func TestLoad_NonStringContent(t *testing.T) {
 	// content 值不是 string 类型时应返回 ErrSourceLoad
 	mc := &mockClient{
-		cache: &mockCache{data: map[string]interface{}{
+		cache: &mockCache{data: map[string]any{
 			"content": 12345,
 		}},
 	}
@@ -496,7 +496,7 @@ func TestOptions_Combined(t *testing.T) {
 
 func TestWatch_StopThenOnChange(t *testing.T) {
 	mc := &mockClient{
-		cache: &mockCache{data: map[string]interface{}{
+		cache: &mockCache{data: map[string]any{
 			"content": `{"v":1}`,
 		}},
 	}

@@ -162,6 +162,11 @@ func (a *Agent) RunStream(ctx context.Context, input string, opts ...llm.CallOpt
 	outCh := make(chan Event, 16)
 	go func() {
 		defer close(outCh)
+		defer func() {
+			if r := recover(); r != nil {
+				outCh <- Event{Type: EventError, Content: fmt.Sprintf("goroutine panic: %v", r)}
+			}
+		}()
 		for evt := range ch {
 			// 输出事件执行护栏检查
 			if evt.Type == EventOutput && len(a.cfg.Guardrails) > 0 {

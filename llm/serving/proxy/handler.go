@@ -95,7 +95,10 @@ func (p *Proxy) handleChatCompletion(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
 	var req chatCompletionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "无效的请求体: "+err.Error())
+		if p.log != nil {
+			p.log.Errorf("解析请求体失败: %v", err)
+		}
+		writeError(w, http.StatusBadRequest, "无效的请求体")
 		return
 	}
 	if req.Model == "" {
@@ -134,7 +137,10 @@ func (p *Proxy) handleChatCompletion(w http.ResponseWriter, r *http.Request) {
 	// 4. 按模型名称路由到对应 Provider
 	model, err := p.Route(req.Model)
 	if err != nil {
-		writeError(w, http.StatusNotFound, err.Error())
+		if p.log != nil {
+			p.log.Errorf("路由模型 %q 失败: %v", req.Model, err)
+		}
+		writeError(w, http.StatusNotFound, "路由失败")
 		return
 	}
 

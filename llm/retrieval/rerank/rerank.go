@@ -5,13 +5,14 @@ package rerank
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"sort"
+	"slices"
 
 	"github.com/Tsukikage7/servex/llm"
 	"github.com/Tsukikage7/servex/llm/retrieval/embedding"
@@ -151,8 +152,8 @@ func (r *llmReranker) Rerank(ctx context.Context, query string, docs []rag.Retri
 	for i := range ranked {
 		ranked[i].Score = scores[i]
 	}
-	sort.Slice(ranked, func(i, j int) bool {
-		return ranked[i].Score > ranked[j].Score
+	slices.SortFunc(ranked, func(a, b rag.RetrievedDoc) int {
+		return cmp.Compare(b.Score, a.Score)
 	})
 
 	return applyTopN(ranked, r.opts.topN), nil
@@ -251,8 +252,8 @@ func (r *embeddingReranker) Rerank(ctx context.Context, query string, docs []rag
 	}
 
 	// 按相似度降序排序.
-	sort.Slice(ranked, func(i, j int) bool {
-		return ranked[i].Score > ranked[j].Score
+	slices.SortFunc(ranked, func(a, b rag.RetrievedDoc) int {
+		return cmp.Compare(b.Score, a.Score)
 	})
 
 	return applyTopN(ranked, r.opts.topN), nil
@@ -385,8 +386,8 @@ func (r *crossEncoderReranker) Rerank(ctx context.Context, query string, docs []
 	}
 
 	// 按 relevance_score 降序排列结果.
-	sort.Slice(apiResp.Results, func(i, j int) bool {
-		return apiResp.Results[i].RelevanceScore > apiResp.Results[j].RelevanceScore
+	slices.SortFunc(apiResp.Results, func(a, b crossEncoderResultItem) int {
+		return cmp.Compare(b.RelevanceScore, a.RelevanceScore)
 	})
 
 	// 按结果顺序重新组织文档列表.

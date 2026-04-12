@@ -1,7 +1,6 @@
 package ratelimit
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -18,7 +17,7 @@ func newQuota(key string, limit int64) Quota {
 }
 
 func TestConsume(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	mgr := NewMemoryQuotaManager()
 
 	quota := newQuota("user:1", 10)
@@ -35,7 +34,7 @@ func TestConsume(t *testing.T) {
 }
 
 func TestCheck(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	mgr := NewMemoryQuotaManager()
 
 	quota := newQuota("user:2", 100)
@@ -55,7 +54,7 @@ func TestCheck(t *testing.T) {
 }
 
 func TestQuotaExceeded(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	mgr := NewMemoryQuotaManager()
 
 	quota := newQuota("user:3", 5)
@@ -81,7 +80,7 @@ func TestQuotaExceeded(t *testing.T) {
 }
 
 func TestResetQuota(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	mgr := NewMemoryQuotaManager()
 
 	quota := newQuota("user:4", 10)
@@ -97,7 +96,7 @@ func TestResetQuota(t *testing.T) {
 }
 
 func TestGetUsage(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	mgr := NewMemoryQuotaManager()
 
 	quota := newQuota("user:5", 100)
@@ -111,7 +110,7 @@ func TestGetUsage(t *testing.T) {
 }
 
 func TestWindowReset(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	mgr := NewMemoryQuotaManager()
 
 	// 使用很短的窗口
@@ -135,7 +134,7 @@ func TestWindowReset(t *testing.T) {
 }
 
 func TestZeroLimit(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	mgr := NewMemoryQuotaManager()
 
 	quota := Quota{
@@ -155,7 +154,7 @@ func TestZeroLimit(t *testing.T) {
 }
 
 func TestLargeWindow(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	mgr := NewMemoryQuotaManager()
 
 	quota := Quota{
@@ -172,7 +171,7 @@ func TestLargeWindow(t *testing.T) {
 }
 
 func TestConcurrentAccess(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	mgr := NewMemoryQuotaManager()
 
 	quota := Quota{

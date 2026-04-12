@@ -245,12 +245,9 @@ func (p *Profiler) Start(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	p.cancel = cancel
 	p.running = true
-
-	p.wg.Add(1)
-	go func() {
-		defer p.wg.Done()
+	p.wg.Go(func() {
 		p.loop(ctx)
-	}()
+	})
 
 	p.printf("profiling: 已启动，间隔=%s, 类型=%v", p.config.Interval, p.config.Types)
 	return nil

@@ -30,7 +30,7 @@ type Entity struct {
 	// End 结束位置.
 	End int `json:"end"`
 	// Metadata 附加元数据.
-	Metadata map[string]any `json:"metadata,omitempty"`
+	Metadata map[string]any `json:"metadata,omitzero"`
 }
 
 // Relation 实体关系.
@@ -62,13 +62,13 @@ type Summary struct {
 // Result 提取结果.
 type Result struct {
 	// Entities 实体列表.
-	Entities []Entity `json:"entities,omitempty"`
+	Entities []Entity `json:"entities,omitzero"`
 	// Relations 关系列表.
-	Relations []Relation `json:"relations,omitempty"`
+	Relations []Relation `json:"relations,omitzero"`
 	// Keywords 关键词列表.
-	Keywords []Keyword `json:"keywords,omitempty"`
+	Keywords []Keyword `json:"keywords,omitzero"`
 	// Summary 摘要.
-	Summary *Summary `json:"summary,omitempty"`
+	Summary *Summary `json:"summary,omitzero"`
 }
 
 // Extractor 信息提取器接口.

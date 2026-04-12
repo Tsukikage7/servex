@@ -76,14 +76,12 @@ func isConcurrencyError(err error) bool {
 	}
 
 	// MySQL: 错误码 1062 (ER_DUP_ENTRY)
-	var mysqlErr *mysql.MySQLError
-	if errors.As(err, &mysqlErr) {
+	if mysqlErr, ok := errors.AsType[*mysql.MySQLError](err); ok {
 		return mysqlErr.Number == 1062
 	}
 
 	// PostgreSQL: 错误码 23505 (unique_violation)
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) {
+	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok {
 		return pgErr.Code == "23505"
 	}
 

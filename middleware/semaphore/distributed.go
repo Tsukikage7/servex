@@ -73,10 +73,12 @@ func (s *Distributed) Acquire(ctx context.Context) error {
 			return nil
 		}
 
+		retryTimer := time.NewTimer(s.retryWait)
 		select {
 		case <-ctx.Done():
+			retryTimer.Stop()
 			return ctx.Err()
-		case <-time.After(s.retryWait):
+		case <-retryTimer.C:
 			// 重试
 		}
 	}

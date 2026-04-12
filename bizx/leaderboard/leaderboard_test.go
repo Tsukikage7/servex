@@ -1,7 +1,6 @@
 package leaderboard
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,7 +12,7 @@ func newTestLB() Leaderboard {
 }
 
 func TestAddAndTopN(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	lb := newTestLB()
 
 	require.NoError(t, lb.AddScore(ctx, "alice", 100))
@@ -31,7 +30,7 @@ func TestAddAndTopN(t *testing.T) {
 }
 
 func TestIncrScore(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	lb := newTestLB()
 
 	require.NoError(t, lb.AddScore(ctx, "alice", 100))
@@ -45,7 +44,7 @@ func TestIncrScore(t *testing.T) {
 }
 
 func TestGetRank(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	lb := newTestLB()
 
 	require.NoError(t, lb.AddScore(ctx, "alice", 100))
@@ -65,7 +64,7 @@ func TestGetRank(t *testing.T) {
 }
 
 func TestGetPage(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	lb := newTestLB()
 
 	for i := 0; i < 10; i++ {
@@ -91,7 +90,7 @@ func TestGetPage(t *testing.T) {
 }
 
 func TestReset(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	lb := newTestLB()
 
 	require.NoError(t, lb.AddScore(ctx, "alice", 100))
@@ -103,7 +102,7 @@ func TestReset(t *testing.T) {
 }
 
 func TestAscending(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	lb := NewMemoryLeaderboard("asc", WithOrder(Ascending))
 
 	require.NoError(t, lb.AddScore(ctx, "alice", 100))

@@ -1,7 +1,6 @@
 package counter
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -14,7 +13,7 @@ func newTestCounter() Counter {
 }
 
 func TestIncr(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	c := newTestCounter()
 
 	val, err := c.Incr(ctx, "hits", 1)
@@ -32,7 +31,7 @@ func TestIncr(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	c := newTestCounter()
 
 	// 不存在的键返回 0
@@ -47,7 +46,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestReset(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	c := newTestCounter()
 
 	_, _ = c.Incr(ctx, "counter", 10)
@@ -60,7 +59,7 @@ func TestReset(t *testing.T) {
 }
 
 func TestIncrWindow(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	c := newTestCounter()
 
 	window := 1 * time.Second
@@ -79,7 +78,7 @@ func TestIncrWindow(t *testing.T) {
 }
 
 func TestGetWindow(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	c := newTestCounter()
 
 	window := 500 * time.Millisecond
@@ -100,7 +99,7 @@ func TestGetWindow(t *testing.T) {
 }
 
 func TestMGet(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	c := newTestCounter()
 
 	_, _ = c.Incr(ctx, "a", 1)
@@ -116,7 +115,7 @@ func TestMGet(t *testing.T) {
 }
 
 func TestConcurrentIncr(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	c := newTestCounter()
 
 	const goroutines = 50
@@ -146,7 +145,7 @@ func TestWindowExpiry(t *testing.T) {
 		t.Skip("skipping window expiry test in short mode")
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 	c := newTestCounter()
 
 	window := 200 * time.Millisecond
@@ -171,7 +170,7 @@ func TestWindowExpiry(t *testing.T) {
 }
 
 func TestNoPrefix(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	c := NewMemoryCounter() // no prefix
 
 	val, err := c.Incr(ctx, "key", 5)
@@ -184,7 +183,7 @@ func TestNoPrefix(t *testing.T) {
 }
 
 func TestResetAlsoClearsWindow(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	c := newTestCounter()
 
 	_, _ = c.IncrWindow(ctx, "wr", 10*time.Second)
@@ -199,7 +198,7 @@ func TestResetAlsoClearsWindow(t *testing.T) {
 }
 
 func TestMGetEmpty(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	c := newTestCounter()
 
 	result, err := c.MGet(ctx)
@@ -208,7 +207,7 @@ func TestMGetEmpty(t *testing.T) {
 }
 
 func TestGetWindowNonexistent(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	c := newTestCounter()
 
 	count, err := c.GetWindow(ctx, "nokey", time.Minute)

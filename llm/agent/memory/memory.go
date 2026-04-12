@@ -149,7 +149,7 @@ const (
 // sessionData 单个会话在缓存中的序列化结构.
 type sessionData struct {
 	Messages []llm.Message  `json:"messages"`
-	Metadata map[string]any `json:"metadata,omitempty"`
+	Metadata map[string]any `json:"metadata,omitzero"`
 }
 
 // redisStoreOptions RedisStore 可选配置.

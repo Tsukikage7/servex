@@ -15,7 +15,7 @@ type Entry struct {
 	Logger     string         `json:"logger,omitempty"`
 	Caller     string         `json:"caller,omitempty"`
 	StackTrace string         `json:"stack_trace,omitempty"`
-	Fields     map[string]any `json:"fields,omitempty"`
+	Fields     map[string]any `json:"fields,omitzero"`
 }
 
 // Sink 日志投递目标接口.

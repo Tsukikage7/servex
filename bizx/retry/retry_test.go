@@ -16,12 +16,12 @@ func TestSubmit(t *testing.T) {
 	store := NewMemoryStore()
 	s := NewScheduler(store)
 
-	id, err := s.Submit(context.Background(), "send-email", map[string]string{"to": "alice@example.com"})
+	id, err := s.Submit(t.Context(), "send-email", map[string]string{"to": "alice@example.com"})
 	require.NoError(t, err)
 	assert.NotEmpty(t, id)
 
 	// 验证任务已保存
-	tasks, err := store.FetchPending(context.Background(), 10)
+	tasks, err := store.FetchPending(t.Context(), 10)
 	require.NoError(t, err)
 	assert.Len(t, tasks, 1)
 	assert.Equal(t, "send-email", tasks[0].Name)
@@ -38,16 +38,16 @@ func TestScheduler_Process(t *testing.T) {
 		return nil
 	})
 
-	_, err := s.Submit(context.Background(), "test-task", "hello")
+	_, err := s.Submit(t.Context(), "test-task", "hello")
 	require.NoError(t, err)
 
-	err = s.Start(context.Background())
+	err = s.Start(t.Context())
 	require.NoError(t, err)
 
 	// 等待处理
 	time.Sleep(200 * time.Millisecond)
 
-	err = s.Stop(context.Background())
+	err = s.Stop(t.Context())
 	require.NoError(t, err)
 
 	assert.Equal(t, int32(1), processed.Load())
@@ -66,14 +66,14 @@ func TestRetry_Backoff(t *testing.T) {
 		return nil
 	})
 
-	_, err := s.Submit(context.Background(), "flaky-task", "data",
+	_, err := s.Submit(t.Context(), "flaky-task", "data",
 		WithMaxRetries(5),
 	)
 	require.NoError(t, err)
 
 	// 手动处理几轮，因为退避延迟会导致自动轮询太慢
 	sched := s.(*scheduler)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 第一次处理 - 失败
 	sched.processBatch(ctx)
@@ -119,13 +119,13 @@ func TestMaxRetries_Dead(t *testing.T) {
 		return errors.New("always fails")
 	})
 
-	_, err := s.Submit(context.Background(), "always-fail", "data",
+	_, err := s.Submit(t.Context(), "always-fail", "data",
 		WithMaxRetries(2),
 	)
 	require.NoError(t, err)
 
 	sched := s.(*scheduler)
-	ctx := context.Background()
+	ctx := t.Context()
 	ms := store.(*memoryStore)
 
 	// 处理直到超过最大重试次数
@@ -154,11 +154,11 @@ func TestRegisterHandler(t *testing.T) {
 	s := NewScheduler(store, WithPollInterval(50*time.Millisecond))
 
 	// 提交任务但不注册处理器
-	_, err := s.Submit(context.Background(), "unknown-task", "data")
+	_, err := s.Submit(t.Context(), "unknown-task", "data")
 	require.NoError(t, err)
 
 	sched := s.(*scheduler)
-	sched.processBatch(context.Background())
+	sched.processBatch(t.Context())
 	time.Sleep(50 * time.Millisecond)
 
 	// 验证任务标记为 dead

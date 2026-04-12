@@ -1,7 +1,6 @@
 package discovery
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -255,7 +254,7 @@ func TestNacosDiscovery_RegisterAndDiscover(t *testing.T) {
 		},
 	}
 	d := newMockNacosDiscovery(mock)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 注册服务
 	_, err := d.Register(ctx, "my-service", "10.0.0.1:8080")

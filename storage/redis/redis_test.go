@@ -52,7 +52,7 @@ func skipIfNoRedis(t *testing.T) Client {
 		return nil
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Second)
 	defer cancel()
 
 	if err := client.Ping(ctx); err != nil {
@@ -116,7 +116,7 @@ func TestPing(t *testing.T) {
 		t.Skip("跳过集成测试（-short 模式）")
 	}
 	client := skipIfNoRedis(t)
-	err := client.Ping(context.Background())
+	err := client.Ping(t.Context())
 	assert.NoError(t, err)
 }
 
@@ -125,7 +125,7 @@ func TestStringOps(t *testing.T) {
 		t.Skip("跳过集成测试（-short 模式）")
 	}
 	client := skipIfNoRedis(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	key := "servex:test:string:" + time.Now().Format("20060102150405.000")
 
 	t.Cleanup(func() { client.Del(ctx, key) })
@@ -175,7 +175,7 @@ func TestHashOps(t *testing.T) {
 		t.Skip("跳过集成测试（-short 模式）")
 	}
 	client := skipIfNoRedis(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	key := "servex:test:hash:" + time.Now().Format("20060102150405.000")
 
 	t.Cleanup(func() { client.Del(ctx, key) })
@@ -208,7 +208,7 @@ func TestListOps(t *testing.T) {
 		t.Skip("跳过集成测试（-short 模式）")
 	}
 	client := skipIfNoRedis(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	key := "servex:test:list:" + time.Now().Format("20060102150405.000")
 
 	t.Cleanup(func() { client.Del(ctx, key) })
@@ -244,7 +244,7 @@ func TestSortedSetOps(t *testing.T) {
 		t.Skip("跳过集成测试（-short 模式）")
 	}
 	client := skipIfNoRedis(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	key := "servex:test:zset:" + time.Now().Format("20060102150405.000")
 
 	t.Cleanup(func() { client.Del(ctx, key) })

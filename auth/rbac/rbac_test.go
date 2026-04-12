@@ -1,7 +1,6 @@
 package rbac
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -20,7 +19,7 @@ func newTestManager(opts ...Option) (RBAC, Store) {
 
 func TestCreateRole(t *testing.T) {
 	mgr, _ := newTestManager()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	role := &Role{
 		Name:        "editor",
@@ -51,7 +50,7 @@ func TestCreateRole(t *testing.T) {
 
 func TestAssignRole(t *testing.T) {
 	mgr, _ := newTestManager()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 先创建角色
 	err := mgr.CreateRole(ctx, &Role{
@@ -90,7 +89,7 @@ func TestAssignRole(t *testing.T) {
 
 func TestHasPermission(t *testing.T) {
 	mgr, _ := newTestManager()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := mgr.CreateRole(ctx, &Role{
 		Name:        "editor",
@@ -135,7 +134,7 @@ func TestHasPermission(t *testing.T) {
 
 func TestRoleInheritance(t *testing.T) {
 	mgr, _ := newTestManager()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 创建父角色
 	err := mgr.CreateRole(ctx, &Role{
@@ -177,7 +176,7 @@ func TestRoleInheritance(t *testing.T) {
 
 func TestSuperAdmin(t *testing.T) {
 	mgr, _ := newTestManager(WithSuperAdmin("superadmin"))
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := mgr.CreateRole(ctx, &Role{
 		Name: "superadmin",
@@ -199,7 +198,7 @@ func TestSuperAdmin(t *testing.T) {
 
 func TestHTTPMiddleware(t *testing.T) {
 	mgr, _ := newTestManager()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := mgr.CreateRole(ctx, &Role{
 		Name:        "viewer",
@@ -263,7 +262,7 @@ func TestParsePermission(t *testing.T) {
 
 func TestListRoles(t *testing.T) {
 	mgr, _ := newTestManager()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_ = mgr.CreateRole(ctx, &Role{Name: "a", Permissions: []string{"a:read"}})
 	_ = mgr.CreateRole(ctx, &Role{Name: "b", Permissions: []string{"b:read"}})
@@ -275,7 +274,7 @@ func TestListRoles(t *testing.T) {
 
 func TestGetUserPermissions(t *testing.T) {
 	mgr, _ := newTestManager()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_ = mgr.CreateRole(ctx, &Role{Name: "r1", Permissions: []string{"a:read", "b:write"}})
 	_ = mgr.CreateRole(ctx, &Role{Name: "r2", Permissions: []string{"c:read"}})

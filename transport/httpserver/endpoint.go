@@ -3,6 +3,7 @@ package httpserver
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 
 	"github.com/Tsukikage7/servex/endpoint"
@@ -228,9 +229,10 @@ func WithResponse() EndpointOption {
 
 // defaultErrorEncoder 默认错误编码器.
 func defaultErrorEncoder(_ context.Context, err error, w http.ResponseWriter) {
+	slog.Error("HTTP 请求处理失败", slog.String("error", err.Error()))
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusInternalServerError)
-	w.Write([]byte(err.Error()))
+	w.Write([]byte("内部服务器错误"))
 }
 
 // responseErrorEncoder 统一响应格式的错误编码器.

@@ -1,7 +1,6 @@
 package slo
 
 import (
-	"context"
 	"sync"
 	"testing"
 	"time"
@@ -55,7 +54,7 @@ func TestRecord_ObjectiveNotFound(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = tracker.Record(context.Background(), "nonexistent", true)
+	err = tracker.Record(t.Context(), "nonexistent", true)
 	if err != ErrObjectiveNotFound {
 		t.Fatalf("expected ErrObjectiveNotFound, got %v", err)
 	}
@@ -69,7 +68,7 @@ func TestRecord_AndStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 记录 999 个好事件和 1 个坏事件
 	for i := 0; i < 999; i++ {
@@ -113,7 +112,7 @@ func TestErrorBudget(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 记录 95 好 + 5 坏 = 5% 错误率
 	for i := 0; i < 95; i++ {
@@ -159,7 +158,7 @@ func TestBurnRate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 正好在预算内：1% 错误率
 	for i := 0; i < 99; i++ {
@@ -202,7 +201,7 @@ func TestIsBreaching(t *testing.T) {
 		t.Fatal("expected not breaching for nonexistent objective")
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 	// 注入大量错误
 	for i := 0; i < 10; i++ {
 		tracker.Record(ctx, "api", false)
@@ -229,7 +228,7 @@ func TestOnBreach(t *testing.T) {
 		mu.Unlock()
 	})
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 先记录一些好事件，使得有基础数据
 	for i := 0; i < 10; i++ {
@@ -287,7 +286,7 @@ func TestPrometheusCollector(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 	tracker.Record(ctx, "api", true)
 	tracker.Record(ctx, "api", false)
 
@@ -356,17 +355,15 @@ func TestConcurrentRecording(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 	var wg sync.WaitGroup
 
 	for i := 0; i < 100; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for j := 0; j < 100; j++ {
 				tracker.Record(ctx, "api", j%10 != 0)
 			}
-		}()
+		})
 	}
 
 	wg.Wait()

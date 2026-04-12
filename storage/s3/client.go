@@ -518,21 +518,17 @@ func (c *s3Client) Close() error {
 // isNotFound 判断 S3 错误是否为 404 Not Found.
 func isNotFound(err error) bool {
 	// 检查 AWS SDK 特定的 NotFound 错误类型
-	var nsk *types.NotFound
-	if errors.As(err, &nsk) {
+	if _, ok := errors.AsType[*types.NotFound](err); ok {
 		return true
 	}
-	var nsb *types.NoSuchBucket
-	if errors.As(err, &nsb) {
+	if _, ok := errors.AsType[*types.NoSuchBucket](err); ok {
 		return true
 	}
-	var nso *types.NoSuchKey
-	if errors.As(err, &nso) {
+	if _, ok := errors.AsType[*types.NoSuchKey](err); ok {
 		return true
 	}
 	// 检查 HTTP 状态码 404
-	var re *smithyhttp.ResponseError
-	if errors.As(err, &re) {
+	if re, ok := errors.AsType[*smithyhttp.ResponseError](err); ok {
 		return re.HTTPStatusCode() == http.StatusNotFound
 	}
 	return false

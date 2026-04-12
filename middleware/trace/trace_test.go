@@ -100,7 +100,7 @@ func TestHTTPMiddleware_InjectsLogger(t *testing.T) {
 
 func TestInjectHTTPHeaders(t *testing.T) {
 	t.Run("注入 trace ID 到请求头", func(t *testing.T) {
-		ctx := withTraceID(context.Background(), "trace-inject-123")
+		ctx := withTraceID(t.Context(), "trace-inject-123")
 
 		req := httptest.NewRequest(http.MethodGet, "http://downstream/api", nil)
 		InjectHTTPHeaders(ctx, req)
@@ -110,7 +110,7 @@ func TestInjectHTTPHeaders(t *testing.T) {
 
 	t.Run("无 trace context 时不设置 header", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "http://downstream/api", nil)
-		InjectHTTPHeaders(context.Background(), req)
+		InjectHTTPHeaders(t.Context(), req)
 
 		assert.Empty(t, req.Header.Get("X-Trace-ID"))
 	})
@@ -118,7 +118,7 @@ func TestInjectHTTPHeaders(t *testing.T) {
 
 func TestInjectGRPCMetadata(t *testing.T) {
 	t.Run("注入 trace ID 到 gRPC metadata", func(t *testing.T) {
-		ctx := withTraceID(context.Background(), "grpc-trace-123")
+		ctx := withTraceID(t.Context(), "grpc-trace-123")
 
 		ctx = InjectGRPCMetadata(ctx)
 		md, ok := metadata.FromOutgoingContext(ctx)
@@ -127,7 +127,7 @@ func TestInjectGRPCMetadata(t *testing.T) {
 	})
 
 	t.Run("无 trace context 时不修改 context", func(t *testing.T) {
-		ctx := InjectGRPCMetadata(context.Background())
+		ctx := InjectGRPCMetadata(t.Context())
 		_, ok := metadata.FromOutgoingContext(ctx)
 		assert.False(t, ok)
 	})
@@ -135,12 +135,12 @@ func TestInjectGRPCMetadata(t *testing.T) {
 
 func TestTraceIDFromContext(t *testing.T) {
 	t.Run("存在 trace ID", func(t *testing.T) {
-		ctx := withTraceID(context.Background(), "my-trace-id")
+		ctx := withTraceID(t.Context(), "my-trace-id")
 		assert.Equal(t, "my-trace-id", TraceIDFromContext(ctx))
 	})
 
 	t.Run("不存在 trace ID", func(t *testing.T) {
-		assert.Empty(t, TraceIDFromContext(context.Background()))
+		assert.Empty(t, TraceIDFromContext(t.Context()))
 	})
 }
 

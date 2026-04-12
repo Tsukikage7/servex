@@ -2,11 +2,12 @@
 package event
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
 	"log"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -155,8 +156,8 @@ func (b *bus) Publish(ctx context.Context, name string, payload any) error {
 	b.mu.RUnlock()
 
 	// 按优先级排序
-	sort.Slice(matched, func(i, j int) bool {
-		return matched[i].priority < matched[j].priority
+	slices.SortFunc(matched, func(a, b subscriber) int {
+		return cmp.Compare(a.priority, b.priority)
 	})
 
 	// 执行处理器

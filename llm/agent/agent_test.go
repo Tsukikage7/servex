@@ -78,7 +78,7 @@ func TestAgent_SimpleRun(t *testing.T) {
 		t.Fatalf("创建 Agent 失败: %v", err)
 	}
 
-	result, err := agent.Run(context.Background(), "你好")
+	result, err := agent.Run(t.Context(), "你好")
 	if err != nil {
 		t.Fatalf("Run 失败: %v", err)
 	}
@@ -115,7 +115,7 @@ func TestAgent_WithMemory(t *testing.T) {
 		t.Fatalf("创建 Agent 失败: %v", err)
 	}
 
-	_, err = agent.Run(context.Background(), "请记住这句话")
+	_, err = agent.Run(t.Context(), "请记住这句话")
 	if err != nil {
 		t.Fatalf("Run 失败: %v", err)
 	}
@@ -152,7 +152,7 @@ func TestAgent_WithGuardrail(t *testing.T) {
 		t.Fatalf("创建 Agent 失败: %v", err)
 	}
 
-	_, err = agent.Run(context.Background(), "这是一条禁止的消息")
+	_, err = agent.Run(t.Context(), "这是一条禁止的消息")
 	if err == nil {
 		t.Fatal("期望被护栏拦截，但没有返回错误")
 	}
@@ -213,7 +213,7 @@ func TestAgent_ReActStrategy(t *testing.T) {
 		t.Fatalf("创建 Agent 失败: %v", err)
 	}
 
-	result, err := agent.Run(context.Background(), "计算 1+1")
+	result, err := agent.Run(t.Context(), "计算 1+1")
 	if err != nil {
 		t.Fatalf("Run 失败: %v", err)
 	}
@@ -264,7 +264,7 @@ func TestAgent_PlanExecuteStrategy(t *testing.T) {
 		t.Fatalf("创建 Agent 失败: %v", err)
 	}
 
-	result, err := agent.Run(context.Background(), "帮我写一个 Hello World 程序")
+	result, err := agent.Run(t.Context(), "帮我写一个 Hello World 程序")
 	if err != nil {
 		t.Fatalf("Run 失败: %v", err)
 	}
@@ -315,7 +315,7 @@ func TestPipeline(t *testing.T) {
 	})
 
 	pipeline := NewPipeline(agent1, agent2)
-	result, err := pipeline.Run(context.Background(), "你好，世界！")
+	result, err := pipeline.Run(t.Context(), "你好，世界！")
 	if err != nil {
 		t.Fatalf("Pipeline Run 失败: %v", err)
 	}
@@ -350,7 +350,7 @@ func TestAgent_RunStream_Simple(t *testing.T) {
 		t.Fatalf("创建 Agent 失败: %v", err)
 	}
 
-	ch, err := agent.RunStream(context.Background(), "hello")
+	ch, err := agent.RunStream(t.Context(), "hello")
 	if err != nil {
 		t.Fatalf("RunStream 失败: %v", err)
 	}
@@ -393,7 +393,7 @@ func TestAgent_RunStream_GuardrailBlocks(t *testing.T) {
 		t.Fatalf("创建 Agent 失败: %v", err)
 	}
 
-	_, err = agent.RunStream(context.Background(), "this is blocked input")
+	_, err = agent.RunStream(t.Context(), "this is blocked input")
 	if err == nil {
 		t.Fatal("should return error for blocked input")
 	}
@@ -404,7 +404,7 @@ func TestAgent_RunStream_GuardrailBlocks(t *testing.T) {
 
 func TestPipeline_Empty(t *testing.T) {
 	pipeline := NewPipeline()
-	result, err := pipeline.Run(context.Background(), "hello")
+	result, err := pipeline.Run(t.Context(), "hello")
 	if err != nil {
 		t.Fatalf("empty pipeline should succeed: %v", err)
 	}

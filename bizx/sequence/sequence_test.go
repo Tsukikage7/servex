@@ -1,7 +1,6 @@
 package sequence
 
 import (
-	"context"
 	"strings"
 	"testing"
 	"time"
@@ -19,7 +18,7 @@ func TestNext_WithDate(t *testing.T) {
 		Padding:    4,
 	}, store)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	id, err := seq.Next(ctx)
 	require.NoError(t, err)
 
@@ -40,7 +39,7 @@ func TestNext_WithoutDate(t *testing.T) {
 		Padding: 6,
 	}, store)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	id, err := seq.Next(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, "INV-000001", id)
@@ -60,7 +59,7 @@ func TestNext_ResetDaily(t *testing.T) {
 		ResetDaily: true,
 	}, store)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	id, err := seq.Next(ctx)
 	require.NoError(t, err)
 
@@ -77,7 +76,7 @@ func TestCurrent(t *testing.T) {
 		Padding: 3,
 	}, store)
 
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 初始状态
 	cur, err := seq.Current(ctx)
@@ -99,7 +98,7 @@ func TestReset(t *testing.T) {
 		Padding: 3,
 	}, store)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	_, _ = seq.Next(ctx)
 	_, _ = seq.Next(ctx)
 
@@ -119,7 +118,7 @@ func TestPadding(t *testing.T) {
 		Padding: 8,
 	}, store)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	id, err := seq.Next(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, "00000001", id)

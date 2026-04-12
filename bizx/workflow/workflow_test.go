@@ -12,7 +12,7 @@ import (
 func TestLinearWorkflow(t *testing.T) {
 	store := NewMemoryStore()
 	engine := New(store)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	def := &Definition{
 		ID:          "linear-1",
@@ -68,7 +68,7 @@ func TestLinearWorkflow(t *testing.T) {
 func TestApprovalFlow(t *testing.T) {
 	store := NewMemoryStore()
 	engine := New(store)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	def := &Definition{
 		ID:          "approval-1",
@@ -128,7 +128,7 @@ func TestApprovalFlow(t *testing.T) {
 func TestApprovalReject(t *testing.T) {
 	store := NewMemoryStore()
 	engine := New(store)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	def := &Definition{
 		ID:          "approval-reject",
@@ -179,7 +179,7 @@ func TestApprovalReject(t *testing.T) {
 func TestConditionBranching(t *testing.T) {
 	store := NewMemoryStore()
 	engine := New(store)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	def := &Definition{
 		ID:          "condition-1",
@@ -258,7 +258,7 @@ func TestConditionBranching(t *testing.T) {
 func TestParallelExecution(t *testing.T) {
 	store := NewMemoryStore()
 	engine := New(store, WithMaxParallel(3))
-	ctx := context.Background()
+	ctx := t.Context()
 
 	executed := false
 	def := &Definition{
@@ -304,7 +304,7 @@ func TestParallelExecution(t *testing.T) {
 func TestCancel(t *testing.T) {
 	store := NewMemoryStore()
 	engine := New(store)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	def := &Definition{
 		ID:          "cancel-1",
@@ -348,7 +348,7 @@ func TestCancel(t *testing.T) {
 func TestDefinitionNotFound(t *testing.T) {
 	store := NewMemoryStore()
 	engine := New(store)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := engine.StartWorkflow(ctx, "nonexistent", nil)
 	assert.ErrorIs(t, err, ErrDefinitionNotFound)
@@ -357,7 +357,7 @@ func TestDefinitionNotFound(t *testing.T) {
 func TestInstanceNotFound(t *testing.T) {
 	store := NewMemoryStore()
 	engine := New(store)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := engine.Execute(ctx, "nonexistent")
 	assert.ErrorIs(t, err, ErrInstanceNotFound)
@@ -383,7 +383,7 @@ func TestRegisterInvalidDefinition(t *testing.T) {
 func TestHandlerError(t *testing.T) {
 	store := NewMemoryStore()
 	engine := New(store)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	handlerErr := errors.New("handler failed")
 	def := &Definition{

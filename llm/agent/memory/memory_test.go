@@ -34,7 +34,7 @@ func (m *mockModel) Stream(ctx context.Context, msgs []llm.Message, opts ...llm.
 
 func TestMemoryStore_SaveAndLoad(t *testing.T) {
 	store := memory.NewMemoryStore()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	msgs := []llm.Message{
 		llm.UserMessage("你好"),
@@ -63,7 +63,7 @@ func TestMemoryStore_SaveAndLoad(t *testing.T) {
 
 func TestMemoryStore_Delete(t *testing.T) {
 	store := memory.NewMemoryStore()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_ = store.Save(ctx, "sess2", []llm.Message{llm.UserMessage("hi")}, nil)
 
@@ -79,7 +79,7 @@ func TestMemoryStore_Delete(t *testing.T) {
 
 func TestMemoryStore_List(t *testing.T) {
 	store := memory.NewMemoryStore()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_ = store.Save(ctx, "s1", nil, nil)
 	_ = store.Save(ctx, "s2", nil, nil)
@@ -111,7 +111,7 @@ func TestMemoryStore_List(t *testing.T) {
 
 func TestPersistentMemory_SaveAndLoad(t *testing.T) {
 	store := memory.NewMemoryStore()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	inner := conversation.NewBufferMemory()
 	pm := memory.NewPersistentMemory(inner, store, "persist-sess")

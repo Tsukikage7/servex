@@ -42,7 +42,7 @@ func TestChain_SingleStep(t *testing.T) {
 	c := New(WithModel(model))
 	c.AddStep(Step{Name: "summarize", Prompt: tmpl})
 
-	result, err := c.Run(context.Background(), "这是一段很长的文章")
+	result, err := c.Run(t.Context(), "这是一段很长的文章")
 	if err != nil {
 		t.Fatalf("Run 返回错误: %v", err)
 	}
@@ -78,7 +78,7 @@ func TestChain_MultiStep(t *testing.T) {
 	c.AddStep(Step{Name: "summarize", Prompt: summarizeTmpl, Model: summarizeModel})
 	c.AddStep(Step{Name: "translate", Prompt: translateTmpl, Model: translateModel})
 
-	result, err := c.Run(context.Background(), "原始文章内容")
+	result, err := c.Run(t.Context(), "原始文章内容")
 	if err != nil {
 		t.Fatalf("Run 返回错误: %v", err)
 	}
@@ -137,7 +137,7 @@ func TestChain_WithParser(t *testing.T) {
 		},
 	})
 
-	result, err := c.Run(context.Background(), "这是需要评分的内容")
+	result, err := c.Run(t.Context(), "这是需要评分的内容")
 	if err != nil {
 		t.Fatalf("Run 返回错误: %v", err)
 	}
@@ -177,7 +177,7 @@ func TestChain_OnStep(t *testing.T) {
 	c.AddStep(Step{Name: "step1", Prompt: tmpl1})
 	c.AddStep(Step{Name: "step2", Prompt: tmpl2})
 
-	_, err := c.Run(context.Background(), "input")
+	_, err := c.Run(t.Context(), "input")
 	if err != nil {
 		t.Fatalf("Run 返回错误: %v", err)
 	}
@@ -201,7 +201,7 @@ func TestChain_OnStep(t *testing.T) {
 func TestChain_Validation(t *testing.T) {
 	t.Run("无步骤", func(t *testing.T) {
 		c := New(WithModel(&mockModel{fn: func(msgs []llm.Message) string { return "" }}))
-		_, err := c.Run(context.Background(), "input")
+		_, err := c.Run(t.Context(), "input")
 		if !errors.Is(err, ErrNoSteps) {
 			t.Errorf("期望 ErrNoSteps，得到 %v", err)
 		}
@@ -211,7 +211,7 @@ func TestChain_Validation(t *testing.T) {
 		tmpl := prompt.MustNew(llm.RoleUser, "{{.}}")
 		c := New()
 		c.AddStep(Step{Name: "step", Prompt: tmpl})
-		_, err := c.Run(context.Background(), "input")
+		_, err := c.Run(t.Context(), "input")
 		if !errors.Is(err, ErrNoModel) {
 			t.Errorf("期望 ErrNoModel，得到 %v", err)
 		}
@@ -220,7 +220,7 @@ func TestChain_Validation(t *testing.T) {
 	t.Run("步骤 Prompt 为 nil", func(t *testing.T) {
 		c := New(WithModel(&mockModel{fn: func(msgs []llm.Message) string { return "" }}))
 		c.AddStep(Step{Name: "bad-step", Prompt: nil})
-		_, err := c.Run(context.Background(), "input")
+		_, err := c.Run(t.Context(), "input")
 		if !errors.Is(err, ErrNilPrompt) {
 			t.Errorf("期望 ErrNilPrompt，得到 %v", err)
 		}

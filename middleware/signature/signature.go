@@ -186,7 +186,7 @@ func HTTPMiddleware(cfg *Config) func(http.Handler) http.Handler {
 			}
 			body, err := io.ReadAll(bodyReader)
 			if err != nil {
-				http.Error(w, fmt.Sprintf("failed to read body: %v", err), http.StatusBadRequest)
+				http.Error(w, "签名验证失败", http.StatusBadRequest)
 				return
 			}
 			if cfg.MaxBodySize > 0 && int64(len(body)) > cfg.MaxBodySize {

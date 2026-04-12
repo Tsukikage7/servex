@@ -742,7 +742,7 @@ func parseFromRegistry(s string, registry map[string]ComponentDef, category stri
 	seen := make(map[string]bool)
 	var result []ComponentDef
 
-	for _, key := range strings.Split(s, ",") {
+	for key := range strings.SplitSeq(s, ",") {
 		key = strings.TrimSpace(key)
 		if key == "" {
 			continue

@@ -79,7 +79,7 @@ func TestShipper_BatchFlush(t *testing.T) {
 		WithFlushInterval(10*time.Second), // 禁用定时触发，只靠批量
 		WithBufferSize(1000),
 	)
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	s.Start(ctx)
 
@@ -108,7 +108,7 @@ func TestShipper_FlushInterval(t *testing.T) {
 		WithFlushInterval(interval),
 		WithBufferSize(1000),
 	)
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	s.Start(ctx)
 
@@ -159,7 +159,7 @@ func TestShipper_Close(t *testing.T) {
 		WithFlushInterval(10*time.Second),
 		WithBufferSize(1000),
 	)
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	s.Start(ctx)
 	defer cancel()
 
@@ -278,7 +278,7 @@ func TestElasticsearchSink(t *testing.T) {
 		{Timestamp: fixedTime, Level: "error", Message: "world"},
 	}
 
-	ctx := context.Background()
+	ctx := t.Context()
 	require.NoError(t, sink.Write(ctx, entries))
 
 	expectedIndex := "logs-2026.04.05"
@@ -328,7 +328,7 @@ func TestKafkaSink(t *testing.T) {
 		{Timestamp: time.Now(), Level: "info", Message: "kafka test"},
 	}
 
-	require.NoError(t, sink.Write(context.Background(), entries))
+	require.NoError(t, sink.Write(t.Context(), entries))
 
 	pub.mu.Lock()
 	defer pub.mu.Unlock()
@@ -382,7 +382,7 @@ func (m *mockLogger) Close() error                                { return nil }
 func TestNewLoggerHook(t *testing.T) {
 	sink := &mockSink{}
 	s := New(sink, WithBatchSize(100), WithFlushInterval(10*time.Second), WithBufferSize(100))
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	s.Start(ctx)
 	defer cancel()
 

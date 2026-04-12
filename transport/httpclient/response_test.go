@@ -4,7 +4,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	stderrors "errors"
+	"errors"
 
 	servexerrors "github.com/Tsukikage7/servex/errors"
 
@@ -62,8 +62,8 @@ func TestResponse_CheckStatus_4xx(t *testing.T) {
 	err := resp.CheckStatus()
 	require.Error(t, err)
 
-	var e *servexerrors.Error
-	require.True(t, stderrors.As(err, &e))
+	e, ok := errors.AsType[*servexerrors.Error](err)
+	require.True(t, ok)
 	assert.Equal(t, 404, e.Code)
 	assert.Equal(t, 404, e.HTTP)
 }
@@ -73,8 +73,8 @@ func TestResponse_CheckStatus_5xx(t *testing.T) {
 	err := resp.CheckStatus()
 	require.Error(t, err)
 
-	var e *servexerrors.Error
-	require.True(t, stderrors.As(err, &e))
+	e, ok := errors.AsType[*servexerrors.Error](err)
+	require.True(t, ok)
 	assert.Equal(t, 500, e.Code)
 	assert.Equal(t, 500, e.HTTP)
 }
@@ -82,8 +82,8 @@ func TestResponse_CheckStatus_5xx(t *testing.T) {
 func TestResponse_CheckStatus_ErrorsAs(t *testing.T) {
 	resp := newResponse(403, "")
 	err := resp.CheckStatus()
-	var e *servexerrors.Error
-	require.True(t, stderrors.As(err, &e))
+	e, ok := errors.AsType[*servexerrors.Error](err)
+	require.True(t, ok)
 	assert.Equal(t, "http.403", e.Key)
 	assert.Contains(t, e.Message, "403")
 }

@@ -40,10 +40,12 @@ func Retry(maxAttempts int, baseDelay time.Duration) Middleware {
 					if !ok {
 						break
 					}
+					retryTimer := time.NewTimer(delay)
 					select {
 					case <-ctx.Done():
+						retryTimer.Stop()
 						return nil, ctx.Err()
-					case <-time.After(delay):
+					case <-retryTimer.C:
 					}
 				}
 				return nil, lastErr
@@ -68,10 +70,12 @@ func Retry(maxAttempts int, baseDelay time.Duration) Middleware {
 					if !ok {
 						break
 					}
+					retryTimer := time.NewTimer(delay)
 					select {
 					case <-ctx.Done():
+						retryTimer.Stop()
 						return nil, ctx.Err()
-					case <-time.After(delay):
+					case <-retryTimer.C:
 					}
 				}
 				return nil, lastErr

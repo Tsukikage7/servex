@@ -36,7 +36,7 @@ func newOrderMachine() *Machine {
 }
 
 func TestFire(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	sm := newOrderMachine()
 
 	assert.Equal(t, StatePending, sm.Current())
@@ -64,7 +64,7 @@ func TestCan(t *testing.T) {
 }
 
 func TestGuard(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	sm := New(StatePending, []Transition{
 		{
@@ -90,7 +90,7 @@ func TestGuard(t *testing.T) {
 }
 
 func TestAction(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	actionErr := errors.New("payment failed")
 
 	sm := New(StatePending, []Transition{
@@ -110,7 +110,7 @@ func TestAction(t *testing.T) {
 }
 
 func TestOnEnter(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	sm := newOrderMachine()
 
 	entered := false
@@ -123,7 +123,7 @@ func TestOnEnter(t *testing.T) {
 }
 
 func TestOnLeave(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	sm := newOrderMachine()
 
 	left := false
@@ -136,7 +136,7 @@ func TestOnLeave(t *testing.T) {
 }
 
 func TestInvalidTransition(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	sm := newOrderMachine()
 
 	// 从 pending 状态触发 ship 事件（无效）
@@ -153,7 +153,7 @@ func TestAvailableEvents(t *testing.T) {
 	assert.Contains(t, events, EventPay)
 	assert.Contains(t, events, EventCancel)
 
-	_ = sm.Fire(context.Background(), EventPay, nil)
+	_ = sm.Fire(t.Context(), EventPay, nil)
 	events = sm.AvailableEvents()
 	assert.Len(t, events, 1)
 	assert.Contains(t, events, EventShip)

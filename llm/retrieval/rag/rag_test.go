@@ -192,7 +192,7 @@ func TestIngest(t *testing.T) {
 		{ID: "doc2", Content: "第二篇文档内容"},
 	}
 
-	if err := p.Ingest(context.Background(), docs); err != nil {
+	if err := p.Ingest(t.Context(), docs); err != nil {
 		t.Fatalf("Ingest 失败: %v", err)
 	}
 
@@ -243,7 +243,7 @@ func TestIngest_WithSplitter(t *testing.T) {
 		{ID: "doc1", Content: "一二三四五六七八九十甲乙丙丁戊己庚辛壬癸"},
 	}
 
-	if err := p.Ingest(context.Background(), docs); err != nil {
+	if err := p.Ingest(t.Context(), docs); err != nil {
 		t.Fatalf("Ingest 失败: %v", err)
 	}
 
@@ -302,7 +302,7 @@ func TestRetrieve(t *testing.T) {
 		t.Fatalf("New 失败: %v", err)
 	}
 
-	results, err := p.Retrieve(context.Background(), "测试问题")
+	results, err := p.Retrieve(t.Context(), "测试问题")
 	if err != nil {
 		t.Fatalf("Retrieve 失败: %v", err)
 	}
@@ -363,7 +363,7 @@ func TestQuery(t *testing.T) {
 		t.Fatalf("New 失败: %v", err)
 	}
 
-	result, err := p.Query(context.Background(), "用户的问题")
+	result, err := p.Query(t.Context(), "用户的问题")
 	if err != nil {
 		t.Fatalf("Query 失败: %v", err)
 	}

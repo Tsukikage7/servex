@@ -35,7 +35,7 @@ func TestEntityExtractor(t *testing.T) {
 		},
 	}
 	e := extractor.NewEntityExtractor(model, []string{"person", "organization"})
-	ctx := context.Background()
+	ctx := t.Context()
 
 	result, err := e.Extract(ctx, "张伟加入了阿里巴巴集团")
 	if err != nil {
@@ -66,7 +66,7 @@ func TestRelationExtractor(t *testing.T) {
 		},
 	}
 	e := extractor.NewRelationExtractor(model)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	result, err := e.Extract(ctx, "李明在北京创立了一家科技公司")
 	if err != nil {
@@ -94,7 +94,7 @@ func TestKeywordExtractor(t *testing.T) {
 		},
 	}
 	e := extractor.NewKeywordExtractor(model)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	result, err := e.Extract(ctx, "人工智能和机器学习是深度学习领域的核心技术，神经网络是基础")
 	if err != nil {
@@ -125,7 +125,7 @@ func TestSummarizer(t *testing.T) {
 		},
 	}
 	e := extractor.NewSummarizer(model)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	result, err := e.Extract(ctx, "人工智能技术近年来取得了突破性进展，在医疗、教育、金融等多个行业得到广泛应用，极大地提升了工作效率和服务质量。")
 	if err != nil {
@@ -150,7 +150,7 @@ func TestWithMaxKeywords(t *testing.T) {
 		},
 	}
 	e := extractor.NewKeywordExtractor(model, extractor.WithMaxKeywords(3))
-	ctx := context.Background()
+	ctx := t.Context()
 
 	result, err := e.Extract(ctx, "some text with keywords")
 	if err != nil {
@@ -164,7 +164,7 @@ func TestWithMaxKeywords(t *testing.T) {
 // TestEmptyText 验证空文本时返回 ErrEmptyText.
 func TestEmptyText(t *testing.T) {
 	model := &mockModel{fn: func(_ []llm.Message) string { return "[]" }}
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("EntityExtractor", func(t *testing.T) {
 		e := extractor.NewEntityExtractor(model, []string{"person"})

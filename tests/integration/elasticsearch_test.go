@@ -3,7 +3,6 @@
 package integration
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -48,7 +47,7 @@ func testIndexName() string {
 
 func TestElasticsearch_Integration(t *testing.T) {
 	client := newESClient(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("Ping", func(t *testing.T) {
 		err := client.Ping(ctx)

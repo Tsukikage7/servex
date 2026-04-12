@@ -235,16 +235,14 @@ func (c *compositeEvaluator) Evaluate(ctx context.Context, input EvalInput) (*Ev
 	var wg sync.WaitGroup
 
 	for i, ev := range c.evaluators {
-		wg.Add(1)
-		go func(idx int, evaluator Evaluator) {
-			defer wg.Done()
-			r, err := evaluator.Evaluate(ctx, input)
+		wg.Go(func() {
+			r, err := ev.Evaluate(ctx, input)
 			if err != nil {
-				results[idx] = result{err: err}
+				results[i] = result{err: err}
 				return
 			}
-			results[idx] = result{scores: r.Scores}
-		}(i, ev)
+			results[i] = result{scores: r.Scores}
+		})
 	}
 
 	wg.Wait()

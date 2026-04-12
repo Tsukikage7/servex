@@ -39,7 +39,7 @@ func newLockCache(t *testing.T) cache.Cache {
 
 func TestLock_Integration(t *testing.T) {
 	c := newLockCache(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("TryLock_Unlock", func(t *testing.T) {
 		locker := lock.NewRedis(c, lock.WithKeyPrefix("inttest:lock:"))
@@ -146,9 +146,7 @@ func TestLock_Integration(t *testing.T) {
 		var wg sync.WaitGroup
 
 		for i := 0; i < workers; i++ {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+			wg.Go(func() {
 				locker := lock.NewRedis(c,
 					lock.WithKeyPrefix("inttest:lock:concurrent:"),
 					lock.WithRetryWait(20*time.Millisecond),
@@ -166,7 +164,7 @@ func TestLock_Integration(t *testing.T) {
 				val := counter.Load()
 				time.Sleep(5 * time.Millisecond)
 				counter.Store(val + 1)
-			}()
+			})
 		}
 
 		wg.Wait()

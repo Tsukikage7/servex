@@ -197,6 +197,11 @@ func (n *nacosDiscovery) Unregister(ctx context.Context, serviceID string) error
 	}
 	ch := make(chan result, 1)
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				ch <- result{false, fmt.Errorf("deregister panic: %v", r)}
+			}
+		}()
 		s, e := n.client.DeregisterInstance(vo.DeregisterInstanceParam{
 			Ip:          info.ip,
 			Port:        info.port,

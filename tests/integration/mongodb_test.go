@@ -38,7 +38,7 @@ func newMongoClient(t *testing.T) mongodb.Client {
 	}
 
 	t.Cleanup(func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 		defer cancel()
 		// Drop the test database
 		client.Database().Drop(ctx)
@@ -50,7 +50,7 @@ func newMongoClient(t *testing.T) mongodb.Client {
 
 func TestMongoDB_Integration(t *testing.T) {
 	client := newMongoClient(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("Ping", func(t *testing.T) {
 		err := client.Ping(ctx)

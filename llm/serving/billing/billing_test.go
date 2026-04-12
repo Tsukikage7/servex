@@ -121,7 +121,7 @@ func TestRecord(t *testing.T) {
 	store := billing.NewMemoryStore()
 	b := billing.NewBilling(store, billing.WithDefaultPricing(testPricing()))
 
-	ctx := context.Background()
+	ctx := t.Context()
 	usage := llm.Usage{
 		PromptTokens:     500,
 		CompletionTokens: 200,
@@ -161,7 +161,7 @@ func TestGetSummary(t *testing.T) {
 	store := billing.NewMemoryStore()
 	b := billing.NewBilling(store, billing.WithDefaultPricing(testPricing()))
 
-	ctx := context.Background()
+	ctx := t.Context()
 	keyID := "key-agg"
 
 	// 记录 3 条：gpt-4o × 2，gpt-3.5-turbo × 1
@@ -290,7 +290,7 @@ func TestMiddleware(t *testing.T) {
 	mw := billing.Middleware(b, keyExtractor)
 	wrapped := mw(model)
 
-	ctx := context.Background()
+	ctx := t.Context()
 	_, err := wrapped.Generate(ctx, []llm.Message{llm.UserMessage("hi")})
 	if err != nil {
 		t.Fatalf("Generate 失败: %v", err)

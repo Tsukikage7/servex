@@ -109,7 +109,7 @@ func parseFields(s string) []Field {
 	}
 
 	var fields []Field
-	for _, part := range strings.Split(s, ",") {
+	for part := range strings.SplitSeq(s, ",") {
 		part = strings.TrimSpace(part)
 		if part == "" {
 			continue
@@ -137,7 +137,7 @@ func parseCommands(s string) []CommandDef {
 	}
 
 	var cmds []CommandDef
-	for _, part := range strings.Split(s, ",") {
+	for part := range strings.SplitSeq(s, ",") {
 		part = strings.TrimSpace(part)
 		if part == "" {
 			continue
@@ -191,7 +191,7 @@ func parseUniqueFields(s string, allFields []Field) []Field {
 	}
 
 	var result []Field
-	for _, part := range strings.Split(s, ",") {
+	for part := range strings.SplitSeq(s, ",") {
 		part = strings.TrimSpace(part)
 		if part == "" {
 			continue

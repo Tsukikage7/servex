@@ -110,9 +110,11 @@ func RetryMiddleware(cfg *retry.Config) Middleware {
 				}
 				if attempt < cfg.MaxAttempts-1 {
 					wait := cfg.Backoff(attempt, cfg.Delay)
+					retryTimer := time.NewTimer(wait)
 					select {
-					case <-time.After(wait):
+					case <-retryTimer.C:
 					case <-req.Context().Done():
+						retryTimer.Stop()
 						return nil, req.Context().Err()
 					}
 				}

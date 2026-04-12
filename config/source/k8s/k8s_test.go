@@ -1,7 +1,6 @@
 package k8s
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -208,7 +207,7 @@ func TestSource_Watch(t *testing.T) {
 	go func() {
 		time.Sleep(100 * time.Millisecond)
 		_, _ = client.CoreV1().ConfigMaps("default").Update(
-			context.Background(),
+			t.Context(),
 			&corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "watch-config",
@@ -305,7 +304,7 @@ func TestSource_SecretWatch(t *testing.T) {
 	go func() {
 		time.Sleep(100 * time.Millisecond)
 		_, _ = client.CoreV1().Secrets("default").Update(
-			context.Background(),
+			t.Context(),
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "watch-secret",

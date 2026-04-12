@@ -2,11 +2,12 @@
 package classifier
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/Tsukikage7/servex/llm"
@@ -131,8 +132,8 @@ func (c *llmClassifier) parseResponse(content string) (*Result, error) {
 	}
 
 	// 按分数降序排列.
-	sort.Slice(labels, func(i, j int) bool {
-		return labels[i].Score > labels[j].Score
+	slices.SortFunc(labels, func(a, b Label) int {
+		return cmp.Compare(b.Score, a.Score)
 	})
 
 	// 截取前 N 个.

@@ -360,12 +360,14 @@ func (s *cronScheduler) runWithRetry(ctx context.Context, job *Job, jc *JobConte
 
 		// 等待重试间隔（尊重 context 取消）
 		if job.RetryInterval > 0 {
+			retryTimer := time.NewTimer(job.RetryInterval)
 			select {
 			case <-ctx.Done():
+				retryTimer.Stop()
 				s.opts.hooks.runErrorHooks(ctx, jc)
 				s.opts.hooks.runAfterHooks(ctx, jc)
 				return
-			case <-time.After(job.RetryInterval):
+			case <-retryTimer.C:
 			}
 		}
 	}

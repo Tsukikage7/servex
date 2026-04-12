@@ -1,7 +1,6 @@
 package abtesting
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -28,7 +27,7 @@ func newTestExperiment() *Experiment {
 func TestAssignmentConsistency(t *testing.T) {
 	store := NewMemoryStore()
 	mgr := New(store)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := mgr.CreateExperiment(ctx, newTestExperiment())
 	require.NoError(t, err)
@@ -48,7 +47,7 @@ func TestAssignmentConsistency(t *testing.T) {
 func TestWeightDistribution(t *testing.T) {
 	store := NewMemoryStore()
 	mgr := New(store)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	exp := &Experiment{
 		ID:      "exp-dist",
@@ -81,7 +80,7 @@ func TestWeightDistribution(t *testing.T) {
 func TestEnableDisable(t *testing.T) {
 	store := NewMemoryStore()
 	mgr := New(store)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := mgr.CreateExperiment(ctx, newTestExperiment())
 	require.NoError(t, err)
@@ -106,7 +105,7 @@ func TestEnableDisable(t *testing.T) {
 func TestExposureTracking(t *testing.T) {
 	store := NewMemoryStore()
 	mgr := New(store)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := mgr.CreateExperiment(ctx, newTestExperiment())
 	require.NoError(t, err)
@@ -127,7 +126,7 @@ func TestExposureTracking(t *testing.T) {
 func TestCreateExperiment_NoVariants(t *testing.T) {
 	store := NewMemoryStore()
 	mgr := New(store)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	exp := &Experiment{
 		ID:      "exp-empty",
@@ -141,7 +140,7 @@ func TestCreateExperiment_NoVariants(t *testing.T) {
 func TestCreateExperiment_InvalidWeight(t *testing.T) {
 	store := NewMemoryStore()
 	mgr := New(store)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	// 权重总和不等于 100
 	exp := &Experiment{
@@ -175,7 +174,7 @@ func TestCreateExperiment_InvalidWeight(t *testing.T) {
 func TestExperimentNotFound(t *testing.T) {
 	store := NewMemoryStore()
 	mgr := New(store)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, err := mgr.GetExperiment(ctx, "nonexistent")
 	assert.ErrorIs(t, err, ErrExperimentNotFound)
@@ -187,7 +186,7 @@ func TestExperimentNotFound(t *testing.T) {
 func TestListExperiments(t *testing.T) {
 	store := NewMemoryStore()
 	mgr := New(store)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := mgr.CreateExperiment(ctx, newTestExperiment())
 	require.NoError(t, err)
@@ -206,7 +205,7 @@ func TestListExperiments(t *testing.T) {
 func TestGetAssignment(t *testing.T) {
 	store := NewMemoryStore()
 	mgr := New(store)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	err := mgr.CreateExperiment(ctx, newTestExperiment())
 	require.NoError(t, err)

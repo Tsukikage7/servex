@@ -37,7 +37,7 @@ func newRedisClient(t *testing.T) redis.Client {
 		return nil
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Second)
 	defer cancel()
 
 	if err := client.Ping(ctx); err != nil {
@@ -56,7 +56,7 @@ func testKey(prefix string) string {
 
 func TestRedis_Integration(t *testing.T) {
 	client := newRedisClient(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("String", func(t *testing.T) {
 		key := testKey("string")
