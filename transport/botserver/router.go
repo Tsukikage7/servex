@@ -24,6 +24,11 @@ func newRouter() *Router {
 	}
 }
 
+// NewRouter 创建命令路由器（供外部包使用）。
+func NewRouter() *Router {
+	return newRouter()
+}
+
 // Handle 注册路由。
 func (r *Router) Handle(pattern string, handler HandlerFunc, middlewares ...Middleware) {
 	r.routes = append(r.routes, route{
