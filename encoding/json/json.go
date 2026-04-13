@@ -4,7 +4,7 @@ package json
 import (
 	stdjson "encoding/json"
 
-	"github.com/Tsukikage7/servex/encoding"
+	"github.com/Tsukikage7/servex/v2/encoding"
 )
 
 func init() { encoding.RegisterCodec(codec{}) }

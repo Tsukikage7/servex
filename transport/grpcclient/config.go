@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Tsukikage7/servex/middleware/circuitbreaker"
-	"github.com/Tsukikage7/servex/observability/metrics"
-	tlsx "github.com/Tsukikage7/servex/transport/tls"
+	"github.com/Tsukikage7/servex/v2/middleware/circuitbreaker"
+	"github.com/Tsukikage7/servex/v2/observability/metrics"
+	tlsx "github.com/Tsukikage7/servex/v2/transport/tls"
 )
 
 // Config gRPC 客户端配置.

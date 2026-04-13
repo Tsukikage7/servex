@@ -8,8 +8,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/Tsukikage7/servex/llm"
-	aimw "github.com/Tsukikage7/servex/llm/middleware"
+	"github.com/Tsukikage7/servex/v2/llm"
+	aimw "github.com/Tsukikage7/servex/v2/llm/middleware"
 )
 
 // 护栏错误类型.

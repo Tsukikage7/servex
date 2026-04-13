@@ -31,7 +31,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Tsukikage7/servex/auth"
+	"github.com/Tsukikage7/servex/v2/auth"
 )
 
 var (

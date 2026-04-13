@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/Tsukikage7/servex/errors"
+	"github.com/Tsukikage7/servex/v2/errors"
 )
 
 // Response HTTP 响应封装.

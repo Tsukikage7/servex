@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Tsukikage7/servex/oauth2"
+	"github.com/Tsukikage7/servex/v2/oauth2"
 )
 
 func TestProvider_AuthURL(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 
-	"github.com/Tsukikage7/servex/notify"
+	"github.com/Tsukikage7/servex/v2/notify"
 )
 
 // mockDiscordClient 用于测试的 mock discordClient.

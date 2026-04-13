@@ -3,7 +3,7 @@ package gemini_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/llm/provider/gemini"
+	"github.com/Tsukikage7/servex/v2/llm/provider/gemini"
 )
 
 func ExampleNew() {

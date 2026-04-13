@@ -3,8 +3,8 @@ package json_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/encoding"
-	_ "github.com/Tsukikage7/servex/encoding/json"
+	"github.com/Tsukikage7/servex/v2/encoding"
+	_ "github.com/Tsukikage7/servex/v2/encoding/json"
 )
 
 func ExampleCodec_marshal() {

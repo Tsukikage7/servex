@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/Tsukikage7/servex/llm"
-	"github.com/Tsukikage7/servex/middleware/retry"
+	"github.com/Tsukikage7/servex/v2/llm"
+	"github.com/Tsukikage7/servex/v2/middleware/retry"
 )
 
 // Retry 返回对 429/5xx 错误进行指数退避重试的中间件.

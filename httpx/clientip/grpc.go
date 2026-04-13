@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 
-	"github.com/Tsukikage7/servex/transport/grpcx"
+	"github.com/Tsukikage7/servex/v2/transport/grpcx"
 )
 
 const (

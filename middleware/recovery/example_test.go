@@ -3,7 +3,7 @@ package recovery_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/middleware/recovery"
+	"github.com/Tsukikage7/servex/v2/middleware/recovery"
 )
 
 func ExamplePanicError_Error() {

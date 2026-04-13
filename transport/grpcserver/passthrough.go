@@ -3,7 +3,7 @@ package grpcserver
 import (
 	"context"
 
-	"github.com/Tsukikage7/servex/endpoint"
+	"github.com/Tsukikage7/servex/v2/endpoint"
 )
 
 // PassthroughDecode 是 gRPC 直通解码器，将 proto 消息原样传递给 Endpoint.

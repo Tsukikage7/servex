@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Tsukikage7/servex/bizx/workflow"
+	"github.com/Tsukikage7/servex/v2/bizx/workflow"
 )
 
 func ExampleEngine_StartWorkflow() {

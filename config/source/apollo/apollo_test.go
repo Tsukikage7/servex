@@ -10,7 +10,7 @@ import (
 	"github.com/apolloconfig/agollo/v4/agcache"
 	"github.com/apolloconfig/agollo/v4/storage"
 
-	svcConfig "github.com/Tsukikage7/servex/config"
+	svcConfig "github.com/Tsukikage7/servex/v2/config"
 )
 
 // --- mock agollo.Client ---

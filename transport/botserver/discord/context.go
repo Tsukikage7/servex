@@ -6,7 +6,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 
-	"github.com/Tsukikage7/servex/transport/botserver"
+	"github.com/Tsukikage7/servex/v2/transport/botserver"
 )
 
 // discordContext 实现 botserver.Context 接口，封装单条 Discord MessageCreate 事件。

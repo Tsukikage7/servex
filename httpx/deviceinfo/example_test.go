@@ -3,7 +3,7 @@ package deviceinfo_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/httpx/deviceinfo"
+	"github.com/Tsukikage7/servex/v2/httpx/deviceinfo"
 )
 
 func ExampleParser_Parse() {

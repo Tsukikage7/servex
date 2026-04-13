@@ -4,7 +4,7 @@ package xml
 import (
 	stdxml "encoding/xml"
 
-	"github.com/Tsukikage7/servex/encoding"
+	"github.com/Tsukikage7/servex/v2/encoding"
 )
 
 func init() { encoding.RegisterCodec(codec{}) }

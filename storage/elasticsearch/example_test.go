@@ -3,7 +3,7 @@ package elasticsearch_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/storage/elasticsearch"
+	"github.com/Tsukikage7/servex/v2/storage/elasticsearch"
 )
 
 func ExampleDefaultConfig() {

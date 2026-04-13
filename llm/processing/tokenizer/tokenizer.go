@@ -5,7 +5,7 @@ import (
 	"math"
 	"unicode"
 
-	"github.com/Tsukikage7/servex/llm"
+	"github.com/Tsukikage7/servex/v2/llm"
 )
 
 // Tokenizer Token 计数器接口.

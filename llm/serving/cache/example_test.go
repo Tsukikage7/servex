@@ -3,7 +3,7 @@ package cache_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/llm/serving/cache"
+	"github.com/Tsukikage7/servex/v2/llm/serving/cache"
 )
 
 func ExampleNewMemoryStore() {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/Tsukikage7/servex/llm"
+	"github.com/Tsukikage7/servex/v2/llm"
 )
 
 // UsageTracker 线程安全的 token 用量累计追踪器.

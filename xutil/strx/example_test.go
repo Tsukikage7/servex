@@ -3,7 +3,7 @@ package strx_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/xutil/strx"
+	"github.com/Tsukikage7/servex/v2/xutil/strx"
 )
 
 func ExampleSplitName() {

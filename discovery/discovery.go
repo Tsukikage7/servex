@@ -4,7 +4,7 @@ package discovery
 import (
 	"context"
 
-	"github.com/Tsukikage7/servex/transport"
+	"github.com/Tsukikage7/servex/v2/transport"
 )
 
 // Discovery 定义服务发现接口.

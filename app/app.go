@@ -12,8 +12,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Tsukikage7/servex/observability/logger"
-	"github.com/Tsukikage7/servex/transport"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
+	"github.com/Tsukikage7/servex/v2/transport"
 )
 
 // ErrRunning 应用正在运行.

@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Tsukikage7/servex/domain"
+	"github.com/Tsukikage7/servex/v2/domain"
 
-	domainOrder "github.com/Tsukikage7/servex/examples/ecommerce/domain/order"
+	domainOrder "github.com/Tsukikage7/servex/v2/examples/ecommerce/domain/order"
 )
 
 // ErrUserNotFound 用户不存在.

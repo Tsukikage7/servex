@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http/httptest"
 
-	"github.com/Tsukikage7/servex/transport/debug"
+	"github.com/Tsukikage7/servex/v2/transport/debug"
 )
 
 func ExampleNew() {

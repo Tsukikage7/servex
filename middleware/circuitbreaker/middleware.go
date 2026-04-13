@@ -3,7 +3,7 @@ package circuitbreaker
 import (
 	"context"
 
-	"github.com/Tsukikage7/servex/endpoint"
+	"github.com/Tsukikage7/servex/v2/endpoint"
 )
 
 // EndpointMiddleware 创建 Endpoint 熔断器中间件.

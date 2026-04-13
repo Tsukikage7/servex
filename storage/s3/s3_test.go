@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Tsukikage7/servex/storage/s3"
-	"github.com/Tsukikage7/servex/testx"
+	"github.com/Tsukikage7/servex/v2/storage/s3"
+	"github.com/Tsukikage7/servex/v2/testx"
 )
 
 // 默认指向本地 MinIO 实例.

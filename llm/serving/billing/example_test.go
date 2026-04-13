@@ -3,7 +3,7 @@ package billing_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/llm/serving/billing"
+	"github.com/Tsukikage7/servex/v2/llm/serving/billing"
 )
 
 func ExampleNewMemoryStore() {

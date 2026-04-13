@@ -1,8 +1,8 @@
 package telegram
 
 import (
-	"github.com/Tsukikage7/servex/transport/botserver"
-	"github.com/Tsukikage7/servex/transport/httpserver"
+	"github.com/Tsukikage7/servex/v2/transport/botserver"
+	"github.com/Tsukikage7/servex/v2/transport/httpserver"
 )
 
 // Option TelegramBot 选项。

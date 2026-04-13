@@ -1,8 +1,8 @@
 package notify
 
 import (
-	"github.com/Tsukikage7/servex/messaging/jobqueue"
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/messaging/jobqueue"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 type dispatcherOptions struct {

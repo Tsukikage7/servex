@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/Tsukikage7/servex/endpoint"
-	"github.com/Tsukikage7/servex/transport/response"
+	"github.com/Tsukikage7/servex/v2/endpoint"
+	"github.com/Tsukikage7/servex/v2/transport/response"
 )
 
 // Handle 创建类型安全的 HTTP Handler，自动处理内容协商编解码与统一响应格式.

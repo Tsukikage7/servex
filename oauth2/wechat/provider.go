@@ -11,7 +11,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/Tsukikage7/servex/oauth2"
+	"github.com/Tsukikage7/servex/v2/oauth2"
 )
 
 const (

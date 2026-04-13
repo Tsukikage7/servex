@@ -3,7 +3,7 @@ package embedding_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/llm/retrieval/embedding"
+	"github.com/Tsukikage7/servex/v2/llm/retrieval/embedding"
 )
 
 func ExampleCosineSimilarity() {

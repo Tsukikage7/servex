@@ -7,7 +7,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 
-	"github.com/Tsukikage7/servex/transport/botserver"
+	"github.com/Tsukikage7/servex/v2/transport/botserver"
 )
 
 // ---- 辅助函数 ----

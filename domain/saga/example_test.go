@@ -3,7 +3,7 @@ package saga_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/domain/saga"
+	"github.com/Tsukikage7/servex/v2/domain/saga"
 )
 
 func ExampleData() {

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/Tsukikage7/servex/llm"
+	"github.com/Tsukikage7/servex/v2/llm"
 )
 
 // BatchEmbed 批量嵌入文本，将长文本列表按 batchSize 分批调用 EmbeddingModel.

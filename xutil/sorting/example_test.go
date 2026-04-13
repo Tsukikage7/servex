@@ -3,7 +3,7 @@ package sorting_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/xutil/sorting"
+	"github.com/Tsukikage7/servex/v2/xutil/sorting"
 )
 
 func ExampleNew() {

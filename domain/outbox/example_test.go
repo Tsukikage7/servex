@@ -3,8 +3,8 @@ package outbox_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/domain/outbox"
-	"github.com/Tsukikage7/servex/messaging/pubsub"
+	"github.com/Tsukikage7/servex/v2/domain/outbox"
+	"github.com/Tsukikage7/servex/v2/messaging/pubsub"
 )
 
 func ExampleNewOutboxMessage() {

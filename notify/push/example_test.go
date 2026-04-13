@@ -3,7 +3,7 @@ package push_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/notify/push"
+	"github.com/Tsukikage7/servex/v2/notify/push"
 )
 
 func ExampleNewFCMProvider() {

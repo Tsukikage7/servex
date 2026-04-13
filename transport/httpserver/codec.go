@@ -5,11 +5,11 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/Tsukikage7/servex/encoding"
+	"github.com/Tsukikage7/servex/v2/encoding"
 	// 注册默认编解码器
-	_ "github.com/Tsukikage7/servex/encoding/json"
-	_ "github.com/Tsukikage7/servex/encoding/proto"
-	_ "github.com/Tsukikage7/servex/encoding/xml"
+	_ "github.com/Tsukikage7/servex/v2/encoding/json"
+	_ "github.com/Tsukikage7/servex/v2/encoding/proto"
+	_ "github.com/Tsukikage7/servex/v2/encoding/xml"
 )
 
 // EncodeCodecResponse 基于 Accept 头自动选择编解码器的响应编码函数.

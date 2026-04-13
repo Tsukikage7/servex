@@ -3,7 +3,7 @@ package cache_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/storage/cache"
+	"github.com/Tsukikage7/servex/v2/storage/cache"
 )
 
 func ExampleNewRedisConfig() {

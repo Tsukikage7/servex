@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Tsukikage7/servex/llm/serving/apikey"
+	"github.com/Tsukikage7/servex/v2/llm/serving/apikey"
 )
 
 func ExampleNewMemoryStore() {

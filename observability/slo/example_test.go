@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Tsukikage7/servex/observability/slo"
+	"github.com/Tsukikage7/servex/v2/observability/slo"
 )
 
 func ExampleObjective() {

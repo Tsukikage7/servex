@@ -12,7 +12,7 @@ import (
 
 	"golang.org/x/text/language"
 
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // Bundle 消息包，管理多语言消息文件.

@@ -10,8 +10,8 @@ import (
 
 	"errors"
 
-	servexerrors "github.com/Tsukikage7/servex/errors"
-	"github.com/Tsukikage7/servex/middleware/retry"
+	servexerrors "github.com/Tsukikage7/servex/v2/errors"
+	"github.com/Tsukikage7/servex/v2/middleware/retry"
 )
 
 func TestNewSimple(t *testing.T) {

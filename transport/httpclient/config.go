@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Tsukikage7/servex/middleware/circuitbreaker"
-	"github.com/Tsukikage7/servex/middleware/retry"
-	tlsx "github.com/Tsukikage7/servex/transport/tls"
+	"github.com/Tsukikage7/servex/v2/middleware/circuitbreaker"
+	"github.com/Tsukikage7/servex/v2/middleware/retry"
+	tlsx "github.com/Tsukikage7/servex/v2/transport/tls"
 )
 
 // Config 配置驱动的客户端创建.

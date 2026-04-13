@@ -8,8 +8,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/Tsukikage7/servex/observability/logger"
-	"github.com/Tsukikage7/servex/transport/grpcx"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
+	"github.com/Tsukikage7/servex/v2/transport/grpcx"
 )
 
 // UnaryServerInterceptor 返回 gRPC 一元服务器超时拦截器.

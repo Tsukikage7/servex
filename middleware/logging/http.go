@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // HTTPMiddleware 返回 HTTP 请求日志中间件.

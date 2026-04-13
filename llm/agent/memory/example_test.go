@@ -3,7 +3,7 @@ package memory_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/llm/agent/memory"
+	"github.com/Tsukikage7/servex/v2/llm/agent/memory"
 )
 
 func ExampleNewMemoryStore() {

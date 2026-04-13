@@ -3,7 +3,7 @@ package rabbitmq_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/messaging/jobqueue/rabbitmq"
+	"github.com/Tsukikage7/servex/v2/messaging/jobqueue/rabbitmq"
 )
 
 func ExampleWithPrefix() {

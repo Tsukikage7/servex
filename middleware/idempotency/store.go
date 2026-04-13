@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/Tsukikage7/servex/storage/cache"
+	"github.com/Tsukikage7/servex/v2/storage/cache"
 )
 
 // IdempotentStore 幂等性存储实现.

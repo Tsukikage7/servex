@@ -3,7 +3,7 @@ package email_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/notify/email"
+	"github.com/Tsukikage7/servex/v2/notify/email"
 )
 
 func ExampleWithSMTP() {

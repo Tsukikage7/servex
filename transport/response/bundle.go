@@ -6,7 +6,7 @@ import (
 
 	"golang.org/x/text/language"
 
-	"github.com/Tsukikage7/servex/i18n"
+	"github.com/Tsukikage7/servex/v2/i18n"
 )
 
 // globalBundle 全局消息包，默认内置中文 + 英文翻译.

@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/Tsukikage7/servex/storage/elasticsearch"
+	"github.com/Tsukikage7/servex/v2/storage/elasticsearch"
 )
 
 // ElasticsearchSink ES 日志投递，将日志批量写入 Elasticsearch 索引.

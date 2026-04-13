@@ -12,8 +12,8 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 
-	"github.com/Tsukikage7/servex/observability/logger"
-	"github.com/Tsukikage7/servex/transport"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
+	"github.com/Tsukikage7/servex/v2/transport"
 )
 
 const (

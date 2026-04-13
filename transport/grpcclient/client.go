@@ -13,9 +13,9 @@ import (
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/status"
 
-	"github.com/Tsukikage7/servex/observability/logger"
-	"github.com/Tsukikage7/servex/observability/metrics"
-	"github.com/Tsukikage7/servex/observability/tracing"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/metrics"
+	"github.com/Tsukikage7/servex/v2/observability/tracing"
 )
 
 // Client gRPC 客户端封装.

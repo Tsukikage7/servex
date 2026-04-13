@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Tsukikage7/servex/domain/cqrs"
+	"github.com/Tsukikage7/servex/v2/domain/cqrs"
 )
 
 // createUserHandler 示例命令处理器.

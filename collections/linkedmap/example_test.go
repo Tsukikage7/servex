@@ -3,7 +3,7 @@ package linkedmap_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/collections/linkedmap"
+	"github.com/Tsukikage7/servex/v2/collections/linkedmap"
 )
 
 func ExampleNew() {

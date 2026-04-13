@@ -3,7 +3,7 @@ package metrics_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/observability/metrics"
+	"github.com/Tsukikage7/servex/v2/observability/metrics"
 )
 
 func ExampleDefaultConfig() {

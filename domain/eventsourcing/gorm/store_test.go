@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
 
-	"github.com/Tsukikage7/servex/domain/eventsourcing"
+	"github.com/Tsukikage7/servex/v2/domain/eventsourcing"
 )
 
 // --- 测试用聚合：银行账户 ---

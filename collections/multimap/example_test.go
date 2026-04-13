@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/Tsukikage7/servex/collections/multimap"
+	"github.com/Tsukikage7/servex/v2/collections/multimap"
 )
 
 func ExampleNew() {

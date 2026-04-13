@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 
-	"github.com/Tsukikage7/servex/messaging/pubsub"
+	"github.com/Tsukikage7/servex/v2/messaging/pubsub"
 )
 
 // --- OutboxMessage 测试 ---

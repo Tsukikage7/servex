@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Tsukikage7/servex/notify/webhook"
-	whstoremem "github.com/Tsukikage7/servex/notify/webhook/store/memory"
+	"github.com/Tsukikage7/servex/v2/notify/webhook"
+	whstoremem "github.com/Tsukikage7/servex/v2/notify/webhook/store/memory"
 )
 
 func ExampleNewStore() {

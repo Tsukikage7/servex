@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Tsukikage7/servex/bizx/audit"
+	"github.com/Tsukikage7/servex/v2/bizx/audit"
 )
 
 func ExampleNewLogger() {

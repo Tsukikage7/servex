@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // HTTPMiddleware 返回 HTTP 认证中间件.

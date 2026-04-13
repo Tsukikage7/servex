@@ -6,9 +6,9 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/Tsukikage7/servex/observability/logger"
-	"github.com/Tsukikage7/servex/transport"
-	"github.com/Tsukikage7/servex/transport/health"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
+	"github.com/Tsukikage7/servex/v2/transport"
+	"github.com/Tsukikage7/servex/v2/transport/health"
 )
 
 // Option 配置选项函数.

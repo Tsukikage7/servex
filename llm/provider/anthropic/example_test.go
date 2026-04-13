@@ -3,7 +3,7 @@ package anthropic_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/llm/provider/anthropic"
+	"github.com/Tsukikage7/servex/v2/llm/provider/anthropic"
 )
 
 func ExampleNew() {

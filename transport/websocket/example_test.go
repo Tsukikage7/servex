@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Tsukikage7/servex/transport/websocket"
+	"github.com/Tsukikage7/servex/v2/transport/websocket"
 )
 
 func ExampleDefaultConfig() {

@@ -5,7 +5,7 @@ import (
 
 	"golang.org/x/text/language"
 
-	"github.com/Tsukikage7/servex/i18n"
+	"github.com/Tsukikage7/servex/v2/i18n"
 )
 
 func ExampleBundle_NewLocalizer() {

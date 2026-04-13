@@ -4,7 +4,7 @@ package middleware
 import (
 	"context"
 
-	"github.com/Tsukikage7/servex/llm"
+	"github.com/Tsukikage7/servex/v2/llm"
 )
 
 // Middleware AI 模型中间件，接收一个 ChatModel 返回一个装饰后的 ChatModel.

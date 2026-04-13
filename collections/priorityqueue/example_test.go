@@ -3,7 +3,7 @@ package priorityqueue_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/collections/priorityqueue"
+	"github.com/Tsukikage7/servex/v2/collections/priorityqueue"
 )
 
 func ExampleNewMin() {

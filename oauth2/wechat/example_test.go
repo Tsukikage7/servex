@@ -3,7 +3,7 @@ package wechat_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/oauth2/wechat"
+	"github.com/Tsukikage7/servex/v2/oauth2/wechat"
 )
 
 func ExampleNewProvider() {

@@ -5,8 +5,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/Tsukikage7/servex/domain/cqrs"
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/domain/cqrs"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // CommandLogging 为命令处理器添加日志装饰器.

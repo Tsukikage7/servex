@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Tsukikage7/servex/llm"
+	"github.com/Tsukikage7/servex/v2/llm"
 )
 
 // 翻译器错误类型.

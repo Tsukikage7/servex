@@ -10,7 +10,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 
-	"github.com/Tsukikage7/servex/config"
+	"github.com/Tsukikage7/servex/v2/config"
 )
 
 // Source 环境变量配置源.

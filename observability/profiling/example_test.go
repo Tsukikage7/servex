@@ -3,7 +3,7 @@ package profiling_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/observability/profiling"
+	"github.com/Tsukikage7/servex/v2/observability/profiling"
 )
 
 func ExampleConfig() {

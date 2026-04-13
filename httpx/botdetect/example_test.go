@@ -3,7 +3,7 @@ package botdetect_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/httpx/botdetect"
+	"github.com/Tsukikage7/servex/v2/httpx/botdetect"
 )
 
 func ExampleDetector_Detect() {

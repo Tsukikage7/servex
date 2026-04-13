@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Tsukikage7/servex/llm/retrieval/rag"
+	"github.com/Tsukikage7/servex/v2/llm/retrieval/rag"
 )
 
 // 预定义错误.

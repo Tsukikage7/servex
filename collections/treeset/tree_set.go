@@ -6,7 +6,7 @@ import (
 	"cmp"
 	"iter"
 
-	"github.com/Tsukikage7/servex/collections/treemap"
+	"github.com/Tsukikage7/servex/v2/collections/treemap"
 )
 
 // TreeSet 基于红黑树的有序集合.

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Tsukikage7/servex/collections/delayqueue"
+	"github.com/Tsukikage7/servex/v2/collections/delayqueue"
 )
 
 // task 实现 Delayable 接口.

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Tsukikage7/servex/storage/cache"
+	"github.com/Tsukikage7/servex/v2/storage/cache"
 )
 
 // DistributedLimiter 分布式限流器.

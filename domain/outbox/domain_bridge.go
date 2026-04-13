@@ -3,8 +3,8 @@ package outbox
 import (
 	"context"
 
-	"github.com/Tsukikage7/servex/domain"
-	"github.com/Tsukikage7/servex/messaging/pubsub"
+	"github.com/Tsukikage7/servex/v2/domain"
+	"github.com/Tsukikage7/servex/v2/messaging/pubsub"
 )
 
 // OutboxPublisher 通过 Outbox 发布领域事件，保证事务一致性.

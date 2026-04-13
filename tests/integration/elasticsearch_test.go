@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Tsukikage7/servex/storage/elasticsearch"
-	"github.com/Tsukikage7/servex/testx"
+	"github.com/Tsukikage7/servex/v2/storage/elasticsearch"
+	"github.com/Tsukikage7/servex/v2/testx"
 )
 
 func esAddresses() []string {

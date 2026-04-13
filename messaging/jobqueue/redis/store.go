@@ -10,7 +10,7 @@ import (
 
 	goredis "github.com/redis/go-redis/v9"
 
-	"github.com/Tsukikage7/servex/messaging/jobqueue"
+	"github.com/Tsukikage7/servex/v2/messaging/jobqueue"
 )
 
 // Store 基于 Redis 的 jobqueue.Store 实现.

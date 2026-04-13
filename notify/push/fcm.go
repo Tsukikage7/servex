@@ -3,7 +3,7 @@ package push
 import (
 	"context"
 
-	"github.com/Tsukikage7/servex/notify"
+	"github.com/Tsukikage7/servex/v2/notify"
 )
 
 // FCMConfig Firebase Cloud Messaging 连接配置.

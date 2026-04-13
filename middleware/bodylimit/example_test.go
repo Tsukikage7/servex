@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/Tsukikage7/servex/middleware/bodylimit"
+	"github.com/Tsukikage7/servex/v2/middleware/bodylimit"
 )
 
 func ExampleHTTPMiddleware() {

@@ -4,9 +4,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/Tsukikage7/servex/domain/saga"
-	"github.com/Tsukikage7/servex/storage/cache"
-	"github.com/Tsukikage7/servex/testx"
+	"github.com/Tsukikage7/servex/v2/domain/saga"
+	"github.com/Tsukikage7/servex/v2/storage/cache"
+	"github.com/Tsukikage7/servex/v2/testx"
 )
 
 func newTestStore() (*Store, cache.Cache) {

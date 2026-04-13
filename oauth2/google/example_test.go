@@ -3,7 +3,7 @@ package google_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/oauth2/google"
+	"github.com/Tsukikage7/servex/v2/oauth2/google"
 )
 
 func ExampleNewProvider() {

@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	// 注册编解码器
-	_ "github.com/Tsukikage7/servex/encoding/json"
-	_ "github.com/Tsukikage7/servex/encoding/xml"
+	_ "github.com/Tsukikage7/servex/v2/encoding/json"
+	_ "github.com/Tsukikage7/servex/v2/encoding/xml"
 )
 
 // CodecTestSuite httpserver 编解码器测试套件.

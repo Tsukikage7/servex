@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Tsukikage7/servex/llm"
-	"github.com/Tsukikage7/servex/llm/middleware"
+	"github.com/Tsukikage7/servex/v2/llm"
+	"github.com/Tsukikage7/servex/v2/llm/middleware"
 )
 
 func ExampleChain() {

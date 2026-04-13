@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/Tsukikage7/servex/storage/sqlx"
+	"github.com/Tsukikage7/servex/v2/storage/sqlx"
 )
 
 func ExampleOf() {

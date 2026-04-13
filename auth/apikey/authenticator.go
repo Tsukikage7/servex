@@ -7,8 +7,8 @@ import (
 	"crypto/subtle"
 	"time"
 
-	"github.com/Tsukikage7/servex/auth"
-	"github.com/Tsukikage7/servex/storage/cache"
+	"github.com/Tsukikage7/servex/v2/auth"
+	"github.com/Tsukikage7/servex/v2/storage/cache"
 )
 
 // Validator 验证 API Key 是否有效，返回对应的 Principal.

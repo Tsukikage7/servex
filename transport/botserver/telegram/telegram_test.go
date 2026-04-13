@@ -10,8 +10,8 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
-	"github.com/Tsukikage7/servex/transport/botserver"
-	"github.com/Tsukikage7/servex/transport/httpserver"
+	"github.com/Tsukikage7/servex/v2/transport/botserver"
+	"github.com/Tsukikage7/servex/v2/transport/httpserver"
 )
 
 // ---- 辅助函数 ----

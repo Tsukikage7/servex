@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Tsukikage7/servex/validation"
+	"github.com/Tsukikage7/servex/v2/validation"
 )
 
 // Validatable 可验证的配置接口.

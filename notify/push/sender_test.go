@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/Tsukikage7/servex/notify"
+	"github.com/Tsukikage7/servex/v2/notify"
 )
 
 type mockProvider struct {

@@ -12,7 +12,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Tsukikage7/servex/notify"
+	"github.com/Tsukikage7/servex/v2/notify"
 )
 
 func TestSender_ImplementsInterface(t *testing.T) { var _ notify.Sender = (*Sender)(nil) }

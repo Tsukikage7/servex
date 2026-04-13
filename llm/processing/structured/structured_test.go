@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Tsukikage7/servex/llm"
-	"github.com/Tsukikage7/servex/llm/processing/structured"
+	"github.com/Tsukikage7/servex/v2/llm"
+	"github.com/Tsukikage7/servex/v2/llm/processing/structured"
 )
 
 // Person 测试用结构体.

@@ -7,8 +7,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/Tsukikage7/servex/domain/cqrs"
-	"github.com/Tsukikage7/servex/testx"
+	"github.com/Tsukikage7/servex/v2/domain/cqrs"
+	"github.com/Tsukikage7/servex/v2/testx"
 )
 
 // mockCommandHandler is a test helper for CommandHandler.

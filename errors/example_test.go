@@ -6,7 +6,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	"github.com/Tsukikage7/servex/errors"
+	"github.com/Tsukikage7/servex/v2/errors"
 )
 
 func ExampleNew() {

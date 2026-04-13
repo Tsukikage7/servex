@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Tsukikage7/servex/middleware/semaphore"
+	"github.com/Tsukikage7/servex/v2/middleware/semaphore"
 )
 
 // mockCounter implements semaphore.Counter for demonstration.

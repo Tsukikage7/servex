@@ -1,6 +1,6 @@
 package rabbitmq
 
-import "github.com/Tsukikage7/servex/observability/logger"
+import "github.com/Tsukikage7/servex/v2/observability/logger"
 
 type publisherOptions struct {
 	logger       logger.Logger

@@ -3,7 +3,7 @@ package discovery_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/discovery"
+	"github.com/Tsukikage7/servex/v2/discovery"
 )
 
 func ExampleConfig_Validate() {

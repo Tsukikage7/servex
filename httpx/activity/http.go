@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"net/http"
 
-	"github.com/Tsukikage7/servex/httpx/clientip"
+	"github.com/Tsukikage7/servex/v2/httpx/clientip"
 )
 
 // HTTPMiddleware 返回 HTTP 中间件，自动追踪用户活跃.

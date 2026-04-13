@@ -3,7 +3,7 @@ package extractor_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/llm/processing/extractor"
+	"github.com/Tsukikage7/servex/v2/llm/processing/extractor"
 )
 
 func ExampleEntity() {

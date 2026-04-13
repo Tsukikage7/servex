@@ -3,7 +3,7 @@ package eventsourcing_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/domain/eventsourcing"
+	"github.com/Tsukikage7/servex/v2/domain/eventsourcing"
 )
 
 func ExampleNewBaseAggregate() {

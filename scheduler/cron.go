@@ -7,7 +7,7 @@ import (
 
 	"github.com/robfig/cron/v3"
 
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // cronScheduler 基于 Cron 的调度器实现.

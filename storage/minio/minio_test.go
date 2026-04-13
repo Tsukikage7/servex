@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Tsukikage7/servex/observability/logger"
-	miniox "github.com/Tsukikage7/servex/storage/minio"
-	"github.com/Tsukikage7/servex/testx"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
+	miniox "github.com/Tsukikage7/servex/v2/storage/minio"
+	"github.com/Tsukikage7/servex/v2/testx"
 )
 
 func TestNewClient_NilConfig(t *testing.T) {

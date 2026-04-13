@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 
-	"github.com/Tsukikage7/servex/middleware/gzip"
+	"github.com/Tsukikage7/servex/v2/middleware/gzip"
 )
 
 func ExampleNew() {

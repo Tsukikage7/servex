@@ -7,8 +7,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Tsukikage7/servex/llm"
-	"github.com/Tsukikage7/servex/llm/provider/openai"
+	"github.com/Tsukikage7/servex/v2/llm"
+	"github.com/Tsukikage7/servex/v2/llm/provider/openai"
 )
 
 // mockOpenAIServer 创建模拟 OpenAI 服务端.

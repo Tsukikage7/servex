@@ -3,7 +3,7 @@ package useragent_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/httpx/useragent"
+	"github.com/Tsukikage7/servex/v2/httpx/useragent"
 )
 
 func ExampleParse() {

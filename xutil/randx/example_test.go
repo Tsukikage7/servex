@@ -3,7 +3,7 @@ package randx_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/xutil/randx"
+	"github.com/Tsukikage7/servex/v2/xutil/randx"
 )
 
 func ExampleRand_RandAlphanumeric() {

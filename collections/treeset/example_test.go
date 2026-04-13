@@ -3,7 +3,7 @@ package treeset_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/collections/treeset"
+	"github.com/Tsukikage7/servex/v2/collections/treeset"
 )
 
 func ExampleNewOrdered() {

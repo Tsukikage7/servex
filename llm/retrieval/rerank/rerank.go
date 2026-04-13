@@ -14,9 +14,9 @@ import (
 	"net/http"
 	"slices"
 
-	"github.com/Tsukikage7/servex/llm"
-	"github.com/Tsukikage7/servex/llm/retrieval/embedding"
-	"github.com/Tsukikage7/servex/llm/retrieval/rag"
+	"github.com/Tsukikage7/servex/v2/llm"
+	"github.com/Tsukikage7/servex/v2/llm/retrieval/embedding"
+	"github.com/Tsukikage7/servex/v2/llm/retrieval/rag"
 )
 
 // 预定义错误.

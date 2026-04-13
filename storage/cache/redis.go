@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-redis/redis/v8"
 
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // redisCache Redis 缓存实现.

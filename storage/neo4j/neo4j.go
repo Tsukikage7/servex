@@ -29,7 +29,7 @@ import (
 
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // 预定义错误.

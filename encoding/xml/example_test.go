@@ -3,8 +3,8 @@ package xml_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/encoding"
-	_ "github.com/Tsukikage7/servex/encoding/xml"
+	"github.com/Tsukikage7/servex/v2/encoding"
+	_ "github.com/Tsukikage7/servex/v2/encoding/xml"
 )
 
 func ExampleCodec_marshal() {

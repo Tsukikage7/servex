@@ -3,7 +3,7 @@ package env_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/config/source/env"
+	"github.com/Tsukikage7/servex/v2/config/source/env"
 )
 
 func ExampleNew() {

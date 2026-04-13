@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Tsukikage7/servex/transport/httpserver"
+	"github.com/Tsukikage7/servex/v2/transport/httpserver"
 
-	appUser "github.com/Tsukikage7/servex/examples/ecommerce/application/user"
-	domainUser "github.com/Tsukikage7/servex/examples/ecommerce/domain/user"
+	appUser "github.com/Tsukikage7/servex/v2/examples/ecommerce/application/user"
+	domainUser "github.com/Tsukikage7/servex/v2/examples/ecommerce/domain/user"
 )
 
 // RegisterHTTPRoutes 注册用户服务的 HTTP 路由.

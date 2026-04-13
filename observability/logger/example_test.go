@@ -3,7 +3,7 @@ package logger_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 func ExampleNewDevConfig() {

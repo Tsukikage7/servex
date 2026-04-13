@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Tsukikage7/servex/oauth2/state"
+	"github.com/Tsukikage7/servex/v2/oauth2/state"
 )
 
 func ExampleNewMemoryStore() {

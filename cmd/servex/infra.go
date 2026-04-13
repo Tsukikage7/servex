@@ -28,7 +28,7 @@ var componentRegistry = map[string]ComponentDef{
 	"mysql": {
 		Key:         "mysql",
 		DisplayName: "MySQL 数据库",
-		Import:      "github.com/Tsukikage7/servex/storage/rdbms",
+		Import:      "github.com/Tsukikage7/servex/v2/storage/rdbms",
 		ConfigKey:   "database",
 		ConfigYAML: `database:
   driver: mysql
@@ -59,7 +59,7 @@ var componentRegistry = map[string]ComponentDef{
 	"postgres": {
 		Key:         "postgres",
 		DisplayName: "PostgreSQL 数据库",
-		Import:      "github.com/Tsukikage7/servex/storage/rdbms",
+		Import:      "github.com/Tsukikage7/servex/v2/storage/rdbms",
 		ConfigKey:   "database",
 		ConfigYAML: `database:
   driver: postgres
@@ -90,7 +90,7 @@ var componentRegistry = map[string]ComponentDef{
 	"sqlite": {
 		Key:         "sqlite",
 		DisplayName: "SQLite 数据库",
-		Import:      "github.com/Tsukikage7/servex/storage/rdbms",
+		Import:      "github.com/Tsukikage7/servex/v2/storage/rdbms",
 		ConfigKey:   "database",
 		ConfigYAML: `database:
   driver: sqlite
@@ -118,7 +118,7 @@ var componentRegistry = map[string]ComponentDef{
 	"redis": {
 		Key:         "redis",
 		DisplayName: "Redis",
-		Import:      "github.com/Tsukikage7/servex/storage/redis",
+		Import:      "github.com/Tsukikage7/servex/v2/storage/redis",
 		Alias:       "srvredis",
 		ConfigKey:   "redis",
 		ConfigYAML: `redis:
@@ -147,7 +147,7 @@ var componentRegistry = map[string]ComponentDef{
 	"mongo": {
 		Key:         "mongo",
 		DisplayName: "MongoDB",
-		Import:      "github.com/Tsukikage7/servex/storage/mongodb",
+		Import:      "github.com/Tsukikage7/servex/v2/storage/mongodb",
 		ConfigKey:   "mongodb",
 		ConfigYAML: `mongodb:
   uri: "mongodb://localhost:27017"
@@ -174,7 +174,7 @@ var componentRegistry = map[string]ComponentDef{
 	"es": {
 		Key:         "es",
 		DisplayName: "Elasticsearch",
-		Import:      "github.com/Tsukikage7/servex/storage/elasticsearch",
+		Import:      "github.com/Tsukikage7/servex/v2/storage/elasticsearch",
 		ConfigKey:   "elasticsearch",
 		ConfigYAML: `elasticsearch:
   addresses:
@@ -202,7 +202,7 @@ var componentRegistry = map[string]ComponentDef{
 	"clickhouse": {
 		Key:         "clickhouse",
 		DisplayName: "ClickHouse",
-		Import:      "github.com/Tsukikage7/servex/storage/clickhouse",
+		Import:      "github.com/Tsukikage7/servex/v2/storage/clickhouse",
 		ConfigKey:   "clickhouse",
 		ConfigYAML: `clickhouse:
   addrs:
@@ -233,7 +233,7 @@ var componentRegistry = map[string]ComponentDef{
 	"s3": {
 		Key:         "s3",
 		DisplayName: "S3 对象存储",
-		Import:      "github.com/Tsukikage7/servex/storage/s3",
+		Import:      "github.com/Tsukikage7/servex/v2/storage/s3",
 		ConfigKey:   "s3",
 		ConfigYAML: `s3:
   endpoint: "http://localhost:9000"
@@ -266,7 +266,7 @@ var componentRegistry = map[string]ComponentDef{
 	"minio": {
 		Key:         "minio",
 		DisplayName: "MinIO 对象存储",
-		Import:      "github.com/Tsukikage7/servex/storage/minio",
+		Import:      "github.com/Tsukikage7/servex/v2/storage/minio",
 		ConfigKey:   "minio",
 		ConfigYAML: `minio:
   endpoint: "localhost:9000"
@@ -298,7 +298,7 @@ var componentRegistry = map[string]ComponentDef{
 	"neo4j": {
 		Key:         "neo4j",
 		DisplayName: "Neo4j 图数据库",
-		Import:      "github.com/Tsukikage7/servex/storage/neo4j",
+		Import:      "github.com/Tsukikage7/servex/v2/storage/neo4j",
 		Alias:       "srvneo4j",
 		ConfigKey:   "neo4j",
 		ConfigYAML: `neo4j:
@@ -330,7 +330,7 @@ var componentRegistry = map[string]ComponentDef{
 	"kafka": {
 		Key:         "kafka",
 		DisplayName: "Kafka 消息队列",
-		Import:      "github.com/Tsukikage7/servex/messaging/pubsub/kafka",
+		Import:      "github.com/Tsukikage7/servex/v2/messaging/pubsub/kafka",
 		ConfigKey:   "kafka",
 		ConfigYAML: `kafka:
   brokers:
@@ -357,7 +357,7 @@ var componentRegistry = map[string]ComponentDef{
 	"rabbitmq": {
 		Key:         "rabbitmq",
 		DisplayName: "RabbitMQ 消息队列",
-		Import:      "github.com/Tsukikage7/servex/messaging/pubsub/rabbitmq",
+		Import:      "github.com/Tsukikage7/servex/v2/messaging/pubsub/rabbitmq",
 		ConfigKey:   "rabbitmq",
 		ConfigYAML: `rabbitmq:
   url: "amqp://guest:guest@localhost:5672/"`,
@@ -385,7 +385,7 @@ var componentRegistry = map[string]ComponentDef{
 	"metrics": {
 		Key:         "metrics",
 		DisplayName: "Prometheus 指标收集",
-		Import:      "github.com/Tsukikage7/servex/observability/metrics",
+		Import:      "github.com/Tsukikage7/servex/v2/observability/metrics",
 		ConfigKey:   "metrics",
 		ConfigYAML: `metrics:
   namespace: "app"
@@ -414,7 +414,7 @@ var componentRegistry = map[string]ComponentDef{
 	"tracing": {
 		Key:         "tracing",
 		DisplayName: "OpenTelemetry 链路追踪",
-		Import:      "github.com/Tsukikage7/servex/observability/tracing",
+		Import:      "github.com/Tsukikage7/servex/v2/observability/tracing",
 		ConfigKey:   "tracing",
 		ConfigYAML: `tracing:
   enabled: true
@@ -447,7 +447,7 @@ var componentRegistry = map[string]ComponentDef{
 	"profiling": {
 		Key:         "profiling",
 		DisplayName: "持续性能剖析",
-		Import:      "github.com/Tsukikage7/servex/observability/profiling",
+		Import:      "github.com/Tsukikage7/servex/v2/observability/profiling",
 		ConfigKey:   "profiling",
 		ConfigYAML: `profiling:
   enabled: true
@@ -489,7 +489,7 @@ var componentRegistry = map[string]ComponentDef{
 	"jwt": {
 		Key:         "jwt",
 		DisplayName: "JWT 认证",
-		Import:      "github.com/Tsukikage7/servex/auth/jwt",
+		Import:      "github.com/Tsukikage7/servex/v2/auth/jwt",
 		Alias:       "srvjwt",
 		ConfigKey:   "jwt",
 		ConfigYAML: `jwt:
@@ -515,7 +515,7 @@ var componentRegistry = map[string]ComponentDef{
 	"rbac": {
 		Key:         "rbac",
 		DisplayName: "RBAC 权限",
-		Import:      "github.com/Tsukikage7/servex/auth/rbac",
+		Import:      "github.com/Tsukikage7/servex/v2/auth/rbac",
 		ConfigKey:   "rbac",
 		ConfigYAML:  `# rbac: 权限规则通常在代码中定义`,
 		InitCode: `// 初始化 RBAC 权限管理
@@ -536,7 +536,7 @@ var componentRegistry = map[string]ComponentDef{
 	"consul": {
 		Key:         "consul",
 		DisplayName: "Consul 服务发现",
-		Import:      "github.com/Tsukikage7/servex/discovery",
+		Import:      "github.com/Tsukikage7/servex/v2/discovery",
 		ConfigKey:   "discovery",
 		ConfigYAML: `discovery:
   type: "consul"
@@ -563,7 +563,7 @@ var componentRegistry = map[string]ComponentDef{
 	"etcd": {
 		Key:         "etcd",
 		DisplayName: "etcd 服务发现",
-		Import:      "github.com/Tsukikage7/servex/discovery",
+		Import:      "github.com/Tsukikage7/servex/v2/discovery",
 		ConfigKey:   "discovery",
 		ConfigYAML: `discovery:
   type: "etcd"
@@ -591,7 +591,7 @@ var componentRegistry = map[string]ComponentDef{
 	"nacos": {
 		Key:         "nacos",
 		DisplayName: "Nacos 服务发现",
-		Import:      "github.com/Tsukikage7/servex/discovery",
+		Import:      "github.com/Tsukikage7/servex/v2/discovery",
 		ConfigKey:   "discovery",
 		ConfigYAML: `discovery:
   type: "nacos"
@@ -622,7 +622,7 @@ var componentRegistry = map[string]ComponentDef{
 	"scheduler": {
 		Key:         "scheduler",
 		DisplayName: "定时任务",
-		Import:      "github.com/Tsukikage7/servex/scheduler",
+		Import:      "github.com/Tsukikage7/servex/v2/scheduler",
 		ConfigKey:   "scheduler",
 		ConfigYAML:  `# scheduler: 任务规则通常在代码中定义`,
 		InitCode: `// 初始化定时任务调度器
@@ -645,7 +645,7 @@ var componentRegistry = map[string]ComponentDef{
 	"i18n": {
 		Key:         "i18n",
 		DisplayName: "国际化",
-		Import:      "github.com/Tsukikage7/servex/i18n",
+		Import:      "github.com/Tsukikage7/servex/v2/i18n",
 		ConfigKey:   "i18n",
 		ConfigYAML: `i18n:
   default_lang: "zh"
@@ -665,7 +665,7 @@ var componentRegistry = map[string]ComponentDef{
 	"tenant": {
 		Key:         "tenant",
 		DisplayName: "多租户",
-		Import:      "github.com/Tsukikage7/servex/tenant",
+		Import:      "github.com/Tsukikage7/servex/v2/tenant",
 		ConfigKey:   "tenant",
 		ConfigYAML:  `# tenant: 租户解析通常在代码中配置`,
 		InitCode: `// 多租户中间件[需要自定义 Resolver 实现]

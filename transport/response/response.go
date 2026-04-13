@@ -2,7 +2,7 @@
 package response
 
 import (
-	"github.com/Tsukikage7/servex/xutil/pagination"
+	"github.com/Tsukikage7/servex/v2/xutil/pagination"
 )
 
 // Envelope 标记一个类型已经是统一响应体，httpserver.Handle 不会再次包装它.

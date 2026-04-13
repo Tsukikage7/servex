@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/Tsukikage7/servex/encoding"
+	"github.com/Tsukikage7/servex/v2/encoding"
 )
 
 // jsonCodec 用于 Example 的 JSON 编解码器.

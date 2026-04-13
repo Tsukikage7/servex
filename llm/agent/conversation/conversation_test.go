@@ -5,8 +5,8 @@ import (
 	"io"
 	"testing"
 
-	"github.com/Tsukikage7/servex/llm"
-	"github.com/Tsukikage7/servex/llm/agent/conversation"
+	"github.com/Tsukikage7/servex/v2/llm"
+	"github.com/Tsukikage7/servex/v2/llm/agent/conversation"
 )
 
 // mockModel 模拟 ChatModel.

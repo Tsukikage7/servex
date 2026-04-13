@@ -7,8 +7,8 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/Tsukikage7/servex/encoding"
-	"github.com/Tsukikage7/servex/encoding/pbjson"
+	"github.com/Tsukikage7/servex/v2/encoding"
+	"github.com/Tsukikage7/servex/v2/encoding/pbjson"
 )
 
 func init() { encoding.RegisterCodec(codec{}) }

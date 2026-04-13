@@ -3,7 +3,7 @@ package signature_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/middleware/signature"
+	"github.com/Tsukikage7/servex/v2/middleware/signature"
 )
 
 func ExampleSign() {

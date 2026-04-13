@@ -7,8 +7,8 @@ import (
 
 	gojwt "github.com/golang-jwt/jwt/v5"
 
-	"github.com/Tsukikage7/servex/auth/jwt"
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/auth/jwt"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 func ExampleNewJWT() {

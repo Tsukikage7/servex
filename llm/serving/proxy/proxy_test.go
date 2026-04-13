@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Tsukikage7/servex/llm"
-	"github.com/Tsukikage7/servex/llm/serving/apikey"
+	"github.com/Tsukikage7/servex/v2/llm"
+	"github.com/Tsukikage7/servex/v2/llm/serving/apikey"
 
-	authapikey "github.com/Tsukikage7/servex/auth/apikey"
+	authapikey "github.com/Tsukikage7/servex/v2/auth/apikey"
 )
 
 // ── Mock 实现 ────────────────────────────────────────────────────────────────

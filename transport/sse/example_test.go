@@ -3,7 +3,7 @@ package sse_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/transport/sse"
+	"github.com/Tsukikage7/servex/v2/transport/sse"
 )
 
 func ExampleEvent_Bytes() {

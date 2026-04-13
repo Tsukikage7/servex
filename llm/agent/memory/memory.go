@@ -13,9 +13,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Tsukikage7/servex/llm"
-	"github.com/Tsukikage7/servex/llm/agent/conversation"
-	"github.com/Tsukikage7/servex/storage/cache"
+	"github.com/Tsukikage7/servex/v2/llm"
+	"github.com/Tsukikage7/servex/v2/llm/agent/conversation"
+	"github.com/Tsukikage7/servex/v2/storage/cache"
 )
 
 // 包级错误变量.

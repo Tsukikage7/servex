@@ -3,7 +3,7 @@ package chain_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/llm/agent/chain"
+	"github.com/Tsukikage7/servex/v2/llm/agent/chain"
 )
 
 func ExampleNew() {

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/Tsukikage7/servex/llm/processing/structured"
+	"github.com/Tsukikage7/servex/v2/llm/processing/structured"
 )
 
 func ExampleSchemaFrom() {

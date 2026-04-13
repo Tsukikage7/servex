@@ -7,7 +7,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/Tsukikage7/servex/tenant"
+	"github.com/Tsukikage7/servex/v2/tenant"
 )
 
 const defaultColumn = "tenant_id"

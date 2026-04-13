@@ -3,7 +3,7 @@ package activity_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/httpx/activity"
+	"github.com/Tsukikage7/servex/v2/httpx/activity"
 )
 
 func ExampleEventType() {

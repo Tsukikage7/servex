@@ -1,6 +1,6 @@
 package auth
 
-import "github.com/Tsukikage7/servex/observability/logger"
+import "github.com/Tsukikage7/servex/v2/observability/logger"
 
 const (
 	// AuthorizationHeader HTTP Authorization 请求头.

@@ -3,7 +3,7 @@ package ptrx_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/xutil/ptrx"
+	"github.com/Tsukikage7/servex/v2/xutil/ptrx"
 )
 
 func ExampleToPtr() {

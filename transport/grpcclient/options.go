@@ -6,10 +6,10 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/Tsukikage7/servex/discovery"
-	"github.com/Tsukikage7/servex/middleware/circuitbreaker"
-	"github.com/Tsukikage7/servex/observability/logger"
-	"github.com/Tsukikage7/servex/observability/metrics"
+	"github.com/Tsukikage7/servex/v2/discovery"
+	"github.com/Tsukikage7/servex/v2/middleware/circuitbreaker"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/metrics"
 )
 
 // Option 配置选项函数.

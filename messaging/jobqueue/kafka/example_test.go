@@ -3,7 +3,7 @@ package kafka_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/messaging/jobqueue/kafka"
+	"github.com/Tsukikage7/servex/v2/messaging/jobqueue/kafka"
 )
 
 func ExampleWithPrefix() {

@@ -8,8 +8,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"github.com/Tsukikage7/servex/domain/outbox"
-	"github.com/Tsukikage7/servex/storage/rdbms"
+	"github.com/Tsukikage7/servex/v2/domain/outbox"
+	"github.com/Tsukikage7/servex/v2/storage/rdbms"
 )
 
 // Store 基于 GORM 的 outbox.Store 实现.

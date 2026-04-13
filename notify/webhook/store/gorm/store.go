@@ -8,8 +8,8 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/Tsukikage7/servex/notify/webhook"
-	"github.com/Tsukikage7/servex/storage/rdbms"
+	"github.com/Tsukikage7/servex/v2/notify/webhook"
+	"github.com/Tsukikage7/servex/v2/storage/rdbms"
 )
 
 type subscriptionModel struct {

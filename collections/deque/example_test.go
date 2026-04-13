@@ -3,7 +3,7 @@ package deque_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/collections/deque"
+	"github.com/Tsukikage7/servex/v2/collections/deque"
 )
 
 func ExampleNew() {

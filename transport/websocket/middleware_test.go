@@ -3,7 +3,7 @@ package websocket
 import (
 	"testing"
 
-	"github.com/Tsukikage7/servex/testx"
+	"github.com/Tsukikage7/servex/v2/testx"
 )
 
 func TestLoggingMiddleware(t *testing.T) {

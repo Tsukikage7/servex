@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // 支持的驱动类型.

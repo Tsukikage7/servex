@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // LoggingMiddleware 日志中间件.

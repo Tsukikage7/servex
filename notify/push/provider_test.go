@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/Tsukikage7/servex/notify"
+	"github.com/Tsukikage7/servex/v2/notify"
 )
 
 func TestFCMProvider_ImplementsInterface(t *testing.T)  { var _ Provider = (*FCMProvider)(nil) }

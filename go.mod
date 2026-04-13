@@ -1,4 +1,4 @@
-module github.com/Tsukikage7/servex
+module github.com/Tsukikage7/servex/v2
 
 go 1.26.1
 

@@ -3,8 +3,8 @@ package scheduler
 import (
 	"time"
 
-	"github.com/Tsukikage7/servex/observability/logger"
-	"github.com/Tsukikage7/servex/storage/lock"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
+	"github.com/Tsukikage7/servex/v2/storage/lock"
 )
 
 // Option 调度器配置选项.

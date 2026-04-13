@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Tsukikage7/servex/testx"
-	"github.com/Tsukikage7/servex/transport"
+	"github.com/Tsukikage7/servex/v2/testx"
+	"github.com/Tsukikage7/servex/v2/transport"
 )
 
 // mockDiscovery 测试用 mock discovery.

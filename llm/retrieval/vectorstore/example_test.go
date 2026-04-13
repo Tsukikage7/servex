@@ -3,7 +3,7 @@ package vectorstore_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/llm/retrieval/vectorstore"
+	"github.com/Tsukikage7/servex/v2/llm/retrieval/vectorstore"
 )
 
 func ExampleWithFilter() {

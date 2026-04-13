@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Tsukikage7/servex/middleware/circuitbreaker"
-	"github.com/Tsukikage7/servex/middleware/retry"
+	"github.com/Tsukikage7/servex/v2/middleware/circuitbreaker"
+	"github.com/Tsukikage7/servex/v2/middleware/retry"
 )
 
 // mwMockTransport 可配置的 RoundTripper mock.

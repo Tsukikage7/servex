@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"github.com/Tsukikage7/servex/domain/eventsourcing"
+	"github.com/Tsukikage7/servex/v2/domain/eventsourcing"
 )
 
 // EventStore 基于 GORM 的事件存储实现.

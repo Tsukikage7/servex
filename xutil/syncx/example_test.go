@@ -3,7 +3,7 @@ package syncx_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/xutil/syncx"
+	"github.com/Tsukikage7/servex/v2/xutil/syncx"
 )
 
 func ExampleMap() {

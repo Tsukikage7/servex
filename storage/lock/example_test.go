@@ -3,7 +3,7 @@ package lock_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/storage/lock"
+	"github.com/Tsukikage7/servex/v2/storage/lock"
 )
 
 func ExampleErrLockNotAcquired() {

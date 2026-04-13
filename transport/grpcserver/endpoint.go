@@ -5,8 +5,8 @@ import (
 
 	"google.golang.org/grpc/metadata"
 
-	"github.com/Tsukikage7/servex/endpoint"
-	"github.com/Tsukikage7/servex/transport/response"
+	"github.com/Tsukikage7/servex/v2/endpoint"
+	"github.com/Tsukikage7/servex/v2/transport/response"
 )
 
 // DecodeRequestFunc 从 gRPC 请求解码为业务请求对象.

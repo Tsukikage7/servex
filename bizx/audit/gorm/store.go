@@ -6,7 +6,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/Tsukikage7/servex/bizx/audit"
+	"github.com/Tsukikage7/servex/v2/bizx/audit"
 )
 
 type gormStore struct {

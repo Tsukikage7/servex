@@ -5,7 +5,7 @@ import (
 
 	"github.com/IBM/sarama"
 
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // NewPublisherFromConfig 根据 brokers 地址列表创建 Publisher，内部自动管理 sarama.Client 生命周期.

@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Tsukikage7/servex/storage/cache"
+	"github.com/Tsukikage7/servex/v2/storage/cache"
 )
 
 // Distributed 分布式信号量.

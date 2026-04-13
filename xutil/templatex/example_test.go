@@ -3,7 +3,7 @@ package templatex_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/xutil/templatex"
+	"github.com/Tsukikage7/servex/v2/xutil/templatex"
 )
 
 func ExampleEngine_RenderString() {

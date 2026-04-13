@@ -3,7 +3,7 @@ package minio_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/storage/minio"
+	"github.com/Tsukikage7/servex/v2/storage/minio"
 )
 
 func ExampleDefaultConfig() {

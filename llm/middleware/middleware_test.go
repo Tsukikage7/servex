@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Tsukikage7/servex/llm"
-	aimw "github.com/Tsukikage7/servex/llm/middleware"
-	"github.com/Tsukikage7/servex/middleware/ratelimit"
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/llm"
+	aimw "github.com/Tsukikage7/servex/v2/llm/middleware"
+	"github.com/Tsukikage7/servex/v2/middleware/ratelimit"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // mockModel 用于测试的模拟模型.

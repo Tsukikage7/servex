@@ -3,7 +3,7 @@ package database_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/messaging/jobqueue/database"
+	"github.com/Tsukikage7/servex/v2/messaging/jobqueue/database"
 )
 
 func ExampleWithTableName() {

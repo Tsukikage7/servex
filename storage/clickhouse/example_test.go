@@ -3,7 +3,7 @@ package clickhouse_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/storage/clickhouse"
+	"github.com/Tsukikage7/servex/v2/storage/clickhouse"
 )
 
 func ExampleDefaultConfig() {

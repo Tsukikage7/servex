@@ -6,8 +6,8 @@ import (
 
 	"golang.org/x/text/language"
 
-	"github.com/Tsukikage7/servex/i18n"
-	"github.com/Tsukikage7/servex/transport/response"
+	"github.com/Tsukikage7/servex/v2/i18n"
+	"github.com/Tsukikage7/servex/v2/transport/response"
 )
 
 func TestLocalizedMessage_Nil(t *testing.T) {

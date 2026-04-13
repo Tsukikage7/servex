@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Tsukikage7/servex/storage/mongodb"
-	"github.com/Tsukikage7/servex/testx"
+	"github.com/Tsukikage7/servex/v2/storage/mongodb"
+	"github.com/Tsukikage7/servex/v2/testx"
 )
 
 // mongoURI 从环境变量读取，默认指向本地.

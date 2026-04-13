@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Tsukikage7/servex/endpoint"
+	"github.com/Tsukikage7/servex/v2/endpoint"
 )
 
 // HTTPMiddleware 返回 HTTP 指标采集中间件.

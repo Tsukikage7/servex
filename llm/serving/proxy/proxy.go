@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/Tsukikage7/servex/llm"
-	"github.com/Tsukikage7/servex/llm/safety/moderation"
-	"github.com/Tsukikage7/servex/llm/serving/apikey"
-	"github.com/Tsukikage7/servex/llm/serving/billing"
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/llm"
+	"github.com/Tsukikage7/servex/v2/llm/safety/moderation"
+	"github.com/Tsukikage7/servex/v2/llm/serving/apikey"
+	"github.com/Tsukikage7/servex/v2/llm/serving/billing"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // 预定义错误.

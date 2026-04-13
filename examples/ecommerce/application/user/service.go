@@ -11,10 +11,10 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 
-	servexJWT "github.com/Tsukikage7/servex/auth/jwt"
-	"github.com/Tsukikage7/servex/domain"
+	servexJWT "github.com/Tsukikage7/servex/v2/auth/jwt"
+	"github.com/Tsukikage7/servex/v2/domain"
 
-	domainUser "github.com/Tsukikage7/servex/examples/ecommerce/domain/user"
+	domainUser "github.com/Tsukikage7/servex/v2/examples/ecommerce/domain/user"
 )
 
 // ErrInvalidCredentials 登录凭据无效.

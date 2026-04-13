@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Tsukikage7/servex/bizx/ratelimit"
+	"github.com/Tsukikage7/servex/v2/bizx/ratelimit"
 )
 
 func ExampleNewMemoryQuotaManager() {

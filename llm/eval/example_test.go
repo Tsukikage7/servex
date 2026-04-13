@@ -3,7 +3,7 @@ package eval_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/llm/eval"
+	"github.com/Tsukikage7/servex/v2/llm/eval"
 )
 
 func ExampleScore() {

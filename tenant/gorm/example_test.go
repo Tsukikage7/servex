@@ -3,7 +3,7 @@ package tenantgorm_test
 import (
 	"fmt"
 
-	tenantgorm "github.com/Tsukikage7/servex/tenant/gorm"
+	tenantgorm "github.com/Tsukikage7/servex/v2/tenant/gorm"
 )
 
 func ExampleScope() {

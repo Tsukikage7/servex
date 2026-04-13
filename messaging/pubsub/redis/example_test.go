@@ -3,7 +3,7 @@ package redis_test
 import (
 	"fmt"
 
-	psredis "github.com/Tsukikage7/servex/messaging/pubsub/redis"
+	psredis "github.com/Tsukikage7/servex/v2/messaging/pubsub/redis"
 )
 
 func ExampleWithMaxLen() {

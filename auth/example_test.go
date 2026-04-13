@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Tsukikage7/servex/auth"
+	"github.com/Tsukikage7/servex/v2/auth"
 )
 
 func ExamplePrincipal() {

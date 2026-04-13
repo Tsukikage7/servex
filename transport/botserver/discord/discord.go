@@ -7,7 +7,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 
-	"github.com/Tsukikage7/servex/transport/botserver"
+	"github.com/Tsukikage7/servex/v2/transport/botserver"
 )
 
 // DiscordBot Discord Bot 实现，使用 Gateway（WebSocket）模式。

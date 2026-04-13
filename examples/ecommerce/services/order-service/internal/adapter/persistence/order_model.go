@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
-	domainOrder "github.com/Tsukikage7/servex/examples/ecommerce/domain/order"
+	domainOrder "github.com/Tsukikage7/servex/v2/examples/ecommerce/domain/order"
 )
 
 // OrderPO 订单持久化对象.

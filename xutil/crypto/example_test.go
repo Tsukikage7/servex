@@ -3,7 +3,7 @@ package crypto_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/xutil/crypto"
+	"github.com/Tsukikage7/servex/v2/xutil/crypto"
 )
 
 func ExampleHashPassword() {

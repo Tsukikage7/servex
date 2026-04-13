@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/consul/api"
 
-	"github.com/Tsukikage7/servex/config"
+	"github.com/Tsukikage7/servex/v2/config"
 )
 
 // Source Consul KV 配置源.

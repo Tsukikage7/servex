@@ -12,11 +12,11 @@
 // 使用示例:
 //
 //	// 单独使用子模块
-//	import "github.com/Tsukikage7/servex/httpx/clientip"
+//	import "github.com/Tsukikage7/servex/v2/httpx/clientip"
 //	handler = clientip.HTTPMiddleware()(handler)
 //
 //	// 使用组合中间件
-//	import "github.com/Tsukikage7/servex/httpx"
+//	import "github.com/Tsukikage7/servex/v2/httpx"
 //	handler = httpx.HTTPMiddleware()(handler)
 package httpx
 
@@ -26,12 +26,12 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/Tsukikage7/servex/httpx/botdetect"
-	"github.com/Tsukikage7/servex/httpx/clientip"
-	"github.com/Tsukikage7/servex/httpx/deviceinfo"
-	"github.com/Tsukikage7/servex/httpx/locale"
-	"github.com/Tsukikage7/servex/httpx/referer"
-	"github.com/Tsukikage7/servex/httpx/useragent"
+	"github.com/Tsukikage7/servex/v2/httpx/botdetect"
+	"github.com/Tsukikage7/servex/v2/httpx/clientip"
+	"github.com/Tsukikage7/servex/v2/httpx/deviceinfo"
+	"github.com/Tsukikage7/servex/v2/httpx/locale"
+	"github.com/Tsukikage7/servex/v2/httpx/referer"
+	"github.com/Tsukikage7/servex/v2/httpx/useragent"
 )
 
 // Info 聚合的请求上下文信息.

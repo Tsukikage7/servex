@@ -3,7 +3,7 @@ package slicesx_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/collections/slicesx"
+	"github.com/Tsukikage7/servex/v2/collections/slicesx"
 )
 
 func ExampleMap() {

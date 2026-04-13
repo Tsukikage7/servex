@@ -9,7 +9,7 @@ import (
 	agolloConfig "github.com/apolloconfig/agollo/v4/env/config"
 	"github.com/apolloconfig/agollo/v4/storage"
 
-	"github.com/Tsukikage7/servex/config"
+	"github.com/Tsukikage7/servex/v2/config"
 )
 
 // Source Apollo 配置中心配置源.

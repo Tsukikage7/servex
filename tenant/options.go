@@ -3,7 +3,7 @@ package tenant
 import (
 	"context"
 
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // Skipper 判断是否跳过租户解析.

@@ -3,7 +3,7 @@ package classifier_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/llm/processing/classifier"
+	"github.com/Tsukikage7/servex/v2/llm/processing/classifier"
 )
 
 func ExampleLabel() {

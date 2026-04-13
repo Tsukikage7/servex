@@ -3,7 +3,7 @@ package sms
 import (
 	"context"
 
-	"github.com/Tsukikage7/servex/notify"
+	"github.com/Tsukikage7/servex/v2/notify"
 )
 
 // TencentConfig 腾讯云短信服务配置.

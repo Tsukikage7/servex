@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Tsukikage7/servex/llm"
-	"github.com/Tsukikage7/servex/llm/prompt"
+	"github.com/Tsukikage7/servex/v2/llm"
+	"github.com/Tsukikage7/servex/v2/llm/prompt"
 )
 
 func TestTemplate_Render(t *testing.T) {

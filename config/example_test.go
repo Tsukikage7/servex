@@ -3,7 +3,7 @@ package config_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/config"
+	"github.com/Tsukikage7/servex/v2/config"
 )
 
 // 演示用配置源.

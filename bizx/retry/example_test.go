@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/Tsukikage7/servex/bizx/retry"
+	"github.com/Tsukikage7/servex/v2/bizx/retry"
 )
 
 func ExampleNewScheduler() {

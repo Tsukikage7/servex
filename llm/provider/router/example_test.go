@@ -3,8 +3,8 @@ package router_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/llm/provider/openai"
-	"github.com/Tsukikage7/servex/llm/provider/router"
+	"github.com/Tsukikage7/servex/v2/llm/provider/openai"
+	"github.com/Tsukikage7/servex/v2/llm/provider/router"
 )
 
 func ExampleNew() {

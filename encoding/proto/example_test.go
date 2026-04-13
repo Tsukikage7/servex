@@ -3,7 +3,7 @@ package proto_test
 import (
 	"fmt"
 
-	_ "github.com/Tsukikage7/servex/encoding/proto"
+	_ "github.com/Tsukikage7/servex/v2/encoding/proto"
 )
 
 func Example() {

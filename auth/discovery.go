@@ -9,7 +9,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 
-	authpb "github.com/Tsukikage7/servex/auth/proto"
+	authpb "github.com/Tsukikage7/servex/v2/auth/proto"
 )
 
 // MethodAuthInfo 方法的认证信息.

@@ -4,7 +4,7 @@ package conversation
 import (
 	"context"
 
-	"github.com/Tsukikage7/servex/llm"
+	"github.com/Tsukikage7/servex/v2/llm"
 )
 
 // Option 会话选项.

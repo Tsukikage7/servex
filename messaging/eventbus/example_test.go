@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Tsukikage7/servex/messaging/eventbus"
+	"github.com/Tsukikage7/servex/v2/messaging/eventbus"
 )
 
 // userRegistered 是一个示例事件.

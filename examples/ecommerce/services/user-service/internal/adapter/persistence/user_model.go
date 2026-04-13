@@ -4,7 +4,7 @@ package persistence
 import (
 	"time"
 
-	domainUser "github.com/Tsukikage7/servex/examples/ecommerce/domain/user"
+	domainUser "github.com/Tsukikage7/servex/v2/examples/ecommerce/domain/user"
 )
 
 // UserPO 用户持久化对象.

@@ -9,7 +9,7 @@ import (
 
 	goredis "github.com/redis/go-redis/v9"
 
-	"github.com/Tsukikage7/servex/messaging/pubsub"
+	"github.com/Tsukikage7/servex/v2/messaging/pubsub"
 )
 
 // Publisher 通过 Redis Streams 发布消息.

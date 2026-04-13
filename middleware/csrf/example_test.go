@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/Tsukikage7/servex/middleware/csrf"
+	"github.com/Tsukikage7/servex/v2/middleware/csrf"
 )
 
 func ExampleHTTPMiddleware() {

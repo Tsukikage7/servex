@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Tsukikage7/servex/llm"
-	"github.com/Tsukikage7/servex/llm/processing/classifier"
+	"github.com/Tsukikage7/servex/v2/llm"
+	"github.com/Tsukikage7/servex/v2/llm/processing/classifier"
 )
 
 // mockModel 测试用模拟模型.

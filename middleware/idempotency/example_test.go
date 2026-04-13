@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Tsukikage7/servex/middleware/idempotency"
+	"github.com/Tsukikage7/servex/v2/middleware/idempotency"
 )
 
 func ExampleResult_Encode() {

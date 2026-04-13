@@ -11,8 +11,8 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/Tsukikage7/servex/storage/cache"
-	"github.com/Tsukikage7/servex/testx"
+	"github.com/Tsukikage7/servex/v2/storage/cache"
+	"github.com/Tsukikage7/servex/v2/testx"
 )
 
 // newTestSemaphore 创建测试用的信号量.

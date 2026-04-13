@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/Tsukikage7/servex/config"
+	"github.com/Tsukikage7/servex/v2/config"
 )
 
 // FileSourceTestSuite 文件配置源测试套件.

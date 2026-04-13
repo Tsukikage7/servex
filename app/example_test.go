@@ -3,8 +3,8 @@ package app_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/app"
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/app"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 func ExampleNew() {

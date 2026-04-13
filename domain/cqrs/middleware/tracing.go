@@ -7,7 +7,7 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/Tsukikage7/servex/domain/cqrs"
+	"github.com/Tsukikage7/servex/v2/domain/cqrs"
 )
 
 const tracerName = "servex/cqrs"

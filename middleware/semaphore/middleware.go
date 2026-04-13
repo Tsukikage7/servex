@@ -8,8 +8,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/Tsukikage7/servex/endpoint"
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/endpoint"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // MiddlewareOption 中间件配置选项.

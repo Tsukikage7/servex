@@ -11,8 +11,8 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/Tsukikage7/servex/endpoint"
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/endpoint"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // TraceIDHeader 响应头中返回 traceId 的键名.

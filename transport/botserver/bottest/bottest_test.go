@@ -3,8 +3,8 @@ package bottest_test
 import (
 	"testing"
 
-	"github.com/Tsukikage7/servex/transport/botserver"
-	"github.com/Tsukikage7/servex/transport/botserver/bottest"
+	"github.com/Tsukikage7/servex/v2/transport/botserver"
+	"github.com/Tsukikage7/servex/v2/transport/botserver/bottest"
 )
 
 // TestCommandParsing 验证命令解析逻辑。

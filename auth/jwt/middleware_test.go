@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/metadata"
 
-	"github.com/Tsukikage7/servex/testx"
+	"github.com/Tsukikage7/servex/v2/testx"
 )
 
 // testClaims 测试用 Claims.

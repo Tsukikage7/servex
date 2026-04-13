@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/Tsukikage7/servex/httpx/activity"
-	"github.com/Tsukikage7/servex/messaging/pubsub"
+	"github.com/Tsukikage7/servex/v2/httpx/activity"
+	"github.com/Tsukikage7/servex/v2/messaging/pubsub"
 )
 
 // Producer Kafka 消息生产者.

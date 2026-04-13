@@ -3,7 +3,7 @@ package referer_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/httpx/referer"
+	"github.com/Tsukikage7/servex/v2/httpx/referer"
 )
 
 func ExampleParse() {

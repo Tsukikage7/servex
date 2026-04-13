@@ -3,7 +3,7 @@ package neo4j_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/storage/neo4j"
+	"github.com/Tsukikage7/servex/v2/storage/neo4j"
 )
 
 func ExampleDefaultConfig() {

@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Tsukikage7/servex/transport/httpserver"
+	"github.com/Tsukikage7/servex/v2/transport/httpserver"
 
-	appOrder "github.com/Tsukikage7/servex/examples/ecommerce/application/order"
-	domainOrder "github.com/Tsukikage7/servex/examples/ecommerce/domain/order"
+	appOrder "github.com/Tsukikage7/servex/v2/examples/ecommerce/application/order"
+	domainOrder "github.com/Tsukikage7/servex/v2/examples/ecommerce/domain/order"
 )
 
 // RegisterHTTPRoutes 注册订单服务的 HTTP 路由.

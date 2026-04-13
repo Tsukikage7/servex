@@ -3,8 +3,8 @@ package prompt_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/llm"
-	"github.com/Tsukikage7/servex/llm/prompt"
+	"github.com/Tsukikage7/servex/v2/llm"
+	"github.com/Tsukikage7/servex/v2/llm/prompt"
 )
 
 func ExampleTemplate_Render() {

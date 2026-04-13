@@ -11,7 +11,7 @@ import (
 	gql "github.com/graphql-go/graphql"
 	"github.com/graphql-go/graphql/gqlerrors"
 
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // Config GraphQL 服务器配置.

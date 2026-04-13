@@ -6,7 +6,7 @@ import (
 
 	"gorm.io/gorm"
 
-	domainUser "github.com/Tsukikage7/servex/examples/ecommerce/domain/user"
+	domainUser "github.com/Tsukikage7/servex/v2/examples/ecommerce/domain/user"
 )
 
 // UserRepository 基于 GORM 的用户仓储实现.

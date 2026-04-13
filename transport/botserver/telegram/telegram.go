@@ -9,8 +9,8 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
-	"github.com/Tsukikage7/servex/transport/botserver"
-	"github.com/Tsukikage7/servex/transport/httpserver"
+	"github.com/Tsukikage7/servex/v2/transport/botserver"
+	"github.com/Tsukikage7/servex/v2/transport/httpserver"
 )
 
 // TelegramBot Telegram Bot 实现，使用 Webhook 模式。

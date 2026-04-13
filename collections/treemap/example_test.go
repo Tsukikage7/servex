@@ -3,7 +3,7 @@ package treemap_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/collections/treemap"
+	"github.com/Tsukikage7/servex/v2/collections/treemap"
 )
 
 func ExampleNewOrdered() {

@@ -3,7 +3,7 @@ package idgen_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/xutil/idgen"
+	"github.com/Tsukikage7/servex/v2/xutil/idgen"
 )
 
 func ExampleUUID() {

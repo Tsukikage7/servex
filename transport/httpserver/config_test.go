@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Tsukikage7/servex/testx"
+	"github.com/Tsukikage7/servex/v2/testx"
 )
 
 func TestNewFromConfig(t *testing.T) {

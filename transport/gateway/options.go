@@ -10,19 +10,19 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/protojson"
 
-	"github.com/Tsukikage7/servex/auth"
-	"github.com/Tsukikage7/servex/httpx/clientip"
-	"github.com/Tsukikage7/servex/middleware/cors"
-	"github.com/Tsukikage7/servex/middleware/logging"
-	"github.com/Tsukikage7/servex/middleware/ratelimit"
-	"github.com/Tsukikage7/servex/middleware/recovery"
-	"github.com/Tsukikage7/servex/observability/logger"
-	"github.com/Tsukikage7/servex/observability/metrics"
-	"github.com/Tsukikage7/servex/observability/tracing"
-	"github.com/Tsukikage7/servex/tenant"
-	"github.com/Tsukikage7/servex/transport"
-	"github.com/Tsukikage7/servex/transport/health"
-	"github.com/Tsukikage7/servex/transport/response"
+	"github.com/Tsukikage7/servex/v2/auth"
+	"github.com/Tsukikage7/servex/v2/httpx/clientip"
+	"github.com/Tsukikage7/servex/v2/middleware/cors"
+	"github.com/Tsukikage7/servex/v2/middleware/logging"
+	"github.com/Tsukikage7/servex/v2/middleware/ratelimit"
+	"github.com/Tsukikage7/servex/v2/middleware/recovery"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/metrics"
+	"github.com/Tsukikage7/servex/v2/observability/tracing"
+	"github.com/Tsukikage7/servex/v2/tenant"
+	"github.com/Tsukikage7/servex/v2/transport"
+	"github.com/Tsukikage7/servex/v2/transport/health"
+	"github.com/Tsukikage7/servex/v2/transport/response"
 )
 
 // Option 配置选项.
@@ -351,7 +351,7 @@ func WithPublicMethods(methods ...string) Option {
 //
 // 在 proto 中标记公开方法:
 //
-//	import "github.com/Tsukikage7/servex/auth/proto/auth.proto";
+//	import "github.com/Tsukikage7/servex/v2/auth/proto/auth.proto";
 //
 //	service AuthService {
 //	  rpc Login(LoginRequest) returns (LoginResponse) {

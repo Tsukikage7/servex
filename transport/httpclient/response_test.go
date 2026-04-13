@@ -6,7 +6,7 @@ import (
 
 	"errors"
 
-	servexerrors "github.com/Tsukikage7/servex/errors"
+	servexerrors "github.com/Tsukikage7/servex/v2/errors"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -3,7 +3,7 @@ package redis_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/storage/redis"
+	"github.com/Tsukikage7/servex/v2/storage/redis"
 )
 
 func ExampleDefaultConfig() {

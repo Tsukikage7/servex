@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/Tsukikage7/servex/domain"
+	"github.com/Tsukikage7/servex/v2/domain"
 )
 
 // OrderStatus 订单状态.

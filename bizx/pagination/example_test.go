@@ -3,7 +3,7 @@ package pagination_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/bizx/pagination"
+	"github.com/Tsukikage7/servex/v2/bizx/pagination"
 )
 
 func ExampleEncodeCursor() {

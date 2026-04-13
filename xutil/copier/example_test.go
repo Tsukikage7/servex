@@ -3,7 +3,7 @@ package copier_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/xutil/copier"
+	"github.com/Tsukikage7/servex/v2/xutil/copier"
 )
 
 type srcUser struct {

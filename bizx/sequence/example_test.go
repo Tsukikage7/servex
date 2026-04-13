@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Tsukikage7/servex/bizx/sequence"
+	"github.com/Tsukikage7/servex/v2/bizx/sequence"
 )
 
 func ExampleNew() {

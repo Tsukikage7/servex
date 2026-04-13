@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Tsukikage7/servex/auth"
-	"github.com/Tsukikage7/servex/auth/apikey"
+	"github.com/Tsukikage7/servex/v2/auth"
+	"github.com/Tsukikage7/servex/v2/auth/apikey"
 )
 
 func ExampleAuthenticator() {

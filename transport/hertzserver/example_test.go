@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Tsukikage7/servex/transport/hertzserver"
+	"github.com/Tsukikage7/servex/v2/transport/hertzserver"
 )
 
 type echoReq struct {

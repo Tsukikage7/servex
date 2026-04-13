@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Tsukikage7/servex/tenant"
+	"github.com/Tsukikage7/servex/v2/tenant"
 )
 
 // exampleTenant 示例租户.

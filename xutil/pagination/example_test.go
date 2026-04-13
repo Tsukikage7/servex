@@ -3,7 +3,7 @@ package pagination_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/xutil/pagination"
+	"github.com/Tsukikage7/servex/v2/xutil/pagination"
 )
 
 func ExampleNew() {

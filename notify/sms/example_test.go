@@ -3,7 +3,7 @@ package sms_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/notify/sms"
+	"github.com/Tsukikage7/servex/v2/notify/sms"
 )
 
 func ExampleNewAliyunProvider() {

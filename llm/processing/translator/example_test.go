@@ -3,7 +3,7 @@ package translator_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/llm/processing/translator"
+	"github.com/Tsukikage7/servex/v2/llm/processing/translator"
 )
 
 func ExampleTranslation() {

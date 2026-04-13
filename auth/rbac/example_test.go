@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Tsukikage7/servex/auth/rbac"
+	"github.com/Tsukikage7/servex/v2/auth/rbac"
 )
 
 func ExampleNewManager() {

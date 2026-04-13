@@ -7,19 +7,19 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/Tsukikage7/servex/app"
-	"github.com/Tsukikage7/servex/auth/jwt"
-	"github.com/Tsukikage7/servex/domain"
-	"github.com/Tsukikage7/servex/middleware/logging"
-	"github.com/Tsukikage7/servex/middleware/recovery"
-	"github.com/Tsukikage7/servex/observability/logger"
-	"github.com/Tsukikage7/servex/storage/rdbms"
-	"github.com/Tsukikage7/servex/transport/httpserver"
+	"github.com/Tsukikage7/servex/v2/app"
+	"github.com/Tsukikage7/servex/v2/auth/jwt"
+	"github.com/Tsukikage7/servex/v2/domain"
+	"github.com/Tsukikage7/servex/v2/middleware/logging"
+	"github.com/Tsukikage7/servex/v2/middleware/recovery"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
+	"github.com/Tsukikage7/servex/v2/storage/rdbms"
+	"github.com/Tsukikage7/servex/v2/transport/httpserver"
 
-	appUser "github.com/Tsukikage7/servex/examples/ecommerce/application/user"
-	domainUser "github.com/Tsukikage7/servex/examples/ecommerce/domain/user"
-	"github.com/Tsukikage7/servex/examples/ecommerce/services/user-service/internal/adapter/persistence"
-	"github.com/Tsukikage7/servex/examples/ecommerce/services/user-service/internal/port"
+	appUser "github.com/Tsukikage7/servex/v2/examples/ecommerce/application/user"
+	domainUser "github.com/Tsukikage7/servex/v2/examples/ecommerce/domain/user"
+	"github.com/Tsukikage7/servex/v2/examples/ecommerce/services/user-service/internal/adapter/persistence"
+	"github.com/Tsukikage7/servex/v2/examples/ecommerce/services/user-service/internal/port"
 )
 
 func main() {

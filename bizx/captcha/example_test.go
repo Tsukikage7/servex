@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Tsukikage7/servex/bizx/captcha"
+	"github.com/Tsukikage7/servex/v2/bizx/captcha"
 )
 
 func ExampleNewManager() {

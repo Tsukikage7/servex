@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Tsukikage7/servex/collections/priorityqueue"
+	"github.com/Tsukikage7/servex/v2/collections/priorityqueue"
 )
 
 // Delayable 可延迟的元素接口.

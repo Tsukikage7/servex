@@ -1,6 +1,6 @@
 package order
 
-import "github.com/Tsukikage7/servex/domain"
+import "github.com/Tsukikage7/servex/v2/domain"
 
 const (
 	// EventOrderPlaced 订单下单事件名.

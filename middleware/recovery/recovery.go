@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // Handler 是 panic 处理函数.

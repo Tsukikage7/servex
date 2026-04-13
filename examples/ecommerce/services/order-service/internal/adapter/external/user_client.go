@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // UserClient 用户服务 HTTP 客户端，实现 order.UserProvider 接口.

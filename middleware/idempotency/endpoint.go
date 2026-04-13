@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/Tsukikage7/servex/endpoint"
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/endpoint"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // IdempotentRequest 支持幂等性的请求接口.

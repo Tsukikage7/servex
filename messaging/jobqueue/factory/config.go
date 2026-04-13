@@ -5,11 +5,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Tsukikage7/servex/messaging/jobqueue"
-	"github.com/Tsukikage7/servex/messaging/jobqueue/database"
-	"github.com/Tsukikage7/servex/messaging/jobqueue/kafka"
-	"github.com/Tsukikage7/servex/messaging/jobqueue/rabbitmq"
-	jqredis "github.com/Tsukikage7/servex/messaging/jobqueue/redis"
+	"github.com/Tsukikage7/servex/v2/messaging/jobqueue"
+	"github.com/Tsukikage7/servex/v2/messaging/jobqueue/database"
+	"github.com/Tsukikage7/servex/v2/messaging/jobqueue/kafka"
+	"github.com/Tsukikage7/servex/v2/messaging/jobqueue/rabbitmq"
+	jqredis "github.com/Tsukikage7/servex/v2/messaging/jobqueue/redis"
 )
 
 // StoreConfig 配置任务存储后端.

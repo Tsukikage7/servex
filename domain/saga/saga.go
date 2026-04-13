@@ -35,7 +35,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // Saga 表示一个 Saga 事务.

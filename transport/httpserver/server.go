@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Tsukikage7/servex/observability/logger"
-	"github.com/Tsukikage7/servex/transport"
-	"github.com/Tsukikage7/servex/transport/health"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
+	"github.com/Tsukikage7/servex/v2/transport"
+	"github.com/Tsukikage7/servex/v2/transport/health"
 )
 
 // Server HTTP 服务器.

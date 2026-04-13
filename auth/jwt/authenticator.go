@@ -5,7 +5,7 @@ import (
 
 	gojwt "github.com/golang-jwt/jwt/v5"
 
-	"github.com/Tsukikage7/servex/auth"
+	"github.com/Tsukikage7/servex/v2/auth"
 )
 
 // ClaimsMapper Claims 到 Principal 的映射函数.

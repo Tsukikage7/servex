@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/Tsukikage7/servex/endpoint"
+	"github.com/Tsukikage7/servex/v2/endpoint"
 )
 
 // Config 重试配置.

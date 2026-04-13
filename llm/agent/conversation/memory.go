@@ -1,6 +1,6 @@
 package conversation
 
-import "github.com/Tsukikage7/servex/llm"
+import "github.com/Tsukikage7/servex/v2/llm"
 
 // Memory 记忆策略接口.
 type Memory interface {

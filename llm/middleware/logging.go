@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/Tsukikage7/servex/llm"
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/llm"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // Logging 返回记录请求日志的中间件.

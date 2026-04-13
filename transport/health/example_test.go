@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Tsukikage7/servex/transport/health"
+	"github.com/Tsukikage7/servex/v2/transport/health"
 )
 
 func ExampleNew() {

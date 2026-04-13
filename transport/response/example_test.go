@@ -3,7 +3,7 @@ package response_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/transport/response"
+	"github.com/Tsukikage7/servex/v2/transport/response"
 )
 
 func ExampleOK() {

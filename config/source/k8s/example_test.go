@@ -3,7 +3,7 @@ package k8s_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/config/source/k8s"
+	"github.com/Tsukikage7/servex/v2/config/source/k8s"
 )
 
 func ExampleResourceConfigMap() {

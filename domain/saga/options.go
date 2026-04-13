@@ -3,7 +3,7 @@ package saga
 import (
 	"time"
 
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // Option 配置选项函数.

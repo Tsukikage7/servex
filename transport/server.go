@@ -5,7 +5,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/Tsukikage7/servex/transport/health"
+	"github.com/Tsukikage7/servex/v2/transport/health"
 )
 
 // Server 服务器接口.

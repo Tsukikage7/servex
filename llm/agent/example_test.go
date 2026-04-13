@@ -3,7 +3,7 @@ package agent_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/llm/agent"
+	"github.com/Tsukikage7/servex/v2/llm/agent"
 )
 
 func ExampleConfig() {

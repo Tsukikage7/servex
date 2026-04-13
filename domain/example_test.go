@@ -3,7 +3,7 @@ package domain_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/domain"
+	"github.com/Tsukikage7/servex/v2/domain"
 )
 
 // OrderCreated 是一个示例领域事件.

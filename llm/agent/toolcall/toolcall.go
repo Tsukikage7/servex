@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Tsukikage7/servex/llm"
+	"github.com/Tsukikage7/servex/v2/llm"
 )
 
 // ErrMaxRounds 超过最大工具调用轮次.

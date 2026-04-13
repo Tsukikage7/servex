@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Tsukikage7/servex/llm"
+	"github.com/Tsukikage7/servex/v2/llm"
 )
 
 // TestEstimateTokenizer_English 测试纯英文文本的 Token 估算.

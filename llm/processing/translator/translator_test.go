@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Tsukikage7/servex/llm"
-	"github.com/Tsukikage7/servex/llm/processing/translator"
+	"github.com/Tsukikage7/servex/v2/llm"
+	"github.com/Tsukikage7/servex/v2/llm/processing/translator"
 )
 
 // mockModel 测试用模拟模型.

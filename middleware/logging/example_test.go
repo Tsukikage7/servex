@@ -3,7 +3,7 @@ package logging_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/middleware/logging"
+	"github.com/Tsukikage7/servex/v2/middleware/logging"
 )
 
 func ExampleWithSkipPaths() {

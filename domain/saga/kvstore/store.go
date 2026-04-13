@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/Tsukikage7/servex/domain/saga"
-	"github.com/Tsukikage7/servex/storage/cache"
+	"github.com/Tsukikage7/servex/v2/domain/saga"
+	"github.com/Tsukikage7/servex/v2/storage/cache"
 )
 
 // stateDTO 用于序列化的状态结构.

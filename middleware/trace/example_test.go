@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/Tsukikage7/servex/middleware/trace"
+	"github.com/Tsukikage7/servex/v2/middleware/trace"
 )
 
 func ExampleHTTPMiddleware() {

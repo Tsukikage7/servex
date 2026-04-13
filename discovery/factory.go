@@ -3,7 +3,7 @@ package discovery
 import (
 	"github.com/google/uuid"
 
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // NewDiscovery 创建一个新的服务发现实例.

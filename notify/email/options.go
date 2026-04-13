@@ -1,6 +1,6 @@
 package email
 
-import "github.com/Tsukikage7/servex/observability/logger"
+import "github.com/Tsukikage7/servex/v2/observability/logger"
 
 type senderOptions struct {
 	host     string

@@ -10,7 +10,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/Tsukikage7/servex/llm"
+	"github.com/Tsukikage7/servex/v2/llm"
 )
 
 // Client Anthropic Claude API 客户端.

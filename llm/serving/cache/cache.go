@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Tsukikage7/servex/llm"
-	aimw "github.com/Tsukikage7/servex/llm/middleware"
-	"github.com/Tsukikage7/servex/llm/retrieval/embedding"
+	"github.com/Tsukikage7/servex/v2/llm"
+	aimw "github.com/Tsukikage7/servex/v2/llm/middleware"
+	"github.com/Tsukikage7/servex/v2/llm/retrieval/embedding"
 )
 
 // Config 语义缓存配置.

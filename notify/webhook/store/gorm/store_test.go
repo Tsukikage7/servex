@@ -4,7 +4,7 @@ package gorm
 import (
 	"testing"
 
-	"github.com/Tsukikage7/servex/notify/webhook"
+	"github.com/Tsukikage7/servex/v2/notify/webhook"
 )
 
 func TestNewStore_NilDB(t *testing.T) {

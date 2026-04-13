@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Tsukikage7/servex/middleware/ratelimit"
+	"github.com/Tsukikage7/servex/v2/middleware/ratelimit"
 )
 
 func ExampleNewTokenBucket() {

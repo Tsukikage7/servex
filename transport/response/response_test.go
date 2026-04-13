@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Tsukikage7/servex/transport/response"
-	"github.com/Tsukikage7/servex/xutil/pagination"
+	"github.com/Tsukikage7/servex/v2/transport/response"
+	"github.com/Tsukikage7/servex/v2/xutil/pagination"
 )
 
 func TestOK(t *testing.T) {

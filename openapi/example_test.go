@@ -3,7 +3,7 @@ package openapi_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/openapi"
+	"github.com/Tsukikage7/servex/v2/openapi"
 )
 
 func ExampleNewRegistry() {

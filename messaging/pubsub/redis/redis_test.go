@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/Tsukikage7/servex/messaging/pubsub"
+	"github.com/Tsukikage7/servex/v2/messaging/pubsub"
 )
 
 func TestNewPublisher_NilClient(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Tsukikage7/servex/config/source/file"
+	"github.com/Tsukikage7/servex/v2/config/source/file"
 )
 
 func ExampleNew() {

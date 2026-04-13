@@ -26,7 +26,7 @@ import (
 
 	goredis "github.com/redis/go-redis/v9"
 
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // 错误定义.

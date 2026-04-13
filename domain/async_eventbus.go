@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/Tsukikage7/servex/messaging/pubsub"
+	"github.com/Tsukikage7/servex/v2/messaging/pubsub"
 )
 
 // EventConverter 领域事件到消息的转换器接口.

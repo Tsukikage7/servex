@@ -6,9 +6,9 @@ import (
 
 	neodriver "github.com/neo4j/neo4j-go-driver/v5/neo4j"
 
-	"github.com/Tsukikage7/servex/observability/logger"
-	neo4jpkg "github.com/Tsukikage7/servex/storage/neo4j"
-	"github.com/Tsukikage7/servex/testx"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
+	neo4jpkg "github.com/Tsukikage7/servex/v2/storage/neo4j"
+	"github.com/Tsukikage7/servex/v2/testx"
 )
 
 // ---- 单元测试（不需要服务）----

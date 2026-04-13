@@ -11,11 +11,11 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/Tsukikage7/servex/middleware/circuitbreaker"
-	"github.com/Tsukikage7/servex/middleware/retry"
-	"github.com/Tsukikage7/servex/observability/logger"
-	"github.com/Tsukikage7/servex/observability/metrics"
-	"github.com/Tsukikage7/servex/observability/tracing"
+	"github.com/Tsukikage7/servex/v2/middleware/circuitbreaker"
+	"github.com/Tsukikage7/servex/v2/middleware/retry"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/metrics"
+	"github.com/Tsukikage7/servex/v2/observability/tracing"
 )
 
 // Middleware 是 http.RoundTripper 的中间件类型.

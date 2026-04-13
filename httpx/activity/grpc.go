@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
-	"github.com/Tsukikage7/servex/httpx/clientip"
+	"github.com/Tsukikage7/servex/v2/httpx/clientip"
 )
 
 // UnaryServerInterceptor 返回一元 gRPC 拦截器，自动追踪用户活跃.

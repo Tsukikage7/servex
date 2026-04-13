@@ -5,8 +5,8 @@ import (
 	"io"
 	"testing"
 
-	"github.com/Tsukikage7/servex/llm"
-	"github.com/Tsukikage7/servex/llm/provider/router"
+	"github.com/Tsukikage7/servex/v2/llm"
+	"github.com/Tsukikage7/servex/v2/llm/provider/router"
 )
 
 // mockModel 记录调用时使用的 model 名称.

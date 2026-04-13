@@ -11,8 +11,8 @@ import (
 
 	"github.com/cloudwego/hertz/pkg/app"
 
-	"github.com/Tsukikage7/servex/transport/response"
-	"github.com/Tsukikage7/servex/validation"
+	"github.com/Tsukikage7/servex/v2/transport/response"
+	"github.com/Tsukikage7/servex/v2/validation"
 )
 
 // Validatable 可由请求对象实现以启用自动校验.

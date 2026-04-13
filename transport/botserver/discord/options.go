@@ -3,7 +3,7 @@ package discord
 import (
 	"github.com/bwmarrin/discordgo"
 
-	"github.com/Tsukikage7/servex/transport/botserver"
+	"github.com/Tsukikage7/servex/v2/transport/botserver"
 )
 
 // Option DiscordBot 选项。

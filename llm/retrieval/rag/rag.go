@@ -8,11 +8,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Tsukikage7/servex/llm"
-	"github.com/Tsukikage7/servex/llm/prompt"
-	"github.com/Tsukikage7/servex/llm/retrieval/embedding"
-	"github.com/Tsukikage7/servex/llm/retrieval/splitter"
-	"github.com/Tsukikage7/servex/llm/retrieval/vectorstore"
+	"github.com/Tsukikage7/servex/v2/llm"
+	"github.com/Tsukikage7/servex/v2/llm/prompt"
+	"github.com/Tsukikage7/servex/v2/llm/retrieval/embedding"
+	"github.com/Tsukikage7/servex/v2/llm/retrieval/splitter"
+	"github.com/Tsukikage7/servex/v2/llm/retrieval/vectorstore"
 )
 
 // 预定义错误.

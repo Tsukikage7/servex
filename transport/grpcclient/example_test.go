@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Tsukikage7/servex/transport/grpcclient"
+	"github.com/Tsukikage7/servex/v2/transport/grpcclient"
 )
 
 func ExampleWithName() {

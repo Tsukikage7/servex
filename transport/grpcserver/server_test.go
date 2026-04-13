@@ -9,7 +9,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/Tsukikage7/servex/testx"
+	"github.com/Tsukikage7/servex/v2/testx"
 )
 
 // mockRegistrar 测试用 mock registrar.

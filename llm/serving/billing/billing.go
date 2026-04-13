@@ -9,8 +9,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/Tsukikage7/servex/llm"
-	aimw "github.com/Tsukikage7/servex/llm/middleware"
+	"github.com/Tsukikage7/servex/v2/llm"
+	aimw "github.com/Tsukikage7/servex/v2/llm/middleware"
 )
 
 // 预定义错误.

@@ -5,8 +5,8 @@ import (
 	"math"
 	"testing"
 
-	"github.com/Tsukikage7/servex/llm"
-	"github.com/Tsukikage7/servex/llm/retrieval/embedding"
+	"github.com/Tsukikage7/servex/v2/llm"
+	"github.com/Tsukikage7/servex/v2/llm/retrieval/embedding"
 )
 
 // mockEmbeddingModel 模拟嵌入模型.

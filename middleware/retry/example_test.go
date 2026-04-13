@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Tsukikage7/servex/middleware/retry"
+	"github.com/Tsukikage7/servex/v2/middleware/retry"
 )
 
 func ExampleDo() {

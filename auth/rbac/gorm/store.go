@@ -7,7 +7,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/Tsukikage7/servex/auth/rbac"
+	"github.com/Tsukikage7/servex/v2/auth/rbac"
 )
 
 // gormStore 基于 GORM 的角色存储.

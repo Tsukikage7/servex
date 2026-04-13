@@ -3,7 +3,7 @@ package notify_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/notify"
+	"github.com/Tsukikage7/servex/v2/notify"
 )
 
 func ExampleMessage() {

@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Tsukikage7/servex/notify"
-	"github.com/Tsukikage7/servex/notify/email"
-	"github.com/Tsukikage7/servex/notify/nwebhook"
-	"github.com/Tsukikage7/servex/notify/push"
-	"github.com/Tsukikage7/servex/notify/sms"
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/notify"
+	"github.com/Tsukikage7/servex/v2/notify/email"
+	"github.com/Tsukikage7/servex/v2/notify/nwebhook"
+	"github.com/Tsukikage7/servex/v2/notify/push"
+	"github.com/Tsukikage7/servex/v2/notify/sms"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // Config 聚合所有通知渠道的配置.

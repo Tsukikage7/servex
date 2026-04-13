@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/Tsukikage7/servex/middleware/cors"
+	"github.com/Tsukikage7/servex/v2/middleware/cors"
 )
 
 func ExampleHTTPMiddleware() {

@@ -3,7 +3,7 @@ package optionx_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/xutil/optionx"
+	"github.com/Tsukikage7/servex/v2/xutil/optionx"
 )
 
 type serverConfig struct {

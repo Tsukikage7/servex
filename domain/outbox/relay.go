@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Tsukikage7/servex/messaging/pubsub"
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/messaging/pubsub"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // Relay 事务发件箱中继器.

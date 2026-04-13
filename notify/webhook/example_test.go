@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Tsukikage7/servex/notify/webhook"
+	"github.com/Tsukikage7/servex/v2/notify/webhook"
 )
 
 func ExampleEvent() {

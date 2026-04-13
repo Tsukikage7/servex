@@ -6,7 +6,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/Tsukikage7/servex/llm/serving/apikey"
+	"github.com/Tsukikage7/servex/v2/llm/serving/apikey"
 )
 
 // GORMStore 基于 GORM 的 Store 实现.

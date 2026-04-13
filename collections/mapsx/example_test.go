@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/Tsukikage7/servex/collections/mapsx"
+	"github.com/Tsukikage7/servex/v2/collections/mapsx"
 )
 
 func ExampleMerge() {

@@ -7,7 +7,7 @@ import (
 )
 
 // installPath 是 go install 的目标模块路径，提取为变量以便测试.
-var installPath = "github.com/Tsukikage7/servex/cmd/servex@latest"
+var installPath = "github.com/Tsukikage7/servex/v2/cmd/servex@latest"
 
 // runUpgrade 执行 servex upgrade 命令.
 func runUpgrade(args []string) error {

@@ -3,8 +3,8 @@ package auth
 import (
 	"context"
 
-	"github.com/Tsukikage7/servex/endpoint"
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/endpoint"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // Middleware 返回 Endpoint 认证中间件.

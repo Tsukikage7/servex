@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Tsukikage7/servex/endpoint"
+	"github.com/Tsukikage7/servex/v2/endpoint"
 )
 
 func ExampleChain() {

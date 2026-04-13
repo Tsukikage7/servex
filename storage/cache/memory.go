@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // memoryCache 内存缓存实现.

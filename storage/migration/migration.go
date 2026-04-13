@@ -10,7 +10,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // Migration 单次迁移定义.

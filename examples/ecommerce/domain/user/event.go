@@ -1,6 +1,6 @@
 package user
 
-import "github.com/Tsukikage7/servex/domain"
+import "github.com/Tsukikage7/servex/v2/domain"
 
 const (
 	// EventUserCreated 用户创建事件名.

@@ -3,7 +3,7 @@ package mongodb_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/storage/mongodb"
+	"github.com/Tsukikage7/servex/v2/storage/mongodb"
 )
 
 func ExampleDefaultConfig() {

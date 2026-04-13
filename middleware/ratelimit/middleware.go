@@ -3,7 +3,7 @@ package ratelimit
 import (
 	"context"
 
-	"github.com/Tsukikage7/servex/endpoint"
+	"github.com/Tsukikage7/servex/v2/endpoint"
 )
 
 // EndpointMiddleware 创建限流 Endpoint 中间件.

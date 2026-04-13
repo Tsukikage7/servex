@@ -1,6 +1,6 @@
 package rabbitmq
 
-import "github.com/Tsukikage7/servex/observability/logger"
+import "github.com/Tsukikage7/servex/v2/observability/logger"
 
 // NewPublisherFromConfig 根据 AMQP URL 创建 Publisher.
 func NewPublisherFromConfig(url string, log logger.Logger) (*Publisher, error) {

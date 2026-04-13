@@ -8,11 +8,11 @@ import (
 	"net/http/httptest"
 	"strings"
 
-	"github.com/Tsukikage7/servex/endpoint"
-	"github.com/Tsukikage7/servex/transport/httpserver"
+	"github.com/Tsukikage7/servex/v2/endpoint"
+	"github.com/Tsukikage7/servex/v2/transport/httpserver"
 
-	_ "github.com/Tsukikage7/servex/encoding/json"
-	_ "github.com/Tsukikage7/servex/encoding/xml"
+	_ "github.com/Tsukikage7/servex/v2/encoding/json"
+	_ "github.com/Tsukikage7/servex/v2/encoding/xml"
 )
 
 type greetRequest struct {

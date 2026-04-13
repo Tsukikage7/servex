@@ -27,7 +27,7 @@ import (
 	"sync"
 	"time"
 
-	storagelock "github.com/Tsukikage7/servex/storage/lock"
+	storagelock "github.com/Tsukikage7/servex/v2/storage/lock"
 )
 
 var (

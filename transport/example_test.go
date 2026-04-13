@@ -3,7 +3,7 @@ package transport_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/transport"
+	"github.com/Tsukikage7/servex/v2/transport"
 )
 
 func ExampleBuildMethodSkipper() {

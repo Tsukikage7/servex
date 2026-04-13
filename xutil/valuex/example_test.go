@@ -3,7 +3,7 @@ package valuex_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/xutil/valuex"
+	"github.com/Tsukikage7/servex/v2/xutil/valuex"
 )
 
 func ExampleOf() {

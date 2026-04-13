@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Tsukikage7/servex/transport/httpclient"
+	"github.com/Tsukikage7/servex/v2/transport/httpclient"
 )
 
 func ExampleNewSimple() {

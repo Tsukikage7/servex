@@ -4,7 +4,7 @@ package user
 import (
 	"time"
 
-	"github.com/Tsukikage7/servex/domain"
+	"github.com/Tsukikage7/servex/v2/domain"
 )
 
 // User 用户聚合根.

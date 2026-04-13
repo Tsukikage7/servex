@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Tsukikage7/servex/storage/rdbms"
+	"github.com/Tsukikage7/servex/v2/storage/rdbms"
 )
 
 func ExampleDefaultConfig() {

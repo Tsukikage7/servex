@@ -3,7 +3,7 @@ package lrucache_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/collections/lrucache"
+	"github.com/Tsukikage7/servex/v2/collections/lrucache"
 )
 
 func ExampleNew() {

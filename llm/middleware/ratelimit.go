@@ -3,8 +3,8 @@ package middleware
 import (
 	"context"
 
-	"github.com/Tsukikage7/servex/llm"
-	"github.com/Tsukikage7/servex/middleware/ratelimit"
+	"github.com/Tsukikage7/servex/v2/llm"
+	"github.com/Tsukikage7/servex/v2/middleware/ratelimit"
 )
 
 // RateLimit 返回基于 ratelimit.Limiter 的限流中间件.

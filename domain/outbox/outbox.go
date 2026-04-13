@@ -11,7 +11,7 @@
 //
 // 使用示例:
 //
-//	store := outboxgorm.NewStore(db)  // import outboxgorm "github.com/Tsukikage7/servex/domain/outbox/gorm"
+//	store := outboxgorm.NewStore(db)  // import outboxgorm "github.com/Tsukikage7/servex/v2/domain/outbox/gorm"
 //	store.AutoMigrate()
 //	relay, _ := outbox.NewRelay(store, producer, outbox.WithLogger(log))
 //	relay.Start(ctx)
@@ -31,7 +31,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/Tsukikage7/servex/messaging/pubsub"
+	"github.com/Tsukikage7/servex/v2/messaging/pubsub"
 )
 
 // MessageStatus 消息状态.

@@ -8,8 +8,8 @@ import (
 
 	"github.com/hashicorp/consul/api"
 
-	"github.com/Tsukikage7/servex/observability/logger"
-	"github.com/Tsukikage7/servex/transport"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
+	"github.com/Tsukikage7/servex/v2/transport"
 )
 
 // consulDiscovery 是 Consul 服务发现实现.

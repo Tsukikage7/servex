@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Tsukikage7/servex/storage/elasticsearch"
-	"github.com/Tsukikage7/servex/testx"
+	"github.com/Tsukikage7/servex/v2/storage/elasticsearch"
+	"github.com/Tsukikage7/servex/v2/testx"
 )
 
 // esAddresses 从环境变量读取，默认指向本地.

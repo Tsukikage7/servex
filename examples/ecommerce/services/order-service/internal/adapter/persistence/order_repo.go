@@ -6,7 +6,7 @@ import (
 
 	"gorm.io/gorm"
 
-	domainOrder "github.com/Tsukikage7/servex/examples/ecommerce/domain/order"
+	domainOrder "github.com/Tsukikage7/servex/v2/examples/ecommerce/domain/order"
 )
 
 // OrderRepository 基于 GORM 的订单仓储实现.

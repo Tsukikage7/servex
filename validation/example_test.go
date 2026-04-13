@@ -3,7 +3,7 @@ package validation_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/validation"
+	"github.com/Tsukikage7/servex/v2/validation"
 )
 
 func ExampleValidator_Validate() {

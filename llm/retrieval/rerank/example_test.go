@@ -3,7 +3,7 @@ package rerank_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/llm/retrieval/rerank"
+	"github.com/Tsukikage7/servex/v2/llm/retrieval/rerank"
 )
 
 func ExampleWithTopN() {

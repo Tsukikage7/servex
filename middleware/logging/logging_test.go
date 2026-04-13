@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Tsukikage7/servex/testx"
+	"github.com/Tsukikage7/servex/v2/testx"
 )
 
 func TestHTTPMiddleware(t *testing.T) {

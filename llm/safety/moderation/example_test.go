@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Tsukikage7/servex/llm/safety/moderation"
+	"github.com/Tsukikage7/servex/v2/llm/safety/moderation"
 )
 
 func ExampleNewKeywordModerator() {

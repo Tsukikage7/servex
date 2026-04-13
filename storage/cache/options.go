@@ -1,6 +1,6 @@
 package cache
 
-import "github.com/Tsukikage7/servex/observability/logger"
+import "github.com/Tsukikage7/servex/v2/observability/logger"
 
 // NewCache 创建缓存实例.
 // logger 是必需参数，不能为 nil.

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Tsukikage7/servex/llm/retrieval/document"
+	"github.com/Tsukikage7/servex/v2/llm/retrieval/document"
 )
 
 func ExampleNewTextLoader() {

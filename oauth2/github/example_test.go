@@ -3,7 +3,7 @@ package github_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/oauth2/github"
+	"github.com/Tsukikage7/servex/v2/oauth2/github"
 )
 
 func ExampleNewProvider() {

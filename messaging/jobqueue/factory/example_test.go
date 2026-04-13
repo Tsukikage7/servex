@@ -3,7 +3,7 @@ package factory_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/messaging/jobqueue/factory"
+	"github.com/Tsukikage7/servex/v2/messaging/jobqueue/factory"
 )
 
 func ExampleStoreConfig() {

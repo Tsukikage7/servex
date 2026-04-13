@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Tsukikage7/servex/middleware/timeout"
+	"github.com/Tsukikage7/servex/v2/middleware/timeout"
 )
 
 func ExampleRemaining() {

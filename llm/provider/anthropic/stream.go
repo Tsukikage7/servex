@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/Tsukikage7/servex/llm"
+	"github.com/Tsukikage7/servex/v2/llm"
 )
 
 // streamReader 实现 llm.StreamReader，解析 Anthropic SSE 流.

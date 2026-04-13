@@ -6,9 +6,9 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/Tsukikage7/servex/endpoint"
-	"github.com/Tsukikage7/servex/transport/response"
-	"github.com/Tsukikage7/servex/validation"
+	"github.com/Tsukikage7/servex/v2/endpoint"
+	"github.com/Tsukikage7/servex/v2/transport/response"
+	"github.com/Tsukikage7/servex/v2/validation"
 )
 
 // DecodeRequestFunc 从 HTTP 请求解码为业务请求对象.

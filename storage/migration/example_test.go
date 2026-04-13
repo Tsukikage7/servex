@@ -3,7 +3,7 @@ package migration_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/storage/migration"
+	"github.com/Tsukikage7/servex/v2/storage/migration"
 	"gorm.io/gorm"
 )
 

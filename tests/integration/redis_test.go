@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Tsukikage7/servex/storage/redis"
-	"github.com/Tsukikage7/servex/testx"
+	"github.com/Tsukikage7/servex/v2/storage/redis"
+	"github.com/Tsukikage7/servex/v2/testx"
 )
 
 func redisAddr() string {

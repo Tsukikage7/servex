@@ -24,7 +24,7 @@ import (
 
 	driver "github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // Config ClickHouse 配置.

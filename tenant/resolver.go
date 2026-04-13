@@ -7,7 +7,7 @@ import (
 
 	"google.golang.org/grpc/metadata"
 
-	"github.com/Tsukikage7/servex/auth"
+	"github.com/Tsukikage7/servex/v2/auth"
 )
 
 // Resolver 从令牌解析租户.

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/Tsukikage7/servex/observability/logger"
-	"github.com/Tsukikage7/servex/transport"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
+	"github.com/Tsukikage7/servex/v2/transport"
 )
 
 // ServiceInfo 表示服务信息.

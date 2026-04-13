@@ -3,7 +3,7 @@ package splitter_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/llm/retrieval/splitter"
+	"github.com/Tsukikage7/servex/v2/llm/retrieval/splitter"
 )
 
 func ExampleNewCharacterSplitter() {

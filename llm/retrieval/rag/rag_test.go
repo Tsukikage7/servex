@@ -6,9 +6,9 @@ import (
 	"io"
 	"testing"
 
-	"github.com/Tsukikage7/servex/llm"
-	"github.com/Tsukikage7/servex/llm/retrieval/splitter"
-	"github.com/Tsukikage7/servex/llm/retrieval/vectorstore"
+	"github.com/Tsukikage7/servex/v2/llm"
+	"github.com/Tsukikage7/servex/v2/llm/retrieval/splitter"
+	"github.com/Tsukikage7/servex/v2/llm/retrieval/vectorstore"
 )
 
 // ──────────────────────────────────────────

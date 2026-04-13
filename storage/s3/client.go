@@ -14,7 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // s3Client S3 客户端实现.

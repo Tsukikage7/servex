@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	storagelock "github.com/Tsukikage7/servex/storage/lock"
+	storagelock "github.com/Tsukikage7/servex/v2/storage/lock"
 
-	"github.com/Tsukikage7/servex/bizx/locking"
+	"github.com/Tsukikage7/servex/v2/bizx/locking"
 )
 
 // testLocker 用于示例的简易内存锁实现.

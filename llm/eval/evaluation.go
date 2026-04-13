@@ -12,7 +12,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/Tsukikage7/servex/llm"
+	"github.com/Tsukikage7/servex/v2/llm"
 )
 
 // 评估错误类型.

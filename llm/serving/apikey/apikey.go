@@ -14,8 +14,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/Tsukikage7/servex/auth"
-	authapikey "github.com/Tsukikage7/servex/auth/apikey"
+	"github.com/Tsukikage7/servex/v2/auth"
+	authapikey "github.com/Tsukikage7/servex/v2/auth/apikey"
 )
 
 // Key API 密钥模型.

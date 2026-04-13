@@ -5,7 +5,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/Tsukikage7/servex/transport/botserver"
+	"github.com/Tsukikage7/servex/v2/transport/botserver"
 )
 
 // RecordedMessage 记录一条 Reply 调用。

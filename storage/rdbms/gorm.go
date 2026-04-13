@@ -12,7 +12,7 @@ import (
 	gormlogger "gorm.io/gorm/logger"
 	"gorm.io/plugin/opentelemetry/tracing"
 
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // BaseModel GORM 基础模型.

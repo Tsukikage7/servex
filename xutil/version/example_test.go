@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/Tsukikage7/servex/xutil/version"
+	"github.com/Tsukikage7/servex/v2/xutil/version"
 )
 
 func ExampleGet() {

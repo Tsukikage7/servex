@@ -3,7 +3,7 @@ package tokenizer_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/llm/processing/tokenizer"
+	"github.com/Tsukikage7/servex/v2/llm/processing/tokenizer"
 )
 
 func ExampleEstimateTokens() {

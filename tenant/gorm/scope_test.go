@@ -7,7 +7,7 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
-	"github.com/Tsukikage7/servex/tenant"
+	"github.com/Tsukikage7/servex/v2/tenant"
 )
 
 // testTenant 测试用租户实现.

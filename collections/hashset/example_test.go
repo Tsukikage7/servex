@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/Tsukikage7/servex/collections/hashset"
+	"github.com/Tsukikage7/servex/v2/collections/hashset"
 )
 
 func ExampleNew() {

@@ -3,7 +3,7 @@ package s3_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/storage/s3"
+	"github.com/Tsukikage7/servex/v2/storage/s3"
 )
 
 func ExampleDefaultConfig() {

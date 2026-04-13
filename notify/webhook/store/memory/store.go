@@ -5,7 +5,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/Tsukikage7/servex/notify/webhook"
+	"github.com/Tsukikage7/servex/v2/notify/webhook"
 )
 
 // Store 内存实现的 SubscriptionStore，用于开发和测试.

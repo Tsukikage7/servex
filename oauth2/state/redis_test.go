@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Tsukikage7/servex/oauth2"
+	"github.com/Tsukikage7/servex/v2/oauth2"
 )
 
 func TestNewRedisStore_NilClient(t *testing.T) {

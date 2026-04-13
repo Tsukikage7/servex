@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Tsukikage7/servex/storage/cache"
-	"github.com/Tsukikage7/servex/testx"
+	"github.com/Tsukikage7/servex/v2/storage/cache"
+	"github.com/Tsukikage7/servex/v2/testx"
 )
 
 // newTestStore 创建测试用的存储.

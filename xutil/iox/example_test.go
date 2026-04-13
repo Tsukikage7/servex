@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Tsukikage7/servex/xutil/iox"
+	"github.com/Tsukikage7/servex/v2/xutil/iox"
 )
 
 func ExampleReadLines() {

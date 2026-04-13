@@ -3,7 +3,7 @@ package locale_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/httpx/locale"
+	"github.com/Tsukikage7/servex/v2/httpx/locale"
 )
 
 func ExampleParse() {

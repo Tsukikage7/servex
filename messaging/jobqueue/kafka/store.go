@@ -9,7 +9,7 @@ import (
 
 	"github.com/IBM/sarama"
 
-	"github.com/Tsukikage7/servex/messaging/jobqueue"
+	"github.com/Tsukikage7/servex/v2/messaging/jobqueue"
 )
 
 // Store 基于 Kafka 的 jobqueue.Store 实现.

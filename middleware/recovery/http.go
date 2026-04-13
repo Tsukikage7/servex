@@ -3,7 +3,7 @@ package recovery
 import (
 	"net/http"
 
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // HTTPMiddleware 返回 HTTP panic 恢复中间件.

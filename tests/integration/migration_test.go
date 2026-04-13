@@ -12,8 +12,8 @@ import (
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
 
-	"github.com/Tsukikage7/servex/storage/migration"
-	"github.com/Tsukikage7/servex/testx"
+	"github.com/Tsukikage7/servex/v2/storage/migration"
+	"github.com/Tsukikage7/servex/v2/testx"
 )
 
 func newMigrationDB(t *testing.T) *gorm.DB {

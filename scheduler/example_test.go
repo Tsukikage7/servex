@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Tsukikage7/servex/scheduler"
+	"github.com/Tsukikage7/servex/v2/scheduler"
 )
 
 func ExampleNewJob() {

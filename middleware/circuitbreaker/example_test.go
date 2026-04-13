@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Tsukikage7/servex/middleware/circuitbreaker"
+	"github.com/Tsukikage7/servex/v2/middleware/circuitbreaker"
 )
 
 func ExampleNew() {

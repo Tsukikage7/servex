@@ -6,7 +6,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/Tsukikage7/servex/domain/cqrs"
+	"github.com/Tsukikage7/servex/v2/domain/cqrs"
 )
 
 // CommandMetrics 为命令处理器添加 Prometheus 指标装饰器.

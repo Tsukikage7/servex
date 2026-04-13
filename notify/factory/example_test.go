@@ -3,7 +3,7 @@ package factory_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/notify/factory"
+	"github.com/Tsukikage7/servex/v2/notify/factory"
 )
 
 func ExampleConfig() {

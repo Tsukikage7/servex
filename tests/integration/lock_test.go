@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Tsukikage7/servex/storage/cache"
-	"github.com/Tsukikage7/servex/storage/lock"
-	"github.com/Tsukikage7/servex/testx"
+	"github.com/Tsukikage7/servex/v2/storage/cache"
+	"github.com/Tsukikage7/servex/v2/storage/lock"
+	"github.com/Tsukikage7/servex/v2/testx"
 )
 
 func newLockCache(t *testing.T) cache.Cache {

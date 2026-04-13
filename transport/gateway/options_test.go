@@ -4,11 +4,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Tsukikage7/servex/httpx/clientip"
-	"github.com/Tsukikage7/servex/middleware/cors"
-	"github.com/Tsukikage7/servex/middleware/ratelimit"
-	"github.com/Tsukikage7/servex/observability/metrics"
-	"github.com/Tsukikage7/servex/testx"
+	"github.com/Tsukikage7/servex/v2/httpx/clientip"
+	"github.com/Tsukikage7/servex/v2/middleware/cors"
+	"github.com/Tsukikage7/servex/v2/middleware/ratelimit"
+	"github.com/Tsukikage7/servex/v2/observability/metrics"
+	"github.com/Tsukikage7/servex/v2/testx"
 )
 
 func TestGateway_WithCORS(t *testing.T) {

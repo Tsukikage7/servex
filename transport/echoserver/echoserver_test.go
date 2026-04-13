@@ -10,7 +10,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/Tsukikage7/servex/transport/response"
+	"github.com/Tsukikage7/servex/v2/transport/response"
 )
 
 type testReq struct {

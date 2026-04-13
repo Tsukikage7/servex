@@ -12,10 +12,10 @@ import (
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/Tsukikage7/servex/observability/logger"
-	"github.com/Tsukikage7/servex/transport"
-	"github.com/Tsukikage7/servex/transport/grpcx"
-	"github.com/Tsukikage7/servex/transport/health"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
+	"github.com/Tsukikage7/servex/v2/transport"
+	"github.com/Tsukikage7/servex/v2/transport/grpcx"
+	"github.com/Tsukikage7/servex/v2/transport/health"
 )
 
 // Registrar gRPC 服务注册器接口.

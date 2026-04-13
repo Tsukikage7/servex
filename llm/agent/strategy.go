@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Tsukikage7/servex/llm"
-	"github.com/Tsukikage7/servex/llm/agent/toolcall"
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/llm"
+	"github.com/Tsukikage7/servex/v2/llm/agent/toolcall"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // Strategy Agent 执行策略接口.

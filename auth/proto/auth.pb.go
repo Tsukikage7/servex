@@ -32,7 +32,7 @@ const (
 //
 // 使用示例:
 //
-//	import "github.com/Tsukikage7/servex/auth/proto/auth.proto";
+//	import "github.com/Tsukikage7/servex/v2/auth/proto/auth.proto";
 //
 //	service AuthService {
 //	  rpc Login(LoginRequest) returns (LoginResponse) {

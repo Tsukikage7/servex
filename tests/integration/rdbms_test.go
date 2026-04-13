@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 
-	"github.com/Tsukikage7/servex/storage/rdbms"
-	"github.com/Tsukikage7/servex/testx"
+	"github.com/Tsukikage7/servex/v2/storage/rdbms"
+	"github.com/Tsukikage7/servex/v2/testx"
 )
 
 // testUser GORM test model.
