@@ -17,12 +17,12 @@ type mockCtx struct {
 	replies []string
 }
 
-func (m *mockCtx) ChatID() string  { return m.chatID }
-func (m *mockCtx) UserID() string  { return m.userID }
-func (m *mockCtx) Text() string    { return m.text }
-func (m *mockCtx) Command() string { return m.command }
-func (m *mockCtx) Args() []string  { return m.args }
-func (m *mockCtx) State() string   { return m.state }
+func (m *mockCtx) ChatID() string    { return m.chatID }
+func (m *mockCtx) UserID() string    { return m.userID }
+func (m *mockCtx) Text() string      { return m.text }
+func (m *mockCtx) Command() string   { return m.command }
+func (m *mockCtx) Args() []string    { return m.args }
+func (m *mockCtx) State() string     { return m.state }
 func (m *mockCtx) SetState(s string) { m.state = s }
 func (m *mockCtx) Reply(text string, _ ...ReplyOption) error {
 	m.replies = append(m.replies, text)
