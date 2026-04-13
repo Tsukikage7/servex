@@ -29,6 +29,11 @@ func NewRouter() *Router {
 	return newRouter()
 }
 
+// SetErrorHandler 设置 handler 错误处理函数。
+func (r *Router) SetErrorHandler(h func(ctx Context, err error)) {
+	r.errHandler = h
+}
+
 // Handle 注册路由。
 func (r *Router) Handle(pattern string, handler HandlerFunc, middlewares ...Middleware) {
 	r.routes = append(r.routes, route{
