@@ -36,7 +36,7 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 
 | 领域 | 文件路径 | 覆盖模块 |
 |------|---------|---------|
-| 传输层 | `skills/servex/references/transport.md` | httpserver/grpcserver/httpclient/grpcclient/gateway/graphql/websocket/sse/grpcx/tls/debug |
+| 传输层 | `skills/servex/references/transport.md` | httpserver/grpcserver/httpclient/grpcclient/gateway/graphql/websocket/sse/grpcx/tls/debug/botserver/botserver-telegram/botserver-discord/bottest |
 | 中间件 | `skills/servex/references/middleware.md` | ratelimit/circuitbreaker/retry/recovery/timeout/cors/idempotency/semaphore/logging/secure/csrf/bodylimit/signature/trace/gzip/adaptive/waf/version/fallback/loadshed |
 | 存储 | `skills/servex/references/storage.md` | cache/rdbms/mongodb/elasticsearch/clickhouse/s3/minio/neo4j/lock/sqlx/migration/redis |
 | 认证 | `skills/servex/references/auth.md` | jwt/apikey/rbac |
@@ -45,7 +45,7 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 | 消息 | `skills/servex/references/pubsub.md` | pubsub/jobqueue (kafka/rabbitmq/redis)/eventbus |
 | 领域驱动 | `skills/servex/references/distributed.md` | cqrs/saga/outbox/eventsourcing |
 | 业务组件 | `skills/servex/references/bizx.md` | counter/leaderboard/sequence/locking/ratelimit/statemachine/pagination/audit/feature/retry/event/captcha/workflow/abtesting |
-| 通知 | `skills/servex/references/notify.md` | email/sms/push/webhook |
+| 通知 | `skills/servex/references/notify.md` | email/sms/push/webhook/telegram/discord |
 | OAuth2 | `skills/servex/references/oauth2.md` | github/google/wechat/state |
 | 其他 | `skills/servex/references/errors.md` `skills/servex/references/httpx.md` `skills/servex/references/i18n.md` `skills/servex/references/tenant.md` `skills/servex/references/validation.md` `skills/servex/references/xutil.md` `skills/servex/references/collections.md` `skills/servex/references/testx.md` `skills/servex/references/openapi.md` `skills/servex/references/webhook.md` | 对应模块 |
 
@@ -100,22 +100,26 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 
 | 模块 | 包路径 | 描述 | 核心类型/函数 |
 |------|--------|------|--------------|
-| httpserver | `transport/httpserver` | HTTP 服务器（集成中间件链） | `New`, `WithAddr`, `WithLogger`, `WithAuth`, `WithMiddlewares` |
-| grpcserver | `transport/grpcserver` | gRPC 服务器 | `New`, `Server` |
+| httpserver | `transport/httpserver` | HTTP 服务器（集成中间件链） | `New`, `WithAddr`, `WithLogger`, `WithAuth`, `WithMiddlewares`, `WithVersion` |
+| grpcserver | `transport/grpcserver` | gRPC 服务器 | `New`, `Server`, `WithVersion` |
 | httpclient | `transport/httpclient` | HTTP 客户端（负载均衡） | `New`, `WithServiceName`, `WithDiscovery`, `WithBalancer` |
 | ginserver | `transport/ginserver` | Gin 适配器 | `New` |
 | echoserver | `transport/echoserver` | Echo 适配器 | `New` |
 | hertzserver | `transport/hertzserver` | Hertz 适配器 | `New` |
 | websocket | `transport/websocket` | WebSocket 服务端 | `NewServer`, `Handler` |
 | sse | `transport/sse` | Server-Sent Events 服务端 | `NewServer`, `Handler` |
-| gateway | `transport/gateway` | gRPC + HTTP 双协议服务器 | `New`, `Register`, `Registrar`, `WithAuth`, `WithPublicMethods` |
+| gateway | `transport/gateway` | gRPC + HTTP 双协议服务器 | `New`, `Register`, `Registrar`, `WithAuth`, `WithPublicMethods`, `WithVersion` |
 | grpcclient | `transport/grpcclient` | gRPC 客户端 | `New`, `Conn`, `WithServiceName`, `WithDiscovery` |
-| health | `transport/health` | 健康检查 | `New`, `Checker`, `NewDBChecker`, `NewRedisChecker`, `Middleware` |
-| response | `transport/response` | 统一响应格式 | `OK`, `Fail`, `Response`, `Code`, `BusinessError`, `ExtractCode` |
+| health | `transport/health` | 健康检查 | `New`, `Checker`, `NewDBChecker`, `NewRedisChecker`, `Middleware`, `WithVersion` |
+| response | `transport/response` | 统一响应格式 | `OK`, `Fail`, `Response`, `Code`, `BusinessError`, `ExtractCode`, `GatewayErrorHandler`, `GatewayServeMuxOption` |
 | graphql | `transport/graphql` | GraphQL 服务器适配 | `New`, `Handler`, `PlaygroundHandler`, `LoggingMiddleware`, `TracingMiddleware`, `RecoveryMiddleware`, `WrapResolve` |
 | tls | `transport/tls` | TLS 配置工具（证书/mTLS/版本控制） | `NewServerTLSConfig`, `NewClientTLSConfig`, `NewTLSConfig` |
 | grpcx | `transport/grpcx` | gRPC 工具包（流包装/Metadata/错误/健康检查） | `WrapServerStream`, `GetMetadataValue`, `AppendOutgoingMetadata`, `CopyIncomingToOutgoing`, `NotFound`, `IsCode`, `HealthCheck`, `WaitForReady` |
 | debug | `transport/debug` | 调试面板（路由/配置/健康/指标/构建信息） | `Handler`, `WithRoutes`, `WithConfig`, `RegisterRoutes` |
+| botserver | `transport/botserver` | 平台无关的 Bot 框架（命令路由/中间件/状态存储） | `Bot`, `Context`, `HandlerFunc`, `Middleware`, `Router`, `NewRouter`, `StateStore`, `NewMemoryStateStore`, `NewRedisStateStore` |
+| botserver/telegram | `transport/botserver/telegram` | Telegram Bot（Webhook 模式） | `New`, `TelegramBot`, `WithWebhookPath`, `WithWebhookURL`, `WithHTTPServer`, `WithStateStore` |
+| botserver/discord | `transport/botserver/discord` | Discord Bot（Gateway 模式） | `New`, `DiscordBot`, `WithStateStore`, `WithIntents`, `WithCommandPrefix` |
+| botserver/bottest | `transport/botserver/bottest` | Bot 测试工具 | `NewTestBot`, `TestBot`, `Recorder`, `WithChatID`, `WithUserID` |
 
 ### 中间件 → 详见 `middleware` skill
 
@@ -171,7 +175,7 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 
 | 模块 | 包路径 | 描述 | 核心类型/函数 |
 |------|--------|------|--------------|
-| observability/metrics | `observability/metrics` | Prometheus + OpenTelemetry 指标 | `NewMetrics`, `MustNewMetrics`, `DefaultConfig`, `NewOTel`, `WithMeterProvider`, `WithExporter` |
+| observability/metrics | `observability/metrics` | Prometheus + OpenTelemetry 指标 | `NewMetrics`, `MustNewMetrics`, `DefaultConfig`, `Config{ServiceName,Version}`, `NewOTel`, `WithMeterProvider`, `WithExporter` |
 | observability/tracing | `observability/tracing` | OpenTelemetry 追踪 | `NewTracer`, `TracingConfig`, `OTLPConfig` |
 | observability/logger | `observability/logger` | 结构化日志 | `NewLogger`, `NewContext`, `FromContext`, `AsSlog`, `NewFromSlog`, `WithLevel`, `WithOutput` |
 | observability/logshipper | `observability/logshipper` | 日志投递（ES/Kafka sink，异步批量） | `New`, `NewElasticsearchSink`, `NewKafkaSink`, `ZapHook`, `AttachToLogger`, `NewLoggerHook` |
@@ -264,6 +268,8 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 | notify/webhook | `notify/webhook` | Webhook 投递与接收 | `NewDispatcher`, `NewReceiver`, `NewHMACSigner` |
 | notify/webhook/store/memory | `notify/webhook/store/memory` | 内存 SubscriptionStore | `NewStore` |
 | notify/webhook/store/gorm | `notify/webhook/store/gorm` | GORM SubscriptionStore | `NewStore` |
+| notify/telegram | `notify/telegram` | Telegram 消息通知 | `NewSender`, `NewSenderWithClient`, `Sender`, `ChannelTelegram` |
+| notify/discord | `notify/discord` | Discord 消息通知 | `NewSender`, `NewSenderWithClient`, `Sender`, `ChannelDiscord` |
 
 ### OAuth2 → 详见 `oauth2` skill
 

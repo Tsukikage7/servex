@@ -3,7 +3,7 @@
 ## httpx -- 组合中间件（推荐入口）
 
 ```go
-import "github.com/Tsukikage7/servex/httpx"
+import "github.com/Tsukikage7/servex/v2/httpx"
 
 // 使用默认配置（启用 ClientIP + UserAgent + Locale + Referer）
 handler = httpx.HTTPMiddleware()(handler)
@@ -40,7 +40,7 @@ func myHandler(w http.ResponseWriter, r *http.Request) {
 ## gRPC 拦截器
 
 ```go
-import "github.com/Tsukikage7/servex/httpx"
+import "github.com/Tsukikage7/servex/v2/httpx"
 
 // 一元拦截器
 grpcserver.New(
@@ -52,7 +52,7 @@ grpcserver.New(
 ## clientip -- 客户端 IP
 
 ```go
-import "github.com/Tsukikage7/servex/httpx/clientip"
+import "github.com/Tsukikage7/servex/v2/httpx/clientip"
 
 // HTTP 中间件
 handler = clientip.HTTPMiddleware(
@@ -70,7 +70,7 @@ geo, ok := clientip.GeoInfoFromContext(ctx)
 ## useragent -- User-Agent 解析
 
 ```go
-import "github.com/Tsukikage7/servex/httpx/useragent"
+import "github.com/Tsukikage7/servex/v2/httpx/useragent"
 
 handler = useragent.HTTPMiddleware()(handler)
 
@@ -81,7 +81,7 @@ ua, ok := useragent.FromContext(ctx)
 ## deviceinfo -- 设备信息
 
 ```go
-import "github.com/Tsukikage7/servex/httpx/deviceinfo"
+import "github.com/Tsukikage7/servex/v2/httpx/deviceinfo"
 
 // 优先使用 Client Hints，回退到 User-Agent
 handler = deviceinfo.HTTPMiddleware()(handler)
@@ -92,7 +92,7 @@ dev, ok := deviceinfo.FromContext(ctx)
 ## botdetect -- 机器人检测
 
 ```go
-import "github.com/Tsukikage7/servex/httpx/botdetect"
+import "github.com/Tsukikage7/servex/v2/httpx/botdetect"
 
 handler = botdetect.HTTPMiddleware()(handler)
 
@@ -103,7 +103,7 @@ bot, ok := botdetect.FromContext(ctx)
 ## locale -- 语言区域
 
 ```go
-import "github.com/Tsukikage7/servex/httpx/locale"
+import "github.com/Tsukikage7/servex/v2/httpx/locale"
 
 handler = locale.HTTPMiddleware()(handler)
 
@@ -114,7 +114,7 @@ loc, ok := locale.FromContext(ctx)
 ## referer -- 来源页面
 
 ```go
-import "github.com/Tsukikage7/servex/httpx/referer"
+import "github.com/Tsukikage7/servex/v2/httpx/referer"
 
 handler = referer.HTTPMiddleware()(handler)
 
@@ -125,7 +125,7 @@ ref, ok := referer.FromContext(ctx)
 ## activity -- 用户活动追踪
 
 ```go
-import "github.com/Tsukikage7/servex/httpx/activity"
+import "github.com/Tsukikage7/servex/v2/httpx/activity"
 
 // 记录用户活动（如页面访问、操作行为）
 // 与其他 httpx 子模块配合使用

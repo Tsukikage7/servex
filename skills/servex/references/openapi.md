@@ -3,7 +3,7 @@
 ## 核心用法
 
 ```go
-import "github.com/Tsukikage7/servex/openapi"
+import "github.com/Tsukikage7/servex/v2/openapi"
 
 // 1. 创建 Registry
 reg := openapi.NewRegistry(

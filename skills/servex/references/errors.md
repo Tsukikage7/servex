@@ -3,7 +3,7 @@
 ## Error 类型 -- 业务错误定义
 
 ```go
-import "github.com/Tsukikage7/servex/errors"
+import "github.com/Tsukikage7/servex/v2/errors"
 
 // 定义错误常量（通常在包级别）
 var (
@@ -56,7 +56,7 @@ stderrors.Is(err, ErrNotFound)  // true（按 Code 比较）
 ## HTTP 错误响应
 
 ```go
-import "github.com/Tsukikage7/servex/errors"
+import "github.com/Tsukikage7/servex/v2/errors"
 
 // 提取 HTTP 状态码（默认 500）
 status := errors.ToHTTPStatus(err)
@@ -83,7 +83,7 @@ errors.WriteErrorFrom(w, err)
 ## gRPC 错误映射
 
 ```go
-import "github.com/Tsukikage7/servex/errors"
+import "github.com/Tsukikage7/servex/v2/errors"
 
 // *Error → gRPC Status
 st := errors.ToGRPCStatus(err)
@@ -104,14 +104,40 @@ grpcserver.New(
 2. 拦截器调用 `ToGRPCStatus(err)` 转为 gRPC Status
 3. 客户端收到 Status 后调用 `FromGRPCStatus(st)` 还原 `*Error`
 
+## 错误码段分配（v2.0.6+）
+
+从 v2.0.6 开始，servex 所有对外暴露的错误统一使用 `errors.New(code, key, msg)` 定义，
+每个错误都包含 HTTP 状态码和 gRPC Code 的映射。错误码段分配如下：
+
+| 码段 | 范围 | 领域 | 示例 |
+|------|------|------|------|
+| 20xxx | 20001-20999 | 认证/授权（auth） | `ErrUnauthenticated(20001)`, `ErrForbidden(20002)` |
+| 201xx | 20101-20199 | JWT | `ErrTokenInvalid(20101)`, `ErrTokenRevoked(20102)` |
+| 203xx | 20301-20399 | RBAC | `ErrRoleNotFound(20301)`, `ErrPermissionDenied(20303)` |
+| 60xxx | 60001-60999 | 传输层（transport） | `ErrRequestFailed(60001)`, `ErrConnectionFailed(60101)` |
+| 602xx | 60201-60299 | GraphQL | `ErrNilSchema(60201)` |
+| 70xxx | 70001-70999 | 通知（notify） | `ErrNilMessage(70001)`, `ErrEmptyChannel(70002)` |
+| 700xx | 70061-70079 | notify/discord | `ErrEmptyToken(70061)`, `ErrSessionCreate(70062)` |
+| 700xx | 70071-70079 | notify/telegram | `ErrEmptyToken(70071)`, `ErrBotAPICreate(70072)` |
+| 80xxx | 80001-80999 | OAuth2 | `ErrInvalidState(80001)`, `ErrExchangeFailed(80002)` |
+| 90xxx | 90001-90999 | 服务发现（discovery） | `ErrNilConfig(90001)`, `ErrNotFound(90012)` |
+
+**自定义业务错误码建议：** 使用 `100000+` 起始，避免与框架错误码冲突。
+
 ## 完整示例 -- 定义 + 使用
 
 ```go
+import "github.com/Tsukikage7/servex/v2/errors"
+
 // errors/codes.go — 错误码定义
 var (
     ErrUserNotFound = errors.New(100404, "user_not_found", "用户不存在").
         WithHTTP(http.StatusNotFound).
         WithGRPC(codes.NotFound)
+
+    ErrUserExists = errors.New(100409, "user_exists", "用户已存在").
+        WithHTTP(http.StatusConflict).
+        WithGRPC(codes.AlreadyExists)
 )
 
 // service 层

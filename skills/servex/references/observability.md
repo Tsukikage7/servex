@@ -4,10 +4,13 @@
 
 ```go
 // MustNewMetrics 初始化失败直接 panic（适合 main 函数）
-m := metrics.MustNewMetrics(metrics.DefaultConfig("my-service"))
+cfg := metrics.DefaultConfig()
+cfg.ServiceName = "my-service"
+cfg.Version = "v2.0.5"
+m := metrics.MustNewMetrics(cfg)
 
 // NewMetrics 返回 error
-m, err := metrics.NewMetrics(metrics.DefaultConfig("my-service"))
+m, err := metrics.NewMetrics(cfg)
 if err != nil { ... }
 
 // HTTP 中间件（自动记录请求数、延迟、状态码）
@@ -20,7 +23,7 @@ srv := httpserver.New(mux,
 ### OpenTelemetry Metrics（OTel）
 
 ```go
-import "github.com/Tsukikage7/servex/observability/metrics"
+import "github.com/Tsukikage7/servex/v2/observability/metrics"
 
 // 创建 OTel Metrics 收集器
 otelMetrics, err := metrics.NewOTel(
@@ -30,7 +33,7 @@ otelMetrics, err := metrics.NewOTel(
 if err != nil { ... }
 
 // 与 Prometheus 共存（双后端）
-m := metrics.MustNewMetrics(metrics.DefaultConfig("my-service"))
+m := metrics.MustNewMetrics(metrics.DefaultConfig())
 m.EnableOTel(otelMetrics)
 
 // HTTP 中间件（同时写入 Prometheus 和 OTel）
@@ -39,10 +42,41 @@ srv := httpserver.New(mux,
 )
 ```
 
+### Config 结构体（v2.0.5+）
+
+```go
+type Config struct {
+    Path        string // 指标暴露路径，默认 /metrics
+    Namespace   string // 指标命名空间
+    ServiceName string // 服务名称，用于 service_info 指标
+    Version     string // 服务版本，用于 service_info 指标
+}
+```
+
+当 `ServiceName` 或 `Version` 不为空时，自动注册 `service_info` Gauge 指标：
+
+```
+# HELP service_info 服务元信息
+# TYPE service_info gauge
+service_info{service_name="my-service",version="v2.0.5"} 1
+```
+
+```go
+cfg := &metrics.Config{
+    Path:        "/metrics",
+    Namespace:   "app",
+    ServiceName: "order-service",
+    Version:     "v2.0.5",
+}
+m := metrics.MustNewMetrics(cfg)
+```
+
 **关键选项：**
-- `metrics.DefaultConfig(serviceName)` — 默认配置，注册 HTTP/gRPC 指标
+- `metrics.DefaultConfig()` — 默认配置（Path="/metrics", Namespace="app"）
+- `metrics.Config{ServiceName, Version}` — 设置服务名称和版本，自动注册 `service_info` gauge（v2.0.5+）
 - `metrics.NewOTel(opts...)` — 创建 OTel Metrics 收集器
 - `WithMeterProvider(mp)` — 自定义 OpenTelemetry MeterProvider
+- `WithServiceName(name)` — OTel Meter 的 instrumentation scope 服务名
 - `WithExporter(exp)` — 指标导出器（OTLP HTTP/gRPC、Prometheus Remote Write）
 - `m.HTTPMiddleware()` — `func(http.Handler) http.Handler`
 - `m.GRPCUnaryInterceptor()` — gRPC 一元拦截器
@@ -181,7 +215,7 @@ hooked.Infof("用户登录: %s", userID)
 ## observability/slo — SLO/SLI 追踪
 
 ```go
-import "github.com/Tsukikage7/servex/observability/slo"
+import "github.com/Tsukikage7/servex/v2/observability/slo"
 
 // 定义 SLO 目标
 objectives := []*slo.Objective{
@@ -243,7 +277,7 @@ prometheus.MustRegister(tracker.PrometheusCollector())
 ## observability/alerting — 告警规则引擎
 
 ```go
-import "github.com/Tsukikage7/servex/observability/alerting"
+import "github.com/Tsukikage7/servex/v2/observability/alerting"
 
 // 创建指标提供者（实现 MetricProvider 接口）
 type myProvider struct{}
@@ -349,7 +383,7 @@ engine.RemoveRule("high-cpu")
 ## observability/profiling — 持续性能剖析
 
 ```go
-import "github.com/Tsukikage7/servex/observability/profiling"
+import "github.com/Tsukikage7/servex/v2/observability/profiling"
 
 // 默认配置（CPU/Heap/Goroutine，60s 间隔，10s CPU 采样时长）
 cfg := profiling.DefaultConfig()

@@ -3,7 +3,7 @@
 ## 核心类型
 
 ```go
-import "github.com/Tsukikage7/servex/notify/webhook"
+import "github.com/Tsukikage7/servex/v2/notify/webhook"
 
 type Event struct {
     ID        string
@@ -78,13 +78,13 @@ type Signer interface {
 
 ```go
 // 内存（开发/测试）
-import "github.com/Tsukikage7/servex/webhook/store/memory"
+import "github.com/Tsukikage7/servex/v2/webhook/store/memory"
 store := memory.NewStore()
 
 // GORM（生产）：接受 database.Database
 import (
-    webhookgorm "github.com/Tsukikage7/servex/notify/webhook/store/gorm"
-    "github.com/Tsukikage7/servex/storage/rdbms"
+    webhookgorm "github.com/Tsukikage7/servex/v2/notify/webhook/store/gorm"
+    "github.com/Tsukikage7/servex/v2/storage/rdbms"
 )
 db := database.MustNewDatabase(&database.Config{
     Driver: database.DriverMySQL,

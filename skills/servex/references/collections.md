@@ -3,7 +3,7 @@
 ## blockingqueue -- 阻塞队列
 
 ```go
-import "github.com/Tsukikage7/servex/collections/blockingqueue"
+import "github.com/Tsukikage7/servex/v2/collections/blockingqueue"
 
 // 创建容量为 100 的阻塞队列
 q := blockingqueue.New[string](100)
@@ -27,7 +27,7 @@ q.IsEmpty() // 是否为空
 ## delayqueue -- 延迟队列
 
 ```go
-import "github.com/Tsukikage7/servex/collections/delayqueue"
+import "github.com/Tsukikage7/servex/v2/collections/delayqueue"
 
 // 实现 Delayable 接口
 type Task struct {
@@ -54,7 +54,7 @@ task, err := dq.Dequeue(ctx)
 ## deque -- 双端队列
 
 ```go
-import "github.com/Tsukikage7/servex/collections/deque"
+import "github.com/Tsukikage7/servex/v2/collections/deque"
 
 dq := deque.New[int]()          // 空双端队列
 dq = deque.From([]int{1, 2, 3}) // 从切片创建
@@ -79,7 +79,7 @@ dq.Len()  // 元素数量
 ## hashset -- 无序集合
 
 ```go
-import "github.com/Tsukikage7/servex/collections/hashset"
+import "github.com/Tsukikage7/servex/v2/collections/hashset"
 
 s := hashset.New(1, 2, 3)       // 创建并初始化
 s = hashset.FromSlice([]int{1, 2, 3})
@@ -105,7 +105,7 @@ s.Range(func(item int) bool {
 ## linkedmap -- 有序 Map（按插入顺序）
 
 ```go
-import "github.com/Tsukikage7/servex/collections/linkedmap"
+import "github.com/Tsukikage7/servex/v2/collections/linkedmap"
 
 m := linkedmap.New[string, int]()
 m.Put("b", 2)
@@ -128,7 +128,7 @@ m.Range(func(k string, v int) bool {
 ## lrucache -- LRU 缓存
 
 ```go
-import "github.com/Tsukikage7/servex/collections/lrucache"
+import "github.com/Tsukikage7/servex/v2/collections/lrucache"
 
 cache := lrucache.New[string, int](100) // 容量 100
 
@@ -152,7 +152,7 @@ val = cache.GetOrPut("c", func() int {
 ## mapsx -- Map 工具函数
 
 ```go
-import "github.com/Tsukikage7/servex/collections/mapsx"
+import "github.com/Tsukikage7/servex/v2/collections/mapsx"
 
 m := map[string]int{"a": 1, "b": 2, "c": 3}
 
@@ -178,7 +178,7 @@ m2 := mapsx.FromEntries(entries)
 ## multimap -- 一对多映射
 
 ```go
-import "github.com/Tsukikage7/servex/collections/multimap"
+import "github.com/Tsukikage7/servex/v2/collections/multimap"
 
 mm := multimap.New[string, int]()
 mm.Put("tag", 1)
@@ -199,7 +199,7 @@ multimap.RemoveValue(mm, "tag", 2)
 ## priorityqueue -- 优先队列
 
 ```go
-import "github.com/Tsukikage7/servex/collections/priorityqueue"
+import "github.com/Tsukikage7/servex/v2/collections/priorityqueue"
 
 // 最小堆
 pq := priorityqueue.NewMin[int]()
@@ -229,7 +229,7 @@ val, ok = cpq.Pop()  // 1
 ## slicesx -- 切片工具函数
 
 ```go
-import "github.com/Tsukikage7/servex/collections/slicesx"
+import "github.com/Tsukikage7/servex/v2/collections/slicesx"
 
 nums := []int{1, 2, 3, 4, 5}
 
@@ -263,7 +263,7 @@ chunks := slicesx.Chunk(nums, 2) // [[1,2], [3,4], [5]]
 ## treemap -- 有序 Map（按键排序）
 
 ```go
-import "github.com/Tsukikage7/servex/collections/treemap"
+import "github.com/Tsukikage7/servex/v2/collections/treemap"
 
 // 使用内置类型的默认比较
 tm := treemap.NewOrdered[int, string]()
@@ -295,7 +295,7 @@ last, _ := tm.LastKey()    // 3
 ## treeset -- 有序集合
 
 ```go
-import "github.com/Tsukikage7/servex/collections/treeset"
+import "github.com/Tsukikage7/servex/v2/collections/treeset"
 
 ts := treeset.NewOrdered[int]()
 ts.Add(3, 1, 2)

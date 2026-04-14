@@ -121,7 +121,7 @@ mw := semaphore.New(semaphore.WithLimit(100))
 ## secure — 安全头
 
 ```go
-import "github.com/Tsukikage7/servex/middleware/secure"
+import "github.com/Tsukikage7/servex/v2/middleware/secure"
 
 // 使用默认配置（生产推荐）：自动设置 X-Frame-Options、HSTS、X-Content-Type-Options 等
 mw := secure.HTTPMiddleware(nil)
@@ -152,7 +152,7 @@ srv := httpserver.New(mux,
 ## csrf — CSRF 防护
 
 ```go
-import "github.com/Tsukikage7/servex/middleware/csrf"
+import "github.com/Tsukikage7/servex/v2/middleware/csrf"
 
 // 使用默认配置（Double Submit Cookie 模式）
 mw := csrf.HTTPMiddleware(nil)
@@ -184,7 +184,7 @@ func myHandler(w http.ResponseWriter, r *http.Request) {
 ## bodylimit — 请求体大小限制
 
 ```go
-import "github.com/Tsukikage7/servex/middleware/bodylimit"
+import "github.com/Tsukikage7/servex/v2/middleware/bodylimit"
 
 // 直接指定字节数（1 MB）
 mw := bodylimit.HTTPMiddleware(1 << 20)
@@ -273,7 +273,7 @@ _ = signature.SignRequestWithConfig(req, cfg)
 ## gzip — 响应 gzip 压缩
 
 ```go
-import "github.com/Tsukikage7/servex/middleware/gzip"
+import "github.com/Tsukikage7/servex/v2/middleware/gzip"
 
 // 使用默认配置（压缩级别: DefaultCompression, 最小字节数: 256）
 mw := gzip.New()
@@ -311,7 +311,7 @@ handler := gzip.Handler(mux, gzip.WithMinLength(512))
 ## adaptive — 自适应限流与降级
 
 ```go
-import "github.com/Tsukikage7/servex/middleware/adaptive"
+import "github.com/Tsukikage7/servex/v2/middleware/adaptive"
 
 // 基于 CPU 使用率限流
 limiter, err := adaptive.New(&adaptive.Config{
@@ -379,7 +379,7 @@ fmt.Printf("限流中: %v, CPU: %.2f, P99: %v, 错误率: %.2f\n",
 ## trace — 链路追踪增强
 
 ```go
-import "github.com/Tsukikage7/servex/middleware/trace"
+import "github.com/Tsukikage7/servex/v2/middleware/trace"
 ```
 
 统一 trace-id 在日志、响应头、下游调用中的传播，构建于 `observability/tracing` 之上。
@@ -438,7 +438,7 @@ ctx = trace.InjectGRPCMetadata(ctx)
 ## waf — Web 应用防火墙
 
 ```go
-import "github.com/Tsukikage7/servex/middleware/waf"
+import "github.com/Tsukikage7/servex/v2/middleware/waf"
 
 // 使用默认规则集（SQL 注入/XSS/路径遍历/命令注入）
 mw := waf.New()
@@ -474,7 +474,7 @@ srv := httpserver.New(mux,
 ## version — API 版本化
 
 ```go
-import "github.com/Tsukikage7/servex/middleware/version"
+import "github.com/Tsukikage7/servex/v2/middleware/version"
 
 // 路径前缀模式：/v1/users、/v2/users
 mw := version.New(
@@ -508,7 +508,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 ## fallback — 优雅降级
 
 ```go
-import "github.com/Tsukikage7/servex/middleware/fallback"
+import "github.com/Tsukikage7/servex/v2/middleware/fallback"
 
 // 5xx 错误自动降级
 mw := fallback.New(
@@ -534,7 +534,7 @@ srv := httpserver.New(mux,
 ## loadshed — 负载卸载
 
 ```go
-import "github.com/Tsukikage7/servex/middleware/loadshed"
+import "github.com/Tsukikage7/servex/v2/middleware/loadshed"
 
 // 基于并发数限制
 mw := loadshed.New(

@@ -3,7 +3,7 @@
 ## 核心接口
 
 ```go
-import "github.com/Tsukikage7/servex/oauth2"
+import "github.com/Tsukikage7/servex/v2/oauth2"
 
 type Provider interface {
     AuthURL(state string, opts ...AuthURLOption) string
@@ -22,8 +22,8 @@ type StateStore interface {
 
 ```go
 import (
-    "github.com/Tsukikage7/servex/oauth2/github"
-    "github.com/Tsukikage7/servex/oauth2/state"
+    "github.com/Tsukikage7/servex/v2/oauth2/github"
+    "github.com/Tsukikage7/servex/v2/oauth2/state"
 )
 
 gh := github.NewProvider(
@@ -73,7 +73,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 store := state.NewMemoryStore()
 
 // Redis（生产）：接受 cache.Cache
-import "github.com/Tsukikage7/servex/storage/cache"
+import "github.com/Tsukikage7/servex/v2/storage/cache"
 c := cache.MustNewCache(&cache.Config{Type: cache.TypeRedis, Addr: "localhost:6379"}, log)
 store, _ := state.NewRedisStore(c,
     state.WithPrefix("oauth2:state:"),

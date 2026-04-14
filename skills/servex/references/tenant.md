@@ -3,7 +3,7 @@
 ## Tenant 接口与 Context
 
 ```go
-import "github.com/Tsukikage7/servex/tenant"
+import "github.com/Tsukikage7/servex/v2/tenant"
 
 // 应用层实现 Tenant 接口
 type MyTenant struct {
@@ -24,7 +24,7 @@ id := tenant.ID(ctx)                 // 直接获取 ID，无租户返回 ""
 ## Resolver -- 租户解析器
 
 ```go
-import "github.com/Tsukikage7/servex/tenant"
+import "github.com/Tsukikage7/servex/v2/tenant"
 
 // 实现 Resolver 接口
 type DBResolver struct{ db *gorm.DB }
@@ -60,7 +60,7 @@ tenant.PrincipalTokenExtractor()
 ## HTTP 中间件
 
 ```go
-import "github.com/Tsukikage7/servex/tenant"
+import "github.com/Tsukikage7/servex/v2/tenant"
 
 resolver := &DBResolver{db: db}
 
@@ -78,7 +78,7 @@ handler = tenant.HTTPMiddleware(resolver,
 ## Endpoint 中间件
 
 ```go
-import "github.com/Tsukikage7/servex/tenant"
+import "github.com/Tsukikage7/servex/v2/tenant"
 
 // 用于 endpoint 层（transport 无关）
 ep = tenant.Middleware(resolver,
@@ -89,7 +89,7 @@ ep = tenant.Middleware(resolver,
 ## SQL 作用域（通用）
 
 ```go
-import "github.com/Tsukikage7/servex/tenant"
+import "github.com/Tsukikage7/servex/v2/tenant"
 
 // 获取 WHERE 子句
 clause, args := tenant.WhereClause(ctx)
@@ -103,7 +103,7 @@ clause, args = tenant.WhereClause(ctx, "t.tenant_id")
 ## GORM 集成
 
 ```go
-import tenantgorm "github.com/Tsukikage7/servex/tenant/gorm"
+import tenantgorm "github.com/Tsukikage7/servex/v2/tenant/gorm"
 
 // 查询作用域 — 自动按 tenant_id 过滤
 db.Scopes(tenantgorm.Scope(ctx)).Find(&results)

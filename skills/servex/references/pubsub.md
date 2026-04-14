@@ -6,8 +6,8 @@
 
 ```go
 import (
-    "github.com/Tsukikage7/servex/messaging/pubsub"
-    "github.com/Tsukikage7/servex/messaging/pubsub/factory"
+    "github.com/Tsukikage7/servex/v2/messaging/pubsub"
+    "github.com/Tsukikage7/servex/v2/messaging/pubsub/factory"
 )
 
 // factory.Config 支持 "kafka", "rabbitmq", "redis" 三种 Type
@@ -40,8 +40,8 @@ for msg := range ch {
 
 ```go
 import (
-    "github.com/Tsukikage7/servex/messaging/jobqueue"
-    "github.com/Tsukikage7/servex/messaging/jobqueue/factory"
+    "github.com/Tsukikage7/servex/v2/messaging/jobqueue"
+    "github.com/Tsukikage7/servex/v2/messaging/jobqueue/factory"
 )
 
 // factory.StoreConfig 支持 "redis", "kafka", "rabbitmq", "database" 四种 Type
@@ -70,7 +70,7 @@ w.Start(ctx)
 ### 核心接口
 
 ```go
-import "github.com/Tsukikage7/servex/messaging/pubsub"
+import "github.com/Tsukikage7/servex/v2/messaging/pubsub"
 
 // Message 是传输的基本单元
 type Message struct {
@@ -98,7 +98,7 @@ type Subscriber interface {
 ### Kafka
 
 ```go
-import "github.com/Tsukikage7/servex/messaging/pubsub/kafka"
+import "github.com/Tsukikage7/servex/v2/messaging/pubsub/kafka"
 
 // 构造函数接收已有的 sarama.Client
 pub, _ := kafka.NewPublisher(saramaClient,
@@ -127,7 +127,7 @@ for msg := range ch {
 ### RabbitMQ
 
 ```go
-import "github.com/Tsukikage7/servex/messaging/pubsub/rabbitmq"
+import "github.com/Tsukikage7/servex/v2/messaging/pubsub/rabbitmq"
 
 // 构造函数接收已有的 *amqp.Connection
 pub, _ := rabbitmq.NewPublisher(amqpConn,
@@ -146,7 +146,7 @@ sub, _ := rabbitmq.NewSubscriber(amqpConn,
 ### Redis Streams
 
 ```go
-import "github.com/Tsukikage7/servex/messaging/pubsub/redis"
+import "github.com/Tsukikage7/servex/v2/messaging/pubsub/redis"
 
 // 构造函数接收已有的 *redis.Client
 pub, _ := redis.NewPublisher(redisClient,
@@ -165,7 +165,7 @@ sub, _ := redis.NewSubscriber(redisClient,
 ### 核心接口
 
 ```go
-import "github.com/Tsukikage7/servex/messaging/jobqueue"
+import "github.com/Tsukikage7/servex/v2/messaging/jobqueue"
 
 // Job 表示一个异步任务
 type Job struct {
@@ -188,8 +188,8 @@ type Store  interface { Enqueue/Dequeue/MarkRunning/MarkFailed/MarkDead/MarkDone
 
 ```go
 import (
-    "github.com/Tsukikage7/servex/messaging/jobqueue"
-    jqredis "github.com/Tsukikage7/servex/messaging/jobqueue/redis"
+    "github.com/Tsukikage7/servex/v2/messaging/jobqueue"
+    jqredis "github.com/Tsukikage7/servex/v2/messaging/jobqueue/redis"
 )
 
 store, _ := jqredis.NewStore(redisClient, jqredis.WithPrefix("myapp"))
@@ -250,7 +250,7 @@ type Handler func(ctx context.Context, event Event) error
 ### 示例
 
 ```go
-import "github.com/Tsukikage7/servex/messaging/eventbus"
+import "github.com/Tsukikage7/servex/v2/messaging/eventbus"
 
 // 定义事件
 type OrderCreated struct {

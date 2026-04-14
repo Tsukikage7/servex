@@ -3,7 +3,7 @@
 ## ptrx -- 指针工具
 
 ```go
-import "github.com/Tsukikage7/servex/xutil/ptrx"
+import "github.com/Tsukikage7/servex/v2/xutil/ptrx"
 
 // 值转指针（常用于 proto/struct 字面量）
 p := ptrx.ToPtr(42)       // *int
@@ -24,7 +24,7 @@ ptrs := ptrx.ToPtrSlice([]int{1, 2, 3}) // []*int
 ## optionx -- 函数选项模式
 
 ```go
-import "github.com/Tsukikage7/servex/xutil/optionx"
+import "github.com/Tsukikage7/servex/v2/xutil/optionx"
 
 // 定义配置和选项
 type Config struct {
@@ -52,7 +52,7 @@ optionx.ApplyErr(&cfg, func(c *Config) error {
 ## valuex -- 类型转换
 
 ```go
-import "github.com/Tsukikage7/servex/xutil/valuex"
+import "github.com/Tsukikage7/servex/v2/xutil/valuex"
 
 // 包装任意值
 av := valuex.Of(42)
@@ -72,7 +72,7 @@ n64, err := valuex.Of(3.14).AsInt64() // 3, nil
 ## strx -- 字符串工具
 
 ```go
-import "github.com/Tsukikage7/servex/xutil/strx"
+import "github.com/Tsukikage7/servex/v2/xutil/strx"
 
 strx.IsEmpty("  ")               // true
 strx.IsNotEmpty("hello")         // true
@@ -94,7 +94,7 @@ s := strx.UnsafeToString([]byte{}) // 不可再修改原 []byte
 ## randx -- 随机数
 
 ```go
-import "github.com/Tsukikage7/servex/xutil/randx"
+import "github.com/Tsukikage7/servex/v2/xutil/randx"
 
 // 高性能随机生成器（基于 PCG）
 r := randx.New()
@@ -119,7 +119,7 @@ sample := randx.Sample(r, items, 3) // 随机取 3 个
 ## iox -- I/O 工具
 
 ```go
-import "github.com/Tsukikage7/servex/xutil/iox"
+import "github.com/Tsukikage7/servex/v2/xutil/iox"
 
 // 读取
 data, err := iox.ReadAll(reader)         // 读全部字节
@@ -141,7 +141,7 @@ lr := iox.LimitReadCloser(resp.Body, 1<<20) // 最多 1MB
 ## copier -- 结构体拷贝
 
 ```go
-import "github.com/Tsukikage7/servex/xutil/copier"
+import "github.com/Tsukikage7/servex/v2/xutil/copier"
 
 type UserDTO struct { Name string; Age int }
 type UserVO  struct { Name string; Age int; Extra string }
@@ -167,7 +167,7 @@ vo, err = copier.CopyWithOptions[UserVO](src,
 ## syncx -- 并发原语
 
 ```go
-import "github.com/Tsukikage7/servex/xutil/syncx"
+import "github.com/Tsukikage7/servex/v2/xutil/syncx"
 
 // 泛型对象池
 pool := syncx.NewPool(func() *bytes.Buffer { return new(bytes.Buffer) })
@@ -199,7 +199,7 @@ cond.Broadcast() // 唤醒全部
 ## sorting -- 排序参数
 
 ```go
-import "github.com/Tsukikage7/servex/xutil/sorting"
+import "github.com/Tsukikage7/servex/v2/xutil/sorting"
 
 // 解析排序字符串
 s := sorting.New("created_time:desc,name:asc")
@@ -224,7 +224,7 @@ s.Apply(db).Find(&users)
 ## pagination -- 分页
 
 ```go
-import "github.com/Tsukikage7/servex/xutil/pagination"
+import "github.com/Tsukikage7/servex/v2/xutil/pagination"
 
 // 创建分页参数（自动校验边界）
 p := pagination.New(1, 20) // page=1, pageSize=20
@@ -246,7 +246,7 @@ result.HasPrev()     // false
 ## version -- 版本信息
 
 ```go
-import "github.com/Tsukikage7/servex/xutil/version"
+import "github.com/Tsukikage7/servex/v2/xutil/version"
 
 // 获取编译时注入的版本信息
 info := version.Get()
@@ -265,7 +265,7 @@ go build -ldflags "-X github.com/Tsukikage7/servex/xutil/version.Version=v1.0.0 
 ## crypto -- 密码与随机 ID
 
 ```go
-import "github.com/Tsukikage7/servex/xutil/crypto"
+import "github.com/Tsukikage7/servex/v2/xutil/crypto"
 
 // 随机 ID
 id, err := crypto.GenerateID() // 32 位十六进制 "a1b2c3d4..."
@@ -289,7 +289,7 @@ err = crypto.VerifyPassword(hashed, "mypassword") // nil = 匹配
 ## templatex -- 增强模板引擎
 
 ```go
-import "github.com/Tsukikage7/servex/xutil/templatex"
+import "github.com/Tsukikage7/servex/v2/xutil/templatex"
 
 // 创建模板引擎（内置 14 个常用函数）
 engine := templatex.New(
@@ -343,7 +343,7 @@ result, err := engine.RenderHTML("page.html", data)
 ## idgen -- 分布式 ID 生成
 
 ```go
-import "github.com/Tsukikage7/servex/xutil/idgen"
+import "github.com/Tsukikage7/servex/v2/xutil/idgen"
 
 // 便捷函数（使用默认生成器，出错时 panic）
 id := idgen.Snowflake() // "1234567890123456789"（纯数字，趋势递增）

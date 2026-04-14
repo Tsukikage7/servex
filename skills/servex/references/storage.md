@@ -356,7 +356,7 @@ if err := client.Ping(ctx); err != nil { ... }
 ## storage/minio — MinIO 对象存储
 
 ```go
-import "github.com/Tsukikage7/servex/storage/minio"
+import "github.com/Tsukikage7/servex/v2/storage/minio"
 
 // 创建 MinIO 客户端
 client, err := minio.NewClient(&minio.Config{
@@ -412,7 +412,7 @@ client.MakeBucket(ctx)
 ## storage/neo4j — Neo4j 图数据库
 
 ```go
-import "github.com/Tsukikage7/servex/storage/neo4j"
+import "github.com/Tsukikage7/servex/v2/storage/neo4j"
 
 // 创建客户端（自动验证连通性）
 client, err := neo4j.NewClient(&neo4j.Config{

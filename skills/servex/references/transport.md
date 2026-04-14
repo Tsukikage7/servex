@@ -57,6 +57,7 @@ if err := srv.Start(ctx); err != nil {
 - `WithAuth(authenticator, publicPaths...)` — 认证中间件，白名单外均需认证
 - `WithMiddlewares(mws...)` — 注入自定义 `func(http.Handler) http.Handler`
 - `WithClientIP()` — 提取客户端真实 IP，写入 context
+- `WithVersion(v)` — 设置服务版本，注入到健康检查响应的 `version` 字段（v2.0.5+）
 - `NewFromConfig(handler, cfg, log, additionalOpts...)` — Config 驱动工厂，Config 字段自动转换为选项
 
 ### Router + Handle — 类型安全路由
@@ -193,6 +194,7 @@ srv := grpcserver.New(
 
 - `WithMetrics(collector *metrics.PrometheusCollector)` — 启用 Prometheus 指标收集，gRPC 端记录方法名、状态码和耗时
 - `WithRateLimit(limiter ratelimit.Limiter)` — 启用限流，超限时返回 `codes.ResourceExhausted` 错误
+- `WithVersion(v)` — 设置服务版本，注入到健康检查响应的 `version` 字段（v2.0.5+）
 
 ## ginserver / echoserver / hertzserver — 框架适配（片段）
 
@@ -346,6 +348,24 @@ gateway.WithHTTPTLS(tlsCfg)
 - `server.Register(services...)` — 注册业务服务
 - 内置健康检查：`/healthz`（存活）、`/readyz`（就绪）
 - `WithConfig(transport.GatewayConfig)` — 从配置结构体设置
+- `WithVersion(v)` — 设置服务版本，注入到健康检查响应（v2.0.5+）
+
+**Gateway 统一错误响应（v2.0.4+）：**
+
+gateway 的 gRPC 错误会通过 `response.GatewayErrorHandler` 转换为统一 JSON 格式（支持 i18n）。
+此处理器已从 gateway 包迁移到 `transport/response` 包：
+
+```go
+import "github.com/Tsukikage7/servex/v2/transport/response"
+
+srv := gateway.New(
+    gateway.WithServeMuxOptions(response.GatewayServeMuxOption()),
+    // ... 其他选项
+)
+```
+
+- `response.GatewayErrorHandler` — 将 gRPC Status 转为统一 JSON 错误响应，读取 Accept-Language 支持 i18n
+- `response.GatewayServeMuxOption()` — 返回注册了统一错误处理器的 `runtime.ServeMuxOption`
 
 **拦截器执行顺序（gRPC 端）：** Recovery → Tracing → RequestID → Logging → Metrics → RateLimit → ClientIP → Tenant → Auth
 
@@ -399,7 +419,7 @@ client, err := grpcclient.NewFromConfigWithDeps(cfg, prometheusCollector, circui
 
 ```go
 // TLS / mTLS
-import tlsx "github.com/Tsukikage7/servex/transport/tls"
+import tlsx "github.com/Tsukikage7/servex/v2/transport/tls"
 
 tlsCfg, err := tlsx.NewClientTLSConfig(&tlsx.Config{
     CertFile: "/etc/tls/client.crt",  // mTLS 需要
@@ -471,8 +491,10 @@ if h.IsHealthy(ctx) { ... }
 **关键类型：**
 - `health.Health` — 健康检查管理器（`Liveness`, `Readiness`, `IsHealthy`）
 - `health.Checker` — 检查器接口（`Name() string`, `Check(ctx) CheckResult`）
+- `health.Response` — 响应结构体，包含 `Status`、`Checks`、`Version`（v2.0.5+）字段
 - 内置检查器：`NewDBChecker`、`NewRedisChecker`、`NewPingChecker`、`NewAlwaysUpChecker`、`NewCompositeChecker`
 - `health.Middleware(h)` — HTTP 中间件，自动拦截 `/healthz`、`/readyz`
+- `WithVersion(v)` — 设置服务版本，健康检查响应中会携带 `"version"` 字段（v2.0.5+）
 - 状态：`StatusUp`、`StatusDown`、`StatusUnknown`
 
 ## response — 统一响应格式
@@ -631,7 +653,7 @@ ok = skipper("/api/private/users")      // false
 ## transport/tls — TLS 配置工具（tlsx）
 
 ```go
-import tlsx "github.com/Tsukikage7/servex/transport/tls"
+import tlsx "github.com/Tsukikage7/servex/v2/transport/tls"
 ```
 
 ### httpserver 启用 TLS
@@ -731,7 +753,7 @@ tlsCfg, err := tlsx.NewServerTLSConfig(&cfg)
 ## transport/grpcx — gRPC 工具包
 
 ```go
-import "github.com/Tsukikage7/servex/transport/grpcx"
+import "github.com/Tsukikage7/servex/v2/transport/grpcx"
 ```
 
 ### 流包装（ServerStream context 替换）
@@ -807,7 +829,7 @@ if err := grpcx.WaitForReady(ctx, conn, 5*time.Second); err != nil {
 ## transport/debug — 调试面板
 
 ```go
-import "github.com/Tsukikage7/servex/transport/debug"
+import "github.com/Tsukikage7/servex/v2/transport/debug"
 
 // 创建调试面板 handler
 handler := debug.Handler(
@@ -831,3 +853,227 @@ debug.RegisterRoutes(mux, handler)
 - `debug.WithRoutes(router)` — 注入路由表信息
 - `debug.WithConfig(data)` — 注入配置数据（建议脱敏敏感字段）
 - 端点：`/debug/routes`、`/debug/config`、`/debug/health`、`/debug/metrics`、`/debug/build`
+
+## transport/botserver — 平台无关的 Bot 框架（v2.0.1+）
+
+`botserver` 提供平台无关的 Bot 接口、命令路由器、中间件链和状态存储。
+具体平台实现在子包 `telegram` 和 `discord` 中。
+
+### 核心接口
+
+```go
+import "github.com/Tsukikage7/servex/v2/transport/botserver"
+
+// Bot 平台无关接口
+type Bot interface {
+    Handle(pattern string, handler HandlerFunc, middlewares ...Middleware)
+    Use(middlewares ...Middleware)
+    Start(ctx context.Context) error
+    Stop() error
+}
+
+// Context 每条消息/命令的处理上下文
+type Context interface {
+    ChatID() string
+    UserID() string
+    Text() string
+    Command() string   // "/start" -> "start"，非命令返回 ""
+    Args() []string    // 命令参数，非命令返回 nil
+    State() string
+    SetState(state string)
+    Reply(text string, opts ...ReplyOption) error
+    Native() any       // 平台原始对象
+}
+
+// HandlerFunc 处理函数
+type HandlerFunc func(ctx Context) error
+
+// Middleware 中间件
+type Middleware func(next HandlerFunc) HandlerFunc
+```
+
+### Router — 命令路由器
+
+```go
+router := botserver.NewRouter()
+
+// 注册命令（匹配优先级：精确 > 通配符 "*" > 忽略）
+router.Handle("start", startHandler)
+router.Handle("help", helpHandler)
+router.Handle("*", fallbackHandler)  // 通配符，匹配所有未命中的命令
+
+// 全局中间件
+router.Use(loggingMiddleware)
+
+// 自定义错误处理
+router.SetErrorHandler(func(ctx botserver.Context, err error) {
+    log.Printf("错误 [chat=%s]: %v", ctx.ChatID(), err)
+})
+
+// 分发消息
+router.Dispatch(ctx)
+```
+
+### StateStore — 对话状态存储
+
+```go
+// 内存存储（开发/单机场景）
+store := botserver.NewMemoryStateStore()
+
+// Redis 存储（生产多实例场景）
+store := botserver.NewRedisStateStore(redisClient,
+    botserver.WithKeyPrefix("mybot:state:"),  // 默认 "botstate:"
+)
+```
+
+**关键类型：**
+- `botserver.Bot` — 平台无关接口
+- `botserver.Context` — 消息处理上下文（ChatID/UserID/Text/Command/Args/State/Reply/Native）
+- `botserver.HandlerFunc` / `botserver.Middleware` — handler 和中间件类型
+- `botserver.Router` — 命令路由器（`NewRouter`, `Handle`, `Use`, `Dispatch`, `SetErrorHandler`）
+- `botserver.StateStore` — 状态存储接口（`Get`/`Set`/`Del`）
+- `botserver.NewMemoryStateStore()` — 内存状态存储
+- `botserver.NewRedisStateStore(client, opts...)` — Redis 状态存储
+- `botserver.WithKeyPrefix(prefix)` — Redis key 前缀选项
+
+## transport/botserver/telegram — Telegram Bot（Webhook 模式）
+
+```go
+import "github.com/Tsukikage7/servex/v2/transport/botserver/telegram"
+
+// 创建 Telegram Bot
+bot, err := telegram.New("YOUR_BOT_TOKEN",
+    telegram.WithWebhookURL("https://example.com/bot/telegram"),
+    telegram.WithWebhookPath("/bot/telegram"),       // 默认 "/bot/telegram"
+    telegram.WithHTTPServer(router),                  // 注册 webhook 路由到现有 httpserver Router
+    telegram.WithStateStore(redisStore),              // 默认 MemoryStateStore
+    telegram.WithErrorHandler(func(ctx botserver.Context, err error) {
+        log.Printf("错误: %v", err)
+    }),
+)
+if err != nil { ... }
+
+// 注册命令
+bot.Handle("start", func(ctx botserver.Context) error {
+    return ctx.Reply("欢迎使用！")
+})
+
+bot.Handle("echo", func(ctx botserver.Context) error {
+    args := ctx.Args()
+    if len(args) == 0 {
+        return ctx.Reply("用法: /echo <消息>")
+    }
+    return ctx.Reply(strings.Join(args, " "))
+})
+
+// 通配符：处理所有非命令消息
+bot.Handle("*", func(ctx botserver.Context) error {
+    return ctx.Reply("未知命令，发送 /help 查看帮助")
+})
+
+// 全局中间件
+bot.Use(loggingMiddleware)
+
+// 启动（设置 Webhook，注册 HTTP 路由，非阻塞）
+if err := bot.Start(ctx); err != nil { ... }
+defer bot.Stop()
+
+// 复用底层 BotAPI 客户端（如传给 notify/telegram）
+tgSender := notifytelegram.NewSenderWithClient(bot.Client())
+```
+
+**关键选项：**
+- `telegram.New(token, opts...)` — 创建 TelegramBot
+- `WithWebhookURL(url)` — 公网 HTTPS Webhook URL，Start 时调用 SetWebhook
+- `WithWebhookPath(path)` — webhook 路由路径（默认 "/bot/telegram"）
+- `WithHTTPServer(router)` — 将 webhook 路由注册到现有 httpserver Router
+- `WithStateStore(store)` — 对话状态存储（默认 MemoryStateStore）
+- `WithErrorHandler(fn)` — handler 错误处理函数
+- `bot.Client() *tgbotapi.BotAPI` — 获取底层客户端（可复用给 notify/telegram）
+
+## transport/botserver/discord — Discord Bot（Gateway 模式）
+
+```go
+import "github.com/Tsukikage7/servex/v2/transport/botserver/discord"
+
+// 创建 Discord Bot（内部自动添加 "Bot " 前缀）
+bot, err := discord.New("YOUR_BOT_TOKEN",
+    discord.WithStateStore(redisStore),
+    discord.WithCommandPrefix("/"),                    // 默认 "/"
+    discord.WithIntents(discordgo.IntentsGuildMessages | discordgo.IntentsDirectMessages),
+    discord.WithErrorHandler(func(ctx botserver.Context, err error) {
+        log.Printf("错误: %v", err)
+    }),
+)
+if err != nil { ... }
+
+// 注册命令
+bot.Handle("ping", func(ctx botserver.Context) error {
+    return ctx.Reply("pong!")
+})
+
+bot.Handle("greet", func(ctx botserver.Context) error {
+    return ctx.Reply("你好, " + ctx.UserID())
+})
+
+// 启动（建立 Gateway 连接，阻塞直到 ctx 取消）
+if err := bot.Start(ctx); err != nil { ... }
+
+// 复用底层 Session（如传给 notify/discord）
+dcSender := notifydiscord.NewSenderWithClient(bot.Session())
+```
+
+**关键选项：**
+- `discord.New(token, opts...)` — 创建 DiscordBot
+- `WithStateStore(store)` — 对话状态存储（默认 MemoryStateStore）
+- `WithCommandPrefix(prefix)` — 消息命令前缀（默认 "/"）
+- `WithIntents(intents)` — 覆盖 Gateway Intents（默认 GuildMessages + DirectMessages + MessageContent）
+- `WithErrorHandler(fn)` — handler 错误处理函数
+- `bot.Session() *discordgo.Session` — 获取底层 Session（可复用给 notify/discord）
+
+## transport/botserver/bottest — Bot 测试工具
+
+```go
+import "github.com/Tsukikage7/servex/v2/transport/botserver/bottest"
+
+func TestBotHandler(t *testing.T) {
+    // 创建测试 Bot 和消息记录器
+    bot, recorder := bottest.NewTestBot()
+
+    // 注册 handler（与真实 Bot 相同的 API）
+    bot.Handle("ping", func(ctx botserver.Context) error {
+        return ctx.Reply("pong!")
+    })
+
+    bot.Handle("echo", func(ctx botserver.Context) error {
+        return ctx.Reply(strings.Join(ctx.Args(), " "))
+    })
+
+    // 模拟发送命令
+    err := bot.Dispatch("/ping")
+    require.NoError(t, err)
+    assert.Equal(t, "pong!", recorder.Messages[0].Text)
+
+    // 带参数的命令
+    err = bot.Dispatch("/echo hello world")
+    require.NoError(t, err)
+    assert.Equal(t, "hello world", recorder.Messages[1].Text)
+
+    // 自定义 chatID/userID
+    err = bot.Dispatch("/ping",
+        bottest.WithChatID("chat-123"),
+        bottest.WithUserID("user-456"),
+    )
+    require.NoError(t, err)
+    assert.Equal(t, "chat-123", recorder.Messages[2].ChatID)
+}
+```
+
+**关键类型：**
+- `bottest.NewTestBot() (*TestBot, *Recorder)` — 创建测试 Bot 和消息记录器
+- `bottest.TestBot` — 实现 `botserver.Bot` 接口，Start/Stop 为空操作
+- `bottest.Recorder` — 记录所有 Reply 调用，`Messages []RecordedMessage`
+- `bottest.RecordedMessage` — 记录条目（`ChatID string`, `Text string`）
+- `bot.Dispatch(text, opts...)` — 模拟一条入站消息/命令
+- `bottest.WithChatID(id)` — 设置会话 ID（默认 "test-chat"）
+- `bottest.WithUserID(id)` — 设置用户 ID（默认 "test-user"）

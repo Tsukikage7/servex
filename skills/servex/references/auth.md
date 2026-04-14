@@ -64,6 +64,13 @@ srv := httpserver.New(mux,
 - `jwt.StandardClaims` — 标准 claims 结构（嵌入 `gojwt.RegisteredClaims`）
 - `auth.Principal` — 认证后的用户信息，含 `ID`（不是 `UserID`）
 
+**统一错误码（v2.0.6+）：** auth 包的所有错误已统一为 servex errors 格式，包含 HTTP/gRPC 映射：
+- `auth.ErrUnauthenticated(20001)` — 未认证（401 / Unauthenticated）
+- `auth.ErrForbidden(20002)` — 无权限（403 / PermissionDenied）
+- `jwt.ErrTokenInvalid(20101)` — 令牌无效（401 / Unauthenticated）
+- `jwt.ErrTokenRevoked(20102)` — 令牌已撤销（401 / Unauthenticated）
+- `rbac.ErrPermissionDenied(20303)` — RBAC 权限被拒绝（403 / PermissionDenied）
+
 **签名算法选项：**
 - `WithSecretKey(key)` — HMAC 对称签名（HS256，默认）
 - `WithRSAKeys(privateKey, publicKey)` — RSA 非对称签名（RS256）

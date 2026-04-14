@@ -195,3 +195,22 @@ go test ./... -update
 ```
 
 **注意：** `-update` 标志通过 `flag.Bool("update", false, ...)` 注册，使用前需在测试中调用 `flag.Parse()`（通常由 `TestMain` 或测试框架自动处理）。
+
+## Bot 测试工具（bottest）（v2.0.1+）
+
+Bot handler 的测试工具在 `transport/botserver/bottest` 包中，详见 `references/transport.md` 的 `transport/botserver/bottest` 章节。
+
+```go
+import "github.com/Tsukikage7/servex/v2/transport/botserver/bottest"
+
+func TestBotCommand(t *testing.T) {
+    bot, recorder := bottest.NewTestBot()
+    bot.Handle("ping", func(ctx botserver.Context) error {
+        return ctx.Reply("pong!")
+    })
+
+    err := bot.Dispatch("/ping")
+    require.NoError(t, err)
+    assert.Equal(t, "pong!", recorder.Messages[0].Text)
+}
+```

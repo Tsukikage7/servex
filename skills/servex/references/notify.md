@@ -3,13 +3,16 @@
 ## 核心类型
 
 ```go
-import "github.com/Tsukikage7/servex/notify"
+import "github.com/Tsukikage7/servex/v2/notify"
 
 // 通知渠道
 notify.ChannelEmail   // "email"
 notify.ChannelSMS     // "sms"
 notify.ChannelWebhook // "webhook"
 notify.ChannelPush    // "push"
+// 另见子包中定义的渠道：
+// telegram.ChannelTelegram  // "telegram"（v2.0.1+）
+// discord.ChannelDiscord    // "discord"（v2.0.1+）
 
 // 消息
 msg := &notify.Message{
@@ -38,7 +41,7 @@ type TemplateEngine interface {
 ## Dispatcher -- 通知分发器
 
 ```go
-import "github.com/Tsukikage7/servex/notify"
+import "github.com/Tsukikage7/servex/v2/notify"
 
 // 创建分发器
 dispatcher := notify.NewDispatcher(
@@ -78,7 +81,7 @@ dispatcher.Close()
 ## email -- 邮件发送
 
 ```go
-import "github.com/Tsukikage7/servex/notify/email"
+import "github.com/Tsukikage7/servex/v2/notify/email"
 
 sender, err := email.NewSender(
     email.WithSMTP("smtp.example.com", 587),
@@ -94,7 +97,7 @@ dispatcher.Register(sender)
 ## sms -- 短信发送
 
 ```go
-import "github.com/Tsukikage7/servex/notify/sms"
+import "github.com/Tsukikage7/servex/v2/notify/sms"
 
 // 阿里云短信
 provider := sms.NewAliyunProvider(sms.AliyunConfig{
@@ -114,7 +117,7 @@ provider := sms.NewTencentProvider(sms.TencentConfig{
 ## push -- 推送通知
 
 ```go
-import "github.com/Tsukikage7/servex/notify/push"
+import "github.com/Tsukikage7/servex/v2/notify/push"
 
 // Apple APNs
 provider := push.NewAPNsProvider(push.APNsConfig{
@@ -134,7 +137,7 @@ provider := push.NewFCMProvider(push.FCMConfig{
 ## nwebhook -- Webhook 通知
 
 ```go
-import "github.com/Tsukikage7/servex/notify/nwebhook"
+import "github.com/Tsukikage7/servex/v2/notify/nwebhook"
 
 // 支持多种消息格式
 // Slack / DingTalk / Lark / 自定义
@@ -147,10 +150,72 @@ sender := nwebhook.NewSender(
 dispatcher.Register(sender)
 ```
 
+## telegram -- Telegram 通知（v2.0.1+）
+
+```go
+import "github.com/Tsukikage7/servex/v2/notify/telegram"
+
+// 方式一：独立创建（内部自建 BotAPI 连接）
+sender, err := telegram.NewSender("YOUR_BOT_TOKEN")
+if err != nil { ... }
+dispatcher.Register(sender)
+
+// 方式二：复用 botserver/telegram 的 BotAPI 客户端
+import tgbot "github.com/Tsukikage7/servex/v2/transport/botserver/telegram"
+
+bot, _ := tgbot.New("YOUR_BOT_TOKEN", ...)
+sender := telegram.NewSenderWithClient(bot.Client())
+dispatcher.Register(sender)
+
+// 发送消息（msg.To 为 chat ID 字符串列表，msg.Body 为消息正文）
+result, err := dispatcher.Send(ctx, &notify.Message{
+    Channel: telegram.ChannelTelegram,
+    To:      []string{"123456789"},
+    Body:    "服务器告警：CPU 使用率超过 90%",
+})
+```
+
+**关键类型：**
+- `telegram.NewSender(token, opts...) (*Sender, error)` — 独立创建（内部创建 BotAPI）
+- `telegram.NewSenderWithClient(client *tgbotapi.BotAPI) *Sender` — 复用已有 BotAPI 客户端
+- `telegram.ChannelTelegram` — 渠道标识 `"telegram"`
+- 错误：`ErrEmptyToken(70071)`, `ErrBotAPICreate(70072)`, `ErrInvalidChatID(70073)`
+
+## discord -- Discord 通知（v2.0.1+）
+
+```go
+import "github.com/Tsukikage7/servex/v2/notify/discord"
+
+// 方式一：独立创建（内部创建 Session，仅用 HTTP API，不建立 Gateway 连接）
+sender, err := discord.NewSender("YOUR_BOT_TOKEN")
+if err != nil { ... }
+dispatcher.Register(sender)
+
+// 方式二：复用 botserver/discord 的 Session
+import dcbot "github.com/Tsukikage7/servex/v2/transport/botserver/discord"
+
+bot, _ := dcbot.New("YOUR_BOT_TOKEN", ...)
+sender := discord.NewSenderWithClient(bot.Session())
+dispatcher.Register(sender)
+
+// 发送消息（msg.To 为 channel ID 列表，msg.Body 为消息正文）
+result, err := dispatcher.Send(ctx, &notify.Message{
+    Channel: discord.ChannelDiscord,
+    To:      []string{"1234567890123456789"},
+    Body:    "部署完成：v2.0.1 已上线",
+})
+```
+
+**关键类型：**
+- `discord.NewSender(token, opts...) (*Sender, error)` — 独立创建（token 不含 "Bot " 前缀）
+- `discord.NewSenderWithClient(session *discordgo.Session) *Sender` — 复用已有 Session
+- `discord.ChannelDiscord` — 渠道标识 `"discord"`
+- 错误：`ErrEmptyToken(70061)`, `ErrSessionCreate(70062)`
+
 ## factory -- 配置驱动工厂
 
 ```go
-import "github.com/Tsukikage7/servex/notify/factory"
+import "github.com/Tsukikage7/servex/v2/notify/factory"
 
 // 从配置文件创建 Dispatcher（自动初始化所有配置的渠道）
 cfg := factory.Config{

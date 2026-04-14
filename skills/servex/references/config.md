@@ -30,7 +30,7 @@ defer mgr.Close()
 ## config/source/file — 文件配置源（热更新）
 
 ```go
-import fileSrc "github.com/Tsukikage7/servex/config/source/file"
+import fileSrc "github.com/Tsukikage7/servex/v2/config/source/file"
 
 // 支持 YAML、JSON、TOML；文件变更自动触发 Observer
 src := fileSrc.New("/etc/myapp/config.yaml")
@@ -39,7 +39,7 @@ src := fileSrc.New("/etc/myapp/config.yaml")
 ## config/source/etcd — etcd 配置源
 
 ```go
-import etcdSrc "github.com/Tsukikage7/servex/config/source/etcd"
+import etcdSrc "github.com/Tsukikage7/servex/v2/config/source/etcd"
 
 src := etcdSrc.New(etcdSrc.Config{
     Endpoints: []string{"localhost:2379"},
@@ -50,7 +50,7 @@ src := etcdSrc.New(etcdSrc.Config{
 ## config/source/env — 环境变量配置源
 
 ```go
-import envSrc "github.com/Tsukikage7/servex/config/source/env"
+import envSrc "github.com/Tsukikage7/servex/v2/config/source/env"
 
 // 从环境变量读取，支持监听 .env 文件变更
 src := envSrc.New()
@@ -60,7 +60,7 @@ src := envSrc.New()
 
 ```go
 import (
-    consulSrc "github.com/Tsukikage7/servex/config/source/consul"
+    consulSrc "github.com/Tsukikage7/servex/v2/config/source/consul"
     "github.com/hashicorp/consul/api"
 )
 
@@ -94,7 +94,7 @@ mgr, err := config.NewManager[AppConfig](
 
 ```go
 import (
-    nacosSrc "github.com/Tsukikage7/servex/config/source/nacos"
+    nacosSrc "github.com/Tsukikage7/servex/v2/config/source/nacos"
     "github.com/nacos-group/nacos-sdk-go/v2/clients/config_client"
 )
 
@@ -125,7 +125,7 @@ mgr, err := config.NewManager[AppConfig](
 ## config/source/apollo — Apollo 配置中心配置源
 
 ```go
-import apolloSrc "github.com/Tsukikage7/servex/config/source/apollo"
+import apolloSrc "github.com/Tsukikage7/servex/v2/config/source/apollo"
 
 // 创建 Apollo 配置源（自动启动 Apollo 客户端）
 src, err := apolloSrc.New(&apolloSrc.Config{
@@ -161,7 +161,7 @@ mgr, err := config.NewManager[AppConfig](
 ## config/source/k8s — Kubernetes ConfigMap/Secret 配置源
 
 ```go
-import k8sSrc "github.com/Tsukikage7/servex/config/source/k8s"
+import k8sSrc "github.com/Tsukikage7/servex/v2/config/source/k8s"
 
 // 方式一：通过 Config 创建（自动构建 clientset）
 src, err := k8sSrc.New(&k8sSrc.Config{
