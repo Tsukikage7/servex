@@ -3,7 +3,6 @@ package gateway
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net"
 	"net/http"
@@ -15,7 +14,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/Tsukikage7/servex/v2/auth"
@@ -97,7 +95,7 @@ func New(opts ...Option) *Server {
 
 	// 如果启用统一响应，添加自定义错误处理器
 	if o.enableResponse {
-		muxOpts = append(muxOpts, runtime.WithErrorHandler(unifiedErrorHandler))
+		muxOpts = append(muxOpts, runtime.WithErrorHandler(response.GatewayErrorHandler))
 	}
 
 	muxOpts = append(muxOpts, o.serveMuxOpts...)
@@ -112,31 +110,6 @@ func New(opts ...Option) *Server {
 		mux:    runtime.NewServeMux(muxOpts...),
 		health: h,
 	}
-}
-
-// unifiedErrorHandler 统一错误处理器.
-//
-// 将 gRPC 错误转换为统一的 JSON 响应格式.
-func unifiedErrorHandler(
-	ctx context.Context,
-	mux *runtime.ServeMux,
-	marshaler runtime.Marshaler,
-	w http.ResponseWriter,
-	r *http.Request,
-	err error,
-) {
-	// 从 gRPC status 提取错误码
-	s, _ := status.FromError(err)
-	code := response.FromGRPCStatus(s)
-
-	resp := response.Response[any]{
-		Code:    code.Num,
-		Message: s.Message(),
-	}
-
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(code.HTTPStatus)
-	_ = json.NewEncoder(w).Encode(resp)
 }
 
 // Register 注册服务，支持链式调用.
