@@ -10,6 +10,7 @@ import (
 
 	es "github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
@@ -37,14 +38,20 @@ func newESClient(config *Config, log logger.Logger) (*esClient, error) {
 	}
 
 	// 自定义 Transport 设置（基于默认 Transport 克隆，保留 TLS、DialContext 等默认配置）
-	if config.MaxIdleConnsPerHost > 0 || config.ResponseHeaderTimeout > 0 {
-		tp := http.DefaultTransport.(*http.Transport).Clone()
-		if config.MaxIdleConnsPerHost > 0 {
-			tp.MaxIdleConnsPerHost = config.MaxIdleConnsPerHost
-		}
-		if config.ResponseHeaderTimeout > 0 {
-			tp.ResponseHeaderTimeout = config.ResponseHeaderTimeout
-		}
+	tp := http.DefaultTransport.(*http.Transport).Clone()
+	if config.MaxIdleConnsPerHost > 0 {
+		tp.MaxIdleConnsPerHost = config.MaxIdleConnsPerHost
+	}
+	if config.ResponseHeaderTimeout > 0 {
+		tp.ResponseHeaderTimeout = config.ResponseHeaderTimeout
+	}
+
+	// 启用链路追踪时，用 otelhttp 包装 Transport
+	if config.EnableTracing {
+		cfg.Transport = otelhttp.NewTransport(tp, otelhttp.WithSpanNameFormatter(func(_ string, r *http.Request) string {
+			return "ES " + r.Method + " " + r.URL.Path
+		}))
+	} else {
 		cfg.Transport = tp
 	}
 
