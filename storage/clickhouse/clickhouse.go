@@ -127,7 +127,17 @@ func NewClient(config *Config, log logger.Logger) (Client, error) {
 		return nil, err
 	}
 
-	return newCHClient(config, log)
+	client, err := newCHClient(config, log)
+	if err != nil {
+		return nil, err
+	}
+
+	// 启用链路追踪
+	if config.EnableTracing {
+		return newTracingClient(client), nil
+	}
+
+	return client, nil
 }
 
 // MustNewClient 创建 ClickHouse 客户端，失败时 panic.
