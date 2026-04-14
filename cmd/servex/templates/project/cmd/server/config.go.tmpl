@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/Tsukikage7/servex/observability/logger"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 {{- range .AllComponents}}{{if .Alias}}
 	{{.Alias}} "{{.Import}}"
 {{- else}}
