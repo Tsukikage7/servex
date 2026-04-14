@@ -20,21 +20,37 @@ type ServiceInfo struct {
 
 // ServiceRegistry 管理多个服务的注册和注销.
 type ServiceRegistry struct {
-	discovery  Discovery
-	logger     logger.Logger
-	services   []ServiceInfo
-	serviceIDs []string
-	mu         sync.Mutex
+	discovery     Discovery
+	logger        logger.Logger
+	advertiseAddr string
+	services      []ServiceInfo
+	serviceIDs    []string
+	mu            sync.Mutex
+}
+
+// RegistryOption 是 ServiceRegistry 的可选配置.
+type RegistryOption func(*ServiceRegistry)
+
+// WithAdvertiseAddr 设置服务注册的通告地址.
+// 当服务地址仅包含端口（如 ":8080"）时，会自动拼接此地址作为 host.
+func WithAdvertiseAddr(addr string) RegistryOption {
+	return func(r *ServiceRegistry) {
+		r.advertiseAddr = addr
+	}
 }
 
 // NewServiceRegistry 创建服务注册器.
-func NewServiceRegistry(discovery Discovery, logger logger.Logger) *ServiceRegistry {
-	return &ServiceRegistry{
+func NewServiceRegistry(discovery Discovery, logger logger.Logger, opts ...RegistryOption) *ServiceRegistry {
+	r := &ServiceRegistry{
 		discovery:  discovery,
 		logger:     logger,
 		services:   make([]ServiceInfo, 0),
 		serviceIDs: make([]string, 0),
 	}
+	for _, opt := range opts {
+		opt(r)
+	}
+	return r
 }
 
 // AddService 添加要注册的服务.
@@ -43,7 +59,7 @@ func (r *ServiceRegistry) AddService(name, addr, protocol string) *ServiceRegist
 	defer r.mu.Unlock()
 	r.services = append(r.services, ServiceInfo{
 		Name:     name,
-		Addr:     addr,
+		Addr:     r.resolveAddr(addr),
 		Protocol: protocol,
 	})
 	return r
@@ -67,7 +83,7 @@ func (r *ServiceRegistry) AddServer(name string, server transport.Server) *Servi
 
 	info := ServiceInfo{
 		Name: name,
-		Addr: server.Addr(),
+		Addr: r.resolveAddr(server.Addr()),
 	}
 	info.Protocol = r.inferProtocol(server)
 
@@ -86,7 +102,7 @@ func (r *ServiceRegistry) AddServerWithProtocol(name string, server transport.Se
 
 	info := ServiceInfo{
 		Name:     name,
-		Addr:     server.Addr(),
+		Addr:     r.resolveAddr(server.Addr()),
 		Protocol: protocol,
 	}
 
@@ -198,6 +214,14 @@ func (r *ServiceRegistry) AfterStartHook() func(ctx context.Context) error {
 // BeforeStopHook 返回服务停止前的注销钩子，可用于 HooksBuilder.BeforeStop.
 func (r *ServiceRegistry) BeforeStopHook() func(ctx context.Context) error {
 	return r.UnregisterAll
+}
+
+// resolveAddr 解析服务地址，如果地址仅包含端口（以 ":" 开头），则拼接 advertiseAddr.
+func (r *ServiceRegistry) resolveAddr(addr string) string {
+	if r.advertiseAddr != "" && strings.HasPrefix(addr, ":") {
+		return r.advertiseAddr + addr
+	}
+	return addr
 }
 
 func containsIgnoreCase(s, substr string) bool {

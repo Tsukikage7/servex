@@ -30,9 +30,10 @@ const DefaultVersion = "1.0.0"
 
 // Config 表示服务发现配置.
 type Config struct {
-	Type     string        `json:"type" toml:"type" yaml:"type" mapstructure:"type"`
-	Addr     string        `json:"addr" toml:"addr" yaml:"addr" mapstructure:"addr"`
-	Services ServiceConfig `json:"services" toml:"services" yaml:"services" mapstructure:"services"`
+	Type          string        `json:"type" toml:"type" yaml:"type" mapstructure:"type"`
+	Addr          string        `json:"addr" toml:"addr" yaml:"addr" mapstructure:"addr"`
+	AdvertiseAddr string        `json:"advertise_addr" toml:"advertise_addr" yaml:"advertise_addr" mapstructure:"advertise_addr"`
+	Services      ServiceConfig `json:"services" toml:"services" yaml:"services" mapstructure:"services"`
 
 	// etcd 专用配置字段（Type == TypeEtcd 时生效）.
 	EtcdEndpoints   []string      `json:"etcd_endpoints" toml:"etcd_endpoints" yaml:"etcd_endpoints" mapstructure:"etcd_endpoints"`
