@@ -2,11 +2,20 @@ package {{.NameLower}}
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/Tsukikage7/servex/domain"
+	errors "github.com/Tsukikage7/servex/v2/errors"
 
 	domain{{.Name}} "{{.Module}}/domain/{{.NameLower}}"
+)
+
+// Sentinel errors for service operations.
+var (
+	ErrSaveFailed     = errors.New(50001, "{{.NameLower}}.save_failed", "{{.NameLower}} 保存失败")
+	ErrFindFailed     = errors.New(50002, "{{.NameLower}}.find_failed", "{{.NameLower}} 查询失败")
+	ErrListFailed     = errors.New(50003, "{{.NameLower}}.list_failed", "{{.NameLower}} 列表查询失败")
+	ErrDeleteFailed   = errors.New(50004, "{{.NameLower}}.delete_failed", "{{.NameLower}} 删除失败")
+	ErrDispatchEvents = errors.New(50005, "{{.NameLower}}.dispatch_events_failed", "{{.NameLower}} 事件分发失败")
 )
 
 // Service {{.Name}}应用服务.
@@ -24,10 +33,10 @@ func NewService(repo domain{{.Name}}.Repository, eventBus *domain.EventBus) *Ser
 func (s *Service) HandleCreate(ctx context.Context, cmd domain{{.Name}}.Create{{.Name}}Command) (*domain{{.Name}}.{{.Name}}View, error) {
 	agg := domain{{.Name}}.New{{.Name}}(0{{range .NonIDFields}}, cmd.{{.Name}}{{end}})
 	if err := s.repo.Save(ctx, agg); err != nil {
-		return nil, fmt.Errorf("save {{.NameLower}}: %w", err)
+		return nil, ErrSaveFailed.WithCause(err)
 	}
 	if err := s.eventBus.Dispatch(ctx, agg.DomainEvents(), agg.ClearDomainEvents); err != nil {
-		return nil, fmt.Errorf("dispatch events: %w", err)
+		return nil, ErrDispatchEvents.WithCause(err)
 	}
 	return &domain{{.Name}}.{{.Name}}View{
 		ID: agg.ID(),
@@ -43,11 +52,11 @@ func (s *Service) HandleCreate(ctx context.Context, cmd domain{{.Name}}.Create{{
 func (s *Service) Handle{{.Name}}(ctx context.Context, cmd domain{{$.Name}}.{{.Name}}{{$.Name}}Command) error {
 	agg, err := s.repo.FindByID(ctx, cmd.ID)
 	if err != nil {
-		return fmt.Errorf("find {{$.NameLower}}: %w", err)
+		return ErrFindFailed.WithCause(err)
 	}
 	agg.{{.Name}}()
 	if err := s.repo.Save(ctx, agg); err != nil {
-		return fmt.Errorf("save {{$.NameLower}}: %w", err)
+		return ErrSaveFailed.WithCause(err)
 	}
 	return s.eventBus.Dispatch(ctx, agg.DomainEvents(), agg.ClearDomainEvents)
 }
@@ -58,14 +67,14 @@ func (s *Service) Handle{{.Name}}(ctx context.Context, cmd domain{{$.Name}}.{{.N
 func (s *Service) HandleUpdate(ctx context.Context, cmd domain{{.Name}}.Update{{.Name}}Command) (*domain{{.Name}}.{{.Name}}View, error) {
 	agg, err := s.repo.FindByID(ctx, cmd.ID)
 	if err != nil {
-		return nil, fmt.Errorf("find {{.NameLower}}: %w", err)
+		return nil, ErrFindFailed.WithCause(err)
 	}
 	// TODO: apply updates to aggregate
 	if err := s.repo.Save(ctx, agg); err != nil {
-		return nil, fmt.Errorf("save {{.NameLower}}: %w", err)
+		return nil, ErrSaveFailed.WithCause(err)
 	}
 	if err := s.eventBus.Dispatch(ctx, agg.DomainEvents(), agg.ClearDomainEvents); err != nil {
-		return nil, fmt.Errorf("dispatch events: %w", err)
+		return nil, ErrDispatchEvents.WithCause(err)
 	}
 	return &domain{{.Name}}.{{.Name}}View{
 		ID: agg.ID(),
@@ -79,7 +88,7 @@ func (s *Service) HandleUpdate(ctx context.Context, cmd domain{{.Name}}.Update{{
 // HandleDelete 处理删除命令.
 func (s *Service) HandleDelete(ctx context.Context, cmd domain{{.Name}}.Delete{{.Name}}Command) error {
 	if err := s.repo.Delete(ctx, cmd.ID); err != nil {
-		return fmt.Errorf("delete {{.NameLower}}: %w", err)
+		return ErrDeleteFailed.WithCause(err)
 	}
 	return nil
 }
@@ -88,7 +97,7 @@ func (s *Service) HandleDelete(ctx context.Context, cmd domain{{.Name}}.Delete{{
 func (s *Service) HandleGet(ctx context.Context, query domain{{.Name}}.Get{{.Name}}Query) (*domain{{.Name}}.{{.Name}}View, error) {
 	agg, err := s.repo.FindByID(ctx, query.ID)
 	if err != nil {
-		return nil, fmt.Errorf("find {{.NameLower}}: %w", err)
+		return nil, ErrFindFailed.WithCause(err)
 	}
 	return &domain{{.Name}}.{{.Name}}View{
 		ID: agg.ID(),
@@ -103,7 +112,7 @@ func (s *Service) HandleList(ctx context.Context, query domain{{.Name}}.List{{.N
 	offset := (query.Page - 1) * query.PageSize
 	aggs, total, err := s.repo.List(ctx, domain{{.Name}}.{{.Name}}Filter{}, offset, query.PageSize)
 	if err != nil {
-		return nil, 0, fmt.Errorf("list {{.NameLower}}: %w", err)
+		return nil, 0, ErrListFailed.WithCause(err)
 	}
 
 	views := make([]*domain{{.Name}}.{{.Name}}View, len(aggs))

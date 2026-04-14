@@ -2,12 +2,16 @@ package external
 
 import (
 	"context"
-	"fmt"
 
 	"google.golang.org/grpc"
 
+	errors "github.com/Tsukikage7/servex/v2/errors"
+
 	domain{{.CallerName}} "{{.Module}}/domain/{{.CallerName}}"
 )
+
+// ErrNotImplemented {{.TargetName}}客户端未实现.
+var ErrNotImplemented = errors.New(50101, "{{.TargetNameLower}}.not_implemented", "{{.TargetNameLower}} 客户端未实现")
 
 // {{.TargetName}}Client {{.TargetName}}服务 gRPC 客户端适配器.
 type {{.TargetName}}Client struct {
@@ -22,5 +26,5 @@ func New{{.TargetName}}Client(conn *grpc.ClientConn) *{{.TargetName}}Client {
 // Get{{.TargetName}} 查询{{.TargetName}}信息.
 func (c *{{.TargetName}}Client) Get{{.TargetName}}(ctx context.Context, id uint64) (*domain{{.CallerName}}.{{.TargetName}}Info, error) {
 	// TODO: implement gRPC call to {{.TargetNameLower}}-service
-	return nil, fmt.Errorf("{{.TargetNameLower}} client: not implemented")
+	return nil, ErrNotImplemented
 }

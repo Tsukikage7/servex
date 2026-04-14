@@ -2,11 +2,15 @@ package {{.NameLower}}
 
 import (
 	"context"
-	"errors"
+	"net/http"
+
+	"google.golang.org/grpc/codes"
+
+	errors "github.com/Tsukikage7/servex/v2/errors"
 )
 
 // ErrNotFound {{.Name}}未找到.
-var ErrNotFound = errors.New("{{.NameLower}}: not found")
+var ErrNotFound = errors.New(40001, "{{.NameLower}}.not_found", "{{.NameLower}} 不存在").WithHTTP(http.StatusNotFound).WithGRPC(codes.NotFound)
 
 // Repository {{.Name}}仓储接口.
 type Repository interface {
