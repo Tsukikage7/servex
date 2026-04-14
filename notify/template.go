@@ -2,7 +2,6 @@ package notify
 
 import (
 	"bytes"
-	"fmt"
 	"html/template"
 	"io/fs"
 	"os"
@@ -80,14 +79,14 @@ func NewTemplateEngine(opts ...TemplateOption) *templateEngine {
 func (e *templateEngine) Render(templateID string, data map[string]any) (string, error) {
 	tmpl, ok := e.templates[templateID]
 	if !ok {
-		return "", fmt.Errorf("%w: %s", ErrTemplateNotFound, templateID)
+		return "", ErrTemplateNotFound.WithMessage("模板未找到: " + templateID)
 	}
 	if tmpl == nil {
-		return "", fmt.Errorf("%w: %s (解析失败)", ErrTemplateRender, templateID)
+		return "", ErrTemplateRender.WithMessage("模板渲染失败: " + templateID + " (解析失败)")
 	}
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, data); err != nil {
-		return "", fmt.Errorf("%w: %v", ErrTemplateRender, err)
+		return "", ErrTemplateRender.WithCause(err)
 	}
 	return buf.String(), nil
 }

@@ -3,8 +3,7 @@ package discord
 
 import (
 	"context"
-	"errors"
-	"fmt"
+	stderrors "errors"
 
 	"github.com/bwmarrin/discordgo"
 
@@ -29,11 +28,11 @@ type Sender struct {
 // token 为 Bot Token（不含 "Bot " 前缀，内部自动添加）。
 func NewSender(token string, opts ...Option) (*Sender, error) {
 	if token == "" {
-		return nil, errors.New("notify/discord: token 不能为空")
+		return nil, ErrEmptyToken
 	}
 	session, err := discordgo.New("Bot " + token)
 	if err != nil {
-		return nil, fmt.Errorf("notify/discord: 创建 Session 失败: %w", err)
+		return nil, ErrSessionCreate.WithCause(err)
 	}
 	// 注意：只使用 HTTP API 发消息，不需要建立 Gateway 连接（无需 Open）
 	s := &Sender{client: session}
@@ -65,7 +64,7 @@ func (s *Sender) Send(_ context.Context, msg *notify.Message) (*notify.Result, e
 		lastID = sent.ID
 	}
 	if len(errs) > 0 {
-		return &notify.Result{MessageID: lastID, Channel: ChannelDiscord, Error: errors.Join(errs...)}, errors.Join(errs...)
+		return &notify.Result{MessageID: lastID, Channel: ChannelDiscord, Error: stderrors.Join(errs...)}, stderrors.Join(errs...)
 	}
 	return &notify.Result{MessageID: lastID, Channel: ChannelDiscord}, nil
 }

@@ -3,7 +3,6 @@ package notify
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"sync"
 	"sync/atomic"
 
@@ -94,12 +93,12 @@ func (d *Dispatcher) SendAsync(ctx context.Context, msg *Message) error {
 		return err
 	}
 	if d.opts.jobClient == nil {
-		return fmt.Errorf("notification: jobqueue 未配置")
+		return ErrJobQueueNotConfigured
 	}
 
 	payload, err := json.Marshal(msg)
 	if err != nil {
-		return fmt.Errorf("notification: 序列化消息失败: %w", err)
+		return ErrSerializeFailed.WithCause(err)
 	}
 
 	return d.opts.jobClient.Enqueue(ctx, &jobqueue.Job{

@@ -34,7 +34,7 @@ func TestErrors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.NotNil(t, tt.err)
-			assert.Equal(t, tt.msg, tt.err.Error())
+			assert.Contains(t, tt.err.Error(), tt.msg)
 		})
 	}
 }

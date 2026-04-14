@@ -4,7 +4,6 @@ package wechat
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -67,10 +66,10 @@ func (p *Provider) Exchange(ctx context.Context, code string) (*oauth2.Token, er
 
 	var result map[string]any
 	if err := p.get(ctx, u, &result); err != nil {
-		return nil, errors.Join(oauth2.ErrExchangeFailed, err)
+		return nil, oauth2.ErrExchangeFailed.WithCause(err)
 	}
 	if _, ok := result["errcode"]; ok {
-		return nil, fmt.Errorf("%w: %v", oauth2.ErrExchangeFailed, result["errmsg"])
+		return nil, oauth2.ErrExchangeFailed.WithMessage(fmt.Sprintf("code 换取 token 失败: %v", result["errmsg"]))
 	}
 
 	token := &oauth2.Token{
@@ -94,7 +93,7 @@ func (p *Provider) Refresh(ctx context.Context, refreshToken string) (*oauth2.To
 
 	var result map[string]any
 	if err := p.get(ctx, u, &result); err != nil {
-		return nil, errors.Join(oauth2.ErrRefreshFailed, err)
+		return nil, oauth2.ErrRefreshFailed.WithCause(err)
 	}
 
 	token := &oauth2.Token{
@@ -118,7 +117,7 @@ func (p *Provider) UserInfo(ctx context.Context, token *oauth2.Token) (*oauth2.U
 
 	var result map[string]any
 	if err := p.get(ctx, u, &result); err != nil {
-		return nil, errors.Join(oauth2.ErrUserInfoFailed, err)
+		return nil, oauth2.ErrUserInfoFailed.WithCause(err)
 	}
 
 	return &oauth2.UserInfo{

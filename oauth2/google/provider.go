@@ -7,7 +7,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -155,26 +154,26 @@ func (p *Provider) ExchangeWithState(ctx context.Context, code, state string) (*
 
 	resp, err := p.opts.httpClient.Do(req)
 	if err != nil {
-		return nil, errors.Join(oauth2.ErrExchangeFailed, err)
+		return nil, oauth2.ErrExchangeFailed.WithCause(err)
 	}
 	defer resp.Body.Close()
 
 	// 检查 HTTP 状态码
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("%w: HTTP %d", oauth2.ErrExchangeFailed, resp.StatusCode)
+		return nil, oauth2.ErrExchangeFailed.WithMessage(fmt.Sprintf("code 换取 token 失败: HTTP %d", resp.StatusCode))
 	}
 
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBody))
 	if err != nil {
-		return nil, errors.Join(oauth2.ErrExchangeFailed, err)
+		return nil, oauth2.ErrExchangeFailed.WithCause(err)
 	}
 
 	var result map[string]any
 	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, errors.Join(oauth2.ErrExchangeFailed, err)
+		return nil, oauth2.ErrExchangeFailed.WithCause(err)
 	}
 	if _, ok := result["error"]; ok {
-		return nil, fmt.Errorf("%w: %v", oauth2.ErrExchangeFailed, result["error_description"])
+		return nil, oauth2.ErrExchangeFailed.WithMessage(fmt.Sprintf("code 换取 token 失败: %v", result["error_description"]))
 	}
 
 	token := &oauth2.Token{
@@ -211,13 +210,13 @@ func (p *Provider) Refresh(ctx context.Context, refreshToken string) (*oauth2.To
 
 	resp, err := p.opts.httpClient.Do(req)
 	if err != nil {
-		return nil, errors.Join(oauth2.ErrRefreshFailed, err)
+		return nil, oauth2.ErrRefreshFailed.WithCause(err)
 	}
 	defer resp.Body.Close()
 
 	var result map[string]any
 	if err := json.NewDecoder(io.LimitReader(resp.Body, maxResponseBody)).Decode(&result); err != nil {
-		return nil, errors.Join(oauth2.ErrRefreshFailed, err)
+		return nil, oauth2.ErrRefreshFailed.WithCause(err)
 	}
 
 	token := &oauth2.Token{
@@ -245,18 +244,18 @@ func (p *Provider) UserInfo(ctx context.Context, token *oauth2.Token) (*oauth2.U
 
 	resp, err := p.opts.httpClient.Do(req)
 	if err != nil {
-		return nil, errors.Join(oauth2.ErrUserInfoFailed, err)
+		return nil, oauth2.ErrUserInfoFailed.WithCause(err)
 	}
 	defer resp.Body.Close()
 
 	// 检查 HTTP 状态码
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("%w: HTTP %d", oauth2.ErrUserInfoFailed, resp.StatusCode)
+		return nil, oauth2.ErrUserInfoFailed.WithMessage(fmt.Sprintf("获取用户信息失败: HTTP %d", resp.StatusCode))
 	}
 
 	var result map[string]any
 	if err := json.NewDecoder(io.LimitReader(resp.Body, maxResponseBody)).Decode(&result); err != nil {
-		return nil, errors.Join(oauth2.ErrUserInfoFailed, err)
+		return nil, oauth2.ErrUserInfoFailed.WithCause(err)
 	}
 
 	return &oauth2.UserInfo{

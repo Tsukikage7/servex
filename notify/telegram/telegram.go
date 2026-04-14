@@ -3,8 +3,7 @@ package telegram
 
 import (
 	"context"
-	"errors"
-	"fmt"
+	stderrors "errors"
 	"strconv"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -28,11 +27,11 @@ type Sender struct {
 // NewSender 创建 Sender，内部自建 tgbotapi.BotAPI 连接.
 func NewSender(token string, opts ...Option) (*Sender, error) {
 	if token == "" {
-		return nil, errors.New("notify/telegram: token 不能为空")
+		return nil, ErrEmptyToken
 	}
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
-		return nil, fmt.Errorf("notify/telegram: 创建 BotAPI 失败: %w", err)
+		return nil, ErrBotAPICreate.WithCause(err)
 	}
 	s := &Sender{client: bot}
 	for _, opt := range opts {
@@ -56,7 +55,7 @@ func (s *Sender) Send(_ context.Context, msg *notify.Message) (*notify.Result, e
 	for _, to := range msg.To {
 		chatID, err := strconv.ParseInt(to, 10, 64)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("invalid chat ID %q: %w", to, err))
+			errs = append(errs, ErrInvalidChatID.WithMessage("无效的 chat ID: "+to).WithCause(err))
 			continue
 		}
 		m := tgbotapi.NewMessage(chatID, msg.Body)
@@ -68,7 +67,7 @@ func (s *Sender) Send(_ context.Context, msg *notify.Message) (*notify.Result, e
 		lastID = strconv.Itoa(sent.MessageID)
 	}
 	if len(errs) > 0 {
-		return &notify.Result{MessageID: lastID, Channel: ChannelTelegram, Error: errors.Join(errs...)}, errors.Join(errs...)
+		return &notify.Result{MessageID: lastID, Channel: ChannelTelegram, Error: stderrors.Join(errs...)}, stderrors.Join(errs...)
 	}
 	return &notify.Result{MessageID: lastID, Channel: ChannelTelegram}, nil
 }

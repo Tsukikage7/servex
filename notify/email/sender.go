@@ -4,7 +4,6 @@ package email
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"mime"
 	"net"
@@ -30,10 +29,10 @@ func NewSender(opts ...Option) (*Sender, error) {
 		opt(&o)
 	}
 	if o.host == "" {
-		return nil, errors.New("notification/email: SMTP host 不能为空")
+		return nil, ErrEmptySMTPHost
 	}
 	if o.fromAddr == "" {
-		return nil, errors.New("notification/email: 发件人地址不能为空")
+		return nil, ErrEmptyFromAddr
 	}
 	return &Sender{opts: o}, nil
 }

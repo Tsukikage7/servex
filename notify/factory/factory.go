@@ -2,10 +2,13 @@
 package factory
 
 import (
-	"errors"
 	"fmt"
+	"net/http"
 	"time"
 
+	"google.golang.org/grpc/codes"
+
+	"github.com/Tsukikage7/servex/v2/errors"
 	"github.com/Tsukikage7/servex/v2/notify"
 	"github.com/Tsukikage7/servex/v2/notify/email"
 	"github.com/Tsukikage7/servex/v2/notify/nwebhook"
@@ -70,7 +73,13 @@ type APNsPushConfig struct {
 	Production                       bool
 }
 
-var errNilConfig = errors.New("notification: config 不能为空")
+var (
+	errNilConfig           = errors.New(70051, "notify.factory.nil_config", "config 不能为空").WithHTTP(http.StatusBadRequest).WithGRPC(codes.InvalidArgument)
+	errEmailSenderFailed   = errors.New(70052, "notify.factory.email_sender_failed", "创建 email sender 失败").WithHTTP(http.StatusInternalServerError).WithGRPC(codes.Internal)
+	errWebhookSenderFailed = errors.New(70053, "notify.factory.webhook_sender_failed", "创建 webhook sender 失败").WithHTTP(http.StatusInternalServerError).WithGRPC(codes.Internal)
+	errUnsupportedSMS      = errors.New(70054, "notify.factory.unsupported_sms_provider", "不支持的 SMS provider").WithHTTP(http.StatusBadRequest).WithGRPC(codes.InvalidArgument)
+	errUnsupportedPush     = errors.New(70055, "notify.factory.unsupported_push_provider", "不支持的 push provider").WithHTTP(http.StatusBadRequest).WithGRPC(codes.InvalidArgument)
+)
 
 // NewDispatcher 根据 Config 创建并配置好 *notify.Dispatcher.
 func NewDispatcher(cfg *Config, log logger.Logger) (*notify.Dispatcher, error) {
@@ -106,7 +115,7 @@ func NewDispatcher(cfg *Config, log logger.Logger) (*notify.Dispatcher, error) {
 		}
 		s, err := email.NewSender(eo...)
 		if err != nil {
-			return nil, fmt.Errorf("notification: email sender: %w", err)
+			return nil, errEmailSenderFailed.WithCause(err)
 		}
 		d.Register(s)
 	}
@@ -129,7 +138,7 @@ func NewDispatcher(cfg *Config, log logger.Logger) (*notify.Dispatcher, error) {
 		}
 		s, err := nwebhook.NewSender(wo...)
 		if err != nil {
-			return nil, fmt.Errorf("notification: webhook sender: %w", err)
+			return nil, errWebhookSenderFailed.WithCause(err)
 		}
 		d.Register(s)
 	}
@@ -170,7 +179,7 @@ func buildSMS(cfg *SMSConfig, log logger.Logger) (notify.Sender, error) {
 			Endpoint:  cfg.Tencent.Endpoint,
 		})
 	default:
-		return nil, fmt.Errorf("notification: 不支持的 SMS provider %q", cfg.Provider)
+		return nil, errUnsupportedSMS.WithMessage(fmt.Sprintf("不支持的 SMS provider %q", cfg.Provider))
 	}
 	sopts := []sms.Option{sms.WithSignName(cfg.SignName)}
 	if log != nil {
@@ -202,7 +211,7 @@ func buildPush(cfg *PushConfig, log logger.Logger) (notify.Sender, error) {
 			Production: cfg.APNs.Production,
 		})
 	default:
-		return nil, fmt.Errorf("notification: 不支持的 push provider %q", cfg.Provider)
+		return nil, errUnsupportedPush.WithMessage(fmt.Sprintf("不支持的 push provider %q", cfg.Provider))
 	}
 	var popts []push.Option
 	if log != nil {

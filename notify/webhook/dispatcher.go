@@ -89,7 +89,7 @@ func (d *dispatcher) doDispatch(ctx context.Context, sub *Subscription, event *E
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		return fmt.Errorf("webhook: 投递失败，状态码 %d", resp.StatusCode)
+		return ErrDeliveryFailed.WithMessage(fmt.Sprintf("投递失败，状态码 %d", resp.StatusCode))
 	}
 	return nil
 }

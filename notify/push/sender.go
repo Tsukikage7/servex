@@ -2,7 +2,6 @@ package push
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -21,7 +20,7 @@ type Sender struct {
 // NewSender 创建推送发送器实例.
 func NewSender(provider Provider, opts ...Option) (*Sender, error) {
 	if provider == nil {
-		return nil, errors.New("notification/push: provider 不能为空")
+		return nil, ErrNilProvider
 	}
 	var o senderOptions
 	for _, opt := range opts {
@@ -69,7 +68,7 @@ func (s *Sender) Send(ctx context.Context, msg *notify.Message) (*notify.Result,
 		lastID = id
 	}
 	if len(errs) > 0 {
-		return nil, fmt.Errorf("notification/push: 部分发送失败: %s", strings.Join(errs, "; "))
+		return nil, ErrPartialSendFailed.WithMessage("部分发送失败: " + strings.Join(errs, "; "))
 	}
 	return &notify.Result{MessageID: lastID, Channel: notify.ChannelPush}, nil
 }

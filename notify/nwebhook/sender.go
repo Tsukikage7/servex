@@ -86,7 +86,7 @@ func (s *Sender) doSend(ctx context.Context, url string, payload []byte, secret 
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
-		return fmt.Errorf("notification/webhook: 投递失败，状态码 %d", resp.StatusCode)
+		return ErrDeliveryFailed.WithMessage(fmt.Sprintf("投递失败，状态码 %d", resp.StatusCode))
 	}
 	return nil
 }

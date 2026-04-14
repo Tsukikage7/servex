@@ -2,7 +2,6 @@ package sms
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"sync/atomic"
@@ -20,7 +19,7 @@ type Sender struct {
 // NewSender 创建短信发送器实例.
 func NewSender(provider Provider, opts ...Option) (*Sender, error) {
 	if provider == nil {
-		return nil, errors.New("notification/sms: provider 不能为空")
+		return nil, ErrNilProvider
 	}
 	var o senderOptions
 	for _, opt := range opts {
@@ -60,7 +59,7 @@ func (s *Sender) Send(ctx context.Context, msg *notify.Message) (*notify.Result,
 		lastID = id
 	}
 	if len(errs) > 0 {
-		return nil, fmt.Errorf("notification/sms: 部分发送失败: %s", strings.Join(errs, "; "))
+		return nil, ErrPartialSendFailed.WithMessage("部分发送失败: " + strings.Join(errs, "; "))
 	}
 	return &notify.Result{MessageID: lastID, Channel: notify.ChannelSMS}, nil
 }
