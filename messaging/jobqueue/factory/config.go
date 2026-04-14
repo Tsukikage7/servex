@@ -33,9 +33,11 @@ type StoreConfig struct {
 	DSN    string `json:"dsn"    yaml:"dsn"`
 	Table  string `json:"table"  yaml:"table"`
 
-	// EnableTracing 启用链路追踪.
-	// TODO: 待各 driver（redis/kafka/rabbitmq/database）OTEL 集成库成熟后启用
+	// EnableTracing 启用链路追踪（Enqueue 时自动注入 trace context 到 Job Headers）.
 	EnableTracing bool `json:"enable_tracing" yaml:"enable_tracing" mapstructure:"enable_tracing"`
+
+	// TracerName 链路追踪 tracer 名称（用于 Worker span，默认 "jobqueue"）.
+	TracerName string `json:"tracer_name" yaml:"tracer_name" mapstructure:"tracer_name"`
 }
 
 // NewStore 根据 StoreConfig 创建对应的 jobqueue.Store 实例.
@@ -55,4 +57,36 @@ func NewStore(cfg *StoreConfig) (jobqueue.Store, error) {
 	default:
 		return nil, fmt.Errorf("jobqueue/factory: 不支持的存储类型 %q", cfg.Type)
 	}
+}
+
+// NewClient 根据 StoreConfig 创建 Client.
+// 当 EnableTracing 为 true 时，自动使用 TracingClient 包装.
+func NewClient(cfg *StoreConfig) (jobqueue.Client, error) {
+	store, err := NewStore(cfg)
+	if err != nil {
+		return nil, err
+	}
+	c := jobqueue.NewClient(store)
+	if cfg.EnableTracing {
+		return jobqueue.NewTracingClient(c), nil
+	}
+	return c, nil
+}
+
+// NewWorker 根据 StoreConfig 创建 Worker.
+// 当 EnableTracing 为 true 时，自动使用 TracingWorker 包装.
+func NewWorker(cfg *StoreConfig, opts ...jobqueue.WorkerOption) (jobqueue.Worker, error) {
+	store, err := NewStore(cfg)
+	if err != nil {
+		return nil, err
+	}
+	w := jobqueue.NewWorker(store, opts...)
+	if cfg.EnableTracing {
+		tracerName := cfg.TracerName
+		if tracerName == "" {
+			tracerName = "jobqueue"
+		}
+		return jobqueue.NewTracingWorker(w, tracerName), nil
+	}
+	return w, nil
 }

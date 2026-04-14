@@ -28,6 +28,7 @@ import (
 	"time"
 
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
@@ -65,7 +66,6 @@ type Config struct {
 	// Encrypted 是否启用加密连接.
 	Encrypted bool `json:"encrypted" yaml:"encrypted" mapstructure:"encrypted"`
 	// EnableTracing 启用链路追踪.
-	// TODO: 待 neo4j-go-driver OTEL 集成库成熟后启用
 	EnableTracing bool `json:"enable_tracing" yaml:"enable_tracing" mapstructure:"enable_tracing"`
 }
 
@@ -148,9 +148,10 @@ func (r *Record) Get(key string) (any, bool) {
 
 // Client Neo4j 客户端.
 type Client struct {
-	driver   neo4j.DriverWithContext
-	database string
-	log      logger.Logger
+	driver        neo4j.DriverWithContext
+	database      string
+	log           logger.Logger
+	enableTracing bool
 }
 
 // NewClient 创建 Neo4j 客户端.
@@ -188,8 +189,9 @@ func NewClient(cfg *Config, opts ...Option) (*Client, error) {
 	}
 
 	client := &Client{
-		driver:   driver,
-		database: cfg.Database,
+		driver:        driver,
+		database:      cfg.Database,
+		enableTracing: cfg.EnableTracing,
 	}
 
 	for _, opt := range opts {
@@ -250,32 +252,40 @@ func (c *Client) Session(ctx context.Context, mode neo4j.AccessMode) neo4j.Sessi
 
 // ReadTransaction 执行读事务.
 func (c *Client) ReadTransaction(ctx context.Context, fn func(tx neo4j.ManagedTransaction) (any, error)) (any, error) {
+	ctx, span := c.startSpan(ctx, "READ_TX")
 	session := c.Session(ctx, neo4j.AccessModeRead)
 	defer session.Close(ctx) //nolint:errcheck
 
-	return session.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+	result, err := session.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
 		return fn(tx)
 	})
+	c.endSpan(span, err)
+	return result, err
 }
 
 // WriteTransaction 执行写事务.
 func (c *Client) WriteTransaction(ctx context.Context, fn func(tx neo4j.ManagedTransaction) (any, error)) (any, error) {
+	ctx, span := c.startSpan(ctx, "WRITE_TX")
 	session := c.Session(ctx, neo4j.AccessModeWrite)
 	defer session.Close(ctx) //nolint:errcheck
 
-	return session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+	result, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
 		return fn(tx)
 	})
+	c.endSpan(span, err)
+	return result, err
 }
 
 // Run 执行 Cypher 查询并返回结果.
 // 注意：使用 AccessModeWrite 以支持读写操作.
 func (c *Client) Run(ctx context.Context, cypher string, params map[string]any) ([]*Record, error) {
+	ctx, span := c.startSpan(ctx, "QUERY", attribute.String("db.statement", cypher))
 	session := c.Session(ctx, neo4j.AccessModeWrite)
 	defer session.Close(ctx) //nolint:errcheck // session 关闭错误不影响查询结果
 
 	result, err := session.Run(ctx, cypher, params)
 	if err != nil {
+		c.endSpan(span, err)
 		return nil, err
 	}
 
@@ -289,8 +299,10 @@ func (c *Client) Run(ctx context.Context, cypher string, params map[string]any) 
 	}
 
 	if err := result.Err(); err != nil {
+		c.endSpan(span, err)
 		return nil, err
 	}
 
+	c.endSpan(span, nil)
 	return records, nil
 }

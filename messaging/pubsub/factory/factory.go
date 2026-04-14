@@ -31,8 +31,7 @@ type Config struct {
 	Password string `json:"-" yaml:"password"`
 	DB       int    `json:"db"       yaml:"db"`
 
-	// EnableTracing 启用链路追踪.
-	// TODO: 待各 driver（sarama/amqp/redis-streams）OTEL 集成库成熟后启用
+	// EnableTracing 启用链路追踪（Publish 时自动注入 trace context 到消息 Headers）.
 	EnableTracing bool `json:"enable_tracing" yaml:"enable_tracing" mapstructure:"enable_tracing"`
 }
 
@@ -42,22 +41,32 @@ var (
 )
 
 // NewPublisher 根据 Config 创建 Publisher.
+// 当 EnableTracing 为 true 时，自动使用 TracingPublisher 包装，Publish 时注入 trace context.
 func NewPublisher(cfg *Config, log logger.Logger) (pubsub.Publisher, error) {
 	if cfg == nil {
 		return nil, errNilConfig
 	}
+	var p pubsub.Publisher
+	var err error
 	switch cfg.Type {
 	case "":
 		return nil, errEmptyType
 	case "kafka":
-		return kafka.NewPublisherFromConfig(cfg.Brokers, log)
+		p, err = kafka.NewPublisherFromConfig(cfg.Brokers, log)
 	case "rabbitmq":
-		return rabbitmq.NewPublisherFromConfig(cfg.URL, log)
+		p, err = rabbitmq.NewPublisherFromConfig(cfg.URL, log)
 	case "redis":
-		return redis.NewPublisherFromConfig(cfg.Addr, cfg.Password, cfg.DB, log)
+		p, err = redis.NewPublisherFromConfig(cfg.Addr, cfg.Password, cfg.DB, log)
 	default:
 		return nil, fmt.Errorf("pubsub: 不支持的类型 %q", cfg.Type)
 	}
+	if err != nil {
+		return nil, err
+	}
+	if cfg.EnableTracing {
+		p = pubsub.NewTracingPublisher(p)
+	}
+	return p, nil
 }
 
 // NewSubscriber 根据 Config 创建 Subscriber. group 用于 Kafka consumer group 和 Redis consumer group.
