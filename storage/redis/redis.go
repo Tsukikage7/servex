@@ -214,7 +214,7 @@ func NewClient(config *Config, log logger.Logger) (Client, error) {
 		return nil, err
 	}
 
-	log.Info("redis connected", "addr", config.Addr, "db", config.DB)
+	log.Info("redis 连接成功", "addr", config.Addr, "db", config.DB)
 
 	return &redisClient{
 		client: rdb,

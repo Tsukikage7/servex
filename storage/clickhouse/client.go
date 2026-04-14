@@ -89,7 +89,7 @@ func (c *chClient) Ping(ctx context.Context) error {
 }
 
 func (c *chClient) Close() error {
-	c.log.Info("clickhouse disconnecting")
+	c.log.Info("clickhouse 连接关闭")
 	return c.conn.Close()
 }
 

@@ -12,7 +12,7 @@ func LoggingMiddleware(log logger.Logger) Middleware {
 	return func(next Handler) Handler {
 		return func(client Client, msg *Message) {
 			start := time.Now()
-			log.Debug("websocket message received",
+			log.Debug("websocket 收到消息",
 				"client_id", client.ID(),
 				"type", msg.Type,
 				"size", len(msg.Data),
@@ -20,7 +20,7 @@ func LoggingMiddleware(log logger.Logger) Middleware {
 
 			next(client, msg)
 
-			log.Debug("websocket message handled",
+			log.Debug("websocket 消息处理完成",
 				"client_id", client.ID(),
 				"duration", time.Since(start),
 			)
@@ -34,7 +34,7 @@ func RecoveryMiddleware(log logger.Logger) Middleware {
 		return func(client Client, msg *Message) {
 			defer func() {
 				if r := recover(); r != nil {
-					log.Error("websocket handler panic",
+					log.Error("websocket handler 发生 panic",
 						"client_id", client.ID(),
 						"panic", r,
 					)

@@ -154,7 +154,7 @@ func NewClient(cfg *Config, opts ...Option) (*Client, error) {
 	}
 
 	if c.log != nil {
-		c.log.Info("minio client created", "endpoint", cfg.Endpoint, "bucket", cfg.Bucket)
+		c.log.Info("minio 连接成功", "endpoint", cfg.Endpoint, "bucket", cfg.Bucket)
 	}
 
 	return c, nil
