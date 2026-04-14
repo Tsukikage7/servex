@@ -1,11 +1,14 @@
 version: v2
 modules:
   - path: .
-deps:
-  - buf.build/googleapis/googleapis
+  - path: ../third_party
 lint:
   use:
     - STANDARD
+  ignore:
+    - ../third_party
 breaking:
   use:
     - FILE
+  ignore:
+    - ../third_party

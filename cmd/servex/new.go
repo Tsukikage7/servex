@@ -76,6 +76,11 @@ func generateProject(data ProjectData) error {
 		}
 	}
 
+	// 复制 api/third_party（vendor proto 文件，不需要模板渲染）
+	if err := copyEmbedDir(projectTemplates, "templates/project/api/third_party", filepath.Join(data.Name, "api/third_party")); err != nil {
+		return fmt.Errorf("复制 third_party: %w", err)
+	}
+
 	fmt.Printf("项目 %q 创建成功! (standalone)\n", data.Name)
 	fmt.Printf("  cd %s && go mod tidy\n", data.Name)
 	return nil
@@ -99,7 +104,6 @@ var monorepoGitkeepDirs = []string{
 	"domain",
 	"application",
 	"services",
-	"api",
 	"infrastructure",
 	"deploy/k8s",
 }
@@ -129,6 +133,11 @@ func generateMonorepo(data ProjectData) error {
 		if err := os.WriteFile(gitkeepPath, nil, 0o644); err != nil {
 			return fmt.Errorf("创建 .gitkeep: %s: %w", dir, err)
 		}
+	}
+
+	// 复制 api/third_party（vendor proto 文件，不需要模板渲染）
+	if err := copyEmbedDir(monorepoTemplates, "templates/monorepo/api/third_party", filepath.Join(data.Name, "api/third_party")); err != nil {
+		return fmt.Errorf("复制 third_party: %w", err)
 	}
 
 	fmt.Printf("项目 %q 创建成功! (monorepo)\n", data.Name)
@@ -163,5 +172,38 @@ func renderTemplate(fsys embed.FS, tmplPath, outPath string, data any, funcMap t
 		return fmt.Errorf("执行模板 %s: %w", tmplPath, err)
 	}
 
+	return nil
+}
+
+// copyEmbedDir 将 embed.FS 中的目录递归复制到目标路径（原样复制，不做模板渲染）.
+func copyEmbedDir(fsys embed.FS, srcDir, dstDir string) error {
+	entries, err := fsys.ReadDir(srcDir)
+	if err != nil {
+		return fmt.Errorf("读取目录 %s: %w", srcDir, err)
+	}
+
+	if err := os.MkdirAll(dstDir, 0o755); err != nil {
+		return fmt.Errorf("创建目录 %s: %w", dstDir, err)
+	}
+
+	for _, entry := range entries {
+		srcPath := srcDir + "/" + entry.Name()
+		dstPath := filepath.Join(dstDir, entry.Name())
+
+		if entry.IsDir() {
+			if err := copyEmbedDir(fsys, srcPath, dstPath); err != nil {
+				return err
+			}
+			continue
+		}
+
+		data, err := fsys.ReadFile(srcPath)
+		if err != nil {
+			return fmt.Errorf("读取文件 %s: %w", srcPath, err)
+		}
+		if err := os.WriteFile(dstPath, data, 0o644); err != nil {
+			return fmt.Errorf("写入文件 %s: %w", dstPath, err)
+		}
+	}
 	return nil
 }
