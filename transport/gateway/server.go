@@ -358,6 +358,10 @@ func (s *Server) startHTTP(ctx context.Context) error {
 	// 5. Metrics（HTTP 端）
 	if s.opts.metricsCollector != nil {
 		handler = metrics.HTTPMiddleware(s.opts.metricsCollector)(handler)
+		// 注册 /metrics 端点
+		s.mux.HandlePath("GET", s.opts.metricsCollector.GetPath(), func(w http.ResponseWriter, r *http.Request, _ map[string]string) {
+			s.opts.metricsCollector.GetHandler().ServeHTTP(w, r)
+		})
 	}
 
 	// 4. Tracing（HTTP 端）
