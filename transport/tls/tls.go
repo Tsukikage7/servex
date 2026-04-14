@@ -7,19 +7,25 @@ package tlsx
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
-	"fmt"
 	"log/slog"
 	"os"
+
+	servexerrs "github.com/Tsukikage7/servex/v2/errors"
 )
 
 var (
 	// ErrNilConfig 配置为 nil.
-	ErrNilConfig = errors.New("tls: config is nil")
+	ErrNilConfig = servexerrs.New(60701, "transport.tls.nil_config", "TLS 配置为空")
 	// ErrMissingCert 缺少证书文件.
-	ErrMissingCert = errors.New("tls: cert_file is required")
+	ErrMissingCert = servexerrs.New(60702, "transport.tls.missing_cert", "缺少证书文件")
 	// ErrMissingKey 缺少密钥文件.
-	ErrMissingKey = errors.New("tls: key_file is required")
+	ErrMissingKey = servexerrs.New(60703, "transport.tls.missing_key", "缺少密钥文件")
+	// ErrLoadKeyPair 加载证书密钥对失败.
+	ErrLoadKeyPair = servexerrs.New(60704, "transport.tls.load_key_pair_failed", "加载证书密钥对失败")
+	// ErrReadCAFile 读取 CA 证书文件失败.
+	ErrReadCAFile = servexerrs.New(60705, "transport.tls.read_ca_file_failed", "读取 CA 证书文件失败")
+	// ErrParseCA 解析 CA 证书失败.
+	ErrParseCA = servexerrs.New(60706, "transport.tls.parse_ca_failed", "解析 CA 证书失败")
 )
 
 // Config TLS 配置.
@@ -51,7 +57,7 @@ func NewTLSConfig(cfg *Config) (*tls.Config, error) {
 
 	cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
 	if err != nil {
-		return nil, fmt.Errorf("tls: failed to load key pair: %w", err)
+		return nil, ErrLoadKeyPair.WithCause(err)
 	}
 
 	tlsCfg := &tls.Config{
@@ -63,11 +69,11 @@ func NewTLSConfig(cfg *Config) (*tls.Config, error) {
 	if cfg.CAFile != "" {
 		caCert, err := os.ReadFile(cfg.CAFile)
 		if err != nil {
-			return nil, fmt.Errorf("tls: failed to read CA file: %w", err)
+			return nil, ErrReadCAFile.WithCause(err)
 		}
 		pool := x509.NewCertPool()
 		if !pool.AppendCertsFromPEM(caCert) {
-			return nil, fmt.Errorf("tls: failed to parse CA certificate")
+			return nil, ErrParseCA
 		}
 		tlsCfg.RootCAs = pool
 		tlsCfg.ClientCAs = pool
@@ -112,7 +118,7 @@ func NewClientTLSConfig(cfg *Config) (*tls.Config, error) {
 	if cfg.CertFile != "" && cfg.KeyFile != "" {
 		cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
 		if err != nil {
-			return nil, fmt.Errorf("tls: failed to load client key pair: %w", err)
+			return nil, ErrLoadKeyPair.WithCause(err)
 		}
 		tlsCfg.Certificates = []tls.Certificate{cert}
 	}
@@ -121,11 +127,11 @@ func NewClientTLSConfig(cfg *Config) (*tls.Config, error) {
 	if cfg.CAFile != "" {
 		caCert, err := os.ReadFile(cfg.CAFile)
 		if err != nil {
-			return nil, fmt.Errorf("tls: failed to read CA file: %w", err)
+			return nil, ErrReadCAFile.WithCause(err)
 		}
 		pool := x509.NewCertPool()
 		if !pool.AppendCertsFromPEM(caCert) {
-			return nil, fmt.Errorf("tls: failed to parse CA certificate")
+			return nil, ErrParseCA
 		}
 		tlsCfg.RootCAs = pool
 	}

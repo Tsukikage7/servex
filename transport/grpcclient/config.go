@@ -39,7 +39,7 @@ type KeepaliveConfig struct {
 // 不使用服务发现，直接连接 cfg.Addr. 如需服务发现请使用 New.
 func NewFromConfig(cfg *Config, additionalOpts ...Option) (*Client, error) {
 	if cfg.Addr == "" {
-		return nil, fmt.Errorf("grpc client: addr is required in config")
+		return nil, ErrMissingAddr
 	}
 
 	var opts []Option
@@ -105,7 +105,7 @@ func newDirect(addr string, opts ...Option) (*Client, error) {
 
 	conn, err := dialWithTimeout(addr, o.timeout, dialOpts...)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrConnectionFailed, err)
+		return nil, ErrConnectionFailed.WithCause(err)
 	}
 
 	if o.logger != nil {

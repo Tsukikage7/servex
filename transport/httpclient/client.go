@@ -45,22 +45,22 @@ func New(opts ...Option) (*Client, error) {
 
 	// 验证必需参数
 	if o.serviceName == "" {
-		return nil, fmt.Errorf("http client: 必须设置 serviceName")
+		return nil, ErrMissingServiceName
 	}
 	if o.discovery == nil {
-		return nil, fmt.Errorf("http client: 必须设置 discovery")
+		return nil, ErrMissingDiscovery
 	}
 	if o.logger == nil {
-		return nil, fmt.Errorf("http client: 必须设置 logger")
+		return nil, ErrMissingLogger
 	}
 
 	// 初始服务发现
 	addrs, err := o.discovery.Discover(context.Background(), o.serviceName)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrDiscoveryFailed, err)
+		return nil, ErrDiscoveryFailed.WithCause(err)
 	}
 	if len(addrs) == 0 {
-		return nil, fmt.Errorf("%w: %s", ErrServiceNotFound, o.serviceName)
+		return nil, ErrServiceNotFound.WithMessage(o.serviceName)
 	}
 
 	// 构建负载均衡器
@@ -169,7 +169,7 @@ func (c *Client) Do(ctx context.Context, method, path string, body io.Reader) (*
 	url := fmt.Sprintf("%s://%s%s", c.opts.scheme, addr, path)
 	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrRequestFailed, err)
+		return nil, ErrRequestFailed.WithCause(err)
 	}
 
 	for key, value := range c.opts.headers {
@@ -199,7 +199,7 @@ func (c *Client) pick(ctx context.Context) (string, error) {
 	}
 
 	if len(addrs) == 0 {
-		return "", fmt.Errorf("%w: %s", ErrServiceNotFound, c.opts.serviceName)
+		return "", ErrServiceNotFound.WithMessage(c.opts.serviceName)
 	}
 
 	return c.balancer.Pick(addrs), nil
@@ -373,7 +373,7 @@ func (c *Client) DoRequest(ctx context.Context, r *Request) (*Response, error) {
 	if r.Body != nil {
 		b, err := json.Marshal(r.Body)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %v", ErrMarshalBody, err)
+			return nil, ErrMarshalBody.WithCause(err)
 		}
 		bodyReader = bytes.NewReader(b)
 	}
@@ -392,7 +392,7 @@ func (c *Client) DoRequest(ctx context.Context, r *Request) (*Response, error) {
 
 	req, err := http.NewRequestWithContext(ctx, r.Method, url, bodyReader)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrRequestFailed, err)
+		return nil, ErrRequestFailed.WithCause(err)
 	}
 
 	if r.Body != nil {

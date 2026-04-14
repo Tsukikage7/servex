@@ -25,7 +25,6 @@ package sse
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -33,17 +32,19 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
+	servexerrs "github.com/Tsukikage7/servex/v2/errors"
 )
 
 var (
 	// ErrClientNotFound 客户端不存在.
-	ErrClientNotFound = errors.New("sse: client not found")
+	ErrClientNotFound = servexerrs.New(60601, "transport.sse.client_not_found", "客户端不存在")
 	// ErrServerClosed 服务器已关闭.
-	ErrServerClosed = errors.New("sse: server is closed")
+	ErrServerClosed = servexerrs.New(60602, "transport.sse.server_closed", "服务器已关闭")
 	// ErrConnectionClosed 连接已关闭.
-	ErrConnectionClosed = errors.New("sse: connection closed")
+	ErrConnectionClosed = servexerrs.New(60603, "transport.sse.connection_closed", "连接已关闭")
 	// ErrNotFlusher ResponseWriter 不支持 Flush.
-	ErrNotFlusher = errors.New("sse: response writer does not support flushing")
+	ErrNotFlusher = servexerrs.New(60604, "transport.sse.not_flusher", "ResponseWriter 不支持 Flush")
 )
 
 // Event SSE 事件.

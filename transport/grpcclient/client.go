@@ -33,22 +33,22 @@ func New(opts ...Option) (*Client, error) {
 
 	// 验证必需参数
 	if o.serviceName == "" {
-		return nil, fmt.Errorf("grpc client: 必须设置 serviceName")
+		return nil, ErrMissingServiceName
 	}
 	if o.discovery == nil {
-		return nil, fmt.Errorf("grpc client: 必须设置 discovery")
+		return nil, ErrMissingDiscovery
 	}
 	if o.logger == nil {
-		return nil, fmt.Errorf("grpc client: 必须设置 logger")
+		return nil, ErrMissingLogger
 	}
 
 	// 服务发现
 	addrs, err := o.discovery.Discover(context.Background(), o.serviceName)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrDiscoveryFailed, err)
+		return nil, ErrDiscoveryFailed.WithCause(err)
 	}
 	if len(addrs) == 0 {
-		return nil, fmt.Errorf("%w: %s", ErrServiceNotFound, o.serviceName)
+		return nil, ErrServiceNotFound.WithMessage(o.serviceName)
 	}
 	target := addrs[0]
 
@@ -57,7 +57,7 @@ func New(opts ...Option) (*Client, error) {
 	// 创建连接
 	conn, err := dialWithTimeout(target, o.timeout, dialOpts...)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrConnectionFailed, err)
+		return nil, ErrConnectionFailed.WithCause(err)
 	}
 
 	o.logger.With(

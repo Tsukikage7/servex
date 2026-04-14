@@ -72,7 +72,7 @@ func RecoveryMiddleware(log logger.Logger) Middleware {
 						logger.Field{Key: "field", Value: p.Info.FieldName},
 						logger.Field{Key: "panic", Value: fmt.Sprintf("%v", r)},
 					).Error("graphql resolve panic 已恢复")
-					err = fmt.Errorf("graphql: internal error")
+					err = ErrInternalError
 				}
 			}()
 			return next(p)

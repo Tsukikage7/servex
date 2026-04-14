@@ -19,14 +19,14 @@ func ExampleNewTLSConfig_validation() {
 	_, err = tlsx.NewTLSConfig(&tlsx.Config{CertFile: "cert.pem"})
 	fmt.Println(err)
 	// Output:
-	// tls: config is nil
-	// tls: cert_file is required
-	// tls: key_file is required
+	// [60701] transport.tls.nil_config: TLS 配置为空
+	// [60702] transport.tls.missing_cert: 缺少证书文件
+	// [60703] transport.tls.missing_key: 缺少密钥文件
 }
 
 func ExampleNewClientTLSConfig_validation() {
 	_, err := tlsx.NewClientTLSConfig(nil)
 	fmt.Println(err)
 	// Output:
-	// tls: config is nil
+	// [60701] transport.tls.nil_config: TLS 配置为空
 }

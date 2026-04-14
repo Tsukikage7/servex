@@ -8,6 +8,17 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/health/grpc_health_v1"
+
+	servexerrs "github.com/Tsukikage7/servex/v2/errors"
+)
+
+var (
+	// ErrHealthCheckFailed 健康检查请求失败.
+	ErrHealthCheckFailed = servexerrs.New(60150, "transport.grpcx.health_check_failed", "健康检查失败")
+	// ErrServiceNotServing 服务状态异常.
+	ErrServiceNotServing = servexerrs.New(60151, "transport.grpcx.service_not_serving", "服务状态异常")
+	// ErrWaitForReadyTimeout 等待连接就绪超时.
+	ErrWaitForReadyTimeout = servexerrs.New(60152, "transport.grpcx.wait_for_ready_timeout", "等待连接就绪超时")
 )
 
 // HealthCheck 创建 gRPC 健康检查客户端，检查目标服务是否可用.
@@ -16,10 +27,12 @@ func HealthCheck(ctx context.Context, conn *grpc.ClientConn) error {
 	client := grpc_health_v1.NewHealthClient(conn)
 	resp, err := client.Check(ctx, &grpc_health_v1.HealthCheckRequest{})
 	if err != nil {
-		return fmt.Errorf("grpcx: 健康检查失败: %w", err)
+		return ErrHealthCheckFailed.WithCause(err)
 	}
 	if resp.GetStatus() != grpc_health_v1.HealthCheckResponse_SERVING {
-		return fmt.Errorf("grpcx: 服务状态异常: %s", resp.GetStatus().String())
+		return ErrServiceNotServing.WithMessage(
+			fmt.Sprintf("服务状态异常: %s", resp.GetStatus().String()),
+		)
 	}
 	return nil
 }
@@ -37,7 +50,9 @@ func WaitForReady(ctx context.Context, conn *grpc.ClientConn, timeout time.Durat
 		}
 		if !conn.WaitForStateChange(ctx, state) {
 			// context 超时或取消
-			return fmt.Errorf("grpcx: 等待连接就绪超时，当前状态: %s", conn.GetState().String())
+			return ErrWaitForReadyTimeout.WithMessage(
+				fmt.Sprintf("等待连接就绪超时，当前状态: %s", conn.GetState().String()),
+			)
 		}
 	}
 }

@@ -20,9 +20,10 @@ package websocket
 
 import (
 	"context"
-	"errors"
 	"sync"
 	"time"
+
+	"github.com/Tsukikage7/servex/v2/errors"
 )
 
 // MessageType 消息类型.
@@ -43,19 +44,19 @@ const (
 
 var (
 	// ErrClientNotFound 客户端不存在.
-	ErrClientNotFound = errors.New("websocket: client not found")
+	ErrClientNotFound = errors.New(60605, "transport.websocket.client_not_found", "客户端不存在")
 	// ErrHubClosed Hub 已关闭.
-	ErrHubClosed = errors.New("websocket: hub is closed")
+	ErrHubClosed = errors.New(60606, "transport.websocket.hub_closed", "Hub 已关闭")
 	// ErrConnectionClosed 连接已关闭.
-	ErrConnectionClosed = errors.New("websocket: connection closed")
+	ErrConnectionClosed = errors.New(60607, "transport.websocket.connection_closed", "连接已关闭")
 	// ErrWriteTimeout 写超时.
-	ErrWriteTimeout = errors.New("websocket: write timeout")
+	ErrWriteTimeout = errors.New(60608, "transport.websocket.write_timeout", "写超时")
 	// ErrMessageTooLarge 消息过大.
-	ErrMessageTooLarge = errors.New("websocket: message too large")
+	ErrMessageTooLarge = errors.New(60609, "transport.websocket.message_too_large", "消息过大")
 	// ErrInvalidMessage 无效消息.
-	ErrInvalidMessage = errors.New("websocket: invalid message")
+	ErrInvalidMessage = errors.New(60610, "transport.websocket.invalid_message", "无效消息")
 	// ErrUpgradeFailed 升级失败.
-	ErrUpgradeFailed = errors.New("websocket: upgrade failed")
+	ErrUpgradeFailed = errors.New(60611, "transport.websocket.upgrade_failed", "升级失败")
 )
 
 // Message WebSocket 消息.
