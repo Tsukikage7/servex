@@ -6,6 +6,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
+	"go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/v2/mongo/otelmongo"
 
 	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
@@ -43,6 +44,11 @@ func newMongoClient(config *Config, log logger.Logger) (*mongoClient, error) {
 	// 直连模式
 	if config.Direct {
 		opts.SetDirect(true)
+	}
+
+	// 启用链路追踪
+	if config.EnableTracing {
+		opts.SetMonitor(otelmongo.NewMonitor())
 	}
 
 	// 创建客户端
