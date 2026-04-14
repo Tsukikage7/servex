@@ -2,11 +2,15 @@ package user
 
 import (
 	"context"
-	"errors"
+	"net/http"
+
+	"google.golang.org/grpc/codes"
+
+	"github.com/Tsukikage7/servex/v2/errors"
 )
 
 // ErrNotFound 用户不存在.
-var ErrNotFound = errors.New("user: 用户不存在")
+var ErrNotFound = errors.New(40101, "user.not_found", "用户不存在").WithHTTP(http.StatusNotFound).WithGRPC(codes.NotFound)
 
 // Filter 用户查询过滤条件.
 type Filter struct {

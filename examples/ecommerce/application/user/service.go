@@ -3,22 +3,30 @@ package user
 
 import (
 	"context"
-	"errors"
-	"fmt"
+	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/grpc/codes"
 
 	servexJWT "github.com/Tsukikage7/servex/v2/auth/jwt"
 	"github.com/Tsukikage7/servex/v2/domain"
+	"github.com/Tsukikage7/servex/v2/errors"
 
 	domainUser "github.com/Tsukikage7/servex/v2/examples/ecommerce/domain/user"
 )
 
-// ErrInvalidCredentials 登录凭据无效.
-var ErrInvalidCredentials = errors.New("user: 用户名或密码错误")
+// 用户应用层错误.
+var (
+	ErrInvalidCredentials = errors.New(50101, "user.invalid_credentials", "用户名或密码错误").WithHTTP(http.StatusUnauthorized).WithGRPC(codes.Unauthenticated)
+	ErrHashPassword       = errors.New(50102, "user.hash_password", "生成密码哈希失败").WithHTTP(http.StatusInternalServerError).WithGRPC(codes.Internal)
+	ErrCreateUser         = errors.New(50103, "user.create_failed", "创建用户失败").WithHTTP(http.StatusInternalServerError).WithGRPC(codes.Internal)
+	ErrDispatchEvent      = errors.New(50104, "user.dispatch_event", "分发领域事件失败").WithHTTP(http.StatusInternalServerError).WithGRPC(codes.Internal)
+	ErrUpdateUser         = errors.New(50105, "user.update_failed", "更新用户失败").WithHTTP(http.StatusInternalServerError).WithGRPC(codes.Internal)
+	ErrGenerateToken      = errors.New(50106, "user.generate_token", "生成令牌失败").WithHTTP(http.StatusInternalServerError).WithGRPC(codes.Internal)
+)
 
 // Service 用户应用服务.
 type Service struct {
@@ -40,7 +48,7 @@ func NewService(repo domainUser.Repository, eventBus *domain.EventBus, jwtSvc *s
 func (s *Service) Create(ctx context.Context, cmd domainUser.CreateUserCommand) (*domainUser.UserView, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(cmd.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, fmt.Errorf("生成密码哈希失败: %w", err)
+		return nil, ErrHashPassword.WithCause(err)
 	}
 
 	// 使用时间戳作为简易 ID 生成（生产环境应使用分布式 ID）
@@ -49,12 +57,12 @@ func (s *Service) Create(ctx context.Context, cmd domainUser.CreateUserCommand) 
 	user := domainUser.NewUser(id, cmd.Username, cmd.Email, string(hash))
 
 	if err := s.repo.Create(ctx, user); err != nil {
-		return nil, fmt.Errorf("创建用户失败: %w", err)
+		return nil, ErrCreateUser.WithCause(err)
 	}
 
 	// 分发领域事件
 	if err := s.eventBus.Dispatch(ctx, user.DomainEvents(), user.ClearDomainEvents); err != nil {
-		return nil, fmt.Errorf("分发领域事件失败: %w", err)
+		return nil, ErrDispatchEvent.WithCause(err)
 	}
 
 	return domainUser.ToView(user), nil
@@ -79,11 +87,11 @@ func (s *Service) Update(ctx context.Context, cmd domainUser.UpdateUserCommand) 
 	user.Update(cmd.Username, cmd.Email)
 
 	if err := s.repo.Update(ctx, user); err != nil {
-		return nil, fmt.Errorf("更新用户失败: %w", err)
+		return nil, ErrUpdateUser.WithCause(err)
 	}
 
 	if err := s.eventBus.Dispatch(ctx, user.DomainEvents(), user.ClearDomainEvents); err != nil {
-		return nil, fmt.Errorf("分发领域事件失败: %w", err)
+		return nil, ErrDispatchEvent.WithCause(err)
 	}
 
 	return domainUser.ToView(user), nil
@@ -139,9 +147,9 @@ func (s *Service) Login(ctx context.Context, req LoginRequest) (*LoginResponse, 
 		},
 	}
 
-	token, err := s.jwtSvc.Generate(claims)
+	token, err := s.jwtSvc.Generate(ctx, claims)
 	if err != nil {
-		return nil, fmt.Errorf("生成令牌失败: %w", err)
+		return nil, ErrGenerateToken.WithCause(err)
 	}
 
 	return &LoginResponse{
