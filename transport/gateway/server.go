@@ -300,12 +300,18 @@ func (s *Server) discoverPublicMethods() {
 
 func (s *Server) connectGateway() error {
 	// 根据配置选择 gRPC 连接凭证
-	dialOpts := make([]grpc.DialOption, 0, len(s.opts.dialOptions)+1)
+	dialOpts := make([]grpc.DialOption, 0, len(s.opts.dialOptions)+2)
 	if s.opts.grpcTLSConfig != nil {
 		dialOpts = append(dialOpts, grpc.WithTransportCredentials(credentials.NewTLS(s.opts.grpcTLSConfig)))
 	} else {
 		dialOpts = append(dialOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
+
+	// 启用 tracing 时，注入 client interceptor 传播 trace context（HTTP span → gRPC metadata）
+	if s.opts.tracerName != "" {
+		dialOpts = append(dialOpts, grpc.WithUnaryInterceptor(tracing.UnaryClientInterceptor(s.opts.tracerName)))
+	}
+
 	dialOpts = append(dialOpts, s.opts.dialOptions...)
 
 	conn, err := grpc.NewClient(s.opts.grpcAddr, dialOpts...)
