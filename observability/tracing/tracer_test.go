@@ -8,7 +8,7 @@ import (
 )
 
 func TestNewTracer_NilConfig(t *testing.T) {
-	tp, err := NewTracer(nil, "test-service", "1.0.0")
+	tp, err := NewTracer(nil)
 
 	assert.Nil(t, tp)
 	assert.ErrorIs(t, err, ErrNilConfig)
@@ -19,7 +19,7 @@ func TestNewTracer_Disabled(t *testing.T) {
 		Enabled: false,
 	}
 
-	tp, err := NewTracer(cfg, "test-service", "1.0.0")
+	tp, err := NewTracer(cfg)
 
 	require.NoError(t, err)
 	assert.NotNil(t, tp)
@@ -34,7 +34,7 @@ func TestNewTracer_EmptyServiceName(t *testing.T) {
 		},
 	}
 
-	tp, err := NewTracer(cfg, "", "1.0.0")
+	tp, err := NewTracer(cfg)
 
 	assert.Nil(t, tp)
 	assert.ErrorIs(t, err, ErrEmptyServiceName)
@@ -42,11 +42,12 @@ func TestNewTracer_EmptyServiceName(t *testing.T) {
 
 func TestNewTracer_NilOTLP(t *testing.T) {
 	cfg := &TracingConfig{
-		Enabled: true,
-		OTLP:    nil,
+		Enabled:     true,
+		ServiceName: "test-service",
+		OTLP:        nil,
 	}
 
-	tp, err := NewTracer(cfg, "test-service", "1.0.0")
+	tp, err := NewTracer(cfg)
 
 	assert.Nil(t, tp)
 	assert.ErrorIs(t, err, ErrEmptyEndpoint)
@@ -54,13 +55,14 @@ func TestNewTracer_NilOTLP(t *testing.T) {
 
 func TestNewTracer_EmptyEndpoint(t *testing.T) {
 	cfg := &TracingConfig{
-		Enabled: true,
+		Enabled:     true,
+		ServiceName: "test-service",
 		OTLP: &OTLPConfig{
 			Endpoint: "",
 		},
 	}
 
-	tp, err := NewTracer(cfg, "test-service", "1.0.0")
+	tp, err := NewTracer(cfg)
 
 	assert.Nil(t, tp)
 	assert.ErrorIs(t, err, ErrEmptyEndpoint)
@@ -68,14 +70,16 @@ func TestNewTracer_EmptyEndpoint(t *testing.T) {
 
 func TestNewTracer_Success(t *testing.T) {
 	cfg := &TracingConfig{
-		Enabled:      true,
-		SamplingRate: 0.5,
+		Enabled:        true,
+		ServiceName:    "test-service",
+		ServiceVersion: "1.0.0",
+		SamplingRate:   0.5,
 		OTLP: &OTLPConfig{
 			Endpoint: "localhost:4318",
 		},
 	}
 
-	tp, err := NewTracer(cfg, "test-service", "1.0.0")
+	tp, err := NewTracer(cfg)
 
 	require.NoError(t, err)
 	assert.NotNil(t, tp)
@@ -84,13 +88,14 @@ func TestNewTracer_Success(t *testing.T) {
 
 func TestNewTracer_WithHttpPrefix(t *testing.T) {
 	cfg := &TracingConfig{
-		Enabled: true,
+		Enabled:     true,
+		ServiceName: "test-service",
 		OTLP: &OTLPConfig{
 			Endpoint: "http://localhost:4318",
 		},
 	}
 
-	tp, err := NewTracer(cfg, "test-service", "1.0.0")
+	tp, err := NewTracer(cfg)
 
 	require.NoError(t, err)
 	assert.NotNil(t, tp)
@@ -99,13 +104,14 @@ func TestNewTracer_WithHttpPrefix(t *testing.T) {
 
 func TestNewTracer_WithHttpsPrefix(t *testing.T) {
 	cfg := &TracingConfig{
-		Enabled: true,
+		Enabled:     true,
+		ServiceName: "test-service",
 		OTLP: &OTLPConfig{
 			Endpoint: "https://localhost:4318",
 		},
 	}
 
-	tp, err := NewTracer(cfg, "test-service", "1.0.0")
+	tp, err := NewTracer(cfg)
 
 	require.NoError(t, err)
 	assert.NotNil(t, tp)
@@ -114,7 +120,8 @@ func TestNewTracer_WithHttpsPrefix(t *testing.T) {
 
 func TestNewTracer_WithHeaders(t *testing.T) {
 	cfg := &TracingConfig{
-		Enabled: true,
+		Enabled:     true,
+		ServiceName: "test-service",
 		OTLP: &OTLPConfig{
 			Endpoint: "localhost:4318",
 			Headers: map[string]string{
@@ -123,7 +130,7 @@ func TestNewTracer_WithHeaders(t *testing.T) {
 		},
 	}
 
-	tp, err := NewTracer(cfg, "test-service", "1.0.0")
+	tp, err := NewTracer(cfg)
 
 	require.NoError(t, err)
 	assert.NotNil(t, tp)
@@ -144,13 +151,14 @@ func TestNewTracer_InvalidSamplingRate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &TracingConfig{
 				Enabled:      true,
+				ServiceName:  "test-service",
 				SamplingRate: tt.samplingRate,
 				OTLP: &OTLPConfig{
 					Endpoint: "localhost:4318",
 				},
 			}
 
-			tp, err := NewTracer(cfg, "test-service", "1.0.0")
+			tp, err := NewTracer(cfg)
 
 			// 无效采样率会被自动修正为1.0，不会报错
 			require.NoError(t, err)
@@ -163,13 +171,14 @@ func TestNewTracer_InvalidSamplingRate(t *testing.T) {
 func TestNewTracer_ValidSamplingRate(t *testing.T) {
 	cfg := &TracingConfig{
 		Enabled:      true,
+		ServiceName:  "test-service",
 		SamplingRate: 0.1,
 		OTLP: &OTLPConfig{
 			Endpoint: "localhost:4318",
 		},
 	}
 
-	tp, err := NewTracer(cfg, "test-service", "1.0.0")
+	tp, err := NewTracer(cfg)
 
 	require.NoError(t, err)
 	assert.NotNil(t, tp)
@@ -178,14 +187,15 @@ func TestNewTracer_ValidSamplingRate(t *testing.T) {
 
 func TestMustNewTracer_Success(t *testing.T) {
 	cfg := &TracingConfig{
-		Enabled: true,
+		Enabled:     true,
+		ServiceName: "test-service",
 		OTLP: &OTLPConfig{
 			Endpoint: "localhost:4318",
 		},
 	}
 
 	assert.NotPanics(t, func() {
-		tp := MustNewTracer(cfg, "test-service", "1.0.0")
+		tp := MustNewTracer(cfg)
 		assert.NotNil(t, tp)
 		_ = tp.Shutdown(t.Context())
 	})
@@ -193,7 +203,7 @@ func TestMustNewTracer_Success(t *testing.T) {
 
 func TestMustNewTracer_Panic(t *testing.T) {
 	assert.Panics(t, func() {
-		MustNewTracer(nil, "test-service", "1.0.0")
+		MustNewTracer(nil)
 	})
 
 	cfg := &TracingConfig{
@@ -203,14 +213,34 @@ func TestMustNewTracer_Panic(t *testing.T) {
 		},
 	}
 	assert.Panics(t, func() {
-		MustNewTracer(cfg, "", "1.0.0")
+		MustNewTracer(cfg)
 	})
+}
+
+func TestNewTracer_GRPCProtocol(t *testing.T) {
+	cfg := &TracingConfig{
+		Enabled:     true,
+		ServiceName: "test-service",
+		OTLP: &OTLPConfig{
+			Endpoint: "localhost:4317",
+			Protocol: "grpc",
+			Insecure: true,
+		},
+	}
+
+	tp, err := NewTracer(cfg)
+
+	require.NoError(t, err)
+	assert.NotNil(t, tp)
+	_ = tp.Shutdown(t.Context())
 }
 
 func TestTracingConfig(t *testing.T) {
 	cfg := &TracingConfig{
-		Enabled:      true,
-		SamplingRate: 0.5,
+		Enabled:        true,
+		ServiceName:    "test-service",
+		ServiceVersion: "1.0.0",
+		SamplingRate:   0.5,
 		OTLP: &OTLPConfig{
 			Endpoint: "localhost:4318",
 			Headers: map[string]string{
@@ -220,6 +250,8 @@ func TestTracingConfig(t *testing.T) {
 	}
 
 	assert.True(t, cfg.Enabled)
+	assert.Equal(t, "test-service", cfg.ServiceName)
+	assert.Equal(t, "1.0.0", cfg.ServiceVersion)
 	assert.Equal(t, 0.5, cfg.SamplingRate)
 	assert.Equal(t, "localhost:4318", cfg.OTLP.Endpoint)
 	assert.Equal(t, "value", cfg.OTLP.Headers["key"])

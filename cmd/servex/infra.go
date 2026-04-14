@@ -423,12 +423,14 @@ var componentRegistry = map[string]ComponentDef{
     endpoint: "localhost:4318"`,
 		InitCode: `// 初始化 OpenTelemetry 链路追踪
 	tp, err := tracing.NewTracer(&tracing.TracingConfig{
-		Enabled:      true,
-		SamplingRate: 1.0,
+		Enabled:        true,
+		ServiceName:    envOr("SERVICE_NAME", "my-service"),
+		ServiceVersion: "1.0.0",
+		SamplingRate:   1.0,
 		OTLP: &tracing.OTLPConfig{
 			Endpoint: envOr("OTEL_ENDPOINT", "localhost:4318"),
 		},
-	}, envOr("SERVICE_NAME", "my-service"), "1.0.0")
+	})
 	if err != nil {
 		log.Fatalf("init tracing: %v", err)
 	}
@@ -436,7 +438,7 @@ var componentRegistry = map[string]ComponentDef{
 		ExtraImports: []string{"context"},
 		ProviderFunc: "provideTracing",
 		ProviderCode: `func provideTracing(cfg *Config, log logger.Logger) (*tracing.Tracer, func(), error) {
-	tp, err := tracing.NewTracer(&cfg.Tracing, cfg.Name, "1.0.0")
+	tp, err := tracing.NewTracer(&cfg.Tracing)
 	if err != nil {
 		return nil, nil, err
 	}

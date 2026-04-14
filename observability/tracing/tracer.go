@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -14,7 +16,8 @@ import (
 )
 
 // NewTracer 创建新的链路追踪器.
-func NewTracer(cfg *TracingConfig, serviceName, serviceVersion string) (*trace.TracerProvider, error) {
+// ServiceName 和 ServiceVersion 从 cfg 中读取.
+func NewTracer(cfg *TracingConfig) (*trace.TracerProvider, error) {
 	if cfg == nil {
 		return nil, ErrNilConfig
 	}
@@ -24,7 +27,7 @@ func NewTracer(cfg *TracingConfig, serviceName, serviceVersion string) (*trace.T
 		return trace.NewTracerProvider(), nil
 	}
 
-	if serviceName == "" {
+	if cfg.ServiceName == "" {
 		return nil, ErrEmptyServiceName
 	}
 
@@ -41,23 +44,35 @@ func NewTracer(cfg *TracingConfig, serviceName, serviceVersion string) (*trace.T
 		endpoint = after
 	}
 
-	// 创建OTLP HTTP导出器选项
-	opts := []otlptracehttp.Option{
-		otlptracehttp.WithEndpoint(endpoint),
+	// 根据 Protocol 创建不同的 OTLP 导出器
+	var exp *otlptrace.Exporter
+	var err error
+
+	switch cfg.OTLP.Protocol {
+	case "grpc":
+		grpcOpts := []otlptracegrpc.Option{
+			otlptracegrpc.WithEndpoint(endpoint),
+		}
+		if cfg.OTLP.Insecure {
+			grpcOpts = append(grpcOpts, otlptracegrpc.WithInsecure())
+		}
+		if len(cfg.OTLP.Headers) > 0 {
+			grpcOpts = append(grpcOpts, otlptracegrpc.WithHeaders(cfg.OTLP.Headers))
+		}
+		exp, err = otlptracegrpc.New(context.Background(), grpcOpts...)
+	default:
+		httpOpts := []otlptracehttp.Option{
+			otlptracehttp.WithEndpoint(endpoint),
+		}
+		if cfg.OTLP.Insecure {
+			httpOpts = append(httpOpts, otlptracehttp.WithInsecure())
+		}
+		if len(cfg.OTLP.Headers) > 0 {
+			httpOpts = append(httpOpts, otlptracehttp.WithHeaders(cfg.OTLP.Headers))
+		}
+		exp, err = otlptracehttp.New(context.Background(), httpOpts...)
 	}
 
-	// 仅在配置为 Insecure 时使用 HTTP（不加密）
-	if cfg.OTLP.Insecure {
-		opts = append(opts, otlptracehttp.WithInsecure())
-	}
-
-	// 添加请求头
-	if len(cfg.OTLP.Headers) > 0 {
-		opts = append(opts, otlptracehttp.WithHeaders(cfg.OTLP.Headers))
-	}
-
-	// 创建OTLP导出器
-	exp, err := otlptracehttp.New(context.Background(), opts...)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrCreateExporter, err)
 	}
@@ -65,8 +80,8 @@ func NewTracer(cfg *TracingConfig, serviceName, serviceVersion string) (*trace.T
 	// 创建资源
 	res, err := resource.New(context.Background(),
 		resource.WithAttributes(
-			semconv.ServiceName(serviceName),
-			semconv.ServiceVersion(serviceVersion),
+			semconv.ServiceName(cfg.ServiceName),
+			semconv.ServiceVersion(cfg.ServiceVersion),
 		),
 	)
 	if err != nil {
@@ -99,8 +114,8 @@ func NewTracer(cfg *TracingConfig, serviceName, serviceVersion string) (*trace.T
 }
 
 // MustNewTracer 创建链路追踪器，失败时 panic.
-func MustNewTracer(cfg *TracingConfig, serviceName, serviceVersion string) *trace.TracerProvider {
-	tp, err := NewTracer(cfg, serviceName, serviceVersion)
+func MustNewTracer(cfg *TracingConfig) *trace.TracerProvider {
+	tp, err := NewTracer(cfg)
 	if err != nil {
 		panic(err)
 	}
