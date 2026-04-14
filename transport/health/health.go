@@ -43,6 +43,7 @@ func (r CheckResult) MarshalJSON() ([]byte, error) {
 // Response 健康检查响应.
 type Response struct {
 	Status    Status                 `json:"status"`
+	Version   string                 `json:"version,omitempty"`
 	Timestamp time.Time              `json:"timestamp"`
 	Duration  time.Duration          `json:"-"`
 	Checks    map[string]CheckResult `json:"checks,omitzero"`
@@ -100,6 +101,7 @@ type Health struct {
 	livenessCheckers  []Checker
 	readinessCheckers []Checker
 	timeout           time.Duration
+	version           string
 }
 
 // New 创建健康检查管理器.
@@ -117,6 +119,13 @@ func New(opts ...Option) *Health {
 func WithTimeout(d time.Duration) Option {
 	return func(h *Health) {
 		h.timeout = d
+	}
+}
+
+// WithVersion 设置服务版本，健康检查响应中会携带此信息.
+func WithVersion(v string) Option {
+	return func(h *Health) {
+		h.version = v
 	}
 }
 
@@ -180,6 +189,7 @@ func (h *Health) runChecks(ctx context.Context, checkers []Checker) Response {
 	if len(checkers) == 0 {
 		return Response{
 			Status:    StatusUp,
+			Version:   h.version,
 			Timestamp: start,
 			Duration:  time.Since(start),
 		}
@@ -223,6 +233,7 @@ func (h *Health) runChecks(ctx context.Context, checkers []Checker) Response {
 
 	return Response{
 		Status:    overallStatus,
+		Version:   h.version,
 		Timestamp: start,
 		Duration:  time.Since(start),
 		Checks:    results,

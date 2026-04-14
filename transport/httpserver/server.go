@@ -48,6 +48,9 @@ func New(handler http.Handler, opts ...Option) *Server {
 
 	// 创建健康检查
 	healthOpts := []health.Option{health.WithTimeout(o.healthTimeout)}
+	if o.version != "" {
+		healthOpts = append(healthOpts, health.WithVersion(o.version))
+	}
 	healthOpts = append(healthOpts, o.healthOptions...)
 	h := health.New(healthOpts...)
 
@@ -204,6 +207,7 @@ type Option func(*options)
 
 type options struct {
 	name         string
+	version      string
 	addr         string
 	readTimeout  time.Duration
 	writeTimeout time.Duration
@@ -244,6 +248,11 @@ func WithLogger(l logger.Logger) Option {
 // WithName 设置服务器名称.
 func WithName(name string) Option {
 	return func(o *options) { o.name = name }
+}
+
+// WithVersion 设置服务版本，会注入到健康检查响应中.
+func WithVersion(v string) Option {
+	return func(o *options) { o.version = v }
 }
 
 // WithAddr 设置监听地址.

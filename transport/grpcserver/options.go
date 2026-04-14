@@ -17,6 +17,7 @@ type Option func(*options)
 // options 服务器配置.
 type options struct {
 	name               string
+	version            string
 	addr               string
 	enableReflection   bool
 	keepaliveTime      time.Duration
@@ -51,6 +52,13 @@ func defaultOptions() *options {
 func WithName(name string) Option {
 	return func(o *options) {
 		o.name = name
+	}
+}
+
+// WithVersion 设置服务版本，会注入到健康检查响应中.
+func WithVersion(v string) Option {
+	return func(o *options) {
+		o.version = v
 	}
 }
 

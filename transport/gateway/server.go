@@ -102,6 +102,9 @@ func New(opts ...Option) *Server {
 
 	// 创建内置健康检查管理器
 	healthOpts := []health.Option{health.WithTimeout(o.healthTimeout)}
+	if o.version != "" {
+		healthOpts = append(healthOpts, health.WithVersion(o.version))
+	}
 	healthOpts = append(healthOpts, o.healthOptions...)
 	h := health.New(healthOpts...)
 

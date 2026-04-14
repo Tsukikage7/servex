@@ -176,6 +176,22 @@ func NewPrometheus(cfg *Config) (*PrometheusCollector, error) {
 		}
 	}
 
+	// 注册 service_info 指标（Prometheus 标准做法，value=1 + 标签携带元信息）
+	if cfg.ServiceName != "" || cfg.Version != "" {
+		serviceInfo := prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace: namespace,
+				Name:      "service_info",
+				Help:      "Service metadata",
+			},
+			[]string{"service_name", "service_version"},
+		)
+		if err := registry.Register(serviceInfo); err != nil {
+			return nil, fmt.Errorf("%w: %v", ErrRegisterMetric, err)
+		}
+		serviceInfo.WithLabelValues(cfg.ServiceName, cfg.Version).Set(1)
+	}
+
 	return c, nil
 }
 

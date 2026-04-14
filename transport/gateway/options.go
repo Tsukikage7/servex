@@ -30,6 +30,7 @@ type Option func(*options)
 
 type options struct {
 	name     string
+	version  string
 	services []Registrar
 
 	// gRPC
@@ -129,6 +130,11 @@ func defaultOptions() *options {
 // WithName 设置服务名称.
 func WithName(name string) Option {
 	return func(o *options) { o.name = name }
+}
+
+// WithVersion 设置服务版本，会注入到健康检查响应中.
+func WithVersion(v string) Option {
+	return func(o *options) { o.version = v }
 }
 
 // WithGRPCAddr 设置 gRPC 地址.
