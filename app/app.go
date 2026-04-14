@@ -83,7 +83,7 @@ func (a *Application) Run() error {
 	a.opts.logger.With(
 		logger.String("name", a.opts.name),
 		logger.String("version", a.opts.version),
-	).Info("[App] starting")
+	).Info("[App] 正在启动")
 
 	if err := a.start(); err != nil {
 		// 启动失败，清理 running 标记
@@ -134,7 +134,7 @@ func (a *Application) start() error {
 			a.opts.logger.With(
 				logger.String("server", s.Name()),
 				logger.String("addr", s.Addr()),
-			).Info("[App] starting server")
+			).Info("[App] 正在启动服务")
 			if err := s.Start(a.ctx); err != nil {
 				errCh <- err
 			}
@@ -172,7 +172,7 @@ func (a *Application) waitForShutdown() error {
 
 	select {
 	case sig := <-sigCh:
-		a.opts.logger.With(logger.String("signal", sig.String())).Info("[App] received signal")
+		a.opts.logger.With(logger.String("signal", sig.String())).Info("[App] 收到信号")
 	case <-a.ctx.Done():
 		a.opts.logger.Info("[App] context cancelled")
 	}
@@ -183,7 +183,7 @@ func (a *Application) waitForShutdown() error {
 func (a *Application) shutdown() error {
 	a.opts.logger.With(
 		logger.Duration("timeout", a.opts.gracefulTimeout),
-	).Info("[App] shutting down")
+	).Info("[App] 正在关闭")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), a.opts.gracefulTimeout)
 	defer cancel()
@@ -196,7 +196,7 @@ func (a *Application) shutdown() error {
 	for _, srv := range a.servers {
 		s := srv
 		wg.Go(func() {
-			a.opts.logger.With(logger.String("server", s.Name())).Info("[App] stopping server")
+			a.opts.logger.With(logger.String("server", s.Name())).Info("[App] 正在停止服务")
 			if err := s.Stop(shutdownCtx); err != nil {
 				a.opts.logger.With(
 					logger.String("server", s.Name()),
@@ -214,7 +214,7 @@ func (a *Application) shutdown() error {
 
 	select {
 	case <-done:
-		a.opts.logger.Info("[App] all servers stopped")
+		a.opts.logger.Info("[App] 所有服务已停止")
 	case <-shutdownCtx.Done():
 		a.opts.logger.Warn("[App] shutdown timeout")
 	}
@@ -229,7 +229,7 @@ func (a *Application) shutdown() error {
 	a.running = false
 	a.mu.Unlock()
 
-	a.opts.logger.Info("[App] stopped")
+	a.opts.logger.Info("[App] 已停止")
 	return nil
 }
 
