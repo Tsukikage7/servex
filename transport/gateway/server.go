@@ -372,7 +372,7 @@ func (s *Server) startHTTP(ctx context.Context) error {
 
 	// 4. Tracing（HTTP 端）
 	if s.opts.tracerName != "" {
-		handler = tracing.HTTPMiddleware(s.opts.tracerName)(handler)
+		handler = tracing.HTTPMiddleware(s.opts.tracerName, s.opts.tracingSkipPaths...)(handler)
 	}
 
 	// 3. Logging（HTTP 端）

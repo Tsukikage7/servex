@@ -21,20 +21,30 @@ const TraceIDHeader = "X-Trace-Id"
 // HTTPMiddleware 返回 HTTP 链路追踪中间件.
 // 中间件会自动从请求头提取或生成 traceId，并通过响应头 X-Trace-Id 返回.
 // traceId 同时作为请求的唯一标识（requestId），可通过 TraceID(ctx) 获取.
+// skipPaths 指定不产生 trace span 的路径（如 /metrics、/healthz）.
 // 使用示例:
 //
 //	mux := http.NewServeMux()
 //	mux.HandleFunc("/api/users", handleUsers)
-//	handler := trace.HTTPMiddleware("my-service")(mux)
+//	handler := trace.HTTPMiddleware("my-service", "/metrics", "/healthz")(mux)
 //	http.ListenAndServe(":8080", handler)
 //	// 在处理器中获取 traceId
 //	func handleUsers(w http.ResponseWriter, r *http.Request) {
 //	    traceId := trace.TraceID(r.Context())
 //	    // ...
 //	}
-func HTTPMiddleware(serviceName string) func(http.Handler) http.Handler {
+func HTTPMiddleware(serviceName string, skipPaths ...string) func(http.Handler) http.Handler {
+	skip := make(map[string]bool, len(skipPaths))
+	for _, p := range skipPaths {
+		skip[p] = true
+	}
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if skip[r.URL.Path] {
+				next.ServeHTTP(w, r)
+				return
+			}
+
 			// 从请求头提取上下文
 			ctx := otel.GetTextMapPropagator().Extract(r.Context(), propagation.HeaderCarrier(r.Header))
 

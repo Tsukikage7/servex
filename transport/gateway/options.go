@@ -62,7 +62,8 @@ type options struct {
 	httpMiddlewares []func(http.Handler) http.Handler
 
 	// Trace
-	tracerName string // 链路追踪服务名，为空则不启用
+	tracerName      string   // 链路追踪服务名，为空则不启用
+	tracingSkipPaths []string // 不产生 trace span 的 HTTP 路径
 
 	// Response
 	enableResponse bool // 是否启用统一响应格式
@@ -269,11 +270,13 @@ func WithLivenessChecker(checkers ...health.Checker) Option {
 }
 
 // WithTrace 启用链路追踪（gRPC + HTTP 双端）.
+// skipPaths 指定不产生 trace span 的 HTTP 路径（如 /metrics、/healthz）.
 //
 // 注意: 需要先调用 tracing.NewTracer() 初始化全局 TracerProvider.
-func WithTrace(serviceName string) Option {
+func WithTrace(serviceName string, skipPaths ...string) Option {
 	return func(o *options) {
 		o.tracerName = serviceName
+		o.tracingSkipPaths = skipPaths
 		// 将 trace 拦截器添加到拦截器链最前面
 		o.unaryInterceptors = append(
 			[]grpc.UnaryServerInterceptor{tracing.UnaryServerInterceptor(serviceName)},
