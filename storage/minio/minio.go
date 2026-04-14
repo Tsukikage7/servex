@@ -26,11 +26,13 @@ import (
 	"context"
 	"errors"
 	"io"
+	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
@@ -65,6 +67,8 @@ type Config struct {
 	Region string `json:"region" yaml:"region" mapstructure:"region"`
 	// ConnectTimeout 连接超时.
 	ConnectTimeout time.Duration `json:"connect_timeout" yaml:"connect_timeout" mapstructure:"connect_timeout"`
+	// EnableTracing 启用链路追踪
+	EnableTracing bool `json:"enable_tracing" yaml:"enable_tracing" mapstructure:"enable_tracing"`
 }
 
 // DefaultConfig 返回默认配置.
@@ -138,9 +142,10 @@ func NewClient(cfg *Config, opts ...Option) (*Client, error) {
 	}
 
 	mc, err := minio.New(cfg.Endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(cfg.AccessKey, cfg.SecretKey, ""),
-		Secure: cfg.UseSSL,
-		Region: cfg.Region,
+		Creds:     credentials.NewStaticV4(cfg.AccessKey, cfg.SecretKey, ""),
+		Secure:    cfg.UseSSL,
+		Region:    cfg.Region,
+		Transport: minioTransport(cfg.EnableTracing),
 	})
 	if err != nil {
 		return nil, err
@@ -271,4 +276,16 @@ func (c *Client) FPutObject(ctx context.Context, key, filePath, contentType stri
 	return c.mc.FPutObject(ctx, c.bucket, key, filePath, minio.PutObjectOptions{
 		ContentType: contentType,
 	})
+}
+
+// minioTransport 返回 MinIO 使用的 HTTP Transport.
+// 启用链路追踪时，用 otelhttp 包装默认 Transport.
+func minioTransport(enableTracing bool) http.RoundTripper {
+	tp := http.DefaultTransport.(*http.Transport).Clone()
+	if enableTracing {
+		return otelhttp.NewTransport(tp, otelhttp.WithSpanNameFormatter(func(_ string, r *http.Request) string {
+			return "MinIO " + r.Method + " " + r.URL.Path
+		}))
+	}
+	return tp
 }

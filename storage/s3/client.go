@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	smithyhttp "github.com/aws/smithy-go/transport/http"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 
 	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
@@ -62,6 +63,11 @@ func NewClient(cfg *Config, log logger.Logger) (Client, error) {
 	)
 	if err != nil {
 		return nil, err
+	}
+
+	// 启用链路追踪时，注入 OTEL 中间件
+	if cfg.EnableTracing {
+		otelaws.AppendMiddlewares(&awsCfg.APIOptions)
 	}
 
 	// 创建 S3 客户端

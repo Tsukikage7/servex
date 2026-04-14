@@ -30,6 +30,10 @@ type Config struct {
 	Addr     string `json:"addr"     yaml:"addr"`
 	Password string `json:"-" yaml:"password"`
 	DB       int    `json:"db"       yaml:"db"`
+
+	// EnableTracing 启用链路追踪.
+	// TODO: 待各 driver（sarama/amqp/redis-streams）OTEL 集成库成熟后启用
+	EnableTracing bool `json:"enable_tracing" yaml:"enable_tracing" mapstructure:"enable_tracing"`
 }
 
 var (

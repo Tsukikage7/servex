@@ -64,6 +64,9 @@ type Config struct {
 	MaxTransactionRetryTime time.Duration `json:"max_transaction_retry_time" yaml:"max_transaction_retry_time" mapstructure:"max_transaction_retry_time"`
 	// Encrypted 是否启用加密连接.
 	Encrypted bool `json:"encrypted" yaml:"encrypted" mapstructure:"encrypted"`
+	// EnableTracing 启用链路追踪.
+	// TODO: 待 neo4j-go-driver OTEL 集成库成熟后启用
+	EnableTracing bool `json:"enable_tracing" yaml:"enable_tracing" mapstructure:"enable_tracing"`
 }
 
 // DefaultConfig 返回默认配置.

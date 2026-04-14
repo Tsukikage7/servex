@@ -70,6 +70,8 @@ type Config struct {
 	MaxRetries int `json:"max_retries" yaml:"max_retries" mapstructure:"max_retries"`
 	// PartSize 分片大小（字节）
 	PartSize int64 `json:"part_size" yaml:"part_size" mapstructure:"part_size"`
+	// EnableTracing 启用链路追踪
+	EnableTracing bool `json:"enable_tracing" yaml:"enable_tracing" mapstructure:"enable_tracing"`
 }
 
 // DefaultConfig 返回默认配置.
