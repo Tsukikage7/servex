@@ -8,10 +8,10 @@ import (
 	"text/template"
 )
 
-//go:embed templates/project/*
+//go:embed all:templates/project
 var projectTemplates embed.FS
 
-//go:embed templates/monorepo/*
+//go:embed all:templates/monorepo
 var monorepoTemplates embed.FS
 
 // ProjectData 项目模板数据.
@@ -40,6 +40,8 @@ var templateFiles = []struct {
 	{"templates/project/cmd/server/config.go.tmpl", "cmd/server/config.go"},
 	{"templates/project/internal/server/http.go.tmpl", "internal/server/http.go"},
 	{"templates/project/internal/service/service.go.tmpl", "internal/service/service.go"},
+	{"templates/project/deploy/docker/infra/docker-compose.yaml.tmpl", "deploy/docker/infra/docker-compose.yaml"},
+	{"templates/project/deploy/docker/app/docker-compose.yaml.tmpl", "deploy/docker/app/docker-compose.yaml"},
 }
 
 // grpcTemplateFile gRPC 可选模板.
@@ -88,6 +90,8 @@ var monorepoTemplateFiles = []struct {
 	{"templates/monorepo/justfile.tmpl", "justfile"},
 	{"templates/monorepo/.gitignore.tmpl", ".gitignore"},
 	{"templates/monorepo/README.md.tmpl", "README.md"},
+	{"templates/monorepo/deploy/docker/infra/docker-compose.yaml.tmpl", "deploy/docker/infra/docker-compose.yaml"},
+	{"templates/monorepo/deploy/docker/app/docker-compose.yaml.tmpl", "deploy/docker/app/docker-compose.yaml"},
 }
 
 // monorepoGitkeepDirs monorepo 需要创建的 .gitkeep 目录列表.
@@ -97,7 +101,6 @@ var monorepoGitkeepDirs = []string{
 	"services",
 	"api",
 	"infrastructure",
-	"deploy/docker",
 	"deploy/k8s",
 }
 

@@ -1,0 +1,30 @@
+# 基础设施服务（Consul、Redis、MySQL 等）
+# 用途：本地开发环境依赖，不部署业务服务
+version: "3.9"
+
+services:
+  consul:
+    image: hashicorp/consul:1.19
+    container_name: {{.Name}}-consul
+    ports:
+      - "8500:8500"
+      - "8600:8600/udp"
+    command: agent -dev -client=0.0.0.0
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: {{.Name}}-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.4
+    container_name: {{.Name}}-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: {{.Name}}
+    ports:
+      - "3306:3306"
+    restart: unless-stopped

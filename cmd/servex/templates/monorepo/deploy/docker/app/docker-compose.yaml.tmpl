@@ -1,0 +1,25 @@
+# 应用服务（各微服务容器）
+# 依赖：需先启动 infra/docker-compose.yaml
+version: "3.9"
+
+# 复用基础设施网络
+networks:
+  default:
+    name: {{.Name}}-network
+    external: true
+
+services:
+  # 示例：添加你的微服务
+  # example-service:
+  #   build:
+  #     context: ../../services/example-service
+  #     dockerfile: Dockerfile
+  #   container_name: {{.Name}}-example
+  #   environment:
+  #     - CONFIG_PATH=/app/configs/config.yaml
+  #   ports:
+  #     - "8080:8080"
+  #   depends_on:
+  #     - consul
+  #     - redis
+  #   restart: unless-stopped
