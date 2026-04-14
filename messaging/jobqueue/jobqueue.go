@@ -26,6 +26,7 @@ type Job struct {
 	Queue       string
 	Type        string
 	Payload     []byte
+	Headers     map[string]string
 	Priority    int
 	MaxRetries  int
 	Retried     int

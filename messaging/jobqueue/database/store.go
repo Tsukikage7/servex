@@ -3,6 +3,7 @@ package database
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -16,6 +17,7 @@ type jobModel struct {
 	Queue       string `gorm:"index:idx_queue_sched;size:255"`
 	Type        string `gorm:"size:255"`
 	Payload     []byte
+	Headers     string `gorm:"type:text"`
 	Priority    int
 	MaxRetries  int
 	Retried     int
@@ -109,6 +111,7 @@ func (s *Store) Requeue(ctx context.Context, job *jobqueue.Job) error {
 		"retried":      m.Retried,
 		"last_error":   m.LastError,
 		"scheduled_at": m.ScheduledAt,
+		"headers":      m.Headers,
 	}).Error
 }
 
@@ -127,8 +130,14 @@ func (s *Store) ListDead(ctx context.Context, queue string) ([]*jobqueue.Job, er
 func (s *Store) Close() error { return nil }
 
 func toModel(j *jobqueue.Job) *jobModel {
+	var headers string
+	if len(j.Headers) > 0 {
+		data, _ := json.Marshal(j.Headers)
+		headers = string(data)
+	}
 	return &jobModel{
 		ID: j.ID, Queue: j.Queue, Type: j.Type, Payload: j.Payload,
+		Headers: headers,
 		Priority: j.Priority, MaxRetries: j.MaxRetries, Retried: j.Retried,
 		Status: string(j.Status), LastError: j.LastError,
 		CreatedAt: j.CreatedAt, ScheduledAt: j.ScheduledAt, Deadline: j.Deadline,
@@ -136,8 +145,13 @@ func toModel(j *jobqueue.Job) *jobModel {
 }
 
 func fromModel(m *jobModel) *jobqueue.Job {
+	var headers map[string]string
+	if m.Headers != "" {
+		_ = json.Unmarshal([]byte(m.Headers), &headers)
+	}
 	return &jobqueue.Job{
 		ID: m.ID, Queue: m.Queue, Type: m.Type, Payload: m.Payload,
+		Headers: headers,
 		Priority: m.Priority, MaxRetries: m.MaxRetries, Retried: m.Retried,
 		Status: jobqueue.Status(m.Status), LastError: m.LastError,
 		CreatedAt: m.CreatedAt, ScheduledAt: m.ScheduledAt, Deadline: m.Deadline,
