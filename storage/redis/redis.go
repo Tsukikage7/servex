@@ -25,6 +25,7 @@ import (
 	"time"
 
 	goredis "github.com/redis/go-redis/v9"
+	"github.com/redis/go-redis/extra/redisotel/v9"
 
 	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
@@ -204,6 +205,14 @@ func NewClient(config *Config, log logger.Logger) (Client, error) {
 		ReadTimeout:  config.ReadTimeout,
 		WriteTimeout: config.WriteTimeout,
 	})
+
+	// 启用链路追踪
+	if config.EnableTracing {
+		if err := redisotel.InstrumentTracing(rdb); err != nil {
+			_ = rdb.Close()
+			return nil, err
+		}
+	}
 
 	// 测试连接
 	ctx, cancel := context.WithTimeout(context.Background(), config.DialTimeout)
