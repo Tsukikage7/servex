@@ -38,5 +38,5 @@ func ExampleAuthenticator() {
 	// <nil>
 	// svc-payment
 	// Payment Service
-	// auth: 无效凭据
+	// [20003] AUTH_INVALID_CREDENTIALS: 无效凭据
 }

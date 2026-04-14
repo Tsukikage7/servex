@@ -3,7 +3,7 @@ package rbacgorm
 
 import (
 	"context"
-	"errors"
+	stderrors "errors"
 
 	"gorm.io/gorm"
 
@@ -28,7 +28,7 @@ func (s *gormStore) GetRole(ctx context.Context, name string) (*rbac.Role, error
 	var role rbac.Role
 	err := s.db.WithContext(ctx).Where("name = ?", name).First(&role).Error
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if stderrors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, rbac.ErrRoleNotFound
 		}
 		return nil, err

@@ -25,22 +25,28 @@ package rbac
 
 import (
 	"context"
-	"errors"
+	stderrors "errors"
 	"log/slog"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/Tsukikage7/servex/v2/auth"
+	"github.com/Tsukikage7/servex/v2/errors"
 )
 
 var (
 	// ErrRoleNotFound 角色未找到错误.
-	ErrRoleNotFound = errors.New("rbac: 角色未找到")
+	ErrRoleNotFound = errors.New(20301, "RBAC_ROLE_NOT_FOUND", "角色未找到").
+		WithHTTP(404).WithGRPC(5) // codes.NotFound
+
 	// ErrRoleExists 角色已存在错误.
-	ErrRoleExists = errors.New("rbac: 角色已存在")
+	ErrRoleExists = errors.New(20302, "RBAC_ROLE_EXISTS", "角色已存在").
+		WithHTTP(409).WithGRPC(6) // codes.AlreadyExists
+
 	// ErrPermissionDenied 权限被拒绝错误.
-	ErrPermissionDenied = errors.New("rbac: 权限被拒绝")
+	ErrPermissionDenied = errors.New(20303, "RBAC_PERMISSION_DENIED", "权限被拒绝").
+		WithHTTP(403).WithGRPC(7) // codes.PermissionDenied
 )
 
 // Role 角色.
@@ -141,7 +147,7 @@ func NewManager(store Store, opts ...Option) RBAC {
 func (m *manager) CreateRole(ctx context.Context, role *Role) error {
 	// 检查是否已存在
 	existing, err := m.store.GetRole(ctx, role.Name)
-	if err != nil && !errors.Is(err, ErrRoleNotFound) {
+	if err != nil && !stderrors.Is(err, ErrRoleNotFound) {
 		return err
 	}
 	if existing != nil {

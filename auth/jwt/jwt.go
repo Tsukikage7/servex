@@ -24,7 +24,7 @@ package jwt
 
 import (
 	"context"
-	"errors"
+	stderrors "errors"
 	"fmt"
 	"strings"
 	"time"
@@ -140,7 +140,7 @@ func NewJWT(opts ...Option) *JWT {
 func (j *JWT) Generate(ctx context.Context, claims Claims) (string, error) {
 	key := j.signingKey()
 	if key == nil {
-		return "", fmt.Errorf("%w: 未配置签名密钥（仅验证模式下不可签发令牌）", ErrTokenInvalid)
+		return "", ErrSigningKeyMissing.WithMessage("仅验证模式下不可签发令牌")
 	}
 	token := jwt.NewWithClaims(j.getSigningMethod(), claims)
 	tokenString, err := token.SignedString(key)
@@ -149,7 +149,7 @@ func (j *JWT) Generate(ctx context.Context, claims Claims) (string, error) {
 			logger.String("name", j.opts.name),
 			logger.Err(err),
 		).Error("[JWT] 生成令牌失败")
-		return "", fmt.Errorf("%w: %v", ErrTokenInvalid, err)
+		return "", ErrTokenInvalid.WithCause(err)
 	}
 
 	// 添加前缀
@@ -185,7 +185,7 @@ func (j *JWT) Generate(ctx context.Context, claims Claims) (string, error) {
 func (j *JWT) GenerateWithDuration(claims jwt.Claims, duration time.Duration) (string, error) {
 	key := j.signingKey()
 	if key == nil {
-		return "", fmt.Errorf("%w: 未配置签名密钥（仅验证模式下不可签发令牌）", ErrTokenInvalid)
+		return "", ErrSigningKeyMissing.WithMessage("仅验证模式下不可签发令牌")
 	}
 	token := jwt.NewWithClaims(j.getSigningMethod(), claims)
 	tokenString, err := token.SignedString(key)
@@ -194,7 +194,7 @@ func (j *JWT) GenerateWithDuration(claims jwt.Claims, duration time.Duration) (s
 			logger.String("name", j.opts.name),
 			logger.Err(err),
 		).Error("[JWT] 生成令牌失败")
-		return "", fmt.Errorf("%w: %v", ErrTokenInvalid, err)
+		return "", ErrTokenInvalid.WithCause(err)
 	}
 
 	tokenString = j.opts.tokenPrefix + tokenString
@@ -234,7 +234,7 @@ func (j *JWT) ValidateWithClaims(ctx context.Context, tokenString string, claims
 			logger.String("name", j.opts.name),
 			logger.Err(err),
 		).Warn("[JWT] 令牌验证失败")
-		return nil, fmt.Errorf("%w: %v", ErrTokenInvalid, err)
+		return nil, ErrTokenInvalid.WithCause(err)
 	}
 
 	if !token.Valid {
@@ -280,7 +280,7 @@ func (j *JWT) RefreshWithClaims(ctx context.Context, tokenString string, oldClai
 	})
 
 	if parseErr != nil {
-		return "", fmt.Errorf("%w: %v", ErrTokenInvalid, parseErr)
+		return "", ErrTokenInvalid.WithCause(parseErr)
 	}
 
 	// 检查是否在刷新窗口内
@@ -328,7 +328,7 @@ func (j *JWT) Revoke(ctx context.Context, subject string) error {
 				logger.String("pattern", pattern),
 				logger.Err(err),
 			).Error("[JWT] 查询令牌 key 失败")
-			return fmt.Errorf("jwt: 查询令牌 key 失败: %w", err)
+			return ErrTokenStoreQuery.WithCause(err)
 		}
 
 		if len(keys) > 0 {
@@ -338,7 +338,7 @@ func (j *JWT) Revoke(ctx context.Context, subject string) error {
 					logger.String("subject", subject),
 					logger.Err(err),
 				).Error("[JWT] 删除令牌失败")
-				return fmt.Errorf("jwt: 删除令牌失败: %w", err)
+				return ErrTokenStoreDelete.WithCause(err)
 			}
 		}
 	} else {
@@ -350,7 +350,7 @@ func (j *JWT) Revoke(ctx context.Context, subject string) error {
 				logger.String("subject", subject),
 				logger.Err(err),
 			).Error("[JWT] 设置撤销标记失败")
-			return fmt.Errorf("jwt: 设置撤销标记失败: %w", err)
+			return ErrTokenStoreRevoke.WithCause(err)
 		}
 	}
 
@@ -461,7 +461,7 @@ func (j *JWT) validateCachedToken(ctx context.Context, tokenString string, claim
 	revokeKey := j.opts.cacheKeyPrefix + "revoked:" + subject
 	if val, revokeErr := j.opts.store.Get(ctx, revokeKey); revokeErr == nil && val != "" {
 		return ErrTokenRevoked
-	} else if revokeErr != nil && !errors.Is(revokeErr, cache.ErrNotFound) {
+	} else if revokeErr != nil && !stderrors.Is(revokeErr, cache.ErrNotFound) {
 		// 缓存访问错误（如 Redis 宕机），跳过撤销检查，fail-open
 		j.opts.logger.With(
 			logger.String("name", j.opts.name),
@@ -473,7 +473,7 @@ func (j *JWT) validateCachedToken(ctx context.Context, tokenString string, claim
 	key := j.buildCacheKey(subject, iat.Unix(), exp.Unix())
 	storedToken, err := j.opts.store.Get(ctx, key)
 	if err != nil {
-		if errors.Is(err, cache.ErrNotFound) {
+		if stderrors.Is(err, cache.ErrNotFound) {
 			// 缓存中无此令牌，视为已撤销
 			return ErrTokenRevoked
 		}
