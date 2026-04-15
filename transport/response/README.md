@@ -90,12 +90,18 @@
 
 ### gRPC 集成
 
-| 函数                        | 说明                    |
-| --------------------------- | ----------------------- |
-| `GRPCError(err)`            | 转换为 gRPC error       |
-| `UnaryServerInterceptor()`  | gRPC 一元拦截器         |
-| `StreamServerInterceptor()` | gRPC 流拦截器           |
-| `FromGRPCError(err)`        | 从 gRPC error 提取 Code |
+| 函数                        | 说明                                                         |
+| --------------------------- | ------------------------------------------------------------ |
+| `GRPCStatus(err)`           | 错误转 gRPC Status，message 嵌入 JSON 保留细粒度业务 Code    |
+| `GRPCError(err)`            | 转换为 gRPC error                                            |
+| `FromGRPCStatus(s)`         | 从 gRPC Status 提取 Code，优先读取 JSON payload              |
+| `FromGRPCError(err)`        | 从 gRPC error 提取 Code                                      |
+| `UnaryServerInterceptor()`  | gRPC 一元拦截器                                              |
+| `StreamServerInterceptor()` | gRPC 流拦截器                                                |
+
+**细粒度 Code 保留机制：** 同一 gRPC code（如 `InvalidArgument`）可对应多个业务 Code（30001/30002/30003）。
+`GRPCStatus` 将完整 Code 信息以 JSON 嵌入 message，`FromGRPCStatus` 优先从中恢复，不再依赖粗粒度反向映射。
+非 servex 来源的 gRPC 错误自动回退到 gRPC code 映射，保持兼容。
 
 ### HTTP 集成
 

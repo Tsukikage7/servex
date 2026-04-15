@@ -72,7 +72,7 @@ type Registrar interface {
 | `WithMarshalOptions`    | -                | protojson 序列化选项           |
 | `WithHealthTimeout`     | `5s`             | 健康检查超时                   |
 | `WithTrace`             | -                | 启用链路追踪（gRPC + HTTP）    |
-| `WithResponse`          | -                | 启用统一响应格式               |
+| `WithResponse`          | -                | 启用统一响应格式（含细粒度错误码保留） |
 | `WithRecovery`          | -                | 启用 panic 恢复（gRPC + HTTP） |
 | `WithAuth`              | -                | 启用认证                       |
 | `WithPublicMethods`     | -                | 设置公开方法（无需认证）       |
@@ -137,6 +137,27 @@ srv := gateway.New(
     gateway.WithAuth(authenticator),
     gateway.WithPublicMethods("/api.auth.v1.AuthService/*"),
     gateway.WithResponse(),
+)
+```
+
+## 统一响应与错误处理
+
+`WithResponse()` 会自动注册 `response.GatewayErrorHandler`，将 gRPC 错误统一转换为 JSON 格式，并支持 i18n。
+
+**细粒度业务 Code 保留：** gRPC-gateway 层的错误码转换是无损的。同一 gRPC code（如 `InvalidArgument`）
+可对应多个业务 Code（30001 参数无效 / 30002 缺少参数 / 30003 校验失败）。`response.GRPCStatus` 将
+完整 Code 信息以 JSON 嵌入 gRPC status message，`GatewayErrorHandler` 从中精确还原，不会发生降级。
+
+```go
+// 推荐方式：使用 WithResponse()，自动处理一切
+srv := gateway.New(
+    gateway.WithResponse(),
+    // ...
+)
+
+// 也可以手动注册（行为等价）
+srv := gateway.New(
+    gateway.WithServeMuxOptions(response.GatewayServeMuxOption()),
 )
 ```
 
