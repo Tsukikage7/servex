@@ -367,6 +367,17 @@ srv := gateway.New(
 - `response.GatewayErrorHandler` — 将 gRPC Status 转为统一 JSON 错误响应，读取 Accept-Language 支持 i18n
 - `response.GatewayServeMuxOption()` — 返回注册了统一错误处理器的 `runtime.ServeMuxOption`
 
+**细粒度业务 Code 保留（v2.0.7+）：**
+
+同一 gRPC code（如 `InvalidArgument`）可对应多个业务 Code（30001/30002/30003），纯粗粒度反向映射会丢失细节。
+`GRPCStatus` 将完整 Code 信息以 JSON 格式嵌入 gRPC status message，`FromGRPCStatus`/`GatewayErrorHandler` 优先从中恢复：
+
+```json
+{"num":30002,"http":400,"key":"error.missing_param","msg":"缺少必需参数"}
+```
+
+非 servex 来源的 gRPC 错误（message 不是 JSON）自动回退到 gRPC code 粗粒度映射，向后兼容。
+
 **拦截器执行顺序（gRPC 端）：** Recovery → Tracing → RequestID → Logging → Metrics → RateLimit → ClientIP → Tenant → Auth
 
 ## grpcclient — gRPC 客户端（服务发现/重试/熔断/追踪/负载均衡）

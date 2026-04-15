@@ -82,27 +82,50 @@ errors.WriteErrorFrom(w, err)
 
 ## gRPC 错误映射
 
+`errors` 包（`errors.ToGRPCStatus`）和 `response` 包（`response.GRPCStatus`）是两套独立的 gRPC 错误体系，
+**不要混用**（两者 message 格式不同，混用会导致 GatewayErrorHandler 无法正确解析）。
+
+**`response` 包**（推荐用于 response 体系）：
+
+```go
+import "github.com/Tsukikage7/servex/v2/transport/response"
+
+// error → gRPC Status（message 嵌入 JSON 保留细粒度业务 Code）
+st := response.GRPCStatus(err)
+// st.Message() = `{"num":30002,"http":400,"key":"error.missing_param","msg":"缺少必需参数"}`
+
+// gRPC Status → Code（优先读取 JSON，回退到 gRPC code 映射）
+code := response.FromGRPCStatus(st)
+// code.Num = 30002（不会被降级为 30001）
+
+// gRPC 拦截器
+grpcserver.New(
+    grpcserver.WithUnaryInterceptor(response.UnaryServerInterceptor()),
+)
+```
+
+**`errors` 包**（推荐用于 errors 体系）：
+
 ```go
 import "github.com/Tsukikage7/servex/v2/errors"
 
-// *Error → gRPC Status
+// *Error → gRPC Status（Detail 为 JSON 序列化的错误信息）
 st := errors.ToGRPCStatus(err)
-// gRPC Code 取自 Error.GRPC，Detail 为 JSON 序列化的错误信息
 
 // gRPC Status → *Error
 e := errors.FromGRPCStatus(st)
 
-// gRPC 一元拦截器（自动将 *Error 转为 gRPC Status）
+// gRPC 一元拦截器
 grpcserver.New(
     grpcserver.WithUnaryInterceptor(errors.UnaryServerInterceptor()),
-    grpcserver.WithStreamInterceptor(errors.StreamServerInterceptor()),
 )
 ```
 
-**gRPC 映射流程：**
-1. 业务层返回 `*Error`
-2. 拦截器调用 `ToGRPCStatus(err)` 转为 gRPC Status
-3. 客户端收到 Status 后调用 `FromGRPCStatus(st)` 还原 `*Error`
+**gRPC 映射流程（response 体系）：**
+1. 业务层返回 `*response.BusinessError`
+2. 拦截器调用 `GRPCStatus(err)` 转为 gRPC Status，message 嵌入 JSON
+3. gRPC-gateway `GatewayErrorHandler` 调用 `FromGRPCStatus` 还原完整 Code
+4. 若 JSON 解析失败（非 servex 来源），自动回退到 gRPC code 反向映射
 
 ## 错误码段分配（v2.0.6+）
 
