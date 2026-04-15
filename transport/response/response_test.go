@@ -360,6 +360,36 @@ func TestGRPCConversions(t *testing.T) {
 			_ = code // Just verify no panic
 		}
 	})
+
+	// 回归测试：同一 gRPC code (InvalidArgument) 对应多个业务 Code 时，
+	// GRPCStatus → FromGRPCStatus 必须保留细粒度 Num，不能发生降级。
+	t.Run("fine-grained code preserved through gRPC roundtrip", func(t *testing.T) {
+		cases := []response.Code{
+			response.CodeInvalidParam,    // 30001
+			response.CodeMissingParam,    // 30002
+			response.CodeValidationFailed, // 30003
+			response.CodeUnauthorized,    // 20001
+			response.CodeTokenExpired,    // 20003
+			response.CodeTokenInvalid,    // 20004
+			response.CodeInternal,        // 50001
+			response.CodeDatabaseError,   // 50003
+			response.CodeServiceUnavailable, // 60001
+			response.CodeUpstreamError,   // 60002
+		}
+		for _, want := range cases {
+			err := response.NewError(want)
+			st := response.GRPCStatus(err)
+			got := response.FromGRPCStatus(st)
+			if got.Num != want.Num {
+				t.Errorf("code %d (%s): after gRPC roundtrip got Num=%d, want %d",
+					want.Num, want.Key, got.Num, want.Num)
+			}
+			if got.HTTPStatus != want.HTTPStatus {
+				t.Errorf("code %d: HTTP status got %d, want %d",
+					want.Num, got.HTTPStatus, want.HTTPStatus)
+			}
+		}
+	})
 }
 
 func TestIsBusinessError(t *testing.T) {

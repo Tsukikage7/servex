@@ -2,16 +2,29 @@ package response
 
 import (
 	"context"
+	"encoding/json"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
+// grpcPayload 是嵌入 gRPC status message 的 JSON 载荷，用于跨 gRPC 边界保留细粒度业务 Code。
+type grpcPayload struct {
+	Num        int    `json:"num"`
+	HTTPStatus int    `json:"http"`
+	Key        string `json:"key,omitempty"`
+	Message    string `json:"msg"`
+}
+
 // GRPCStatus 将错误转换为 gRPC Status.
 //
 // 如果是业务错误，使用对应的 gRPC 状态码；
 // 否则返回 Internal 状态.
+//
+// 为了在 gRPC-gateway 场景下保留细粒度业务 Code（避免反向映射丢失），
+// message 字段会序列化为 JSON，携带 Num/HTTPStatus/Key 等信息。
+// FromGRPCStatus 会优先从 JSON 恢复，确保 30002/30003 等不被还原为 30001。
 func GRPCStatus(err error) *status.Status {
 	if err == nil {
 		return status.New(codes.OK, "")
@@ -20,6 +33,15 @@ func GRPCStatus(err error) *status.Status {
 	code := ExtractCode(err)
 	message := ExtractMessage(err)
 
+	payload := grpcPayload{
+		Num:        code.Num,
+		HTTPStatus: code.HTTPStatus,
+		Key:        code.Key,
+		Message:    message,
+	}
+	if b, jsonErr := json.Marshal(payload); jsonErr == nil {
+		return status.New(code.GRPCCode, string(b))
+	}
 	return status.New(code.GRPCCode, message)
 }
 
@@ -32,8 +54,22 @@ func GRPCError(err error) error {
 
 // FromGRPCStatus 从 gRPC Status 提取 Code.
 //
-// 根据 gRPC 状态码映射到业务错误码.
+// 优先从 message JSON（由 GRPCStatus 序列化）中恢复完整的细粒度业务 Code；
+// 若 message 不是 servex 格式，则回退到 gRPC code 映射。
 func FromGRPCStatus(s *status.Status) Code {
+	// 优先尝试从 JSON message 恢复（保留细粒度业务 Code，如 30002/30003）
+	var p grpcPayload
+	if json.Unmarshal([]byte(s.Message()), &p) == nil && p.Num != 0 {
+		return Code{
+			Num:        p.Num,
+			HTTPStatus: p.HTTPStatus,
+			GRPCCode:   s.Code(),
+			Key:        p.Key,
+			Message:    p.Message,
+		}
+	}
+
+	// 回退：粗粒度 gRPC code 映射（兼容非 servex 来源的 gRPC 错误）
 	switch s.Code() {
 	case codes.OK:
 		return CodeSuccess

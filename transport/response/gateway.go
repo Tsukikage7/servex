@@ -14,6 +14,10 @@ import (
 // 将 gRPC 错误转换为统一的 JSON 响应格式，支持 i18n（读取 Accept-Language 头）。
 // 与 httpserver 的 responseErrorEncoder 行为一致。
 //
+// 细粒度 Code 保留：GRPCStatus 将业务 Code 以 JSON 嵌入 gRPC status message，
+// 此处理器通过 FromGRPCStatus 从中还原完整 Code（如 30002），
+// 不会因粗粒度 gRPC code 反向映射被降级（如被错误还原为 30001）。
+//
 // 用法：
 //
 //	srv := gateway.New(
