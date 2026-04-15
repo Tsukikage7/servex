@@ -10,7 +10,7 @@ Go 微服务开发工具包，提供构建生产级微服务所需的核心组�
 ## 安装
 
 ```bash
-go get github.com/Tsukikage7/servex
+go get github.com/Tsukikage7/servex/v2
 ```
 
 ## Claude Code Plugin
@@ -176,6 +176,7 @@ myproject/
 | [transport/hertzserver](./transport/hertzserver/) | Hertz 适配 |
 | [transport/websocket](./transport/websocket/) | WebSocket 服务端（gorilla/websocket） |
 | [transport/sse](./transport/sse/) | Server-Sent Events 服务端 |
+| [transport/botserver](./transport/botserver/) | Bot 框架（Discord/Telegram，平台无关路由） |
 | [transport/health](./transport/health/) | 健康检查（K8s 探针） |
 | [transport/response](./transport/response/) | 统一响应封装 |
 | [transport/graphql](./transport/graphql/) | GraphQL 服务器适配（graphql-go/graphql） |
@@ -398,8 +399,10 @@ myproject/
 - **OpenTelemetry Metrics** — Prometheus + OTel 双指标后端（[observability/metrics](./observability/metrics/)）
 - **调试面板** — 路由/配置/健康/指标/构建信息一览（[transport/debug](./transport/debug/)）
 - **OpenAPI 3.1** — 升级至 3.1 规范，支持 Webhooks 定义（[openapi](./openapi/)）
-- **`servex dev`** — 开发模式，文件变更自动重启
-- **`servex gen k8s`** — K8s Deployment/Service manifest 生成
+- **存储层全面追踪** — ClickHouse/S3/MinIO/Neo4j 客户端 `EnableTracing`，自动上报 OTel span
+- **消息队列追踪** — Pub/Sub 和 JobQueue 支持 trace context 跨消息传播，factory 自动包装
+- **`servex dev`** — 开发模式，air 热重载（文件变更自动重启）
+- **`servex gen k8s`** — K8s Deployment/Service/HPA manifest 生成
 
 详细迁移指南请参阅 [MIGRATION_V2.md](./MIGRATION_V2.md)。
 
