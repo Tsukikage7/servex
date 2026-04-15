@@ -114,10 +114,27 @@ lint:
 vet:
     go vet ./...
 
-# 格式化
+# 格式化（修改文件）
 fmt:
     gofmt -w -s .
-    goimports -w -local github.com/Tsukikage7/servex . 2>/dev/null || true
+    goimports -w -local github.com/Tsukikage7/servex/v2 .
+
+# 格式化检查（只检查不修改，适用于 CI）
+fmt-check:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bad=$(gofmt -l -s . | head -20)
+    if [ -n "$bad" ]; then
+      echo "gofmt: 以下文件格式不符合规范:"
+      echo "$bad"
+      exit 1
+    fi
+    bad=$(goimports -l -local github.com/Tsukikage7/servex/v2 . | head -20)
+    if [ -n "$bad" ]; then
+      echo "goimports: 以下文件 import 顺序不符合规范:"
+      echo "$bad"
+      exit 1
+    fi
 
 # 依赖整理
 tidy:
@@ -200,11 +217,11 @@ service *names:
 # ── CI 本地模拟 ──────────────────────────────────────────────
 
 # 模拟 CI 完整流程（仅单元测试）
-ci: tidy fmt lint vet test-unit build
+ci: tidy fmt-check lint vet test-unit build
     @echo ""
     @echo "CI 检查全部通过"
 
 # 模拟 CI 完整流程（含集成测试，需要先 just services-up）
-ci-full: tidy fmt lint vet test-unit test-integration build
+ci-full: tidy fmt-check lint vet test-unit test-integration build
     @echo ""
     @echo "CI 全量检查通过"
