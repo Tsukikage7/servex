@@ -9,7 +9,7 @@ import (
 type nodeKind int
 
 const (
-	kindInvoke    nodeKind = iota
+	kindInvoke nodeKind = iota
 	kindStream
 	kindCollect
 	kindTransform
