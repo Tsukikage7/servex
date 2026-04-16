@@ -330,4 +330,3 @@ func compileGraph[I, O any](_ context.Context, g *Graph[I, O], stateInjector fun
 		callback:      buildCallbackHandler(callbacks),
 	}, nil
 }
-

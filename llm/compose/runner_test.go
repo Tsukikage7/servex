@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Tsukikage7/servex/v2/llm/compose"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/Tsukikage7/servex/v2/llm/compose"
 )
 
 func TestRunnable_Invoke_Linear(t *testing.T) {
