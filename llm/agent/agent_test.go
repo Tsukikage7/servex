@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"testing"
 
 	"github.com/Tsukikage7/servex/v2/llm"
@@ -30,8 +31,33 @@ func (m *mockModel) Generate(_ context.Context, _ []llm.Message, _ ...llm.CallOp
 }
 
 func (m *mockModel) Stream(_ context.Context, _ []llm.Message, _ ...llm.CallOption) (llm.StreamReader, error) {
-	return nil, errors.New("mock: stream not implemented")
+	if m.idx >= len(m.responses) {
+		return nil, errors.New("mock: no more responses")
+	}
+	resp := m.responses[m.idx]
+	m.idx++
+	return &mockStreamReader{resp: resp}, nil
 }
+
+// mockStreamReader 将单个 ChatResponse 包装为 StreamReader，以单 token 形式发出完整内容.
+type mockStreamReader struct {
+	resp *llm.ChatResponse
+	sent bool
+}
+
+func (r *mockStreamReader) Recv() (llm.StreamChunk, error) {
+	if r.sent {
+		return llm.StreamChunk{}, io.EOF
+	}
+	r.sent = true
+	return llm.StreamChunk{Delta: r.resp.Message.Content, FinishReason: r.resp.FinishReason}, nil
+}
+
+func (r *mockStreamReader) Response() *llm.ChatResponse {
+	return r.resp
+}
+
+func (r *mockStreamReader) Close() error { return nil }
 
 // ---------- 测试 ----------
 

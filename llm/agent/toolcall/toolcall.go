@@ -15,10 +15,20 @@ var ErrMaxRounds = errors.New("toolcall: 超过最大工具调用轮次")
 // ExecutorOption 执行器选项.
 type ExecutorOption func(*executorOptions)
 
+// InterruptChecker 中断检查函数，在工具执行前调用.
+// 若需要中断，应返回非 nil 错误（通常为 *agent.InterruptError）.
+type InterruptChecker func(ctx context.Context, toolCalls []llm.ToolCall, messages []llm.Message, round int) error
+
+// PreToolCallback 工具调用前回调函数.
+type PreToolCallback func(ctx context.Context, call llm.ToolCall)
+
 // executorOptions 内部选项集合.
 type executorOptions struct {
-	maxRounds int
-	onStep    StepHandler
+	maxRounds       int
+	onStep          StepHandler
+	streamCallback  llm.StreamCallback // 流式 token 回调
+	interruptCheck  InterruptChecker   // 工具执行前中断检查（可选）
+	preToolCallback PreToolCallback    // 工具调用前回调（可选）
 }
 
 // WithMaxRounds 设置最大工具调用轮次（默认 10）.
@@ -48,6 +58,22 @@ type StepHandler func(ctx context.Context, event StepEvent)
 // 每当 LLM 返回响应后均触发一次（含最终轮）.
 func WithOnStep(fn StepHandler) ExecutorOption {
 	return func(o *executorOptions) { o.onStep = fn }
+}
+
+// WithStreamCallback 设置流式 token 回调，每轮模型调用时逐 token 触发.
+func WithStreamCallback(fn llm.StreamCallback) ExecutorOption {
+	return func(o *executorOptions) { o.streamCallback = fn }
+}
+
+// WithInterruptCheck 设置中断检查函数，在每轮工具执行前调用.
+// 若函数返回非 nil 错误，工具调用循环终止并将该错误向上传播.
+func WithInterruptCheck(fn InterruptChecker) ExecutorOption {
+	return func(o *executorOptions) { o.interruptCheck = fn }
+}
+
+// WithPreToolCallback 设置工具调用前回调，在每个工具实际执行之前触发.
+func WithPreToolCallback(fn PreToolCallback) ExecutorOption {
+	return func(o *executorOptions) { o.preToolCallback = fn }
 }
 
 // ExecutorResult 执行结果.
@@ -93,7 +119,11 @@ func (e *Executor) Run(ctx context.Context, messages []llm.Message, opts ...llm.
 	result := &ExecutorResult{}
 
 	for round := range e.opts.maxRounds {
-		resp, err := e.model.Generate(ctx, history, opts...)
+		callOpts := opts
+		if e.opts.streamCallback != nil {
+			callOpts = append([]llm.CallOption{llm.WithStreamCallback(e.opts.streamCallback)}, opts...)
+		}
+		resp, err := e.model.Generate(ctx, history, callOpts...)
 		if err != nil {
 			return nil, fmt.Errorf("toolcall: 第 %d 轮生成失败: %w", round+1, err)
 		}
@@ -114,9 +144,19 @@ func (e *Executor) Run(ctx context.Context, messages []llm.Message, opts ...llm.
 
 		result.Rounds = round + 1
 
+		// 工具执行前检查中断
+		if e.opts.interruptCheck != nil {
+			if err := e.opts.interruptCheck(ctx, resp.Message.ToolCalls, history, round); err != nil {
+				return nil, err
+			}
+		}
+
 		// 执行所有工具调用，收集结果
 		toolResults := make([]ToolResult, 0, len(resp.Message.ToolCalls))
 		for _, tc := range resp.Message.ToolCalls {
+			if e.opts.preToolCallback != nil {
+				e.opts.preToolCallback(ctx, tc)
+			}
 			output, execErr := e.registry.Execute(ctx, tc.ID, tc.Function.Name, tc.Function.Arguments)
 			toolResults = append(toolResults, ToolResult{Call: tc, Output: output, Err: execErr})
 			if execErr != nil {

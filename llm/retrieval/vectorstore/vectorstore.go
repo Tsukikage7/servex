@@ -40,6 +40,7 @@ type SearchOption func(*searchOptions)
 type searchOptions struct {
 	filter         map[string]any
 	scoreThreshold *float32
+	textQuery      string
 }
 
 // ApplySearchOptions 应用搜索选项.
@@ -60,3 +61,17 @@ func WithFilter(filter map[string]any) SearchOption {
 func WithScoreThreshold(threshold float32) SearchOption {
 	return func(o *searchOptions) { o.scoreThreshold = &threshold }
 }
+
+// WithTextQuery 设置 BM25 文本查询，与向量搜索混合使用.
+func WithTextQuery(text string) SearchOption {
+	return func(o *searchOptions) { o.textQuery = text }
+}
+
+// Filter 返回元数据过滤条件.
+func (o searchOptions) Filter() map[string]any { return o.filter }
+
+// ScoreThreshold 返回分数阈值指针，未设置时返回 nil.
+func (o searchOptions) ScoreThreshold() *float32 { return o.scoreThreshold }
+
+// TextQuery 返回 BM25 文本查询字符串，未设置时返回空字符串.
+func (o searchOptions) TextQuery() string { return o.textQuery }

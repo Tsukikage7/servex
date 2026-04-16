@@ -21,7 +21,10 @@ go get github.com/Tsukikage7/servex/llm
 | 子包 | 说明 |
 |---|---|
 | `ai/openai` | OpenAI 适配器（兼容 DeepSeek、通义千问等 OpenAI 格式 Provider） |
+| `ai/ollama` | Ollama 本地模型适配器（默认 http://localhost:11434/v1） |
+| `ai/deepseek` | DeepSeek API 适配器（https://api.deepseek.com/v1） |
 | `ai/anthropic` | Anthropic Claude 适配器 |
+| `ai/bedrock` | AWS Bedrock 适配器（Converse API，支持 Claude/Titan/Llama/Mistral 等） |
 | `ai/gemini` | Google Gemini 适配器 |
 | `ai/middleware` | 中间件链（日志、重试、限流、用量追踪） |
 | `ai/conversation` | 多轮对话会话管理（BufferMemory / WindowMemory） |
@@ -30,6 +33,10 @@ go get github.com/Tsukikage7/servex/llm
 | `ai/embedding` | 批量嵌入 + 余弦相似度工具函数 |
 | `ai/vectorstore` | 向量存储统一接口抽象 |
 | `ai/router` | 多 Provider 路由器（按模型名路由） |
+| `ai/compose` | DAG 编排引擎（Graph、四范式节点、条件边、Runnable） |
+| `ai/vectorstore/memory` | 内存向量存储（测试用） |
+| `ai/vectorstore/pgvector` | pgvector 向量存储适配 |
+| `ai/vectorstore/redis` | Redis Search 向量存储适配 |
 
 ## 核心接口
 

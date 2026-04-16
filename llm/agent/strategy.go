@@ -5,11 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
+	"time"
 
 	"github.com/Tsukikage7/servex/v2/llm"
+	"github.com/Tsukikage7/servex/v2/llm/agent/checkpoint"
 	"github.com/Tsukikage7/servex/v2/llm/agent/toolcall"
 	"github.com/Tsukikage7/servex/v2/observability/logger"
+	"github.com/google/uuid"
 )
 
 // Strategy Agent 执行策略接口.
@@ -33,12 +37,16 @@ func NewReActStrategy() Strategy {
 
 // Execute 同步执行 ReAct 策略.
 func (s *reActStrategy) Execute(ctx context.Context, model llm.ChatModel, tools *toolcall.Registry, messages []llm.Message, maxIter int, log logger.Logger, opts ...llm.CallOption) (*Result, error) {
+	cb := buildAgentCallbackHandler(getAgentCallbacks(ctx))
+
 	// 无工具时直接调用模型
 	if tools == nil {
+		cb.OnLLMCall(ctx, messages)
 		resp, err := model.Generate(ctx, messages, opts...)
 		if err != nil {
 			return nil, err
 		}
+		cb.OnLLMResponse(ctx, resp)
 		return &Result{
 			Output:     resp.Message.Content,
 			Messages:   append(messages, resp.Message),
@@ -51,11 +59,18 @@ func (s *reActStrategy) Execute(ctx context.Context, model llm.ChatModel, tools 
 	var allToolResults []toolcall.ToolResult
 	var totalUsage llm.Usage
 
-	executor := toolcall.NewExecutor(model, tools,
+	executorOpts := []toolcall.ExecutorOption{
 		toolcall.WithMaxRounds(maxIter),
-		toolcall.WithOnStep(func(_ context.Context, event toolcall.StepEvent) {
+		toolcall.WithPreToolCallback(func(cbCtx context.Context, call llm.ToolCall) {
+			cb.OnToolCallStart(cbCtx, call)
+		}),
+		toolcall.WithOnStep(func(stepCtx context.Context, event toolcall.StepEvent) {
 			if event.Response != nil {
 				totalUsage.Add(event.Response.Usage)
+				cb.OnLLMResponse(stepCtx, event.Response)
+			}
+			for _, tr := range event.ToolResults {
+				cb.OnToolCallEnd(stepCtx, tr.Call, tr.Output, tr.Err)
 			}
 			allToolResults = append(allToolResults, event.ToolResults...)
 			if log != nil {
@@ -66,8 +81,45 @@ func (s *reActStrategy) Execute(ctx context.Context, model llm.ChatModel, tools 
 				}
 			}
 		}),
-	)
+	}
 
+	// 注入中断检查（从 context 取出配置）
+	if ic := getInterruptConfig(ctx); ic != nil {
+		executorOpts = append(executorOpts, toolcall.WithInterruptCheck(
+			func(checkCtx context.Context, toolCalls []llm.ToolCall, msgs []llm.Message, round int) error {
+				var needsInterrupt []llm.ToolCall
+				for _, tc := range toolCalls {
+					if ic.policy.ShouldInterrupt(checkCtx, tc) {
+						needsInterrupt = append(needsInterrupt, tc)
+					}
+				}
+				if len(needsInterrupt) == 0 {
+					return nil
+				}
+				cp := &checkpoint.AgentCheckpoint{
+					ID:        uuid.New().String(),
+					Messages:  msgs,
+					ToolCalls: needsInterrupt,
+					Iteration: round,
+					CreatedAt: time.Now(),
+					Metadata:  map[string]any{"agent": ic.agentName},
+				}
+				if err := ic.store.Save(checkCtx, cp); err != nil {
+					return fmt.Errorf("agent: save checkpoint: %w", err)
+				}
+				return &InterruptError{
+					CheckpointID: cp.ID,
+					ToolCalls:    needsInterrupt,
+					Messages:     msgs,
+				}
+			},
+		))
+	}
+
+	executor := toolcall.NewExecutor(model, tools, executorOpts...)
+
+	// 在发起 LLM 调用前触发 OnLLMCall
+	cb.OnLLMCall(ctx, messages)
 	execResult, err := executor.Run(ctx, messages, opts...)
 	if err != nil {
 		// 检查是否为最大轮次错误
@@ -98,38 +150,67 @@ func (s *reActStrategy) ExecuteStream(ctx context.Context, model llm.ChatModel, 
 			}
 		}()
 
-		// 无工具时直接调用模型
+		cb := buildAgentCallbackHandler(getAgentCallbacks(ctx))
+
+		// 无工具时直接调用模型流式接口
 		if tools == nil {
-			resp, err := model.Generate(ctx, messages, opts...)
+			cb.OnLLMCall(ctx, messages)
+			reader, err := model.Stream(ctx, messages, opts...)
 			if err != nil {
 				ch <- Event{Type: EventError, Content: err.Error()}
 				return
 			}
-			ch <- Event{Type: EventOutput, Content: resp.Message.Content}
+			defer reader.Close()
+			var content string
+			for {
+				chunk, recvErr := reader.Recv()
+				if recvErr != nil {
+					if recvErr == io.EOF {
+						break
+					}
+					ch <- Event{Type: EventError, Content: recvErr.Error()}
+					return
+				}
+				if chunk.Delta != "" {
+					ch <- Event{Type: EventToken, Content: chunk.Delta}
+					content += chunk.Delta
+				}
+			}
+			// 构造最终响应触发 OnLLMResponse
+			finalResp := reader.Response()
+			if finalResp != nil {
+				cb.OnLLMResponse(ctx, finalResp)
+			}
+			ch <- Event{Type: EventOutput, Content: content}
 			return
 		}
 
-		var allToolResults []toolcall.ToolResult
-
+		cb.OnLLMCall(ctx, messages)
 		executor := toolcall.NewExecutor(model, tools,
 			toolcall.WithMaxRounds(maxIter),
-			toolcall.WithOnStep(func(_ context.Context, event toolcall.StepEvent) {
-				if event.IsFinal {
-					// 最终轮：发送输出事件
-					ch <- Event{Type: EventThinking, Content: event.Response.Message.Content}
-					return
+			toolcall.WithStreamCallback(func(streamCtx context.Context, chunk llm.StreamChunk) error {
+				if chunk.Delta != "" {
+					ch <- Event{Type: EventToken, Content: chunk.Delta}
 				}
-				// 中间轮：发送思考和工具调用事件
-				if event.Response.Message.Content != "" {
-					ch <- Event{Type: EventThinking, Content: event.Response.Message.Content}
+				return nil
+			}),
+			toolcall.WithOnStep(func(stepCtx context.Context, event toolcall.StepEvent) {
+				if event.Response != nil {
+					cb.OnLLMResponse(stepCtx, event.Response)
 				}
-				for i, tc := range event.Response.Message.ToolCalls {
-					tcCopy := tc
-					ch <- Event{Type: EventToolCall, ToolCall: &tcCopy}
-					if i < len(event.ToolResults) {
-						trCopy := event.ToolResults[i]
-						ch <- Event{Type: EventToolResult, ToolResult: &trCopy}
-						allToolResults = append(allToolResults, trCopy)
+				if !event.IsFinal {
+					if event.Response.Message.Content != "" {
+						ch <- Event{Type: EventThinking, Content: event.Response.Message.Content}
+					}
+					for i, tc := range event.Response.Message.ToolCalls {
+						tcCopy := tc
+						cb.OnToolCallStart(stepCtx, tcCopy)
+						ch <- Event{Type: EventToolCall, ToolCall: &tcCopy}
+						if i < len(event.ToolResults) {
+							trCopy := event.ToolResults[i]
+							cb.OnToolCallEnd(stepCtx, tcCopy, trCopy.Output, trCopy.Err)
+							ch <- Event{Type: EventToolResult, ToolResult: &trCopy}
+						}
 					}
 				}
 			}),
@@ -144,8 +225,6 @@ func (s *reActStrategy) ExecuteStream(ctx context.Context, model llm.ChatModel, 
 			}
 			return
 		}
-
-		_ = allToolResults
 		ch <- Event{Type: EventOutput, Content: execResult.Response.Message.Content}
 	}()
 

@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/Tsukikage7/servex/v2/llm"
+	"github.com/Tsukikage7/servex/v2/llm/agent/checkpoint"
 	"github.com/Tsukikage7/servex/v2/llm/agent/conversation"
 	"github.com/Tsukikage7/servex/v2/llm/agent/toolcall"
 	"github.com/Tsukikage7/servex/v2/llm/safety/guardrail"
@@ -43,6 +44,12 @@ type Config struct {
 	MaxIterations int
 	// Logger 日志记录器（可选）.
 	Logger logger.Logger
+	// Callbacks 回调处理器列表（可选）.
+	Callbacks []AgentCallbackHandler
+	// CheckpointStore 检查点存储（可选，与 InterruptPolicy 配合使用）.
+	CheckpointStore checkpoint.Store
+	// InterruptPolicy 中断策略（可选），设置后在工具调用前触发人工审批流程.
+	InterruptPolicy InterruptPolicy
 }
 
 // Agent 智能代理，封装模型调用、工具执行、记忆管理和护栏校验.
@@ -83,7 +90,9 @@ type Result struct {
 type EventType string
 
 const (
-	// EventThinking 模型思考中.
+	// EventToken 单个 token 片段（流式逐 token 输出）.
+	EventToken EventType = "token"
+	// EventThinking 模型思考中（每轮流结束后发一次完整文本）.
 	EventThinking EventType = "thinking"
 	// EventToolCall 工具调用请求.
 	EventToolCall EventType = "tool_call"
@@ -110,17 +119,33 @@ type Event struct {
 // Run 执行 Agent，返回最终结果.
 // 流程：构建消息 → 输入护栏 → 策略执行 → 输出护栏 → 写入记忆 → 返回结果.
 func (a *Agent) Run(ctx context.Context, input string, opts ...llm.CallOption) (*Result, error) {
+	cb := buildAgentCallbackHandler(a.cfg.Callbacks)
+
+	// 0. 触发 OnAgentStart
+	cb.OnAgentStart(ctx, input)
+
 	// 1. 构建消息列表
 	messages := a.buildMessages(input)
 
 	// 2. 输入护栏检查
 	if err := a.runGuardrails(ctx, messages); err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrBlocked, err)
+		err = fmt.Errorf("%w: %v", ErrBlocked, err)
+		cb.OnAgentEnd(ctx, nil, err)
+		return nil, err
 	}
 
-	// 3. 委托策略执行
-	result, err := a.cfg.Strategy.Execute(ctx, a.cfg.Model, a.cfg.Tools, messages, a.cfg.MaxIterations, a.cfg.Logger, opts...)
+	// 3. 委托策略执行（通过 context 传递 callbacks 和中断配置）
+	ctxWithCb := withAgentCallbacks(ctx, a.cfg.Callbacks)
+	if a.cfg.InterruptPolicy != nil && a.cfg.CheckpointStore != nil {
+		ctxWithCb = withInterruptConfig(ctxWithCb, &interruptConfig{
+			policy:    a.cfg.InterruptPolicy,
+			store:     a.cfg.CheckpointStore,
+			agentName: a.cfg.Name,
+		})
+	}
+	result, err := a.cfg.Strategy.Execute(ctxWithCb, a.cfg.Model, a.cfg.Tools, messages, a.cfg.MaxIterations, a.cfg.Logger, opts...)
 	if err != nil {
+		cb.OnAgentEnd(ctx, nil, err)
 		return nil, err
 	}
 
@@ -128,7 +153,9 @@ func (a *Agent) Run(ctx context.Context, input string, opts ...llm.CallOption) (
 	if result.Output != "" && len(a.cfg.Guardrails) > 0 {
 		outMsgs := []llm.Message{llm.AssistantMessage(result.Output)}
 		if err := a.runGuardrails(ctx, outMsgs); err != nil {
-			return nil, fmt.Errorf("%w: %v", ErrBlocked, err)
+			err = fmt.Errorf("%w: %v", ErrBlocked, err)
+			cb.OnAgentEnd(ctx, nil, err)
+			return nil, err
 		}
 	}
 
@@ -138,23 +165,34 @@ func (a *Agent) Run(ctx context.Context, input string, opts ...llm.CallOption) (
 		a.cfg.Memory.Add(llm.AssistantMessage(result.Output))
 	}
 
+	// 6. 触发 OnAgentEnd
+	cb.OnAgentEnd(ctx, result, nil)
 	return result, nil
 }
 
 // RunStream 流式执行 Agent，通过 channel 返回事件流.
 // 整体流程与 Run 一致，但策略层以事件流方式返回中间过程.
 func (a *Agent) RunStream(ctx context.Context, input string, opts ...llm.CallOption) (<-chan Event, error) {
+	cb := buildAgentCallbackHandler(a.cfg.Callbacks)
+
+	// 触发 OnAgentStart
+	cb.OnAgentStart(ctx, input)
+
 	// 构建消息列表
 	messages := a.buildMessages(input)
 
 	// 输入护栏检查
 	if err := a.runGuardrails(ctx, messages); err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrBlocked, err)
+		err = fmt.Errorf("%w: %v", ErrBlocked, err)
+		cb.OnAgentEnd(ctx, nil, err)
+		return nil, err
 	}
 
-	// 委托策略执行流式
-	ch, err := a.cfg.Strategy.ExecuteStream(ctx, a.cfg.Model, a.cfg.Tools, messages, a.cfg.MaxIterations, a.cfg.Logger, opts...)
+	// 委托策略执行流式（通过 context 传递 callbacks）
+	ctxWithCb := withAgentCallbacks(ctx, a.cfg.Callbacks)
+	ch, err := a.cfg.Strategy.ExecuteStream(ctxWithCb, a.cfg.Model, a.cfg.Tools, messages, a.cfg.MaxIterations, a.cfg.Logger, opts...)
 	if err != nil {
+		cb.OnAgentEnd(ctx, nil, err)
 		return nil, err
 	}
 
@@ -172,21 +210,122 @@ func (a *Agent) RunStream(ctx context.Context, input string, opts ...llm.CallOpt
 			if evt.Type == EventOutput && len(a.cfg.Guardrails) > 0 {
 				outMsgs := []llm.Message{llm.AssistantMessage(evt.Content)}
 				if gErr := a.runGuardrails(ctx, outMsgs); gErr != nil {
-					outCh <- Event{Type: EventError, Content: fmt.Sprintf("%v: %v", ErrBlocked, gErr)}
+					guardErr := fmt.Errorf("%w: %v", ErrBlocked, gErr)
+					cb.OnAgentEnd(ctx, nil, guardErr)
+					outCh <- Event{Type: EventError, Content: guardErr.Error()}
 					return
 				}
 			}
 			outCh <- evt
 
-			// 输出事件写入记忆
-			if evt.Type == EventOutput && a.cfg.Memory != nil {
-				a.cfg.Memory.Add(llm.UserMessage(input))
-				a.cfg.Memory.Add(llm.AssistantMessage(evt.Content))
+			// 输出事件写入记忆并触发 OnAgentEnd
+			if evt.Type == EventOutput {
+				if a.cfg.Memory != nil {
+					a.cfg.Memory.Add(llm.UserMessage(input))
+					a.cfg.Memory.Add(llm.AssistantMessage(evt.Content))
+				}
+				cb.OnAgentEnd(ctx, &Result{Output: evt.Content}, nil)
 			}
 		}
 	}()
 
 	return outCh, nil
+}
+
+// Resume 从检查点恢复 Agent 执行.
+// checkpointID 指定要恢复的检查点.
+// approvals 为 toolCallID → 审批结果的映射；未出现在映射中的工具调用默认拒绝.
+func (a *Agent) Resume(ctx context.Context, checkpointID string, approvals map[string]ToolApproval, opts ...llm.CallOption) (*Result, error) {
+	if a.cfg.CheckpointStore == nil {
+		return nil, errors.New("agent: CheckpointStore 未配置，无法恢复")
+	}
+
+	// 注入 callbacks（与 Run 一致）
+	cb := buildAgentCallbackHandler(a.cfg.Callbacks)
+	cb.OnAgentStart(ctx, "resume:"+checkpointID)
+	ctx = withAgentCallbacks(ctx, a.cfg.Callbacks)
+
+	// 注入中断配置（允许 Resume 后的执行中再次中断）
+	if a.cfg.InterruptPolicy != nil {
+		ctx = withInterruptConfig(ctx, &interruptConfig{
+			policy:    a.cfg.InterruptPolicy,
+			store:     a.cfg.CheckpointStore,
+			agentName: a.cfg.Name,
+		})
+	}
+
+	// 1. 加载检查点
+	cp, err := a.cfg.CheckpointStore.Load(ctx, checkpointID)
+	if err != nil {
+		cb.OnAgentEnd(ctx, nil, err)
+		return nil, fmt.Errorf("agent: 加载检查点失败: %w", err)
+	}
+
+	// 2. 根据审批结果构建工具结果消息
+	messages := make([]llm.Message, len(cp.Messages))
+	copy(messages, cp.Messages)
+
+	for _, tc := range cp.ToolCalls {
+		approval, ok := approvals[tc.ID]
+		if !ok {
+			// 未审批：默认拒绝
+			messages = append(messages, llm.ToolResultMessage(tc.ID, `{"error":"not approved"}`))
+			continue
+		}
+		if approval.Approved {
+			// 审批通过：执行工具
+			output := ""
+			if a.cfg.Tools != nil {
+				var execErr error
+				output, execErr = a.cfg.Tools.Execute(ctx, tc.ID, tc.Function.Name, tc.Function.Arguments)
+				if execErr != nil {
+					output = fmt.Sprintf(`{"error":%q}`, execErr.Error())
+				}
+			} else {
+				output = `{"error":"no tools registered"}`
+			}
+			messages = append(messages, llm.ToolResultMessage(tc.ID, output))
+		} else {
+			// 拒绝：使用替代输出
+			output := approval.Output
+			if output == "" {
+				output = `{"error":"tool call rejected by human"}`
+			}
+			messages = append(messages, llm.ToolResultMessage(tc.ID, output))
+		}
+	}
+
+	// 3. 继续 Agent 执行循环（从工具结果之后继续）
+	remainingIter := a.cfg.MaxIterations - cp.Iteration
+	if remainingIter <= 0 {
+		remainingIter = 1
+	}
+	result, err := a.cfg.Strategy.Execute(ctx, a.cfg.Model, a.cfg.Tools, messages, remainingIter, a.cfg.Logger, opts...)
+	if err != nil {
+		cb.OnAgentEnd(ctx, nil, err)
+		return nil, err
+	}
+
+	// 4. 输出护栏检查
+	if result.Output != "" && len(a.cfg.Guardrails) > 0 {
+		outMsgs := []llm.Message{llm.AssistantMessage(result.Output)}
+		if gErr := a.runGuardrails(ctx, outMsgs); gErr != nil {
+			gErr = fmt.Errorf("%w: %v", ErrBlocked, gErr)
+			cb.OnAgentEnd(ctx, nil, gErr)
+			return nil, gErr
+		}
+	}
+
+	// 5. 写入记忆（只记录最终输出）
+	if a.cfg.Memory != nil && result.Output != "" {
+		a.cfg.Memory.Add(llm.AssistantMessage(result.Output))
+	}
+
+	// 6. 删除已用检查点
+	_ = a.cfg.CheckpointStore.Delete(ctx, checkpointID)
+
+	cb.OnAgentEnd(ctx, result, nil)
+	return result, nil
 }
 
 // buildMessages 构建消息列表：系统提示 + 记忆消息 + 用户输入.
