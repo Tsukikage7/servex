@@ -10,8 +10,8 @@ import (
 	"math"
 	"strings"
 
-	goredis "github.com/redis/go-redis/v9"
 	"github.com/Tsukikage7/servex/v2/llm/retrieval/vectorstore"
+	goredis "github.com/redis/go-redis/v9"
 )
 
 // Config Redis Search 配置.
