@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/Tsukikage7/servex/v2/llm/retrieval/vectorstore"
 )
 
