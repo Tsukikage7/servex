@@ -17,6 +17,7 @@ type grpcDetail struct {
 	Code     int               `json:"code"`
 	Key      string            `json:"key"`
 	Message  string            `json:"message"`
+	HTTP     int               `json:"http,omitempty"`
 	Metadata map[string]string `json:"metadata,omitzero"`
 }
 
@@ -40,16 +41,24 @@ func ToGRPCStatus(err error) *status.Status {
 		code = codes.Internal
 	}
 
+	// 内部错误（5xxxx、6xxxx）不透传详细消息，避免暴露敏感信息.
+	// 业务码 1xxxxx+ 不受影响.
+	message := e.Message
+	if e.Code >= 50000 && e.Code < 70000 {
+		message = "内部错误"
+	}
+
 	detail := &grpcDetail{
 		Code:     e.Code,
 		Key:      e.Key,
-		Message:  e.Message,
+		Message:  message,
+		HTTP:     e.HTTP,
 		Metadata: e.Metadata,
 	}
 	detailJSON, jsonErr := json.Marshal(detail)
 	if jsonErr != nil {
 		// JSON 序列化失败时使用 fallback 纯文本
-		return status.New(code, e.Message)
+		return status.New(code, message)
 	}
 
 	st := status.New(code, string(detailJSON))
@@ -128,6 +137,7 @@ func FromGRPCStatus(st *status.Status) *Error {
 		result.Code = detail.Code
 		result.Key = detail.Key
 		result.Message = detail.Message
+		result.HTTP = detail.HTTP
 		result.Metadata = detail.Metadata
 	} else {
 		result.Code = int(st.Code())

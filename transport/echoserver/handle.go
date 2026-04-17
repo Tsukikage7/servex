@@ -39,7 +39,7 @@ func Handle[Req any, Resp any](fn func(ctx context.Context, req Req) (Resp, erro
 	return func(c echo.Context) error {
 		var req Req
 		if err := c.Bind(&req); err != nil {
-			return writeError(c, response.NewError(response.CodeInvalidParam))
+			return writeError(c, response.CodeInvalidParam.ToError())
 		}
 
 		if v, ok := any(&req).(Validatable); ok {

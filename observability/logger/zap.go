@@ -98,15 +98,29 @@ func buildCores(config *Config, level zapcore.Level, encoder zapcore.Encoder) ([
 	return cores, writers, nil
 }
 
+// parseLocation 解析时区名称，解析失败时回退到 UTC.
+func parseLocation(tz string) *time.Location {
+	if tz == "" {
+		return time.UTC
+	}
+	loc, err := time.LoadLocation(tz)
+	if err != nil {
+		return time.UTC
+	}
+	return loc
+}
+
 // createFileWriter 创建文件写入器.
 func createFileWriter(config *Config, prefix string) (RotateWriter, error) {
 	if config.RotationEnabled {
+		loc := parseLocation(config.Timezone)
 		return NewRotateWriter(
 			config.LogDir,
 			prefix,
 			WithMaxAge(config.MaxAge),
 			WithCompress(config.Compress),
 			WithRotationMode(config.RotationTime),
+			WithLocation(loc),
 		), nil
 	}
 

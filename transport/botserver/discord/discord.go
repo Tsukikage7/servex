@@ -68,6 +68,11 @@ func (b *DiscordBot) Use(middlewares ...botserver.Middleware) {
 
 // Start 建立 Gateway 连接，注册消息事件 handler，阻塞直到 ctx 取消。
 func (b *DiscordBot) Start(ctx context.Context) error {
+	// ctx 已取消时直接返回，避免发起不必要的网络连接
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	// 注册 MessageCreate 事件 handler
 	b.session.AddHandler(b.handleMessageCreate)
 

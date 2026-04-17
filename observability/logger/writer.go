@@ -2,7 +2,6 @@ package logger
 
 import (
 	"compress/gzip"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -25,6 +24,7 @@ type rotateWriter struct {
 	maxAge       time.Duration
 	compress     bool
 	rotationMode string
+	location     *time.Location // 时区，默认 UTC
 
 	mu         sync.Mutex
 	currentDay string
@@ -55,18 +55,32 @@ func WithRotationMode(mode string) RotateWriterOption {
 	}
 }
 
+// WithLocation 设置日志轮转使用的时区.
+// 默认为 UTC，如需北京时间传入 time.FixedZone("CST", 8*3600) 或 time.LoadLocation("Asia/Shanghai").
+func WithLocation(loc *time.Location) RotateWriterOption {
+	return func(w *rotateWriter) {
+		if loc != nil {
+			w.location = loc
+		}
+	}
+}
+
 // NewRotateWriter 创建轮转写入器.
+// 默认时区为 UTC，如需指定时区使用 WithLocation 选项.
 func NewRotateWriter(baseDir, prefix string, opts ...RotateWriterOption) RotateWriter {
 	w := &rotateWriter{
 		baseDir:      baseDir,
 		prefix:       prefix,
 		rotationMode: RotationDaily,
-		currentDay:   time.Now().Format("2006-01-02"),
+		location:     time.UTC,
 	}
 
 	for _, opt := range opts {
 		opt(w)
 	}
+
+	// 选项应用后再初始化时间戳，确保格式与轮转模式一致
+	w.currentDay = w.dirTimestamp()
 
 	return w
 }
@@ -111,22 +125,8 @@ func (w *rotateWriter) Close() error {
 }
 
 func (w *rotateWriter) shouldRotate() bool {
-	now := time.Now()
-	today := now.Format("2006-01-02")
-
-	if w.currentDay != today {
-		return true
-	}
-
-	if strings.ToLower(w.rotationMode) == RotationHourly && w.file != nil {
-		stat, err := w.file.Stat()
-		if err != nil {
-			return false
-		}
-		return stat.ModTime().Hour() != now.Hour() || stat.ModTime().Day() != now.Day()
-	}
-
-	return false
+	current := w.dirTimestamp()
+	return w.currentDay != current
 }
 
 func (w *rotateWriter) rotate() {
@@ -135,12 +135,12 @@ func (w *rotateWriter) rotate() {
 		w.file = nil
 	}
 
-	w.currentDay = time.Now().Format("2006-01-02")
+	w.currentDay = w.dirTimestamp()
 	w.cleanupOldLogs()
 }
 
 func (w *rotateWriter) openFile() error {
-	dir := filepath.Join(w.baseDir, w.prefix)
+	dir := w.currentDir()
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return ErrCreateDir
 	}
@@ -155,19 +155,23 @@ func (w *rotateWriter) openFile() error {
 	return nil
 }
 
-func (w *rotateWriter) buildFilename() string {
-	dir := filepath.Join(w.baseDir, w.prefix)
-	now := time.Now()
-
-	var filename string
-	switch strings.ToLower(w.rotationMode) {
-	case RotationHourly:
-		filename = fmt.Sprintf("%s_%s_%02d.log", w.prefix, w.currentDay, now.Hour())
-	default:
-		filename = fmt.Sprintf("%s_%s.log", w.prefix, w.currentDay)
+// dirTimestamp 根据轮转模式返回当前时间戳字符串，用作目录名和轮转判断依据.
+// 按天：20060102；按小时：2006010215
+func (w *rotateWriter) dirTimestamp() string {
+	now := time.Now().In(w.location)
+	if strings.ToLower(w.rotationMode) == RotationHourly {
+		return now.Format("2006010215")
 	}
+	return now.Format("20060102")
+}
 
-	return filepath.Join(dir, filename)
+// currentDir 返回当前轮转周期对应的目录：baseDir/prefix/20060102 或 baseDir/prefix/2006010215
+func (w *rotateWriter) currentDir() string {
+	return filepath.Join(w.baseDir, w.prefix, w.currentDay)
+}
+
+func (w *rotateWriter) buildFilename() string {
+	return filepath.Join(w.currentDir(), w.prefix+".log")
 }
 
 func (w *rotateWriter) cleanupOldLogs() {
@@ -175,45 +179,64 @@ func (w *rotateWriter) cleanupOldLogs() {
 		return
 	}
 
-	dir := filepath.Join(w.baseDir, w.prefix)
+	// 扫描 baseDir/prefix/ 下的日期子目录（格式 20060102）
+	prefixDir := filepath.Join(w.baseDir, w.prefix)
 	cutoff := time.Now().Add(-w.maxAge)
 
-	files, err := os.ReadDir(dir)
+	entries, err := os.ReadDir(prefixDir)
 	if err != nil {
 		return
 	}
 
-	for _, file := range files {
-		if file.IsDir() {
+	for _, entry := range entries {
+		if !entry.IsDir() {
 			continue
 		}
-
-		filename := file.Name()
-		if !w.isLogFile(filename) {
+		// 支持按天（8位：20060102）和按小时（10位：2006010215）两种目录格式
+		name := entry.Name()
+		var t time.Time
+		var err error
+		switch len(name) {
+		case 8:
+			t, err = time.ParseInLocation("20060102", name, time.Local)
+		case 10:
+			t, err = time.ParseInLocation("2006010215", name, time.Local)
+		default:
 			continue
 		}
-
-		info, err := file.Info()
 		if err != nil {
 			continue
 		}
-
-		if info.ModTime().Before(cutoff) {
-			oldPath := filepath.Join(dir, filename)
-			if w.compress && !isCompressedFile(filename) {
-				w.compressFile(oldPath)
-			} else if !w.compress || info.ModTime().Before(cutoff.Add(-24*time.Hour)) {
-				os.Remove(oldPath)
+		if t.Before(cutoff) {
+			dateDir := filepath.Join(prefixDir, name)
+			if w.compress {
+				w.compressDir(dateDir)
+			} else {
+				os.RemoveAll(dateDir)
 			}
 		}
 	}
 }
 
-func (w *rotateWriter) isLogFile(filename string) bool {
-	prefix := w.prefix + "_"
-	return strings.HasPrefix(filename, prefix) &&
-		(strings.HasSuffix(filename, ".log") || strings.HasSuffix(filename, ".log.gz"))
+// compressDir 压缩目录内所有未压缩的日志文件后删除目录.
+func (w *rotateWriter) compressDir(dir string) {
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		return
+	}
+	for _, f := range files {
+		if f.IsDir() || isCompressedFile(f.Name()) {
+			continue
+		}
+		w.compressFile(filepath.Join(dir, f.Name()))
+	}
+	// 若目录已空（压缩完毕），删除目录本身
+	remaining, _ := os.ReadDir(dir)
+	if len(remaining) == 0 {
+		os.Remove(dir)
+	}
 }
+
 
 func (w *rotateWriter) compressFile(filename string) {
 	input, err := os.Open(filename)

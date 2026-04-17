@@ -3,11 +3,14 @@ package response
 import (
 	"errors"
 	"fmt"
+
+	servexerr "github.com/Tsukikage7/servex/v2/errors"
 )
 
 // BusinessError 业务错误.
 //
-// 实现 error 接口，可用于在业务层传递错误码信息.
+// Deprecated: 请使用 Code.ToError() 或 errors.New() 创建错误.
+// 此类型保留用于向后兼容，新代码应使用 servex/errors.Error.
 type BusinessError struct {
 	Code    Code   // 错误码
 	Message string // 自定义错误消息（可选）
@@ -45,6 +48,8 @@ func (e *BusinessError) GetMessage() string {
 }
 
 // NewError 创建业务错误.
+//
+// Deprecated: 请使用 Code.ToError() 代替.
 func NewError(code Code) *BusinessError {
 	return &BusinessError{
 		Code: code,
@@ -52,6 +57,8 @@ func NewError(code Code) *BusinessError {
 }
 
 // NewErrorWithMessage 创建带自定义消息的业务错误.
+//
+// Deprecated: 请使用 Code.ToError().WithMessage(msg) 代替.
 func NewErrorWithMessage(code Code, message string) *BusinessError {
 	return &BusinessError{
 		Code:    code,
@@ -60,6 +67,8 @@ func NewErrorWithMessage(code Code, message string) *BusinessError {
 }
 
 // NewErrorWithCause 创建带原始错误的业务错误.
+//
+// Deprecated: 请使用 Code.ToError().WithCause(err) 代替.
 func NewErrorWithCause(code Code, cause error) *BusinessError {
 	return &BusinessError{
 		Code:  code,
@@ -68,6 +77,8 @@ func NewErrorWithCause(code Code, cause error) *BusinessError {
 }
 
 // NewErrorFull 创建完整的业务错误.
+//
+// Deprecated: 请使用 Code.ToError().WithMessage(msg).WithCause(err) 代替.
 func NewErrorFull(code Code, message string, cause error) *BusinessError {
 	return &BusinessError{
 		Code:    code,
@@ -77,6 +88,8 @@ func NewErrorFull(code Code, message string, cause error) *BusinessError {
 }
 
 // Wrap 包装错误为业务错误.
+//
+// Deprecated: 请使用 Code.ToError().WithCause(err) 代替.
 func Wrap(code Code, err error) *BusinessError {
 	return &BusinessError{
 		Code:  code,
@@ -85,6 +98,8 @@ func Wrap(code Code, err error) *BusinessError {
 }
 
 // WrapWithMessage 包装错误为带消息的业务错误.
+//
+// Deprecated: 请使用 Code.ToError().WithMessage(msg).WithCause(err) 代替.
 func WrapWithMessage(code Code, message string, err error) *BusinessError {
 	return &BusinessError{
 		Code:    code,
@@ -93,9 +108,12 @@ func WrapWithMessage(code Code, message string, err error) *BusinessError {
 	}
 }
 
-// IsBusinessError 判断是否为业务错误.
+// IsBusinessError 判断是否为业务错误（含 *BusinessError 和 *errors.Error）.
 func IsBusinessError(err error) bool {
-	_, ok := errors.AsType[*BusinessError](err)
+	if _, ok := errors.AsType[*BusinessError](err); ok {
+		return true
+	}
+	_, ok := servexerr.FromError(err)
 	return ok
 }
 
@@ -125,7 +143,31 @@ func ExtractCode(err error) Code {
 		return code
 	}
 
+	// 桥接 servex/errors.Error → response.Code
+	if srvErr, ok := servexerr.FromError(err); ok {
+		return Code{
+			Num:        srvErr.Code,
+			Message:    srvErr.Message,
+			HTTPStatus: srvErr.HTTP,
+			GRPCCode:   srvErr.GRPC,
+			Key:        srvErr.Key,
+		}
+	}
+
 	return CodeInternal
+}
+
+// ExtractMetadata 从错误中提取元数据（仅 servex/errors.Error 携带 metadata）.
+//
+// 返回 nil 表示错误无元数据或不是 servex/errors.Error.
+func ExtractMetadata(err error) map[string]string {
+	if err == nil {
+		return nil
+	}
+	if srvErr, ok := servexerr.FromError(err); ok {
+		return srvErr.Metadata
+	}
+	return nil
 }
 
 // ExtractMessage 从错误中提取错误消息.
@@ -136,19 +178,32 @@ func ExtractMessage(err error) string {
 		return CodeSuccess.Message
 	}
 
-	code := ExtractCode(err)
-
-	// 内部错误：不暴露详细信息
-	if code.Num >= 50000 {
+	// 先检查 BusinessError/Code（业务明确声明的，可信）
+	if bizErr, ok := errors.AsType[*BusinessError](err); ok {
+		if isInternalCode(bizErr.Code.Num) {
+			return bizErr.Code.Message
+		}
+		return bizErr.GetMessage()
+	}
+	if code, ok := errors.AsType[Code](err); ok {
 		return code.Message
 	}
 
-	// 业务错误：返回具体消息
-	if bizErr, ok := errors.AsType[*BusinessError](err); ok {
-		return bizErr.GetMessage()
+	// 再检查 servex/errors.Error（可能携带 cause 等敏感信息）
+	if srvErr, ok := servexerr.FromError(err); ok {
+		if isInternalCode(srvErr.Code) {
+			return CodeInternal.Message
+		}
+		return srvErr.Message
 	}
 
-	return code.Message
+	return CodeInternal.Message
+}
+
+// isInternalCode 判断是否为内部/外部服务错误（应掩码 Message）.
+// 规范：5xxxx=服务器内部，6xxxx=外部服务；业务码 >= 70000 不掩码.
+func isInternalCode(code int) bool {
+	return code >= 50000 && code < 70000
 }
 
 // ExtractMessageUnsafe 从错误中提取完整错误消息（包含敏感信息）.

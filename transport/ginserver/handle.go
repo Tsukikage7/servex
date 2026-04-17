@@ -49,7 +49,7 @@ func Handle[Req any, Resp any](fn func(ctx context.Context, req Req) (Resp, erro
 	return func(c *gin.Context) {
 		var req Req
 		if err := c.ShouldBind(&req); err != nil {
-			writeError(c, response.NewError(response.CodeInvalidParam))
+			writeError(c, response.CodeInvalidParam.ToError())
 			return
 		}
 

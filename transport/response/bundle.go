@@ -6,6 +6,7 @@ import (
 
 	"golang.org/x/text/language"
 
+	servexerr "github.com/Tsukikage7/servex/v2/errors"
 	"github.com/Tsukikage7/servex/v2/i18n"
 )
 
@@ -45,26 +46,39 @@ func GetBundle() *i18n.Bundle { return globalBundle.Load() }
 // langs 为语言偏好列表，通常直接传入 Accept-Language 请求头的值。
 // 翻译规则（优先级从高到低）：
 //  1. 内部错误（5xxxx+）始终使用 Code 级别消息，不透传业务细节
-//  2. 业务错误含自定义消息时直接返回（该消息已由业务层明确指定）
+//  2. BusinessError/*errors.Error 含自定义消息时直接返回（已由业务层明确指定）
 //  3. 其余情况通过全局 Bundle 翻译 Code.Key，未命中时回退到 Code.Message
 func LocalizedMessage(err error, langs ...string) string {
 	if err == nil {
 		return localizeCode(CodeSuccess, langs...)
 	}
 
-	code := ExtractCode(err)
-
-	// 内部错误不透传业务细节，只返回通用消息
-	if code.Num >= 50000 {
-		return localizeCode(code, langs...)
+	// BusinessError：内部错误（5xxxx+）掩码；否则自定义消息优先于 i18n
+	if bizErr, ok := errors.AsType[*BusinessError](err); ok {
+		if isInternalCode(bizErr.Code.Num) {
+			return localizeCode(bizErr.Code, langs...)
+		}
+		if bizErr.Message != "" {
+			return bizErr.Message
+		}
+		return localizeCode(bizErr.Code, langs...)
 	}
 
-	// 业务错误含自定义消息时直接返回
-	if bizErr, ok := errors.AsType[*BusinessError](err); ok && bizErr.Message != "" {
-		return bizErr.Message
+	// servex/errors.Error：内部错误掩码；否则翻译 Key，回退到 Message
+	if srvErr, ok := servexerr.FromError(err); ok {
+		if isInternalCode(srvErr.Code) {
+			return localizeCode(CodeInternal, langs...)
+		}
+		if srvErr.Key != "" {
+			if translated := localizeCode(Code{Key: srvErr.Key, Message: srvErr.Message}, langs...); translated != srvErr.Key {
+				return translated
+			}
+		}
+		return srvErr.Message
 	}
 
-	return localizeCode(code, langs...)
+	// 其他场景走 Code 翻译
+	return localizeCode(ExtractCode(err), langs...)
 }
 
 // localizeCode 翻译单个 Code 的消息键，回退到 Code.Message.

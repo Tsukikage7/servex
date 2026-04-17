@@ -24,6 +24,9 @@ type Config struct {
 	RotationTime    string `json:"rotation_time" toml:"rotation_time" yaml:"rotation_time" mapstructure:"rotation_time"`
 	MaxAge          int    `json:"max_age" toml:"max_age" yaml:"max_age" mapstructure:"max_age"`
 	Compress        bool   `json:"compress" toml:"compress" yaml:"compress" mapstructure:"compress"`
+	// Timezone 日志文件轮转使用的时区，格式为 IANA 时区名（如 "Asia/Shanghai"、"America/Los_Angeles"）.
+	// 留空默认使用 UTC，推荐显式配置以避免部署环境差异.
+	Timezone string `json:"timezone" toml:"timezone" yaml:"timezone" mapstructure:"timezone"`
 
 	// 调用者信息配置
 	EnableCaller     bool `json:"enable_caller" toml:"enable_caller" yaml:"enable_caller" mapstructure:"enable_caller"`

@@ -1,16 +1,17 @@
 package response
 
 import (
-	"context"
 	"encoding/json"
 
+	servexerr "github.com/Tsukikage7/servex/v2/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-// grpcPayload 是嵌入 gRPC status message 的 JSON 载荷，用于跨 gRPC 边界保留细粒度业务 Code。
-type grpcPayload struct {
+// legacyPayload 是 response 包旧版 GRPCStatus 嵌入的 JSON 格式.
+// 仅用于 FromGRPCStatus 的向后兼容读取，新代码不再输出此格式.
+type legacyPayload struct {
 	Num        int    `json:"num"`
 	HTTPStatus int    `json:"http"`
 	Key        string `json:"key,omitempty"`
@@ -19,46 +20,63 @@ type grpcPayload struct {
 
 // GRPCStatus 将错误转换为 gRPC Status.
 //
-// 如果是业务错误，使用对应的 gRPC 状态码；
-// 否则返回 Internal 状态.
-//
-// 为了在 gRPC-gateway 场景下保留细粒度业务 Code（避免反向映射丢失），
-// message 字段会序列化为 JSON，携带 Num/HTTPStatus/Key 等信息。
-// FromGRPCStatus 会优先从 JSON 恢复，确保 30002/30003 等不被还原为 30001。
+// 统一委托给 servex/errors.ToGRPCStatus，使用统一的 JSON 格式.
+// 支持 *errors.Error 和 *BusinessError（通过 ExtractCode 桥接）.
 func GRPCStatus(err error) *status.Status {
 	if err == nil {
 		return status.New(codes.OK, "")
 	}
 
+	// 优先检查是否已经是 *errors.Error，直接委托.
+	if _, ok := servexerr.FromError(err); ok {
+		return servexerr.ToGRPCStatus(err)
+	}
+
+	// BusinessError/Code/普通 error → 桥接为 *errors.Error 后委托.
 	code := ExtractCode(err)
 	message := ExtractMessage(err)
+	bridged := servexerr.New(code.Num, code.Key, message).
+		WithHTTP(code.HTTPStatus).
+		WithGRPC(code.GRPCCode)
 
-	payload := grpcPayload{
-		Num:        code.Num,
-		HTTPStatus: code.HTTPStatus,
-		Key:        code.Key,
-		Message:    message,
+	// 尽量保留 metadata（仅 BusinessError 无 metadata，不影响）
+	if md := ExtractMetadata(err); md != nil {
+		for k, v := range md {
+			bridged = bridged.WithMeta(k, v)
+		}
 	}
-	if b, jsonErr := json.Marshal(payload); jsonErr == nil {
-		return status.New(code.GRPCCode, string(b))
-	}
-	return status.New(code.GRPCCode, message)
+
+	return servexerr.ToGRPCStatus(bridged)
 }
 
 // GRPCError 将错误转换为 gRPC error.
-//
-// 返回的 error 可直接作为 gRPC 方法的返回值.
 func GRPCError(err error) error {
 	return GRPCStatus(err).Err()
 }
 
 // FromGRPCStatus 从 gRPC Status 提取 Code.
 //
-// 优先从 message JSON（由 GRPCStatus 序列化）中恢复完整的细粒度业务 Code；
-// 若 message 不是 servex 格式，则回退到 gRPC code 映射。
+// 优先使用 servex/errors.FromGRPCStatus 还原完整信息，
+// 兼容旧版 response 格式（{"num":...,"http":...,"msg":"..."}），
+// 最后回退到 gRPC code 映射.
 func FromGRPCStatus(s *status.Status) Code {
-	// 优先尝试从 JSON message 恢复（保留细粒度业务 Code，如 30002/30003）
-	var p grpcPayload
+	// 1. 尝试用 errors 包还原（统一格式 + ErrorInfo details）
+	if restored := servexerr.FromGRPCStatus(s); restored != nil {
+		httpStatus := restored.HTTP
+		if httpStatus == 0 {
+			httpStatus = grpcCodeToHTTPFallback(s.Code())
+		}
+		return Code{
+			Num:        restored.Code,
+			Message:    restored.Message,
+			HTTPStatus: httpStatus,
+			GRPCCode:   restored.GRPC,
+			Key:        restored.Key,
+		}
+	}
+
+	// 2. 兼容旧版 response 格式（过渡期）
+	var p legacyPayload
 	if json.Unmarshal([]byte(s.Message()), &p) == nil && p.Num != 0 {
 		return Code{
 			Num:        p.Num,
@@ -69,39 +87,8 @@ func FromGRPCStatus(s *status.Status) Code {
 		}
 	}
 
-	// 回退：粗粒度 gRPC code 映射（兼容非 servex 来源的 gRPC 错误）
-	switch s.Code() {
-	case codes.OK:
-		return CodeSuccess
-	case codes.Canceled:
-		return CodeCanceled
-	case codes.Unknown:
-		return CodeUnknown
-	case codes.InvalidArgument:
-		return CodeInvalidParam
-	case codes.DeadlineExceeded:
-		return CodeTimeout
-	case codes.NotFound:
-		return CodeNotFound
-	case codes.AlreadyExists:
-		return CodeAlreadyExists
-	case codes.PermissionDenied:
-		return CodeForbidden
-	case codes.ResourceExhausted:
-		return CodeResourceExhausted
-	case codes.Aborted:
-		return CodeConflict
-	case codes.Unimplemented:
-		return CodeNotImplemented
-	case codes.Internal:
-		return CodeInternal
-	case codes.Unavailable:
-		return CodeServiceUnavailable
-	case codes.Unauthenticated:
-		return CodeUnauthorized
-	default:
-		return CodeUnknown
-	}
+	// 3. 粗粒度 gRPC code 映射
+	return grpcCodeFallback(s.Code())
 }
 
 // FromGRPCError 从 gRPC error 提取 Code.
@@ -118,8 +105,7 @@ func FromGRPCError(err error) Code {
 
 // GRPCCodeToHTTP 将 gRPC 状态码转换为 HTTP 状态码.
 func GRPCCodeToHTTP(c codes.Code) int {
-	code := FromGRPCStatus(status.New(c, ""))
-	return code.HTTPStatus
+	return grpcCodeToHTTPFallback(c)
 }
 
 // HTTPToGRPCCode 将 HTTP 状态码转换为 gRPC 状态码.
@@ -155,19 +141,22 @@ func HTTPToGRPCCode(httpStatus int) codes.Code {
 }
 
 // NewGRPCError 创建 gRPC 错误.
+//
+// Deprecated: 请使用 Code.ToError() 代替.
 func NewGRPCError(code Code) error {
 	return status.Error(code.GRPCCode, code.Message)
 }
 
 // NewGRPCErrorWithMessage 创建带自定义消息的 gRPC 错误.
+//
+// Deprecated: 请使用 Code.ToError().WithMessage(msg) 代替.
 func NewGRPCErrorWithMessage(code Code, message string) error {
 	return status.Error(code.GRPCCode, message)
 }
 
 // GRPCInterceptorErrorHandler gRPC 拦截器错误处理.
 //
-// 将业务错误转换为带有正确状态码的 gRPC 错误.
-// 可用于 gRPC 拦截器中统一处理错误.
+// Deprecated: 请使用 UnaryServerInterceptor() 代替.
 func GRPCInterceptorErrorHandler(err error) error {
 	if err == nil {
 		return nil
@@ -177,36 +166,76 @@ func GRPCInterceptorErrorHandler(err error) error {
 
 // UnaryServerInterceptor 返回 gRPC 一元服务器拦截器.
 //
-// 自动将业务错误转换为正确的 gRPC 状态码.
+// 统一委托给 servex/errors.UnaryServerInterceptor.
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
-	return func(
-		ctx context.Context,
-		req any,
-		info *grpc.UnaryServerInfo,
-		handler grpc.UnaryHandler,
-	) (any, error) {
-		resp, err := handler(ctx, req)
-		if err != nil {
-			return nil, GRPCError(err)
-		}
-		return resp, nil
-	}
+	return servexerr.UnaryServerInterceptor()
 }
 
 // StreamServerInterceptor 返回 gRPC 流服务器拦截器.
 //
-// 自动将业务错误转换为正确的 gRPC 状态码.
+// 统一委托给 servex/errors.StreamServerInterceptor.
 func StreamServerInterceptor() grpc.StreamServerInterceptor {
-	return func(
-		srv any,
-		ss grpc.ServerStream,
-		info *grpc.StreamServerInfo,
-		handler grpc.StreamHandler,
-	) error {
-		err := handler(srv, ss)
-		if err != nil {
-			return GRPCError(err)
-		}
-		return nil
+	return servexerr.StreamServerInterceptor()
+}
+
+// grpcCodeToHTTPFallback 根据 gRPC code 推断 HTTP status.
+func grpcCodeToHTTPFallback(c codes.Code) int {
+	switch c {
+	case codes.OK:
+		return 200
+	case codes.InvalidArgument:
+		return 400
+	case codes.Unauthenticated:
+		return 401
+	case codes.PermissionDenied:
+		return 403
+	case codes.NotFound:
+		return 404
+	case codes.AlreadyExists:
+		return 409
+	case codes.ResourceExhausted:
+		return 429
+	case codes.Internal:
+		return 500
+	case codes.Unavailable:
+		return 503
+	default:
+		return 500
+	}
+}
+
+// grpcCodeFallback 粗粒度 gRPC code → Code 映射.
+func grpcCodeFallback(c codes.Code) Code {
+	switch c {
+	case codes.OK:
+		return CodeSuccess
+	case codes.Canceled:
+		return CodeCanceled
+	case codes.Unknown:
+		return CodeUnknown
+	case codes.InvalidArgument:
+		return CodeInvalidParam
+	case codes.DeadlineExceeded:
+		return CodeTimeout
+	case codes.NotFound:
+		return CodeNotFound
+	case codes.AlreadyExists:
+		return CodeAlreadyExists
+	case codes.PermissionDenied:
+		return CodeForbidden
+	case codes.ResourceExhausted:
+		return CodeResourceExhausted
+	case codes.Aborted:
+		return CodeConflict
+	case codes.Unimplemented:
+		return CodeNotImplemented
+	case codes.Internal:
+		return CodeInternal
+	case codes.Unavailable:
+		return CodeServiceUnavailable
+	case codes.Unauthenticated:
+		return CodeUnauthorized
+	default:
+		return CodeUnknown
 	}
 }

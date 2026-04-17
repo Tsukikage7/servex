@@ -316,35 +316,43 @@ myproject/
 | 包 | 说明 |
 | --- | --- |
 | [llm](./llm/) | 统一 ChatModel / EmbeddingModel 接口抽象 |
+| [llm](./llm/) | 统一 ChatModel / EmbeddingModel 接口抽象 |
 | [llm/provider/openai](./llm/provider/openai/) | OpenAI 适配器（兼容 DeepSeek、通义千问等） |
 | [llm/provider/anthropic](./llm/provider/anthropic/) | Anthropic Claude 适配器 |
 | [llm/provider/gemini](./llm/provider/gemini/) | Google Gemini 适配器 |
+| [llm/provider/ollama](./llm/provider/ollama/) | Ollama 本地模型适配器 |
+| [llm/provider/deepseek](./llm/provider/deepseek/) | DeepSeek 适配器 |
+| [llm/provider/bedrock](./llm/provider/bedrock/) | AWS Bedrock 适配器（Converse API，支持 Claude/Titan/Llama） |
 | [llm/provider/router](./llm/provider/router/) | 多 Provider 路由器（按模型名路由） |
+| [llm/compose](./llm/compose/) | DAG 编排引擎（Graph/四范式节点/条件边/State/Eino 级别自动流式转换/Callback） |
+| [llm/agent](./llm/agent/) | Agent 框架（ReAct/PlanExecute/Supervisor/Pipeline/FanOut/Blackboard/Interrupt-Resume） |
 | [llm/agent/toolcall](./llm/agent/toolcall/) | 工具注册与自动 ReAct 循环执行器 |
 | [llm/agent/conversation](./llm/agent/conversation/) | 多轮对话会话管理（BufferMemory / WindowMemory） |
+| [llm/agent/checkpoint](./llm/agent/checkpoint/) | Agent 检查点存储（内存/Redis），支持 Interrupt/Resume |
+| [llm/retrieval/vectorstore](./llm/retrieval/vectorstore/) | 向量存储统一接口抽象 |
+| [llm/retrieval/vectorstore/memory](./llm/retrieval/vectorstore/memory/) | 内存向量存储（测试/原型） |
+| [llm/retrieval/vectorstore/pgvector](./llm/retrieval/vectorstore/pgvector/) | PostgreSQL pgvector 适配器 |
+| [llm/retrieval/vectorstore/redis](./llm/retrieval/vectorstore/redis/) | Redis Stack 向量存储适配器 |
+| [llm/retrieval/vectorstore/elasticsearch](./llm/retrieval/vectorstore/elasticsearch/) | Elasticsearch kNN 向量存储（支持 BM25+kNN 混合搜索） |
 | [llm/retrieval/embedding](./llm/retrieval/embedding/) | 批量嵌入 + 余弦相似度工具函数 |
+| [llm/retrieval/rag](./llm/retrieval/rag/) | RAG 管线（检索增强生成） |
+| [llm/retrieval/splitter](./llm/retrieval/splitter/) | 文本分块器（字符/递归/Token） |
+| [llm/retrieval/document](./llm/retrieval/document/) | 文档加载器（Text/CSV/JSON/Markdown/Directory） |
+| [llm/retrieval/rerank](./llm/retrieval/rerank/) | 重排序器（LLM/Embedding/CrossEncoder） |
 | [llm/prompt](./llm/prompt/) | 基于 text/template 的提示词模板引擎 |
 | [llm/middleware](./llm/middleware/) | AI 中间件链（日志、重试、限流、用量追踪） |
-| [llm/retrieval/vectorstore](./llm/retrieval/vectorstore/) | 向量存储统一接口抽象 |
-| [llm/retrieval/splitter](./llm/retrieval/splitter/) | 文本分块器（字符/递归/Token） |
 | [llm/processing/structured](./llm/processing/structured/) | 结构化输出提取（JSON Schema 约束） |
-| [llm/serving/cache](./llm/serving/cache/) | 语义缓存（Embedding 相似度） |
-| [llm/safety/guardrail](./llm/safety/guardrail/) | 输入输出护栏（关键词/PII/长度） |
-| [llm/retrieval/rag](./llm/retrieval/rag/) | RAG 管线（检索增强生成） |
-| [llm/agent/chain](./llm/agent/chain/) | 多步 LLM 编排 |
-| [llm/retrieval/document](./llm/retrieval/document/) | 文档加载器（Text/CSV/JSON/Markdown/Directory） |
-| [llm/agent/memory](./llm/agent/memory/) | 持久化记忆（摘要/实体/Redis/内存） |
-| [llm/retrieval/rerank](./llm/retrieval/rerank/) | 重排序器（LLM/Embedding/CrossEncoder） |
-| [llm/agent](./llm/agent/) | 自主 Agent 框架（ReAct/PlanExecute/Supervisor/Pipeline） |
-| [llm/eval](./llm/eval/) | LLM 输出评估（相关性/忠实度/连贯性/正确性） |
 | [llm/processing/tokenizer](./llm/processing/tokenizer/) | Token 计数器（估算/CL100K/截断） |
-| [llm/safety/moderation](./llm/safety/moderation/) | 内容审核（LLM/关键词/组合审核） |
-| [llm/serving/apikey](./llm/serving/apikey/) | API Key 管理（签发/验证/配额/限流） |
-| [llm/serving/billing](./llm/serving/billing/) | 用量计费（按 token 计费/用量报表） |
-| [llm/serving/proxy](./llm/serving/proxy/) | AI API 代理网关（OpenAI 兼容/路由/Fallback） |
 | [llm/processing/classifier](./llm/processing/classifier/) | 文本分类器（意图/情感/主题/语言/毒性/路由） |
 | [llm/processing/extractor](./llm/processing/extractor/) | 信息提取（实体/关系/关键词/摘要） |
 | [llm/processing/translator](./llm/processing/translator/) | 翻译器（多语言/术语表/批量翻译） |
+| [llm/safety/guardrail](./llm/safety/guardrail/) | 输入输出护栏（关键词/PII/长度） |
+| [llm/safety/moderation](./llm/safety/moderation/) | 内容审核（LLM/关键词/组合审核） |
+| [llm/serving/cache](./llm/serving/cache/) | 语义缓存（Embedding 相似度） |
+| [llm/serving/apikey](./llm/serving/apikey/) | API Key 管理（签发/验证/配额/限流） |
+| [llm/serving/billing](./llm/serving/billing/) | 用量计费（按 token 计费/用量报表） |
+| [llm/serving/proxy](./llm/serving/proxy/) | AI API 代理网关（OpenAI 兼容/路由/Fallback） |
+| [llm/eval](./llm/eval/) | LLM 输出评估（相关性/忠实度/连贯性/正确性） |
 
 ### OAuth2 第三方登录
 
@@ -388,6 +396,23 @@ myproject/
 | [bizx/captcha](./bizx/captcha/) | 验证码管理（生成/验证/防刷/冷却） |
 | [bizx/workflow](./bizx/workflow/) | 工作流引擎（审批/条件分支/并行执行） |
 | [bizx/abtesting](./bizx/abtesting/) | A/B 测试（流量分桶/多变体/曝光追踪） |
+
+## v2.1.x 新特性
+
+### v2.1.1
+
+- **错误体系统一** — `transport/response` 与 `errors` 包互通，`Code.ToError()` 一键转换，`BusinessError` 标记 Deprecated 并向后兼容
+- **日志分级分目录** — `observability/logger` 支持 `LevelSeparate`，按天/小时轮转，目录格式 `prefix/YYYYMMDD/prefix.log` 或 `prefix/YYYYMMDDHH/prefix.log`
+- **日志时区配置** — 新增 `Timezone` 配置项（IANA 时区名），默认 UTC，跨时区部署行为一致
+- **Discord Bot 修复** — `Start()` ctx 已取消时立即返回，修复 flaky test
+
+### v2.1.0
+
+- **`llm/compose`** — Eino-style DAG 编排引擎：`Graph[I,O]`、四范式节点（Invoke/Stream/Collect/Transform）、条件边 Branch、共享 State、Eino 级别自动流式转换（auto-concat / auto-boxing）
+- **Callback/Tracing** — compose 层 `CallbackHandler` + OTel Span 自动注入；Agent 层 `AgentCallbackHandler`
+- **Agent 扩展** — `EventToken` 真流式 token 输出、`FanOut` 并行多 Agent、`Blackboard` 黑板共享状态、Interrupt/Resume 人工干预（`CheckpointStore` + `InterruptPolicy`）
+- **向量库适配** — memory / pgvector / Redis Search / Elasticsearch kNN（BM25+kNN 混合搜索）
+- **Provider 扩展** — Ollama（本地模型）/ DeepSeek / AWS Bedrock（Converse API）
 
 ## v2.0.0 新特性
 

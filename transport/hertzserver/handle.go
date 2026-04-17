@@ -40,7 +40,7 @@ func Handle[Req any, Resp any](fn func(ctx context.Context, req Req) (Resp, erro
 	return func(ctx context.Context, c *app.RequestContext) {
 		var req Req
 		if err := c.BindJSON(&req); err != nil {
-			writeError(ctx, c, response.NewError(response.CodeInvalidParam))
+			writeError(ctx, c, response.CodeInvalidParam.ToError())
 			return
 		}
 

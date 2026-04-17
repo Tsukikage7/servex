@@ -35,7 +35,7 @@ func GatewayErrorHandler(
 	code := FromGRPCStatus(s)
 
 	langs := acceptLanguages(r)
-	message := LocalizedMessage(NewError(code), langs...)
+	message := LocalizedMessage(code.ToError(), langs...)
 
 	resp := Response[any]{
 		Code:    code.Num,

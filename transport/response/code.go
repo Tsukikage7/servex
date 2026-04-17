@@ -3,6 +3,7 @@ package response
 import (
 	"net/http"
 
+	servexerr "github.com/Tsukikage7/servex/v2/errors"
 	"google.golang.org/grpc/codes"
 )
 
@@ -33,6 +34,18 @@ func (c Code) Is(target error) bool {
 		return false
 	}
 	return c.Num == t.Num
+}
+
+// ToError 将预定义错误码转为 *errors.Error（统一错误类型）.
+//
+// 推荐用法：
+//
+//	return response.CodeNotFound.ToError()
+//	return response.CodeInvalidParam.ToError().WithMeta("field", "email")
+func (c Code) ToError() *servexerr.Error {
+	return servexerr.New(c.Num, c.Key, c.Message).
+		WithHTTP(c.HTTPStatus).
+		WithGRPC(c.GRPCCode)
 }
 
 // 预定义错误码.
