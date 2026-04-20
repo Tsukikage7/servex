@@ -13,6 +13,7 @@ import (
 // 使用 Go text/template 语法，渲染后直接返回 llm.Message.
 type Template struct {
 	role llm.Role
+	text string // 原始模板文本，持久化与版本管理需要.
 	tmpl *template.Template
 }
 
@@ -23,8 +24,14 @@ func New(role llm.Role, text string) (*Template, error) {
 	if err != nil {
 		return nil, fmt.Errorf("prompt: 解析模板失败: %w", err)
 	}
-	return &Template{role: role, tmpl: tmpl}, nil
+	return &Template{role: role, text: text, tmpl: tmpl}, nil
 }
+
+// Role 返回模板的消息角色.
+func (t *Template) Role() llm.Role { return t.role }
+
+// Text 返回模板的原始文本（未渲染）.
+func (t *Template) Text() string { return t.text }
 
 // MustNew 创建消息模板，失败时 panic.
 func MustNew(role llm.Role, text string) *Template {
