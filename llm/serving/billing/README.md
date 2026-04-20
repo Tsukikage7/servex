@@ -40,3 +40,39 @@ summary, _ := b.GetSummary(ctx, "key-123",
 fmt.Printf("总费用: $%.4f，总 tokens: %d\n",
     summary.TotalCost, summary.TotalTokens)
 ```
+
+## BudgetGuard（预算熔断中间件）
+
+`BudgetGuard` 在每次 LLM 调用**之前**查询该 API Key 在指定周期内的已用费用，若超过预算则拒绝调用，返回 `billing.ErrBudgetExceeded`。
+
+```go
+import "github.com/Tsukikage7/servex/llm/serving/billing"
+
+guard := billing.NewBudgetGuard(
+    b,
+    func(ctx context.Context) string {
+        key, _ := apikey.FromContext(ctx)
+        if key != nil { return key.ID }
+        return ""
+    },
+    func(ctx context.Context, keyID string) (float64, error) {
+        // 从你的业务配置/数据库读取该 key 的美元预算
+        return budgetStore.Get(ctx, keyID)
+    },
+    billing.WithPeriod(30*24*time.Hour), // 默认 30 天
+)
+
+guardedModel := guard.Middleware()(myModel)
+
+resp, err := guardedModel.Generate(ctx, messages)
+if errors.Is(err, billing.ErrBudgetExceeded) {
+    // 返回 429/402 等,提示用户升级
+}
+```
+
+语义要点（**fail-closed**）：
+- `NewBudgetGuard` 的 `billing` / `keyExtractor` / `getBudget` 任一为 `nil` 时**构造即 panic**（启动期暴露配置错误，避免线上静默放行）。
+- `keyExtractor` 返回空串：跳过检查（例如匿名/内部调用）。
+- `getBudget` 或 `GetSummary` 返回错误：错误向上传递，**不会放行**。
+- 已用 `>= 预算` 即拒绝（边界包含在内）。
+- 可与 `Middleware(b, keyExtractor)` 串联：`BudgetGuard` 做熔断、计费中间件做记录。建议把 `BudgetGuard` 放在**外层**。
