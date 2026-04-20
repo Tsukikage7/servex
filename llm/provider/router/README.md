@@ -81,6 +81,33 @@ chain := aimw.Chain(
 model := chain(r) // r 是 *router.Router
 ```
 
+## FallbackRouter（故障转移路由）
+
+`FallbackRouter` 按顺序尝试 `[主, 备 1, 备 2, ...]`，任一成功即返回；主失败且 `shouldFallback(err)==true` 时降级到下一个模型，全失败时返回最后一个错误。
+
+```go
+// 主用 dashscope，备用 openai
+fr := router.NewFallbackRouter(
+    []llm.ChatModel{dashscopeClient, openaiClient},
+    router.WithOnFallback(func(from, to int, err error) {
+        log.Warn("fallback triggered", "from", from, "to", to, "err", err)
+    }),
+)
+
+resp, err := fr.Generate(ctx, messages, llm.WithModel("qwen-plus"))
+```
+
+**语义要点：**
+- 默认 `shouldFallback`（严格策略）：
+  - `context.Canceled` / `context.DeadlineExceeded`：不降级（调用方主动取消/超时，意愿明确）。
+  - 其余情况仅当 `llm.IsRetryable(err)`（含 429/5xx/限流）或 `errors.Is(err, llm.ErrProviderUnavailable)` 为真时才降级。
+  - 其他业务错误（如 4xx 鉴权 `llm.ErrInvalidAuth`、请求格式错误）**不会降级**，错误直接向上传播 — 避免无谓地放大延迟与成本。
+- 自定义判定：`WithShouldFallback(func(err) bool)`，例如"任何非 context 错误都降级"的宽松策略。
+- `Stream` 语义：`Stream()` 成功返回 `StreamReader` 即视为成功，流内错误不再触发降级（因为流可能已经吐给调用方）。
+- `models` 为空：返回 `router.ErrNoModels`。
+
+**组合用法：** `FallbackRouter` 的成员本身可以是 `Router`（按模型名路由）或另一个 `FallbackRouter`（嵌套多级降级），也可以直接套 `middleware.Retry` 做单一 provider 的重试 + 多 provider 降级协同。
+
 ## 许可证
 
 详见项目根目录 LICENSE 文件。
