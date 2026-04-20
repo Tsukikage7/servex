@@ -119,6 +119,9 @@ type Event struct {
 // Run 执行 Agent，返回最终结果.
 // 流程：构建消息 → 输入护栏 → 策略执行 → 输出护栏 → 写入记忆 → 返回结果.
 func (a *Agent) Run(ctx context.Context, input string, opts ...llm.CallOption) (*Result, error) {
+	ctx, span := startRunSpan(ctx, a.cfg.Name, input)
+	defer span.End()
+
 	cb := buildAgentCallbackHandler(a.cfg.Callbacks)
 
 	// 0. 触发 OnAgentStart
@@ -130,6 +133,7 @@ func (a *Agent) Run(ctx context.Context, input string, opts ...llm.CallOption) (
 	// 2. 输入护栏检查
 	if err := a.runGuardrails(ctx, messages); err != nil {
 		err = fmt.Errorf("%w: %v", ErrBlocked, err)
+		recordAgentError(span, err)
 		cb.OnAgentEnd(ctx, nil, err)
 		return nil, err
 	}
@@ -145,6 +149,7 @@ func (a *Agent) Run(ctx context.Context, input string, opts ...llm.CallOption) (
 	}
 	result, err := a.cfg.Strategy.Execute(ctxWithCb, a.cfg.Model, a.cfg.Tools, messages, a.cfg.MaxIterations, a.cfg.Logger, opts...)
 	if err != nil {
+		recordAgentError(span, err)
 		cb.OnAgentEnd(ctx, nil, err)
 		return nil, err
 	}
@@ -154,6 +159,7 @@ func (a *Agent) Run(ctx context.Context, input string, opts ...llm.CallOption) (
 		outMsgs := []llm.Message{llm.AssistantMessage(result.Output)}
 		if err := a.runGuardrails(ctx, outMsgs); err != nil {
 			err = fmt.Errorf("%w: %v", ErrBlocked, err)
+			recordAgentError(span, err)
 			cb.OnAgentEnd(ctx, nil, err)
 			return nil, err
 		}
@@ -166,6 +172,7 @@ func (a *Agent) Run(ctx context.Context, input string, opts ...llm.CallOption) (
 	}
 
 	// 6. 触发 OnAgentEnd
+	recordAgentResult(span, result)
 	cb.OnAgentEnd(ctx, result, nil)
 	return result, nil
 }
@@ -173,6 +180,16 @@ func (a *Agent) Run(ctx context.Context, input string, opts ...llm.CallOption) (
 // RunStream 流式执行 Agent，通过 channel 返回事件流.
 // 整体流程与 Run 一致，但策略层以事件流方式返回中间过程.
 func (a *Agent) RunStream(ctx context.Context, input string, opts ...llm.CallOption) (<-chan Event, error) {
+	ctx, span := startRunStreamSpan(ctx, a.cfg.Name, input)
+	// 注意:此函数返回 channel,span 需要跟随流的生命周期关闭.
+	// 若初始阶段出错,span 就地结束;成功后 span 随 goroutine 结束时关闭.
+	spanDone := false
+	defer func() {
+		if !spanDone {
+			span.End()
+		}
+	}()
+
 	cb := buildAgentCallbackHandler(a.cfg.Callbacks)
 
 	// 触发 OnAgentStart
@@ -184,6 +201,7 @@ func (a *Agent) RunStream(ctx context.Context, input string, opts ...llm.CallOpt
 	// 输入护栏检查
 	if err := a.runGuardrails(ctx, messages); err != nil {
 		err = fmt.Errorf("%w: %v", ErrBlocked, err)
+		recordAgentError(span, err)
 		cb.OnAgentEnd(ctx, nil, err)
 		return nil, err
 	}
@@ -192,13 +210,18 @@ func (a *Agent) RunStream(ctx context.Context, input string, opts ...llm.CallOpt
 	ctxWithCb := withAgentCallbacks(ctx, a.cfg.Callbacks)
 	ch, err := a.cfg.Strategy.ExecuteStream(ctxWithCb, a.cfg.Model, a.cfg.Tools, messages, a.cfg.MaxIterations, a.cfg.Logger, opts...)
 	if err != nil {
+		recordAgentError(span, err)
 		cb.OnAgentEnd(ctx, nil, err)
 		return nil, err
 	}
 
+	// 交接:span 生命周期从此处转移到下方 goroutine.
+	spanDone = true
+
 	// 包装 channel，在输出事件上执行输出护栏并写入记忆
 	outCh := make(chan Event, 16)
 	go func() {
+		defer span.End()
 		defer close(outCh)
 		defer func() {
 			if r := recover(); r != nil {
@@ -211,6 +234,7 @@ func (a *Agent) RunStream(ctx context.Context, input string, opts ...llm.CallOpt
 				outMsgs := []llm.Message{llm.AssistantMessage(evt.Content)}
 				if gErr := a.runGuardrails(ctx, outMsgs); gErr != nil {
 					guardErr := fmt.Errorf("%w: %v", ErrBlocked, gErr)
+					recordAgentError(span, guardErr)
 					cb.OnAgentEnd(ctx, nil, guardErr)
 					outCh <- Event{Type: EventError, Content: guardErr.Error()}
 					return
