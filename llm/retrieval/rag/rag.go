@@ -5,6 +5,7 @@ package rag
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -61,6 +62,108 @@ type Result struct {
 	Sources []RetrievedDoc `json:"sources"`
 	// Usage token 用量统计.
 	Usage llm.Usage `json:"usage"`
+}
+
+// Metadata key 约定，Ingest 时写入 Document.Metadata，Citations() 会按此抽取。
+const (
+	// CitationKeyTitle 标题 key（string）.
+	CitationKeyTitle = "citation.title"
+	// CitationKeyURL 来源 URL key（string）.
+	CitationKeyURL = "citation.url"
+	// CitationKeyChunkIdx 文档内 chunk 序号 key（数值型：int/int32/int64/float64/json.Number）.
+	CitationKeyChunkIdx = "citation.chunk_idx"
+)
+
+// citationSnippetMaxRunes Citation.Snippet 截断的最大 rune 数.
+const citationSnippetMaxRunes = 200
+
+// Citation 引用元信息。从 RetrievedDoc.Metadata 中按约定 key 抽取。
+//
+// 约定的 Metadata key（均可选，缺失则对应字段空值）:
+//   - "citation.title"      string — 标题
+//   - "citation.url"        string — 来源 URL
+//   - "citation.chunk_idx"  数值型（int/int32/int64/float64/json.Number）— 文档内的 chunk 序号
+//
+// ChunkIdx 使用 *int，用于区分"缺失"（nil）和"值 0"（指向 0 的指针）。
+type Citation struct {
+	// DocID 源文档 ID，取自 RetrievedDoc.ID.
+	DocID string `json:"doc_id"`
+	// Title 文档标题，取自 Metadata["citation.title"].
+	Title string `json:"title,omitempty"`
+	// URL 来源 URL，取自 Metadata["citation.url"].
+	URL string `json:"url,omitempty"`
+	// ChunkIdx 在原文档内的 chunk 序号，取自 Metadata["citation.chunk_idx"].
+	// nil 表示缺失或类型不符；非 nil（包括指向 0）表示有效值.
+	ChunkIdx *int `json:"chunk_idx,omitempty"`
+	// Score 相似度分数，取自 RetrievedDoc.Score.
+	Score float32 `json:"score"`
+	// Snippet 内容预览，取 Content 前 200 runes，超出追加省略号.
+	Snippet string `json:"snippet,omitempty"`
+}
+
+// Citations 从 Sources 中按约定抽取 Citation 列表。
+//
+// 抽取规则:
+//   - DocID    取 RetrievedDoc.ID
+//   - Title    取 Metadata["citation.title"]（string，类型不符则忽略）
+//   - URL      取 Metadata["citation.url"]（string，类型不符则忽略）
+//   - ChunkIdx 取 Metadata["citation.chunk_idx"]（int / int32 / int64 / float64 / json.Number 均兼容，其它类型忽略；nil 表示缺失）
+//   - Score    取 RetrievedDoc.Score
+//   - Snippet  取 Content 前 200 runes（不截断 UTF-8；超出则追加省略号）
+//
+// 当 Result 为 nil 或 Sources 为空时返回 nil.
+func (r *Result) Citations() []Citation {
+	if r == nil || len(r.Sources) == 0 {
+		return nil
+	}
+	out := make([]Citation, 0, len(r.Sources))
+	for _, s := range r.Sources {
+		c := Citation{
+			DocID:   s.ID,
+			Score:   s.Score,
+			Snippet: snippetOf(s.Content, citationSnippetMaxRunes),
+		}
+		if s.Metadata != nil {
+			if v, ok := s.Metadata[CitationKeyTitle].(string); ok {
+				c.Title = v
+			}
+			if v, ok := s.Metadata[CitationKeyURL].(string); ok {
+				c.URL = v
+			}
+			if v, ok := s.Metadata[CitationKeyChunkIdx]; ok {
+				switch n := v.(type) {
+				case int:
+					idx := n
+					c.ChunkIdx = &idx
+				case int32:
+					idx := int(n)
+					c.ChunkIdx = &idx
+				case int64:
+					idx := int(n)
+					c.ChunkIdx = &idx
+				case float64:
+					idx := int(n)
+					c.ChunkIdx = &idx
+				case json.Number:
+					if i, err := n.Int64(); err == nil {
+						idx := int(i)
+						c.ChunkIdx = &idx
+					}
+				}
+			}
+		}
+		out = append(out, c)
+	}
+	return out
+}
+
+// snippetOf 返回 s 的前 maxRunes runes，超过则追加省略符.
+func snippetOf(s string, maxRunes int) string {
+	runes := []rune(s)
+	if len(runes) <= maxRunes {
+		return s
+	}
+	return string(runes[:maxRunes]) + "…"
 }
 
 // Config RAG 管线配置.
@@ -190,13 +293,19 @@ func (p *Pipeline) Ingest(ctx context.Context, docs []Document) error {
 
 // Retrieve 只检索不生成，返回与问题最相关的文档列表.
 func (p *Pipeline) Retrieve(ctx context.Context, question string) ([]RetrievedDoc, error) {
+	ctx, span := startRetrieveSpan(ctx, question, p.cfg.TopK)
+	defer span.End()
+
 	// 嵌入问题文本.
 	embedResp, err := p.cfg.EmbeddingModel.EmbedTexts(ctx, []string{question})
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("rag: 嵌入问题失败: %w", err)
 	}
 	if len(embedResp.Embeddings) == 0 {
-		return nil, fmt.Errorf("rag: 嵌入模型未返回向量")
+		err := fmt.Errorf("rag: 嵌入模型未返回向量")
+		recordSpanError(span, err)
+		return nil, err
 	}
 
 	queryVec := embedResp.Embeddings[0]
@@ -210,6 +319,7 @@ func (p *Pipeline) Retrieve(ctx context.Context, question string) ([]RetrievedDo
 	// 在向量库中搜索.
 	results, err := p.cfg.VectorStore.SimilaritySearch(ctx, queryVec, p.cfg.TopK, searchOpts...)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("rag: 向量搜索失败: %w", err)
 	}
 
@@ -226,6 +336,7 @@ func (p *Pipeline) Retrieve(ctx context.Context, question string) ([]RetrievedDo
 		})
 	}
 
+	span.SetAttributes(ragHitsAttr(len(retrieved)))
 	return retrieved, nil
 }
 
@@ -239,12 +350,17 @@ type promptData struct {
 
 // Query 检索增强生成：检索 → 渲染提示词 → 调用聊天模型生成回答.
 func (p *Pipeline) Query(ctx context.Context, question string, opts ...llm.CallOption) (*Result, error) {
+	ctx, span := startQuerySpan(ctx, question, p.cfg.TopK)
+	defer span.End()
+
 	// 检索相关文档.
 	sources, err := p.Retrieve(ctx, question)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 	if len(sources) == 0 {
+		recordSpanError(span, ErrNoResults)
 		return nil, ErrNoResults
 	}
 
@@ -254,6 +370,7 @@ func (p *Pipeline) Query(ctx context.Context, question string, opts ...llm.CallO
 		Question: question,
 	})
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("rag: 渲染提示词失败: %w", err)
 	}
 
@@ -264,9 +381,11 @@ func (p *Pipeline) Query(ctx context.Context, question string, opts ...llm.CallO
 	}
 	resp, err := p.cfg.ChatModel.Generate(ctx, messages, opts...)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("rag: 生成回答失败: %w", err)
 	}
 
+	span.SetAttributes(ragSourcesAttr(len(sources)))
 	return &Result{
 		Answer:  resp.Message.Content,
 		Sources: sources,
@@ -276,12 +395,17 @@ func (p *Pipeline) Query(ctx context.Context, question string, opts ...llm.CallO
 
 // QueryStream 流式检索增强生成：检索 → 渲染提示词 → 流式调用聊天模型.
 func (p *Pipeline) QueryStream(ctx context.Context, question string, opts ...llm.CallOption) (llm.StreamReader, error) {
+	ctx, span := startQueryStreamSpan(ctx, question, p.cfg.TopK)
+	defer span.End()
+
 	// 检索相关文档.
 	sources, err := p.Retrieve(ctx, question)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, err
 	}
 	if len(sources) == 0 {
+		recordSpanError(span, ErrNoResults)
 		return nil, ErrNoResults
 	}
 
@@ -291,6 +415,7 @@ func (p *Pipeline) QueryStream(ctx context.Context, question string, opts ...llm
 		Question: question,
 	})
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("rag: 渲染提示词失败: %w", err)
 	}
 
@@ -301,8 +426,10 @@ func (p *Pipeline) QueryStream(ctx context.Context, question string, opts ...llm
 	}
 	reader, err := p.cfg.ChatModel.Stream(ctx, messages, opts...)
 	if err != nil {
+		recordSpanError(span, err)
 		return nil, fmt.Errorf("rag: 流式生成失败: %w", err)
 	}
 
+	span.SetAttributes(ragSourcesAttr(len(sources)))
 	return reader, nil
 }

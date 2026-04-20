@@ -45,3 +45,43 @@ for _, s := range result.Sources {
     fmt.Printf("  来源: %s (score=%.3f)\n", s.ID, s.Score)
 }
 ```
+
+## 引用透传（Citations）
+
+RAG 命中结果自带的 `[]RetrievedDoc` 可通过 `Result.Citations()` 抽取为结构化引用列表，便于前端渲染来源卡片。抽取过程不修改 Sources 本身，按约定的 Metadata key 做类型安全的读取。
+
+抽取约定的 Metadata key（Ingest 时写入，推荐使用包导出的常量 `rag.CitationKeyTitle` / `rag.CitationKeyURL` / `rag.CitationKeyChunkIdx`，避免字符串字面量漂移）:
+
+| Metadata key          | 字段类型                                         | 用途                       |
+| --------------------- | ------------------------------------------------ | -------------------------- |
+| `citation.title`      | string                                           | 文档标题                   |
+| `citation.url`        | string                                           | 来源 URL                   |
+| `citation.chunk_idx`  | int / int32 / int64 / float64 / json.Number      | 在原文档内的 chunk 序号    |
+
+> 缺失或类型不符会被忽略。`chunk_idx` 为指针类型，`nil` 表示缺失、`0` 表示第 0 块。
+
+`Snippet` 默认取 `Content` 前 200 runes（按 UTF-8 rune 切分，超出追加省略号）。
+
+Ingest 示例（写入 Metadata）:
+
+```go
+doc := rag.Document{
+    ID:      "faq-001",
+    Content: "VPS 退款流程……",
+    Metadata: map[string]any{
+        rag.CitationKeyTitle:    "VPS 退款 FAQ",
+        rag.CitationKeyURL:      "https://x.com/faq",
+        rag.CitationKeyChunkIdx: 0,
+    },
+}
+_ = pipeline.Ingest(ctx, []rag.Document{doc})
+```
+
+查询后抽取:
+
+```go
+result, _ := pipeline.Query(ctx, "VPS 怎么退款？")
+for _, c := range result.Citations() {
+    fmt.Printf("[%s] %s (%.2f) %s\n", c.DocID, c.Title, c.Score, c.Snippet)
+}
+```

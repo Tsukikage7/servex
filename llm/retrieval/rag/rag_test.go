@@ -2,14 +2,20 @@ package rag
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
+	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/Tsukikage7/servex/v2/llm"
 	"github.com/Tsukikage7/servex/v2/llm/retrieval/splitter"
 	"github.com/Tsukikage7/servex/v2/llm/retrieval/vectorstore"
 )
+
+// intPtr 返回指向 n 的 *int，用于构造 Citation.ChunkIdx 期望值.
+func intPtr(n int) *int { return &n }
 
 // ──────────────────────────────────────────
 // Mock 实现
@@ -392,5 +398,128 @@ func TestQuery(t *testing.T) {
 	}
 	if capturedMessages[1].Role != llm.RoleUser {
 		t.Errorf("期望第二条消息为用户消息，实际 Role=%s", capturedMessages[1].Role)
+	}
+}
+
+// ──────────────────────────────────────────
+// TestResult_Citations
+// ──────────────────────────────────────────
+
+// TestResult_Citations 验证 Result.Citations 按约定从 Sources.Metadata 抽取 Citation 列表.
+func TestResult_Citations(t *testing.T) {
+	tests := []struct {
+		name   string
+		result *Result
+		want   []Citation
+	}{
+		{
+			name:   "nil result",
+			result: nil,
+			want:   nil,
+		},
+		{
+			name:   "empty sources",
+			result: &Result{Sources: nil},
+			want:   nil,
+		},
+		{
+			name: "full metadata - int chunk_idx",
+			result: &Result{Sources: []RetrievedDoc{
+				{
+					Document: Document{
+						ID:      "d1",
+						Content: "这是一段不太长的文本",
+						Metadata: map[string]any{
+							"citation.title":     "VPS 退款 FAQ",
+							"citation.url":       "https://x.com/faq",
+							"citation.chunk_idx": 3,
+						},
+					},
+					Score: 0.92,
+				},
+			}},
+			want: []Citation{{
+				DocID:    "d1",
+				Title:    "VPS 退款 FAQ",
+				URL:      "https://x.com/faq",
+				ChunkIdx: intPtr(3),
+				Score:    0.92,
+				Snippet:  "这是一段不太长的文本",
+			}},
+		},
+		{
+			name: "float64 chunk_idx(JSON 解码常见类型)",
+			result: &Result{Sources: []RetrievedDoc{
+				{Document: Document{ID: "d2", Content: "x", Metadata: map[string]any{"citation.chunk_idx": float64(5)}}, Score: 0.5},
+			}},
+			want: []Citation{{DocID: "d2", Score: 0.5, ChunkIdx: intPtr(5), Snippet: "x"}},
+		},
+		{
+			name: "missing metadata keys",
+			result: &Result{Sources: []RetrievedDoc{
+				{Document: Document{ID: "d3", Content: "只有 id"}, Score: 0.1},
+			}},
+			want: []Citation{{DocID: "d3", Score: 0.1, Snippet: "只有 id"}},
+		},
+		{
+			name: "long content truncated to snippet",
+			result: &Result{Sources: []RetrievedDoc{
+				{Document: Document{ID: "d4", Content: strings.Repeat("字", 250)}},
+			}},
+			want: []Citation{{DocID: "d4", Snippet: strings.Repeat("字", 200) + "…"}},
+		},
+		{
+			name: "wrong type metadata ignored",
+			result: &Result{Sources: []RetrievedDoc{
+				{Document: Document{ID: "d5", Content: "x", Metadata: map[string]any{
+					"citation.title": 123, // 错类型应忽略
+					"citation.url":   true,
+				}}, Score: 0.3},
+			}},
+			want: []Citation{{DocID: "d5", Score: 0.3, Snippet: "x"}},
+		},
+		{
+			name: "chunk_idx=0 区分于缺失",
+			result: &Result{Sources: []RetrievedDoc{
+				{Document: Document{ID: "d6", Content: "x", Metadata: map[string]any{"citation.chunk_idx": 0}}, Score: 0.1},
+			}},
+			want: []Citation{{DocID: "d6", Score: 0.1, ChunkIdx: intPtr(0), Snippet: "x"}},
+		},
+		{
+			name: "int64 chunk_idx",
+			result: &Result{Sources: []RetrievedDoc{
+				{Document: Document{ID: "d7", Content: "x", Metadata: map[string]any{"citation.chunk_idx": int64(7)}}, Score: 0.2},
+			}},
+			want: []Citation{{DocID: "d7", Score: 0.2, ChunkIdx: intPtr(7), Snippet: "x"}},
+		},
+		{
+			name: "json.Number chunk_idx",
+			result: &Result{Sources: []RetrievedDoc{
+				{Document: Document{ID: "d8", Content: "x", Metadata: map[string]any{"citation.chunk_idx": json.Number("42")}}, Score: 0.3},
+			}},
+			want: []Citation{{DocID: "d8", Score: 0.3, ChunkIdx: intPtr(42), Snippet: "x"}},
+		},
+		{
+			name: "chunk_idx 错类型忽略",
+			result: &Result{Sources: []RetrievedDoc{
+				{Document: Document{ID: "d9", Content: "x", Metadata: map[string]any{"citation.chunk_idx": "3"}}, Score: 0.4},
+			}},
+			want: []Citation{{DocID: "d9", Score: 0.4, Snippet: "x"}}, // ChunkIdx 保持 nil
+		},
+		{
+			name: "content 正好 200 runes 不加省略号",
+			result: &Result{Sources: []RetrievedDoc{
+				{Document: Document{ID: "d10", Content: strings.Repeat("字", 200)}},
+			}},
+			want: []Citation{{DocID: "d10", Snippet: strings.Repeat("字", 200)}},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := tc.result.Citations()
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Errorf("Citations() = %+v, want %+v", got, tc.want)
+			}
+		})
 	}
 }
