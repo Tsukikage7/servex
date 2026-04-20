@@ -107,6 +107,9 @@ func NewExecutor(model llm.ChatModel, registry *Registry, opts ...ExecutorOption
 // 自动向 opts 中注入 registry 中的工具列表.
 // 循环直到：模型不再请求工具调用、达到最大轮次、或发生错误.
 func (e *Executor) Run(ctx context.Context, messages []llm.Message, opts ...llm.CallOption) (*ExecutorResult, error) {
+	ctx, span := startExecuteSpan(ctx, e.opts.maxRounds)
+	defer span.End()
+
 	// 注入工具列表（附加在调用选项之后，不覆盖用户指定的工具）
 	tools := e.registry.Tools()
 	if len(tools) > 0 {
@@ -117,6 +120,7 @@ func (e *Executor) Run(ctx context.Context, messages []llm.Message, opts ...llm.
 	copy(history, messages)
 
 	result := &ExecutorResult{}
+	totalToolCalls := 0
 
 	for round := range e.opts.maxRounds {
 		callOpts := opts
@@ -125,7 +129,9 @@ func (e *Executor) Run(ctx context.Context, messages []llm.Message, opts ...llm.
 		}
 		resp, err := e.model.Generate(ctx, history, callOpts...)
 		if err != nil {
-			return nil, fmt.Errorf("toolcall: 第 %d 轮生成失败: %w", round+1, err)
+			wrapped := fmt.Errorf("toolcall: 第 %d 轮生成失败: %w", round+1, err)
+			recordToolcallError(span, wrapped)
+			return nil, wrapped
 		}
 
 		// 将助手消息加入历史
@@ -139,6 +145,7 @@ func (e *Executor) Run(ctx context.Context, messages []llm.Message, opts ...llm.
 			result.Response = resp
 			result.Messages = history
 			result.Rounds = round
+			recordToolcallResult(span, result.Rounds, totalToolCalls)
 			return result, nil
 		}
 
@@ -147,6 +154,7 @@ func (e *Executor) Run(ctx context.Context, messages []llm.Message, opts ...llm.
 		// 工具执行前检查中断
 		if e.opts.interruptCheck != nil {
 			if err := e.opts.interruptCheck(ctx, resp.Message.ToolCalls, history, round); err != nil {
+				recordToolcallError(span, err)
 				return nil, err
 			}
 		}
@@ -157,7 +165,11 @@ func (e *Executor) Run(ctx context.Context, messages []llm.Message, opts ...llm.
 			if e.opts.preToolCallback != nil {
 				e.opts.preToolCallback(ctx, tc)
 			}
-			output, execErr := e.registry.Execute(ctx, tc.ID, tc.Function.Name, tc.Function.Arguments)
+			// 单次工具执行包裹 span 记录 tool.name / tool.call_id / tool.duration_ms / error.
+			output, execErr := withToolCallSpan(ctx, tc, func(spanCtx context.Context) (string, error) {
+				return e.registry.Execute(spanCtx, tc.ID, tc.Function.Name, tc.Function.Arguments)
+			})
+			totalToolCalls++
 			toolResults = append(toolResults, ToolResult{Call: tc, Output: output, Err: execErr})
 			if execErr != nil {
 				// 将错误作为工具结果返回，让模型处理
@@ -171,5 +183,7 @@ func (e *Executor) Run(ctx context.Context, messages []llm.Message, opts ...llm.
 		}
 	}
 
-	return nil, fmt.Errorf("%w: %d", ErrMaxRounds, e.opts.maxRounds)
+	err := fmt.Errorf("%w: %d", ErrMaxRounds, e.opts.maxRounds)
+	recordToolcallError(span, err)
+	return nil, err
 }
