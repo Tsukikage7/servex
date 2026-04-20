@@ -37,3 +37,37 @@ composite := moderation.NewCompositeModerator(
 )
 result, _ = composite.Moderate(ctx, "需要审核的内容")
 ```
+
+## StreamModerator（流式边生成边审）
+
+`StreamModerator` 包装 `llm.StreamReader`，在 LLM 流式生成过程中按字符数阈值或时间间隔触发一次底层 `Moderator` 审核；命中违规时通过 `OnFlagged` 回调，并让后续 `Recv` 立即返回 `io.EOF`，同时关闭原流。
+
+```go
+import "github.com/Tsukikage7/servex/llm/safety/moderation"
+
+sm := moderation.NewStreamModerator(
+    myModerator,
+    moderation.WithChunkChars(200),                  // 每累积 200 字符触发一次（默认 200）
+    moderation.WithChunkInterval(500*time.Millisecond), // 或每 500ms 触发一次（默认 500ms）
+    moderation.WithOnFlagged(func(r *moderation.Result) {
+        // 记录、告警或回调客户端
+    }),
+)
+
+reader, _ := model.Stream(ctx, messages)
+wrapped := sm.Wrap(reader)
+defer wrapped.Close()
+
+for {
+    chunk, err := wrapped.Recv()
+    if err == io.EOF { break }
+    if err != nil { return err }
+    // 输出 chunk.Delta
+}
+```
+
+语义要点：
+- 审核在独立 goroutine 中异步执行，不阻塞 `Recv`。
+- 同一时刻只有一次审核在进行，新满足阈值的数据会在上一次结束后下一轮触发。
+- 命中后缓冲数据不再送审，原 `reader` 在 `Close()` 时关闭。
+- 底层 `Moderator` 为 `nil` 时直接透传,不做审核。
