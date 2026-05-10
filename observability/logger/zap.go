@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -210,9 +211,42 @@ func createLevelSeparateLogger(config *Config, minLevel zapcore.Level, encoder z
 	}, nil
 }
 
+// splitArgs 将 args 拆分为 (msg, structuredFields, plainArgs).
+// - 类型为 Field 的参数被识别为结构化字段
+// - 其余参数按出现顺序拼成 msg(用 fmt.Sprint 风格)
+//
+// 这让 logger.FromContext(ctx).Info("[http]", logger.String("k", v))
+// 等价于 logger.FromContext(ctx).With(logger.String("k", v)).Info("[http]"),
+// 而不是用默认 %v 把 Field 拼到 msg 里面变成 "{k v}"。
+func splitArgs(args []any) (string, []zap.Field) {
+	if len(args) == 0 {
+		return "", nil
+	}
+	plain := make([]any, 0, len(args))
+	fields := make([]zap.Field, 0, len(args))
+	for _, a := range args {
+		if f, ok := a.(Field); ok {
+			fields = append(fields, toZapField(f))
+			continue
+		}
+		plain = append(plain, a)
+	}
+	if len(fields) == 0 {
+		return "", nil
+	}
+	if len(plain) == 0 {
+		return "", fields
+	}
+	return fmt.Sprint(plain...), fields
+}
+
 // 基础日志方法实现
 
 func (z *zapLogger) Debug(args ...any) {
+	if msg, fields := splitArgs(args); fields != nil {
+		z.logger.Debug(msg, fields...)
+		return
+	}
 	z.sugar.Debug(args...)
 }
 
@@ -221,6 +255,10 @@ func (z *zapLogger) Debugf(format string, args ...any) {
 }
 
 func (z *zapLogger) Info(args ...any) {
+	if msg, fields := splitArgs(args); fields != nil {
+		z.logger.Info(msg, fields...)
+		return
+	}
 	z.sugar.Info(args...)
 }
 
@@ -229,6 +267,10 @@ func (z *zapLogger) Infof(format string, args ...any) {
 }
 
 func (z *zapLogger) Warn(args ...any) {
+	if msg, fields := splitArgs(args); fields != nil {
+		z.logger.Warn(msg, fields...)
+		return
+	}
 	z.sugar.Warn(args...)
 }
 
@@ -237,6 +279,10 @@ func (z *zapLogger) Warnf(format string, args ...any) {
 }
 
 func (z *zapLogger) Error(args ...any) {
+	if msg, fields := splitArgs(args); fields != nil {
+		z.logger.Error(msg, fields...)
+		return
+	}
 	z.sugar.Error(args...)
 }
 
@@ -245,6 +291,10 @@ func (z *zapLogger) Errorf(format string, args ...any) {
 }
 
 func (z *zapLogger) Fatal(args ...any) {
+	if msg, fields := splitArgs(args); fields != nil {
+		z.logger.Fatal(msg, fields...)
+		return
+	}
 	z.sugar.Fatal(args...)
 }
 
@@ -253,6 +303,10 @@ func (z *zapLogger) Fatalf(format string, args ...any) {
 }
 
 func (z *zapLogger) Panic(args ...any) {
+	if msg, fields := splitArgs(args); fields != nil {
+		z.logger.Panic(msg, fields...)
+		return
+	}
 	z.sugar.Panic(args...)
 }
 
