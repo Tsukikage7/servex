@@ -2,6 +2,8 @@ package jwt
 
 import (
 	"context"
+	stderrors "errors"
+	"reflect"
 
 	gojwt "github.com/golang-jwt/jwt/v5"
 
@@ -13,8 +15,9 @@ type ClaimsMapper func(claims gojwt.Claims) (*auth.Principal, error)
 
 // Authenticator JWT 认证器，实现 auth.Authenticator 接口.
 type Authenticator struct {
-	jwt          *JWT
-	claimsMapper ClaimsMapper
+	jwt           *JWT
+	claimsFactory ClaimsFactory
+	claimsMapper  ClaimsMapper
 }
 
 // AuthenticatorOption 认证器选项.
@@ -23,7 +26,20 @@ type AuthenticatorOption func(*Authenticator)
 // WithClaimsMapper 设置自定义 Claims 映射函数.
 func WithClaimsMapper(mapper ClaimsMapper) AuthenticatorOption {
 	return func(a *Authenticator) {
-		a.claimsMapper = mapper
+		if mapper != nil {
+			a.claimsMapper = mapper
+		}
+	}
+}
+
+// WithClaimsFactory 设置自定义 Claims 工厂.
+//
+// 认证器每次验证都会调用 factory 创建新的 Claims 实例,避免请求之间复用同一对象.
+func WithClaimsFactory(factory ClaimsFactory) AuthenticatorOption {
+	return func(a *Authenticator) {
+		if factory != nil {
+			a.claimsFactory = factory
+		}
 	}
 }
 
@@ -46,8 +62,9 @@ func NewAuthenticator(jwtSrv *JWT, opts ...AuthenticatorOption) *Authenticator {
 	}
 
 	a := &Authenticator{
-		jwt:          jwtSrv,
-		claimsMapper: defaultClaimsMapper,
+		jwt:           jwtSrv,
+		claimsFactory: func() Claims { return &StandardClaims{} },
+		claimsMapper:  defaultClaimsMapper,
 	}
 
 	for _, opt := range opts {
@@ -67,10 +84,18 @@ func (a *Authenticator) Authenticate(ctx context.Context, creds auth.Credentials
 		return nil, auth.ErrCredentialsNotFound
 	}
 
-	// 验证 JWT
-	claims, err := a.jwt.Validate(ctx, creds.Token)
-	if err != nil {
+	claimsType := a.claimsFactory()
+	if claimsType == nil {
 		return nil, auth.ErrInvalidCredentials
+	}
+
+	// 验证 JWT
+	claims, err := a.jwt.ValidateWithClaims(ctx, creds.Token, claimsType)
+	if err != nil {
+		if stderrors.Is(err, ErrTokenInvalid) {
+			return nil, auth.ErrInvalidCredentials.WithCause(err)
+		}
+		return nil, err
 	}
 
 	// 映射为 Principal
@@ -106,23 +131,9 @@ func defaultClaimsMapper(claims gojwt.Claims) (*auth.Principal, error) {
 
 	// 尝试从 MapClaims 获取更多信息
 	if mapClaims, ok := claims.(gojwt.MapClaims); ok {
-		// 获取角色
-		if roles, ok := mapClaims["roles"].([]any); ok {
-			for _, r := range roles {
-				if role, ok := r.(string); ok {
-					principal.Roles = append(principal.Roles, role)
-				}
-			}
-		}
-
-		// 获取权限
-		if permissions, ok := mapClaims["permissions"].([]any); ok {
-			for _, p := range permissions {
-				if perm, ok := p.(string); ok {
-					principal.Permissions = append(principal.Permissions, perm)
-				}
-			}
-		}
+		principal.Roles = append(principal.Roles, stringClaimSlice(mapClaims["roles"])...)
+		principal.Roles = append(principal.Roles, stringClaimSlice(mapClaims["role"])...)
+		principal.Permissions = append(principal.Permissions, stringClaimSlice(mapClaims["permissions"])...)
 
 		// 获取名称
 		if name, ok := mapClaims["name"].(string); ok {
@@ -148,9 +159,90 @@ func defaultClaimsMapper(claims gojwt.Claims) (*auth.Principal, error) {
 		}
 	}
 
+	if principal.Metadata["claims"] == nil {
+		principal.Metadata["claims"] = claims
+	}
+	principal.Roles = append(principal.Roles, exportedStringSliceField(claims, "Roles")...)
+	principal.Roles = append(principal.Roles, exportedStringSliceField(claims, "Role")...)
+	principal.Permissions = append(principal.Permissions, exportedStringSliceField(claims, "Permissions")...)
+	if principal.Name == "" {
+		principal.Name = exportedStringField(claims, "Name", "Username")
+	}
+	if typ := exportedStringField(claims, "Type"); typ != "" {
+		principal.Type = typ
+	}
+
 	if principal.ID == "" {
 		return nil, auth.ErrInvalidCredentials
 	}
 
 	return principal, nil
+}
+
+func stringClaimSlice(v any) []string {
+	switch x := v.(type) {
+	case string:
+		if x == "" {
+			return nil
+		}
+		return []string{x}
+	case []string:
+		return append([]string(nil), x...)
+	case []any:
+		out := make([]string, 0, len(x))
+		for _, item := range x {
+			if s, ok := item.(string); ok && s != "" {
+				out = append(out, s)
+			}
+		}
+		return out
+	default:
+		return nil
+	}
+}
+
+func exportedStringSliceField(claims gojwt.Claims, names ...string) []string {
+	v := reflect.Indirect(reflect.ValueOf(claims))
+	if !v.IsValid() || v.Kind() != reflect.Struct {
+		return nil
+	}
+	for _, name := range names {
+		field := v.FieldByName(name)
+		if !field.IsValid() {
+			continue
+		}
+		switch field.Kind() {
+		case reflect.String:
+			if field.String() == "" {
+				return nil
+			}
+			return []string{field.String()}
+		case reflect.Slice:
+			if field.Type().Elem().Kind() != reflect.String {
+				return nil
+			}
+			out := make([]string, 0, field.Len())
+			for i := 0; i < field.Len(); i++ {
+				if s := field.Index(i).String(); s != "" {
+					out = append(out, s)
+				}
+			}
+			return out
+		}
+	}
+	return nil
+}
+
+func exportedStringField(claims gojwt.Claims, names ...string) string {
+	v := reflect.Indirect(reflect.ValueOf(claims))
+	if !v.IsValid() || v.Kind() != reflect.Struct {
+		return ""
+	}
+	for _, name := range names {
+		field := v.FieldByName(name)
+		if field.IsValid() && field.Kind() == reflect.String {
+			return field.String()
+		}
+	}
+	return ""
 }

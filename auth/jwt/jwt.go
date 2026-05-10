@@ -28,6 +28,7 @@ import (
 	"encoding/hex"
 	stderrors "errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -140,9 +141,17 @@ func NewJWT(opts ...Option) *JWT {
 //
 // 使用配置的签名算法（默认 HMAC-SHA256，也支持 RS256/ES256/EdDSA）.
 func (j *JWT) Generate(ctx context.Context, claims Claims) (string, error) {
+	if claims == nil {
+		return "", ErrClaimsInvalid
+	}
 	key := j.signingKey()
 	if key == nil {
 		return "", ErrSigningKeyMissing.WithMessage("仅验证模式下不可签发令牌")
+	}
+	if j.opts.store != nil {
+		if err := j.prepareCacheClaims(claims, time.Now()); err != nil {
+			return "", err
+		}
 	}
 	token := jwt.NewWithClaims(j.getSigningMethod(), claims)
 	tokenString, err := token.SignedString(key)
@@ -177,29 +186,26 @@ func (j *JWT) Generate(ctx context.Context, claims Claims) (string, error) {
 // 该方法会为 StandardClaims、jwt.RegisteredClaims、jwt.MapClaims 写入 iat/nbf/exp。
 // 对于其他自定义 Claims，请先在调用方自行设置 RegisteredClaims 后再调用 Generate。
 func (j *JWT) GenerateWithDuration(claims jwt.Claims, duration time.Duration) (string, error) {
+	return j.GenerateWithDurationContext(context.Background(), claims, duration)
+}
+
+// GenerateWithDurationContext 使用指定有效期生成令牌，并复用 Generate 的签发与缓存逻辑.
+func (j *JWT) GenerateWithDurationContext(ctx context.Context, claims jwt.Claims, duration time.Duration) (string, error) {
+	if claims == nil {
+		return "", ErrClaimsInvalid
+	}
 	if duration <= 0 {
-		return "", ErrClaimsInvalid.WithMessage("duration 必须大于 0")
+		return "", ErrClaimsInvalid.WithMessage("有效期必须大于 0")
 	}
-	if err := j.applyDuration(claims, duration); err != nil {
-		return "", err
+	typedClaims, ok := claims.(Claims)
+	if !ok {
+		return "", ErrClaimsInvalid.WithMessage("Claims 类型不支持签发")
 	}
-
-	key := j.signingKey()
-	if key == nil {
-		return "", ErrSigningKeyMissing.WithMessage("仅验证模式下不可签发令牌")
-	}
-	token := jwt.NewWithClaims(j.getSigningMethod(), claims)
-	tokenString, err := token.SignedString(key)
-	if err != nil {
-		j.opts.logger.With(
-			logger.String("name", j.opts.name),
-			logger.Err(err),
-		).Error("[JWT] 生成令牌失败")
-		return "", ErrTokenInvalid.WithCause(err)
+	if !setClaimsDuration(typedClaims, time.Now(), duration) {
+		return "", ErrClaimsInvalid.WithMessage("Claims 类型不支持设置有效期")
 	}
 
-	tokenString = j.opts.tokenPrefix + tokenString
-	return tokenString, nil
+	return j.Generate(ctx, typedClaims)
 }
 
 // Validate 验证 JWT 令牌.
@@ -575,4 +581,132 @@ func (j *JWT) validateCachedToken(ctx context.Context, tokenString string, claim
 	}
 
 	return nil
+}
+
+func setClaimsDuration(claims jwt.Claims, now time.Time, duration time.Duration) bool {
+	expiresAt := jwt.NewNumericDate(now.Add(duration))
+	issuedAt := jwt.NewNumericDate(now)
+
+	switch c := claims.(type) {
+	case *StandardClaims:
+		if c.IssuedAt == nil {
+			c.IssuedAt = issuedAt
+		}
+		c.ExpiresAt = expiresAt
+		return true
+	case jwt.MapClaims:
+		if _, ok := c["iat"]; !ok {
+			c["iat"] = issuedAt.Unix()
+		}
+		c["exp"] = expiresAt.Unix()
+		return true
+	}
+
+	return setRegisteredClaimsTimes(claims, issuedAt, expiresAt)
+}
+
+func ensureIssuedAt(claims jwt.Claims, now time.Time) bool {
+	if iat, err := claims.GetIssuedAt(); err == nil && iat != nil {
+		return true
+	}
+
+	issuedAt := jwt.NewNumericDate(now)
+	switch c := claims.(type) {
+	case *StandardClaims:
+		c.IssuedAt = issuedAt
+		return true
+	case jwt.MapClaims:
+		c["iat"] = issuedAt.Unix()
+		return true
+	}
+
+	v := reflect.Indirect(reflect.ValueOf(claims))
+	if !v.IsValid() || v.Kind() != reflect.Struct {
+		return false
+	}
+
+	if setNumericDateField(v.FieldByName("IssuedAt"), issuedAt) {
+		return true
+	}
+
+	if field := v.FieldByName("RegisteredClaims"); field.IsValid() && field.CanSet() {
+		if rc, ok := field.Addr().Interface().(*jwt.RegisteredClaims); ok {
+			rc.IssuedAt = issuedAt
+			return true
+		}
+	}
+
+	return false
+}
+
+func setRegisteredClaimsTimes(claims jwt.Claims, issuedAt, expiresAt *jwt.NumericDate) bool {
+	v := reflect.Indirect(reflect.ValueOf(claims))
+	if !v.IsValid() || v.Kind() != reflect.Struct {
+		return false
+	}
+
+	if setNumericDateField(v.FieldByName("ExpiresAt"), expiresAt) {
+		setNumericDateFieldIfZero(v.FieldByName("IssuedAt"), issuedAt)
+		return true
+	}
+
+	rc := registeredClaimsField(v)
+	if rc == nil {
+		return false
+	}
+	if rc.IssuedAt == nil {
+		rc.IssuedAt = issuedAt
+	}
+	rc.ExpiresAt = expiresAt
+	return true
+}
+
+func (j *JWT) prepareCacheClaims(claims jwt.Claims, now time.Time) error {
+	if !ensureIssuedAt(claims, now) {
+		return ErrClaimsInvalid.WithMessage("Claims 类型不支持设置签发时间")
+	}
+	subject, err := claims.GetSubject()
+	if err != nil || subject == "" {
+		return ErrClaimsInvalid
+	}
+	iat, err := claims.GetIssuedAt()
+	if err != nil || iat == nil {
+		return ErrClaimsInvalid
+	}
+	exp, err := claims.GetExpirationTime()
+	if err != nil || exp == nil {
+		return ErrClaimsInvalid
+	}
+	return nil
+}
+
+func registeredClaimsField(v reflect.Value) *jwt.RegisteredClaims {
+	field := v.FieldByName("RegisteredClaims")
+	if !field.IsValid() || !field.CanSet() {
+		return nil
+	}
+	rc, ok := field.Addr().Interface().(*jwt.RegisteredClaims)
+	if !ok {
+		return nil
+	}
+	return rc
+}
+
+func setNumericDateField(field reflect.Value, value *jwt.NumericDate) bool {
+	if !field.IsValid() || !field.CanSet() {
+		return false
+	}
+	numericDateType := reflect.TypeOf((*jwt.NumericDate)(nil))
+	if field.Type() != numericDateType {
+		return false
+	}
+	field.Set(reflect.ValueOf(value))
+	return true
+}
+
+func setNumericDateFieldIfZero(field reflect.Value, value *jwt.NumericDate) {
+	if !field.IsValid() || !field.CanSet() || field.Kind() != reflect.Pointer || !field.IsNil() {
+		return
+	}
+	setNumericDateField(field, value)
 }

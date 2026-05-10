@@ -2,6 +2,7 @@ package jwt
 
 import (
 	"context"
+	stderrors "errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,14 +13,18 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/metadata"
 
+	"github.com/Tsukikage7/servex/v2/auth"
+	"github.com/Tsukikage7/servex/v2/storage/cache"
 	"github.com/Tsukikage7/servex/v2/testx"
 )
 
 // testClaims 测试用 Claims.
 type testClaims struct {
 	jwt.RegisteredClaims
-	UserID   string `json:"user_id"`
-	Username string `json:"username"`
+	UserID   string   `json:"user_id"`
+	Username string   `json:"username"`
+	Roles    []string `json:"roles"`
+	Role     string   `json:"role"`
 }
 
 // newTestJWT 创建测试用 JWT 服务.
@@ -43,6 +48,117 @@ func generateTestToken(j *JWT, subject string) string {
 	}
 	token, _ := j.Generate(context.Background(), claims)
 	return token
+}
+
+func TestAuthenticator_CustomClaimsFactory(t *testing.T) {
+	j := newTestJWT()
+	claims := &testClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   "user-123",
+			Issuer:    "test-issuer",
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+		Username: "alice",
+		Roles:    []string{"admin", "editor"},
+	}
+	token, err := j.Generate(t.Context(), claims)
+	require.NoError(t, err)
+
+	authenticator := NewAuthenticator(j,
+		WithClaimsFactory(func() Claims { return &testClaims{} }),
+	)
+	principal, err := authenticator.Authenticate(t.Context(), authCredentials(token))
+	require.NoError(t, err)
+
+	assert.Equal(t, "user-123", principal.ID)
+	assert.Equal(t, "alice", principal.Name)
+	assert.ElementsMatch(t, []string{"admin", "editor"}, principal.Roles)
+	parsed, ok := principal.Metadata["claims"].(*testClaims)
+	require.True(t, ok)
+	assert.Equal(t, "alice", parsed.Username)
+}
+
+func TestAuthenticator_CustomClaimsMapperReceivesCustomClaims(t *testing.T) {
+	j := newTestJWT()
+	token, err := j.Generate(t.Context(), &testClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   "user-456",
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+		Username: "bob",
+		Roles:    []string{"operator"},
+	})
+	require.NoError(t, err)
+
+	var gotClaims jwt.Claims
+	authenticator := NewAuthenticator(j,
+		WithClaimsFactory(func() Claims { return &testClaims{} }),
+		WithClaimsMapper(func(claims jwt.Claims) (*auth.Principal, error) {
+			gotClaims = claims
+			c, ok := claims.(*testClaims)
+			require.True(t, ok)
+			return &auth.Principal{
+				ID:    c.Subject,
+				Type:  auth.PrincipalTypeUser,
+				Name:  c.Username,
+				Roles: c.Roles,
+			}, nil
+		}),
+	)
+
+	principal, err := authenticator.Authenticate(t.Context(), authCredentials(token))
+	require.NoError(t, err)
+	require.IsType(t, &testClaims{}, gotClaims)
+	assert.Equal(t, "bob", principal.Name)
+	assert.Equal(t, []string{"operator"}, principal.Roles)
+}
+
+func TestAuthenticator_DefaultMapperMapClaims(t *testing.T) {
+	j := newTestJWT()
+	claims := jwt.MapClaims{
+		"sub":         "user-789",
+		"exp":         time.Now().Add(time.Hour).Unix(),
+		"iat":         time.Now().Unix(),
+		"name":        "carol",
+		"role":        "admin",
+		"roles":       []string{"reviewer"},
+		"permissions": []any{"orders:read", "orders:write"},
+	}
+	token, err := j.Generate(t.Context(), claims)
+	require.NoError(t, err)
+
+	authenticator := NewAuthenticator(j,
+		WithClaimsFactory(func() Claims { return jwt.MapClaims{} }),
+	)
+	principal, err := authenticator.Authenticate(t.Context(), authCredentials(token))
+	require.NoError(t, err)
+
+	assert.Equal(t, "user-789", principal.ID)
+	assert.Equal(t, "carol", principal.Name)
+	assert.ElementsMatch(t, []string{"admin", "reviewer"}, principal.Roles)
+	assert.ElementsMatch(t, []string{"orders:read", "orders:write"}, principal.Permissions)
+}
+
+func authCredentials(token string) auth.Credentials {
+	return auth.Credentials{Type: auth.CredentialTypeBearer, Token: token}
+}
+
+type failingTokenStore struct {
+	err error
+}
+
+func (s *failingTokenStore) Get(context.Context, string) (string, error) {
+	return "", s.err
+}
+
+func (s *failingTokenStore) Set(context.Context, string, string, time.Duration) error {
+	return nil
+}
+
+func (s *failingTokenStore) Delete(context.Context, ...string) error {
+	return nil
 }
 
 func TestNewSigner(t *testing.T) {
@@ -580,6 +696,122 @@ func TestJWT_GenerateValidateRefresh(t *testing.T) {
 		assert.NotEmpty(t, newToken)
 		assert.NotEqual(t, token, newToken)
 	})
+}
+
+func TestJWT_GenerateWithDuration(t *testing.T) {
+	j := newTestJWT()
+
+	t.Run("standard claims", func(t *testing.T) {
+		claims := &StandardClaims{
+			RegisteredClaims: jwt.RegisteredClaims{Subject: "user-300"},
+		}
+
+		token, err := j.GenerateWithDuration(claims, 30*time.Minute)
+		require.NoError(t, err)
+		require.NotEmpty(t, token)
+
+		validated, err := j.Validate(t.Context(), token)
+		require.NoError(t, err)
+		exp, err := validated.GetExpirationTime()
+		require.NoError(t, err)
+		iat, err := validated.GetIssuedAt()
+		require.NoError(t, err)
+		require.NotNil(t, exp)
+		require.NotNil(t, iat)
+		assert.WithinDuration(t, time.Now().Add(30*time.Minute), exp.Time, 3*time.Second)
+	})
+
+	t.Run("map claims", func(t *testing.T) {
+		claims := jwt.MapClaims{"sub": "user-301"}
+
+		token, err := j.GenerateWithDuration(claims, 15*time.Minute)
+		require.NoError(t, err)
+		require.NotEmpty(t, token)
+
+		validated, err := j.ValidateWithClaims(t.Context(), token, jwt.MapClaims{})
+		require.NoError(t, err)
+		exp, err := validated.GetExpirationTime()
+		require.NoError(t, err)
+		require.NotNil(t, exp)
+		assert.WithinDuration(t, time.Now().Add(15*time.Minute), exp.Time, 3*time.Second)
+	})
+
+	t.Run("invalid duration", func(t *testing.T) {
+		_, err := j.GenerateWithDuration(&StandardClaims{}, 0)
+		assert.ErrorIs(t, err, ErrClaimsInvalid)
+	})
+}
+
+func TestJWT_GenerateWithTokenStoreCompletesIssuedAt(t *testing.T) {
+	store, err := cache.NewMemoryCache(cache.NewMemoryConfig(), testx.NopLogger())
+	require.NoError(t, err)
+	j := NewJWT(
+		WithSecretKey("test-secret-key-for-testing-32b!"),
+		WithLogger(testx.NopLogger()),
+		WithTokenStore(CacheTokenStore(store)),
+	)
+	claims := &StandardClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   "user-302",
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+		},
+	}
+
+	token, err := j.Generate(t.Context(), claims)
+	require.NoError(t, err)
+	require.NotEmpty(t, token)
+
+	validated, err := j.Validate(t.Context(), token)
+	require.NoError(t, err)
+	iat, err := validated.GetIssuedAt()
+	require.NoError(t, err)
+	require.NotNil(t, iat)
+}
+
+func TestJWT_GenerateWithDurationContextUsesTokenStore(t *testing.T) {
+	store, err := cache.NewMemoryCache(cache.NewMemoryConfig(), testx.NopLogger())
+	require.NoError(t, err)
+	j := NewJWT(
+		WithSecretKey("test-secret-key-for-testing-32b!"),
+		WithLogger(testx.NopLogger()),
+		WithTokenStore(CacheTokenStore(store)),
+	)
+	claims := &StandardClaims{
+		RegisteredClaims: jwt.RegisteredClaims{Subject: "user-303"},
+	}
+
+	token, err := j.GenerateWithDurationContext(t.Context(), claims, time.Hour)
+	require.NoError(t, err)
+	require.NotEmpty(t, token)
+
+	validated, err := j.Validate(t.Context(), token)
+	require.NoError(t, err)
+	subject, err := validated.GetSubject()
+	require.NoError(t, err)
+	assert.Equal(t, "user-303", subject)
+}
+
+func TestJWT_ValidateCachedTokenFailClose(t *testing.T) {
+	storeErr := stderrors.New("store unavailable")
+	j := NewJWT(
+		WithSecretKey("test-secret-key-for-testing-32b!"),
+		WithLogger(testx.NopLogger()),
+		WithTokenStore(&failingTokenStore{err: storeErr}),
+		WithRevokeFailClose(),
+	)
+	claims := &StandardClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   "user-400",
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+	token, err := j.Generate(t.Context(), claims)
+	require.NoError(t, err)
+
+	_, err = j.Validate(t.Context(), token)
+	assert.ErrorIs(t, err, ErrTokenStoreQuery)
+	assert.ErrorIs(t, err, storeErr)
 }
 
 func TestJWT_Accessors(t *testing.T) {

@@ -64,6 +64,60 @@ validatedClaims, err := j.ValidateWithClaims(token, &UserClaims{})
 userClaims := validatedClaims.(*UserClaims)
 ```
 
+## Authenticator 与自定义 Claims
+
+`NewAuthenticator` 可直接接入 `auth` / `gateway.WithAuth`。如果令牌中包含业务字段
+（如 `roles`、`permissions`、`username`、`tenant_id`），应通过 `WithClaimsFactory`
+指定解析类型；认证器会为每次请求创建新的 Claims 实例，避免并发复用。
+
+```go
+type UserClaims struct {
+    jwt.StandardClaims
+    Username string   `json:"username"`
+    Roles    []string `json:"roles"`
+}
+
+jwtSrv := jwt.NewJWT(
+    jwt.WithSecretKey("your-secret-key-at-least-32-bytes"),
+    jwt.WithLogger(log),
+)
+
+authenticator := jwt.NewAuthenticator(jwtSrv,
+    jwt.WithClaimsFactory(func() jwt.Claims {
+        return &UserClaims{}
+    }),
+    jwt.WithClaimsMapper(func(claims gojwt.Claims) (*auth.Principal, error) {
+        c, ok := claims.(*UserClaims)
+        if !ok {
+            return nil, auth.ErrInvalidCredentials
+        }
+        return &auth.Principal{
+            ID:    c.Subject,
+            Type:  auth.PrincipalTypeUser,
+            Name:  c.Username,
+            Roles: c.Roles,
+            Metadata: map[string]any{
+                "claims": c,
+            },
+        }, nil
+    }),
+)
+
+server := gateway.New(
+    gateway.WithAuth(authenticator),
+)
+```
+
+默认 Claims mapper 支持以下通用字段：
+
+- `sub` / `Subject` → `Principal.ID`
+- `exp` / `ExpiresAt` → `Principal.ExpiresAt`
+- `roles` / `Roles` → `Principal.Roles`
+- `role` / `Role` → 单个角色，追加到 `Principal.Roles`
+- `permissions` / `Permissions` → `Principal.Permissions`
+- `name` / `Name` / `Username` → `Principal.Name`
+- `type` / `Type` → `Principal.Type`
+
 ## Endpoint 中间件
 
 Endpoint 中间件用于 `transport.Endpoint` 层，参考 [go-kit/kit/auth/jwt](https://github.com/go-kit/kit/tree/master/auth/jwt) 设计模式。
