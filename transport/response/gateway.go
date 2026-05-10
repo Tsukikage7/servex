@@ -1,6 +1,7 @@
 package response
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -17,12 +18,6 @@ import (
 // 细粒度 Code 保留：GRPCStatus 将业务 Code 以 JSON 嵌入 gRPC status message，
 // 此处理器通过 FromGRPCStatus 从中还原完整 Code（如 30002），
 // 不会因粗粒度 gRPC code 反向映射被降级（如被错误还原为 30001）。
-//
-// 用法：
-//
-//	srv := gateway.New(
-//	    gateway.WithServeMuxOptions(response.GatewayServeMuxOption()),
-//	)
 func GatewayErrorHandler(
 	_ context.Context,
 	_ *runtime.ServeMux,
@@ -48,10 +43,72 @@ func GatewayErrorHandler(
 }
 
 // GatewayServeMuxOption 返回注册了统一错误处理器的 ServeMux 选项。
-//
-// 与 gateway.WithUnifiedResponse() 配合使用时无需重复设置。
 func GatewayServeMuxOption() runtime.ServeMuxOption {
 	return runtime.WithErrorHandler(GatewayErrorHandler)
+}
+
+// GatewaySuccessResponseMiddleware 返回一个 HTTP middleware，
+// 将 gRPC-Gateway 成功响应（HTTP 200）包裹为统一格式：
+//
+//	{"code": 0, "message": "成功", "data": <原始 proto JSON>}
+//
+// 在 gateway server 的 HTTP handler 外层应用，与 GatewayErrorHandler 配合
+// 实现成功与错误响应格式的完全统一。
+func GatewaySuccessResponseMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		rw := &captureResponseWriter{ResponseWriter: w}
+		next.ServeHTTP(rw, r)
+		rw.flush()
+	})
+}
+
+// captureResponseWriter 捕获 gRPC-Gateway 的写入，成功时包裹统一响应体。
+type captureResponseWriter struct {
+	http.ResponseWriter
+	buf    bytes.Buffer
+	status int
+}
+
+func (c *captureResponseWriter) WriteHeader(code int) {
+	c.status = code
+}
+
+func (c *captureResponseWriter) Write(b []byte) (int, error) {
+	return c.buf.Write(b)
+}
+
+// Flush 实现 http.Flusher，防止中间件链丢失 flush 能力。
+func (c *captureResponseWriter) Flush() {
+	if f, ok := c.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+}
+
+func (c *captureResponseWriter) flush() {
+	statusCode := c.status
+	if statusCode == 0 {
+		statusCode = http.StatusOK
+	}
+
+	body := c.buf.Bytes()
+
+	if statusCode == http.StatusOK && json.Valid(body) {
+		wrapped, err := json.Marshal(map[string]json.RawMessage{
+			"code":    json.RawMessage(`0`),
+			"message": json.RawMessage(`"` + CodeSuccess.Message + `"`),
+			"data":    json.RawMessage(body),
+		})
+		if err == nil {
+			c.ResponseWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
+			c.ResponseWriter.WriteHeader(statusCode)
+			c.ResponseWriter.Write(wrapped) //nolint:errcheck
+			return
+		}
+	}
+
+	// 非 200 或序列化失败直接透传（错误已由 GatewayErrorHandler 格式化）
+	c.ResponseWriter.WriteHeader(statusCode)
+	c.ResponseWriter.Write(body) //nolint:errcheck
 }
 
 // acceptLanguages 从请求头解析语言偏好列表。

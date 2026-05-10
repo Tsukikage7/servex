@@ -337,6 +337,11 @@ func (s *Server) startHTTP(ctx context.Context) error {
 	// RateLimit → ClientIP → Tenant → Auth(via gRPC) → Health → handler
 	var handler http.Handler = health.Middleware(s.health)(s.mux)
 
+	// 统一成功响应格式（紧贴 mux，捕获 gRPC-Gateway 输出后包裹为 {code,message,data}）
+	if s.opts.enableResponse {
+		handler = response.GatewaySuccessResponseMiddleware(handler)
+	}
+
 	// 9. Tenant（HTTP 端）
 	if s.opts.tenantResolver != nil {
 		tenantOpts := s.opts.tenantOpts

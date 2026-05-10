@@ -62,7 +62,7 @@ type options struct {
 	httpMiddlewares []func(http.Handler) http.Handler
 
 	// Trace
-	tracerName      string   // 链路追踪服务名，为空则不启用
+	tracerName       string   // 链路追踪服务名，为空则不启用
 	tracingSkipPaths []string // 不产生 trace span 的 HTTP 路径
 
 	// Response
@@ -517,6 +517,22 @@ func WithHTTPTLS(cfg *tls.Config) Option {
 func WithGRPCTLS(cfg *tls.Config) Option {
 	return func(o *options) {
 		o.grpcTLSConfig = cfg
+	}
+}
+
+// WithHTTPMiddleware 追加自定义 HTTP 中间件到 gateway 的 HTTP 处理链.
+//
+// 多次调用会按调用顺序 append；执行顺序与内置中间件一致：后 append 的先执行。
+// 典型用法：请求体大小限制、按 IP/Token 限流、自定义签名校验等.
+//
+// 示例:
+//
+//	import "github.com/Tsukikage7/servex/v2/middleware/bodylimit"
+//
+//	gateway.WithHTTPMiddleware(bodylimit.HTTPMiddleware(1 << 20)) // 1MB
+func WithHTTPMiddleware(mws ...func(http.Handler) http.Handler) Option {
+	return func(o *options) {
+		o.httpMiddlewares = append(o.httpMiddlewares, mws...)
 	}
 }
 
