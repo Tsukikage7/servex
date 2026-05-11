@@ -24,6 +24,8 @@ package jwt
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	stderrors "errors"
 	"fmt"
 	"strings"
@@ -157,19 +159,8 @@ func (j *JWT) Generate(ctx context.Context, claims Claims) (string, error) {
 
 	// 存储到缓存
 	if j.opts.store != nil {
-		subject, _ := claims.GetSubject()
-		exp, err := claims.GetExpirationTime()
-		if err == nil && exp != nil {
-			iat, _ := claims.GetIssuedAt()
-			key := j.buildCacheKey(subject, iat.Unix(), exp.Unix())
-			ttl := time.Until(exp.Time)
-			if err := j.opts.store.Set(ctx, key, tokenString, ttl); err != nil {
-				j.opts.logger.With(
-					logger.String("name", j.opts.name),
-					logger.String("subject", subject),
-					logger.Err(err),
-				).Debug("[JWT] 令牌缓存存储失败")
-			}
+		if err := j.cacheToken(ctx, tokenString, claims); err != nil {
+			j.opts.logger.With(logger.Err(err)).Debug("[JWT] 令牌缓存存储失败")
 		}
 	}
 
@@ -182,7 +173,17 @@ func (j *JWT) Generate(ctx context.Context, claims Claims) (string, error) {
 }
 
 // GenerateWithDuration 使用指定有效期生成令牌.
+//
+// 该方法会为 StandardClaims、jwt.RegisteredClaims、jwt.MapClaims 写入 iat/nbf/exp。
+// 对于其他自定义 Claims，请先在调用方自行设置 RegisteredClaims 后再调用 Generate。
 func (j *JWT) GenerateWithDuration(claims jwt.Claims, duration time.Duration) (string, error) {
+	if duration <= 0 {
+		return "", ErrClaimsInvalid.WithMessage("duration 必须大于 0")
+	}
+	if err := j.applyDuration(claims, duration); err != nil {
+		return "", err
+	}
+
 	key := j.signingKey()
 	if key == nil {
 		return "", ErrSigningKeyMissing.WithMessage("仅验证模式下不可签发令牌")
@@ -402,8 +403,16 @@ func (j *JWT) stripPrefix(token string) string {
 }
 
 // buildCacheKey 构建缓存 key.
-func (j *JWT) buildCacheKey(subject string, iat int64, exp int64) string {
-	return fmt.Sprintf("%s%s:%d:%d", j.opts.cacheKeyPrefix, subject, iat, exp)
+//
+// key 中包含 token hash，避免同一 subject 在相同 iat/exp 下批量签发时发生缓存 key 冲突。
+func (j *JWT) buildCacheKey(subject string, iat int64, exp int64, tokenString string) string {
+	return fmt.Sprintf("%s%s:%d:%d:%s", j.opts.cacheKeyPrefix, subject, iat, exp, tokenHash(tokenString))
+}
+
+// tokenHash 返回 token 的短哈希，用于缓存 key 防碰撞，避免把完整 token 暴露在 key 中。
+func tokenHash(tokenString string) string {
+	sum := sha256.Sum256([]byte(tokenString))
+	return hex.EncodeToString(sum[:])[:16]
 }
 
 // getSigningMethod 获取签名算法.
@@ -440,6 +449,74 @@ func (j *JWT) verificationKey() any {
 	return []byte(j.opts.secretKey)
 }
 
+// cacheToken 将签发后的令牌写入 TokenStore.
+func (j *JWT) cacheToken(ctx context.Context, tokenString string, claims jwt.Claims) error {
+	subject, _ := claims.GetSubject()
+	exp, err := claims.GetExpirationTime()
+	if err != nil || exp == nil {
+		return ErrClaimsInvalid
+	}
+
+	iat, err := claims.GetIssuedAt()
+	if err != nil || iat == nil {
+		return ErrClaimsInvalid
+	}
+
+	rawToken := j.stripPrefix(tokenString)
+	key := j.buildCacheKey(subject, iat.Unix(), exp.Unix(), rawToken)
+	ttl := time.Until(exp.Time)
+	if ttl <= 0 {
+		return ErrTokenInvalid.WithMessage("令牌已过期，无法缓存")
+	}
+	return j.opts.store.Set(ctx, key, tokenString, ttl)
+}
+
+// applyDuration 为常见 Claims 类型写入 iat/nbf/exp.
+func (j *JWT) applyDuration(claims jwt.Claims, duration time.Duration) error {
+	now := time.Now()
+	issuedAt := jwt.NewNumericDate(now)
+	expiresAt := jwt.NewNumericDate(now.Add(duration))
+
+	switch c := claims.(type) {
+	case *StandardClaims:
+		c.IssuedAt = issuedAt
+		c.NotBefore = issuedAt
+		c.ExpiresAt = expiresAt
+		if c.Issuer == "" {
+			c.Issuer = j.opts.issuer
+		}
+	case *jwt.RegisteredClaims:
+		c.IssuedAt = issuedAt
+		c.NotBefore = issuedAt
+		c.ExpiresAt = expiresAt
+		if c.Issuer == "" {
+			c.Issuer = j.opts.issuer
+		}
+	case jwt.MapClaims:
+		c["iat"] = issuedAt.Unix()
+		c["nbf"] = issuedAt.Unix()
+		c["exp"] = expiresAt.Unix()
+		if j.opts.issuer != "" {
+			if _, ok := c["iss"]; !ok {
+				c["iss"] = j.opts.issuer
+			}
+		}
+	case *jwt.MapClaims:
+		(*c)["iat"] = issuedAt.Unix()
+		(*c)["nbf"] = issuedAt.Unix()
+		(*c)["exp"] = expiresAt.Unix()
+		if j.opts.issuer != "" {
+			if _, ok := (*c)["iss"]; !ok {
+				(*c)["iss"] = j.opts.issuer
+			}
+		}
+	default:
+		return ErrClaimsInvalid.WithMessage("GenerateWithDuration 仅支持 *StandardClaims、*jwt.RegisteredClaims 或 jwt.MapClaims")
+	}
+
+	return nil
+}
+
 // validateCachedToken 验证缓存中的令牌.
 func (j *JWT) validateCachedToken(ctx context.Context, tokenString string, claims jwt.Claims) error {
 	iat, err := claims.GetIssuedAt()
@@ -462,27 +539,33 @@ func (j *JWT) validateCachedToken(ctx context.Context, tokenString string, claim
 	if val, revokeErr := j.opts.store.Get(ctx, revokeKey); revokeErr == nil && val != "" {
 		return ErrTokenRevoked
 	} else if revokeErr != nil && !stderrors.Is(revokeErr, cache.ErrNotFound) {
-		// 缓存访问错误（如 Redis 宕机），跳过撤销检查，fail-open
+		// 缓存访问错误（如 Redis 宕机）
 		j.opts.logger.With(
 			logger.String("name", j.opts.name),
 			logger.String("subject", subject),
 			logger.Err(revokeErr),
-		).Warn("[JWT] 缓存撤销标记查询失败，跳过检查")
+		).Warn("[JWT] 缓存撤销标记查询失败")
+		if j.opts.revokeFailClose {
+			return ErrTokenStoreQuery.WithCause(revokeErr)
+		}
 	}
 
-	key := j.buildCacheKey(subject, iat.Unix(), exp.Unix())
+	key := j.buildCacheKey(subject, iat.Unix(), exp.Unix(), tokenString)
 	storedToken, err := j.opts.store.Get(ctx, key)
 	if err != nil {
 		if stderrors.Is(err, cache.ErrNotFound) {
 			// 缓存中无此令牌，视为已撤销
 			return ErrTokenRevoked
 		}
-		// 缓存访问错误（如 Redis 宕机），fail-open，跳过缓存校验
+		// 缓存访问错误（如 Redis 宕机）
 		j.opts.logger.With(
 			logger.String("name", j.opts.name),
 			logger.String("subject", subject),
 			logger.Err(err),
-		).Warn("[JWT] 缓存令牌查询失败，跳过缓存校验")
+		).Warn("[JWT] 缓存令牌查询失败")
+		if j.opts.revokeFailClose {
+			return ErrTokenStoreQuery.WithCause(err)
+		}
 		return nil
 	}
 
