@@ -3,7 +3,6 @@ package main
 
 import (
 	"context"
-	"log"
 
 	"gorm.io/gorm"
 
@@ -32,6 +31,8 @@ func main() {
 		Output:      logger.OutputConsole,
 	})
 	defer l.Close()
+	mainLog := logger.WithComponent(l, "Ecommerce")
+	eventLog := logger.WithComponent(l, "Event")
 
 	// 初始化数据库
 	db, err := rdbms.NewDatabase(&rdbms.Config{
@@ -40,34 +41,34 @@ func main() {
 		DSN:    "root:password@tcp(127.0.0.1:3306)/ecommerce?charset=utf8mb4&parseTime=True&loc=Local",
 	}, l)
 	if err != nil {
-		log.Fatalf("[Ecommerce] 初始化数据库失败: %v", err)
+		mainLog.With(logger.Err(err)).Fatal("初始化数据库失败")
 	}
 	defer db.Close()
 
 	// 自动迁移
 	gormDB := db.DB().(*gorm.DB)
 	if err := gormDB.AutoMigrate(&persistence.OrderPO{}); err != nil {
-		log.Fatalf("[Ecommerce] 数据库迁移失败: %v", err)
+		mainLog.With(logger.Err(err)).Fatal("数据库迁移失败")
 	}
 
 	// 初始化事件总线
 	eventBus := domain.NewEventBus()
 	eventBus.Subscribe(domainOrder.EventOrderPlaced, func(ctx context.Context, event domain.DomainEvent) error {
 		e := event.(*domainOrder.OrderPlacedEvent)
-		l.With(
+		eventLog.With(
 			logger.Uint64("order_id", e.OrderID),
 			logger.Uint64("user_id", e.UserID),
-		).Info("[Event] 订单创建成功")
+		).Info("订单创建成功")
 		return nil
 	})
 	eventBus.Subscribe(domainOrder.EventOrderCancelled, func(ctx context.Context, event domain.DomainEvent) error {
 		e := event.(*domainOrder.OrderCancelledEvent)
-		l.With(logger.Uint64("order_id", e.OrderID)).Info("[Event] 订单已取消")
+		eventLog.With(logger.Uint64("order_id", e.OrderID)).Info("订单已取消")
 		return nil
 	})
 	eventBus.Subscribe(domainOrder.EventOrderShipped, func(ctx context.Context, event domain.DomainEvent) error {
 		e := event.(*domainOrder.OrderShippedEvent)
-		l.With(logger.Uint64("order_id", e.OrderID)).Info("[Event] 订单已发货")
+		eventLog.With(logger.Uint64("order_id", e.OrderID)).Info("订单已发货")
 		return nil
 	})
 
@@ -99,6 +100,6 @@ func main() {
 		app.WithLogger(l),
 	)
 	if err := application.Use(httpSrv).Run(); err != nil {
-		l.With(logger.Err(err)).Fatal("[App] 应用启动失败")
+		l.With(logger.Err(err)).Fatal("应用启动失败")
 	}
 }

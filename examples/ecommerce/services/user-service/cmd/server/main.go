@@ -3,7 +3,6 @@ package main
 
 import (
 	"context"
-	"log"
 
 	"gorm.io/gorm"
 
@@ -32,6 +31,8 @@ func main() {
 		Output:      logger.OutputConsole,
 	})
 	defer l.Close()
+	mainLog := logger.WithComponent(l, "Ecommerce")
+	eventLog := logger.WithComponent(l, "Event")
 
 	// 初始化数据库
 	db, err := rdbms.NewDatabase(&rdbms.Config{
@@ -40,14 +41,14 @@ func main() {
 		DSN:    "root:password@tcp(127.0.0.1:3306)/ecommerce?charset=utf8mb4&parseTime=True&loc=Local",
 	}, l)
 	if err != nil {
-		log.Fatalf("[Ecommerce] 初始化数据库失败: %v", err)
+		mainLog.With(logger.Err(err)).Fatal("初始化数据库失败")
 	}
 	defer db.Close()
 
 	// 自动迁移
 	gormDB := db.DB().(*gorm.DB)
 	if err := gormDB.AutoMigrate(&persistence.UserPO{}); err != nil {
-		log.Fatalf("[Ecommerce] 数据库迁移失败: %v", err)
+		mainLog.With(logger.Err(err)).Fatal("数据库迁移失败")
 	}
 
 	// 初始化 JWT 服务
@@ -61,10 +62,10 @@ func main() {
 	eventBus := domain.NewEventBus()
 	eventBus.Subscribe(domainUser.EventUserCreated, func(ctx context.Context, event domain.DomainEvent) error {
 		e := event.(*domainUser.UserCreatedEvent)
-		l.With(
+		eventLog.With(
 			logger.Uint64("user_id", e.UserID),
 			logger.String("username", e.Username),
-		).Info("[Event] 用户创建成功")
+		).Info("用户创建成功")
 		return nil
 	})
 
@@ -93,6 +94,6 @@ func main() {
 		app.WithLogger(l),
 	)
 	if err := application.Use(httpSrv).Run(); err != nil {
-		l.With(logger.Err(err)).Fatal("[App] 应用启动失败")
+		l.With(logger.Err(err)).Fatal("应用启动失败")
 	}
 }

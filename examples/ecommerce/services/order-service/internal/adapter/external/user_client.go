@@ -53,10 +53,10 @@ func (c *UserClient) UserExists(ctx context.Context, userID uint64) (bool, error
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		logger.FromContext(ctx).With(
+		logger.For(ctx, "UserClient").With(
 			logger.String("url", url),
 			logger.Err(err),
-		).Error("[UserClient] 请求用户服务失败")
+		).Error("请求用户服务失败")
 		return false, ErrRequestUser.WithCause(err)
 	}
 	defer resp.Body.Close()
