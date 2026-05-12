@@ -50,6 +50,7 @@ func New(opts ...Option) *Server {
 	if o.logger == nil {
 		o.logger = logger.Nop()
 	}
+	o.logger = logger.WithComponent(o.logger, "gRPC")
 
 	// 创建内置健康检查管理器
 	healthOpts := []health.Option{health.WithTimeout(o.healthTimeout)}
@@ -140,7 +141,7 @@ func (s *Server) doStart(ctx context.Context) error {
 	s.opts.logger.With(
 		logger.String("name", s.opts.name),
 		logger.String("addr", s.opts.addr),
-	).Info("[gRPC] 服务器启动")
+	).Info("服务器启动")
 
 	errCh := make(chan error, 1)
 	go func() {
@@ -165,7 +166,7 @@ func (s *Server) Stop(ctx context.Context) error {
 		return nil
 	}
 
-	s.opts.logger.With(logger.String("name", s.opts.name)).Info("[gRPC] 服务器停止中")
+	s.opts.logger.With(logger.String("name", s.opts.name)).Info("服务器停止中")
 
 	// 优雅关闭
 	done := make(chan struct{})

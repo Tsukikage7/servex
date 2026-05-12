@@ -9,10 +9,12 @@ import (
 
 // LoggingMiddleware 日志中间件.
 func LoggingMiddleware(log logger.Logger) Middleware {
+	log = logger.WithComponent(log, "WebSocket")
+
 	return func(next Handler) Handler {
 		return func(client Client, msg *Message) {
 			start := time.Now()
-			log.Debug("[WebSocket] 收到消息",
+			log.Debug("收到消息",
 				"client_id", client.ID(),
 				"type", msg.Type,
 				"size", len(msg.Data),
@@ -20,7 +22,7 @@ func LoggingMiddleware(log logger.Logger) Middleware {
 
 			next(client, msg)
 
-			log.Debug("[WebSocket] 消息处理完成",
+			log.Debug("消息处理完成",
 				"client_id", client.ID(),
 				"duration", time.Since(start),
 			)
@@ -30,11 +32,13 @@ func LoggingMiddleware(log logger.Logger) Middleware {
 
 // RecoveryMiddleware Panic 恢复中间件.
 func RecoveryMiddleware(log logger.Logger) Middleware {
+	log = logger.WithComponent(log, "WebSocket")
+
 	return func(next Handler) Handler {
 		return func(client Client, msg *Message) {
 			defer func() {
 				if r := recover(); r != nil {
-					log.Error("[WebSocket] 处理器发生 panic",
+					log.Error("处理器发生 panic",
 						"client_id", client.ID(),
 						"panic", r,
 					)

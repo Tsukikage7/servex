@@ -38,6 +38,8 @@ func WrapResolve(fn gql.FieldResolveFn, mw ...Middleware) gql.FieldResolveFn {
 
 // LoggingMiddleware 记录 resolve 执行耗时.
 func LoggingMiddleware(log logger.Logger) Middleware {
+	log = logger.WithComponent(log, "GraphQL")
+
 	return func(next ResolveFunc) ResolveFunc {
 		return func(p gql.ResolveParams) (any, error) {
 			start := time.Now()
@@ -50,12 +52,12 @@ func LoggingMiddleware(log logger.Logger) Middleware {
 					logger.Field{Key: "field", Value: fieldName},
 					logger.Field{Key: "duration_ms", Value: elapsed.Milliseconds()},
 					logger.Field{Key: "error", Value: err.Error()},
-				).Error("[GraphQL] 解析器执行失败")
+				).Error("解析器执行失败")
 			} else {
 				log.With(
 					logger.Field{Key: "field", Value: fieldName},
 					logger.Field{Key: "duration_ms", Value: elapsed.Milliseconds()},
-				).Debug("[GraphQL] 解析器执行完成")
+				).Debug("解析器执行完成")
 			}
 			return result, err
 		}
@@ -64,6 +66,8 @@ func LoggingMiddleware(log logger.Logger) Middleware {
 
 // RecoveryMiddleware panic 恢复中间件，捕获 resolve 中的 panic 并返回错误.
 func RecoveryMiddleware(log logger.Logger) Middleware {
+	log = logger.WithComponent(log, "GraphQL")
+
 	return func(next ResolveFunc) ResolveFunc {
 		return func(p gql.ResolveParams) (result any, err error) {
 			defer func() {
@@ -71,7 +75,7 @@ func RecoveryMiddleware(log logger.Logger) Middleware {
 					log.With(
 						logger.Field{Key: "field", Value: p.Info.FieldName},
 						logger.Field{Key: "panic", Value: fmt.Sprintf("%v", r)},
-					).Error("[GraphQL] 解析器异常已恢复")
+					).Error("解析器异常已恢复")
 					err = ErrInternalError
 				}
 			}()

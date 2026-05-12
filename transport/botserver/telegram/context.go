@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"github.com/Tsukikage7/servex/v2/transport/botserver"
 )
@@ -65,7 +65,7 @@ func (c *tgContext) Args() []string {
 func (c *tgContext) State() string {
 	val, err := c.store.Get(c.chatID)
 	if err != nil {
-		log.Printf("[Telegram] 读取状态失败 chat=%s error=%v", c.chatID, err)
+		log.Printf("component=Telegram 读取状态失败 chat=%s error=%v", c.chatID, err)
 		return ""
 	}
 	return val
@@ -74,7 +74,7 @@ func (c *tgContext) State() string {
 // SetState 设置当前 chat 的对话状态。StateStore 错误仅记录日志。
 func (c *tgContext) SetState(state string) {
 	if err := c.store.Set(c.chatID, state); err != nil {
-		log.Printf("[Telegram] 设置状态失败 chat=%s error=%v", c.chatID, err)
+		log.Printf("component=Telegram 设置状态失败 chat=%s error=%v", c.chatID, err)
 	}
 }
 

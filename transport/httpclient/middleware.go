@@ -46,7 +46,7 @@ func LoggingMiddleware(log logger.Logger) Middleware {
 					logger.String("url", req.URL.String()),
 					logger.Duration("elapsed", elapsed),
 					logger.Err(err),
-				).Error("[HTTP] 请求失败")
+				).Error("请求失败")
 				return nil, err
 			}
 
@@ -55,7 +55,7 @@ func LoggingMiddleware(log logger.Logger) Middleware {
 				logger.String("url", req.URL.String()),
 				logger.Int("status", resp.StatusCode),
 				logger.Duration("elapsed", elapsed),
-			).Debug("[HTTP] 请求完成")
+			).Debug("请求完成")
 
 			return resp, nil
 		})

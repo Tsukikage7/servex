@@ -82,7 +82,7 @@ func (c *discordContext) Args() []string {
 func (c *discordContext) State() string {
 	val, err := c.store.Get(c.message.ChannelID)
 	if err != nil {
-		log.Printf("[Discord] 读取状态失败 channel=%s error=%v", c.message.ChannelID, err)
+		log.Printf("component=Discord 读取状态失败 channel=%s error=%v", c.message.ChannelID, err)
 		return ""
 	}
 	return val
@@ -91,7 +91,7 @@ func (c *discordContext) State() string {
 // SetState 设置当前频道（ChatID）的对话状态。
 func (c *discordContext) SetState(state string) {
 	if err := c.store.Set(c.message.ChannelID, state); err != nil {
-		log.Printf("[Discord] 设置状态失败 channel=%s error=%v", c.message.ChannelID, err)
+		log.Printf("component=Discord 设置状态失败 channel=%s error=%v", c.message.ChannelID, err)
 	}
 }
 

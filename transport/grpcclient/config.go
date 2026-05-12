@@ -5,8 +5,9 @@ import (
 	"time"
 
 	"github.com/Tsukikage7/servex/v2/middleware/circuitbreaker"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 	"github.com/Tsukikage7/servex/v2/observability/metrics"
-	"github.com/Tsukikage7/servex/v2/transport/tls"
+	tlsx "github.com/Tsukikage7/servex/v2/transport/tls"
 )
 
 // Config gRPC 客户端配置.
@@ -100,6 +101,10 @@ func newDirect(addr string, opts ...Option) (*Client, error) {
 	for _, opt := range opts {
 		opt(o)
 	}
+	if o.logger == nil {
+		o.logger = logger.Nop()
+	}
+	o.logger = logger.WithComponent(o.logger, "gRPC")
 
 	dialOpts := buildDialOptions(o)
 
@@ -108,9 +113,7 @@ func newDirect(addr string, opts ...Option) (*Client, error) {
 		return nil, ErrConnectionFailed.WithCause(err)
 	}
 
-	if o.logger != nil {
-		o.logger.Info(fmt.Sprintf("[gRPC] 客户端直连初始化成功: %s", addr))
-	}
+	o.logger.With(logger.String("addr", addr)).Info("客户端直连初始化成功")
 
 	return &Client{
 		conn: conn,

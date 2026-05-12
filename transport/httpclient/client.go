@@ -53,6 +53,7 @@ func New(opts ...Option) (*Client, error) {
 	if o.logger == nil {
 		o.logger = logger.Nop()
 	}
+	o.logger = logger.WithComponent(o.logger, "HTTP")
 
 	// 初始服务发现
 	addrs, err := o.discovery.Discover(context.Background(), o.serviceName)
@@ -110,7 +111,7 @@ func New(opts ...Option) (*Client, error) {
 		logger.String("name", o.name),
 		logger.String("service", o.serviceName),
 		logger.String("baseURL", baseURL),
-	).Info("[HTTP] 客户端初始化成功")
+	).Info("客户端初始化成功")
 
 	return &Client{
 		httpClient:   httpClient,

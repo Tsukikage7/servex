@@ -41,6 +41,7 @@ func New(opts ...Option) (*Client, error) {
 	if o.logger == nil {
 		o.logger = logger.Nop()
 	}
+	o.logger = logger.WithComponent(o.logger, "gRPC")
 
 	// 服务发现
 	addrs, err := o.discovery.Discover(context.Background(), o.serviceName)
@@ -64,7 +65,7 @@ func New(opts ...Option) (*Client, error) {
 		logger.String("name", o.name),
 		logger.String("service", o.serviceName),
 		logger.String("target", target),
-	).Info("[gRPC] 客户端初始化成功")
+	).Info("客户端初始化成功")
 
 	return &Client{
 		conn: conn,
@@ -191,12 +192,12 @@ func loggingUnaryInterceptor(log logger.Logger) grpc.UnaryClientInterceptor {
 				logger.String("method", method),
 				logger.Duration("elapsed", elapsed),
 				logger.Err(err),
-			).Error("[gRPC] 调用失败")
+			).Error("调用失败")
 		} else {
 			log.With(
 				logger.String("method", method),
 				logger.Duration("elapsed", elapsed),
-			).Debug("[gRPC] 调用完成")
+			).Debug("调用完成")
 		}
 		return err
 	}
@@ -272,7 +273,7 @@ func (c *Client) Close() error {
 			c.opts.logger.With(
 				logger.String("name", c.opts.name),
 				logger.String("service", c.opts.serviceName),
-			).Info("[gRPC] 关闭连接")
+			).Info("关闭连接")
 		}
 		return c.conn.Close()
 	}

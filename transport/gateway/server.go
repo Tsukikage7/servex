@@ -67,6 +67,7 @@ func New(opts ...Option) *Server {
 	if o.logger == nil {
 		o.logger = logger.Nop()
 	}
+	o.logger = logger.WithComponent(o.logger, "Gateway")
 
 	// 按照优先级顺序应用 gRPC 拦截器（由外到内）:
 	// 1. Recovery
@@ -136,7 +137,7 @@ func (s *Server) Stop(ctx context.Context) error {
 	var errs []error
 
 	if s.httpServer != nil {
-		s.opts.logger.With(logger.String("name", s.opts.name)).Info("[Gateway] HTTP 服务器正在停止")
+		s.opts.logger.With(logger.String("name", s.opts.name)).Info("HTTP 服务器正在停止")
 		if err := s.httpServer.Shutdown(ctx); err != nil {
 			errs = append(errs, err)
 		}
@@ -147,7 +148,7 @@ func (s *Server) Stop(ctx context.Context) error {
 	}
 
 	if s.grpcServer != nil {
-		s.opts.logger.With(logger.String("name", s.opts.name)).Info("[Gateway] gRPC 服务器正在停止")
+		s.opts.logger.With(logger.String("name", s.opts.name)).Info("gRPC 服务器正在停止")
 		done := make(chan struct{})
 		go func() {
 			s.grpcServer.GracefulStop()
@@ -262,14 +263,14 @@ func (s *Server) startGRPC() error {
 	s.opts.logger.With(
 		logger.String("name", s.opts.name),
 		logger.String("addr", s.opts.grpcAddr),
-	).Info("[Gateway] gRPC 服务启动")
+	).Info("gRPC 服务启动")
 
 	go func() {
 		if err := s.grpcServer.Serve(lis); err != nil {
 			s.opts.logger.With(
 				logger.String("name", s.opts.name),
 				logger.Err(err),
-			).Error("[Gateway] gRPC 服务运行错误")
+			).Error("gRPC 服务运行错误")
 		}
 	}()
 	return nil
@@ -288,13 +289,13 @@ func (s *Server) discoverAuthPolicies() {
 		logger.String("name", s.opts.name),
 		logger.Int("policies", len(s.opts.discoveredPolicies)),
 		logger.Int("public", countPublicPolicies(s.opts.discoveredPolicies)),
-	).Info("[Gateway] 自动发现认证策略")
+	).Info("自动发现认证策略")
 
 	if len(result.PublicMethods) > 0 {
 		for _, method := range result.PublicMethods {
 			s.opts.logger.With(
 				logger.String("method", method),
-			).Debug("[Gateway] 发现公开方法")
+			).Debug("发现公开方法")
 		}
 	}
 }
@@ -440,7 +441,7 @@ func (s *Server) startHTTP(ctx context.Context) error {
 	s.opts.logger.With(
 		logger.String("name", s.opts.name),
 		logger.String("addr", s.opts.httpAddr),
-	).Info("[Gateway] HTTP 服务启动")
+	).Info("HTTP 服务启动")
 
 	errCh := make(chan error, 1)
 	go func() {

@@ -51,7 +51,7 @@ func WithConfig(cfg *Config) Option {
 // WithLogger 设置日志记录器.
 func WithLogger(log logger.Logger) Option {
 	return func(s *Server) {
-		s.log = log
+		s.log = logger.WithComponent(log, "GraphQL")
 	}
 }
 
@@ -151,8 +151,7 @@ func (s *Server) Handler() http.Handler {
 		}
 
 		if err := encoder.Encode(result); err != nil && s.log != nil {
-			s.log.With(logger.Field{Key: "error", Value: err.Error()}).
-				Error("graphql: 编码响应失败")
+			s.log.With(logger.Err(err)).Error("编码响应失败")
 		}
 	})
 }
@@ -168,7 +167,7 @@ func (s *Server) PlaygroundHandler() http.Handler {
 // writeError 向客户端写入错误响应.
 func (s *Server) writeError(w http.ResponseWriter, err error, status int) {
 	if s.log != nil {
-		s.log.Error("[GraphQL] 请求处理失败", logger.Err(err))
+		s.log.Error("请求处理失败", logger.Err(err))
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

@@ -45,6 +45,7 @@ func New(handler http.Handler, opts ...Option) *Server {
 	if o.logger == nil {
 		o.logger = logger.Nop()
 	}
+	o.logger = logger.WithComponent(o.logger, "HTTP")
 
 	// 创建健康检查
 	healthOpts := []health.Option{health.WithTimeout(o.healthTimeout)}
@@ -70,7 +71,7 @@ func New(handler http.Handler, opts ...Option) *Server {
 
 	if o.profiling != "" {
 		if o.profilingAuth == nil {
-			o.logger.Warn("[HTTP] 性能分析端点已启用但未配置认证函数")
+			o.logger.Warn("性能分析端点已启用但未配置认证函数")
 		}
 		wrapped = wrapProfiling(wrapped, o.profiling, o.profilingAuth)
 	}
@@ -148,7 +149,7 @@ func (s *Server) Start(ctx context.Context) error {
 		s.opts.logger.With(
 			logger.String("name", s.opts.name),
 			logger.String("addr", s.opts.addr),
-		).Info("[HTTP] 服务器启动")
+		).Info("服务器启动")
 
 		errCh := make(chan error, 1)
 		if s.opts.tlsConfig != nil {
@@ -177,7 +178,7 @@ func (s *Server) Stop(ctx context.Context) error {
 	if s.server == nil {
 		return nil
 	}
-	s.opts.logger.With(logger.String("name", s.opts.name)).Info("[HTTP] 服务器停止")
+	s.opts.logger.With(logger.String("name", s.opts.name)).Info("服务器停止")
 	return s.server.Shutdown(ctx)
 }
 
