@@ -8,18 +8,16 @@ import (
 	"net/http"
 	"time"
 
-	"google.golang.org/grpc/codes"
-
 	"github.com/Tsukikage7/servex/v2/errors"
 	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // 用户客户端适配层错误.
 var (
-	ErrCreateRequest  = errors.New(60001, "user_client.create_request", "创建请求失败").WithHTTP(http.StatusInternalServerError).WithGRPC(codes.Internal)
-	ErrRequestUser    = errors.New(60002, "user_client.request_failed", "请求用户服务失败").WithHTTP(http.StatusBadGateway).WithGRPC(codes.Unavailable)
-	ErrUnexpectedCode = errors.New(60003, "user_client.unexpected_status", "用户服务返回异常状态码").WithHTTP(http.StatusBadGateway).WithGRPC(codes.Internal)
-	ErrDecodeResponse = errors.New(60004, "user_client.decode_response", "解析用户服务响应失败").WithHTTP(http.StatusInternalServerError).WithGRPC(codes.Internal)
+	ErrCreateRequest  = errors.NewWithKind(60001, "user_client.create_request", "创建请求失败", errors.KindInternal)
+	ErrRequestUser    = errors.NewWithKind(60002, "user_client.request_failed", "请求用户服务失败", errors.KindUnavailable)
+	ErrUnexpectedCode = errors.NewWithKind(60003, "user_client.unexpected_status", "用户服务返回异常状态码", errors.KindUnavailable)
+	ErrDecodeResponse = errors.NewWithKind(60004, "user_client.decode_response", "解析用户服务响应失败", errors.KindInternal)
 )
 
 // UserClient 用户服务 HTTP 客户端，实现 order.UserProvider 接口.

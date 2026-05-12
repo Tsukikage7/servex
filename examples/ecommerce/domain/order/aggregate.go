@@ -2,10 +2,7 @@
 package order
 
 import (
-	"net/http"
 	"time"
-
-	"google.golang.org/grpc/codes"
 
 	"github.com/Tsukikage7/servex/v2/domain"
 	"github.com/Tsukikage7/servex/v2/errors"
@@ -47,11 +44,11 @@ func (s OrderStatus) String() string {
 
 // 订单领域错误.
 var (
-	ErrEmptyItems       = errors.New(40001, "order.empty_items", "订单项不能为空").WithHTTP(http.StatusBadRequest).WithGRPC(codes.InvalidArgument)
-	ErrAlreadyCancelled = errors.New(40002, "order.already_cancelled", "订单已取消").WithHTTP(http.StatusConflict).WithGRPC(codes.FailedPrecondition)
-	ErrAlreadyCompleted = errors.New(40003, "order.already_completed", "订单已完成").WithHTTP(http.StatusConflict).WithGRPC(codes.FailedPrecondition)
-	ErrNotShippable     = errors.New(40004, "order.not_shippable", "当前状态不可发货").WithHTTP(http.StatusConflict).WithGRPC(codes.FailedPrecondition)
-	ErrNotCompletable   = errors.New(40005, "order.not_completable", "当前状态不可完成").WithHTTP(http.StatusConflict).WithGRPC(codes.FailedPrecondition)
+	ErrEmptyItems       = errors.NewWithKind(40001, "order.empty_items", "订单项不能为空", errors.KindInvalidArgument)
+	ErrAlreadyCancelled = errors.NewWithKind(40002, "order.already_cancelled", "订单已取消", errors.KindFailedPrecondition)
+	ErrAlreadyCompleted = errors.NewWithKind(40003, "order.already_completed", "订单已完成", errors.KindFailedPrecondition)
+	ErrNotShippable     = errors.NewWithKind(40004, "order.not_shippable", "当前状态不可发货", errors.KindFailedPrecondition)
+	ErrNotCompletable   = errors.NewWithKind(40005, "order.not_completable", "当前状态不可完成", errors.KindFailedPrecondition)
 )
 
 // Order 订单聚合根.

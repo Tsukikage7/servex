@@ -40,14 +40,14 @@ func main() {
 		DSN:    "root:password@tcp(127.0.0.1:3306)/ecommerce?charset=utf8mb4&parseTime=True&loc=Local",
 	}, l)
 	if err != nil {
-		log.Fatalf("初始化数据库失败: %v", err)
+		log.Fatalf("[Ecommerce] 初始化数据库失败: %v", err)
 	}
 	defer db.Close()
 
 	// 自动迁移
 	gormDB := db.DB().(*gorm.DB)
 	if err := gormDB.AutoMigrate(&persistence.OrderPO{}); err != nil {
-		log.Fatalf("数据库迁移失败: %v", err)
+		log.Fatalf("[Ecommerce] 数据库迁移失败: %v", err)
 	}
 
 	// 初始化事件总线

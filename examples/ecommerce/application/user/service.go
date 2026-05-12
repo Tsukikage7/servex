@@ -3,13 +3,11 @@ package user
 
 import (
 	"context"
-	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
-	"google.golang.org/grpc/codes"
 
 	servexJWT "github.com/Tsukikage7/servex/v2/auth/jwt"
 	"github.com/Tsukikage7/servex/v2/domain"
@@ -20,12 +18,12 @@ import (
 
 // 用户应用层错误.
 var (
-	ErrInvalidCredentials = errors.New(50101, "user.invalid_credentials", "用户名或密码错误").WithHTTP(http.StatusUnauthorized).WithGRPC(codes.Unauthenticated)
-	ErrHashPassword       = errors.New(50102, "user.hash_password", "生成密码哈希失败").WithHTTP(http.StatusInternalServerError).WithGRPC(codes.Internal)
-	ErrCreateUser         = errors.New(50103, "user.create_failed", "创建用户失败").WithHTTP(http.StatusInternalServerError).WithGRPC(codes.Internal)
-	ErrDispatchEvent      = errors.New(50104, "user.dispatch_event", "分发领域事件失败").WithHTTP(http.StatusInternalServerError).WithGRPC(codes.Internal)
-	ErrUpdateUser         = errors.New(50105, "user.update_failed", "更新用户失败").WithHTTP(http.StatusInternalServerError).WithGRPC(codes.Internal)
-	ErrGenerateToken      = errors.New(50106, "user.generate_token", "生成令牌失败").WithHTTP(http.StatusInternalServerError).WithGRPC(codes.Internal)
+	ErrInvalidCredentials = errors.NewWithKind(50101, "user.invalid_credentials", "用户名或密码错误", errors.KindUnauthenticated)
+	ErrHashPassword       = errors.NewWithKind(50102, "user.hash_password", "生成密码哈希失败", errors.KindInternal)
+	ErrCreateUser         = errors.NewWithKind(50103, "user.create_failed", "创建用户失败", errors.KindInternal)
+	ErrDispatchEvent      = errors.NewWithKind(50104, "user.dispatch_event", "分发领域事件失败", errors.KindInternal)
+	ErrUpdateUser         = errors.NewWithKind(50105, "user.update_failed", "更新用户失败", errors.KindInternal)
+	ErrGenerateToken      = errors.NewWithKind(50106, "user.generate_token", "生成令牌失败", errors.KindInternal)
 )
 
 // Service 用户应用服务.

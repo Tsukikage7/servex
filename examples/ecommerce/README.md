@@ -31,7 +31,7 @@
 | HTTP 服务器 | `servex/transport/httpserver` |
 | gRPC 服务器 | `servex/transport/grpcserver` |
 | 应用生命周期 | `servex/app` |
-| 日志 | `servex/observability/logger` (zap) |
+| 日志 | `servex/v2/observability/logger` (zap) |
 | 数据库 | `servex/storage/rdbms` (GORM + MySQL) |
 | 缓存 | `servex/storage/redis` |
 | 认证 | `servex/auth/jwt` |

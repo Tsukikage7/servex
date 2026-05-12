@@ -3,10 +3,7 @@ package order
 
 import (
 	"context"
-	"net/http"
 	"time"
-
-	"google.golang.org/grpc/codes"
 
 	"github.com/Tsukikage7/servex/v2/domain"
 	"github.com/Tsukikage7/servex/v2/errors"
@@ -16,11 +13,11 @@ import (
 
 // 订单应用层错误.
 var (
-	ErrUserNotFound     = errors.New(50001, "order.user_not_found", "关联用户不存在").WithHTTP(http.StatusNotFound).WithGRPC(codes.NotFound)
-	ErrVerifyUser       = errors.New(50002, "order.verify_user", "校验用户失败").WithHTTP(http.StatusInternalServerError).WithGRPC(codes.Internal)
-	ErrCreateOrder      = errors.New(50003, "order.create_failed", "创建订单失败").WithHTTP(http.StatusInternalServerError).WithGRPC(codes.Internal)
-	ErrDispatchEvent    = errors.New(50004, "order.dispatch_event", "分发领域事件失败").WithHTTP(http.StatusInternalServerError).WithGRPC(codes.Internal)
-	ErrUpdateOrder      = errors.New(50005, "order.update_failed", "更新订单失败").WithHTTP(http.StatusInternalServerError).WithGRPC(codes.Internal)
+	ErrUserNotFound  = errors.NewWithKind(50001, "order.user_not_found", "关联用户不存在", errors.KindNotFound)
+	ErrVerifyUser    = errors.NewWithKind(50002, "order.verify_user", "校验用户失败", errors.KindInternal)
+	ErrCreateOrder   = errors.NewWithKind(50003, "order.create_failed", "创建订单失败", errors.KindInternal)
+	ErrDispatchEvent = errors.NewWithKind(50004, "order.dispatch_event", "分发领域事件失败", errors.KindInternal)
+	ErrUpdateOrder   = errors.NewWithKind(50005, "order.update_failed", "更新订单失败", errors.KindInternal)
 )
 
 // Service 订单应用服务.
