@@ -115,7 +115,7 @@ servex completion bash/zsh/fish
 |------|--------|
 | --infra | mysql, postgres, sqlite, redis, mongo, es, clickhouse, s3, minio, neo4j, kafka, rabbitmq |
 | --observe | metrics, tracing, profiling |
-| --auth | jwt, rbac |
+| --auth | jwt |
 | --discovery | consul, etcd, nacos |
 | --other | scheduler, i18n, tenant |
 
@@ -215,7 +215,8 @@ myproject/
 | --- | --- |
 | [auth/jwt](./auth/jwt/) | JWT 认证（HS256/RS256/ES256/EdDSA/签发/验证/白名单） |
 | [auth/apikey](./auth/apikey/) | API Key 认证 |
-| [auth/rbac](./auth/rbac/) | 基于角色的访问控制（RBAC） |
+| [auth/rbac](./auth/rbac/) | 可选 RBAC 授权适配 |
+| [auth/casbin](./auth/casbin/) | 可选 Casbin 授权适配 |
 
 ### 可观测性 (observability/)
 
@@ -401,7 +402,7 @@ myproject/
 
 ### v2.1.1
 
-- **错误体系统一** — `transport/response` 与 `errors` 包互通，`Code.ToError()` 一键转换，`BusinessError` 标记 Deprecated 并向后兼容
+- **错误体系统一** — `transport/response` 与 `errors` 包互通，`Code.ToError()` 一键转换为统一错误类型
 - **日志分级分目录** — `observability/logger` 支持 `LevelSeparate`，按天/小时轮转，目录格式 `prefix/YYYYMMDD/prefix.log` 或 `prefix/YYYYMMDDHH/prefix.log`
 - **日志时区配置** — 新增 `Timezone` 配置项（IANA 时区名），默认 UTC，跨时区部署行为一致
 - **Discord Bot 修复** — `Start()` ctx 已取消时立即返回，修复 flaky test

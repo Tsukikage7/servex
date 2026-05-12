@@ -90,7 +90,7 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 |------|--------|
 | --infra | mysql, postgres, sqlite, redis, mongo, es, clickhouse, s3, minio, neo4j, kafka, rabbitmq |
 | --observe | metrics, tracing, profiling |
-| --auth | jwt, rbac |
+| --auth | jwt |
 | --discovery | consul, etcd, nacos |
 | --other | scheduler, i18n, tenant |
 
@@ -108,10 +108,10 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 | hertzserver | `transport/hertzserver` | Hertz 适配器 | `New` |
 | websocket | `transport/websocket` | WebSocket 服务端 | `NewServer`, `Handler` |
 | sse | `transport/sse` | Server-Sent Events 服务端 | `NewServer`, `Handler` |
-| gateway | `transport/gateway` | gRPC + HTTP 双协议服务器 | `New`, `Register`, `Registrar`, `WithAuth`, `WithPublicMethods`, `WithVersion` |
+| gateway | `transport/gateway` | gRPC + HTTP 双协议服务器 | `New`, `Register`, `Registrar`, `WithAuth`, `WithVersion` |
 | grpcclient | `transport/grpcclient` | gRPC 客户端 | `New`, `Conn`, `WithServiceName`, `WithDiscovery` |
 | health | `transport/health` | 健康检查 | `New`, `Checker`, `NewDBChecker`, `NewRedisChecker`, `Middleware`, `WithVersion` |
-| response | `transport/response` | 统一响应格式 | `OK`, `Fail`, `Response`, `Code`, `BusinessError`, `ExtractCode`, `GatewayErrorHandler`, `GatewayServeMuxOption` |
+| response | `transport/response` | 统一响应格式 | `OK`, `Fail`, `Response`, `Code`, `Code.ToError`, `ExtractCode`, `GatewayErrorHandler`, `GatewayServeMuxOption` |
 | graphql | `transport/graphql` | GraphQL 服务器适配 | `New`, `Handler`, `PlaygroundHandler`, `LoggingMiddleware`, `TracingMiddleware`, `RecoveryMiddleware`, `WrapResolve` |
 | tls | `transport/tls` | TLS 配置工具（证书/mTLS/版本控制） | `NewServerTLSConfig`, `NewClientTLSConfig`, `NewTLSConfig` |
 | grpcx | `transport/grpcx` | gRPC 工具包（流包装/Metadata/错误/健康检查） | `WrapServerStream`, `GetMetadataValue`, `AppendOutgoingMetadata`, `CopyIncomingToOutgoing`, `NotFound`, `IsCode`, `HealthCheck`, `WaitForReady` |
@@ -152,7 +152,8 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 |------|--------|------|--------------|
 | auth/jwt | `auth/jwt` | JWT 签发与验证（HS256/RS256/ES256/EdDSA） | `NewJWT`, `NewAuthenticator`, `WithSecretKey`, `WithRSAKeys`, `WithECDSAKeys`, `WithEdDSAKeys`, `LoadRSAPrivateKey`, `Generate`, `Validate` |
 | auth/apikey | `auth/apikey` | API Key 验证 | `New`, `StaticValidator`, `CacheValidator` |
-| auth/rbac | `auth/rbac` | 基于角色的访问控制（RBAC） | `NewManager`, `NewMemoryStore`, `NewGORMStore`, `AssignRole`, `HasPermission`, `HTTPMiddleware` |
+| auth/rbac | `auth/rbac` | 可选 RBAC 授权适配 | `NewManager`, `NewMemoryStore`, `NewGORMStore`, `AssignRole`, `HasPermission`, `HTTPMiddleware` |
+| auth/casbin | `auth/casbin` | 可选 Casbin 授权适配 | `NewAuthorizer`, `WithRequestBuilder` |
 
 ### 存储 → 详见 `storage` skill
 

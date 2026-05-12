@@ -256,12 +256,7 @@ srv := gateway.New(
     gateway.WithTrace("order-service"),         // 链路追踪（双端）
     gateway.WithResponse(),                     // 统一响应格式
     gateway.WithReflection(true),               // gRPC 反射
-    gateway.WithAuth(authenticator),            // 认证（双端）
-    gateway.WithPublicMethods(
-        "/api.order.v1.OrderService/List",      // 精确匹配
-        "/api.auth.v1.AuthService/*",           // 服务级通配
-    ),
-    gateway.WithAutoDiscovery(),                // 从 proto option 自动发现公开方法
+    gateway.WithAuth(authenticator, auth.WithAuthorizer(authorizer)), // 认证与 proto 权限策略（双端）
     gateway.WithReadinessChecker(dbChecker),    // 就绪检查
 )
 
@@ -373,10 +368,10 @@ srv := gateway.New(
 `GRPCStatus` 将完整 Code 信息以 JSON 格式嵌入 gRPC status message，`FromGRPCStatus`/`GatewayErrorHandler` 优先从中恢复：
 
 ```json
-{"num":30002,"http":400,"key":"error.missing_param","msg":"缺少必需参数"}
+{"code":30002,"key":"error.missing_param","message":"缺少必需参数","http":400}
 ```
 
-非 servex 来源的 gRPC 错误（message 不是 JSON）自动回退到 gRPC code 粗粒度映射，向后兼容。
+非 servex 来源的 gRPC 错误按原生 gRPC code 粗粒度映射。
 
 **拦截器执行顺序（gRPC 端）：** Recovery → Tracing → RequestID → Logging → Metrics → RateLimit → ClientIP → Tenant → Auth
 
@@ -522,9 +517,9 @@ resp := response.FailWithError[any](err)             // 从 error 提取错误�
 resp := response.Paged(paginationResult)
 
 // 业务错误
-err := response.NewError(response.CodeNotFound)
-err := response.NewErrorWithMessage(response.CodeInvalidParam, "用户名已存在")
-err := response.Wrap(response.CodeDatabaseError, dbErr)
+err := response.CodeNotFound.ToError()
+err := response.CodeInvalidParam.ToError().WithMessage("用户名已存在")
+err := response.CodeDatabaseError.ToError().WithCause(dbErr)
 
 // 提取错误信息
 code := response.ExtractCode(err)      // 提取错误码
@@ -543,9 +538,9 @@ msg := response.ExtractMessageUnsafe(err) // 完整消息（仅用于日志）
 
 **关键类型：**
 - `response.Response[T]` / `response.PagedResponse[T]` — 统一响应体（实现 `Envelope` 接口）
-- `response.Code` — 错误码（含 `Num`、`Message`、`HTTPStatus`、`GRPCCode`、`Key`）
-- `response.BusinessError` — 业务错误（含 `Code`、`Message`、`Cause`）
-- `response.NewCode(num, message, httpStatus, grpcCode)` — 自定义错误码
+- `response.Code` — 错误码（含 `Num`、`Message`、`Key`、`Kind`）
+- `response.Code.ToError()` — 转换为统一错误类型
+- `response.NewCodeWithKind(num, key, message, kind)` — 推荐的自定义错误码入口，HTTP/gRPC 由 Kind 推导
 
 ## transport/graphql — GraphQL 服务器适配
 
@@ -658,8 +653,8 @@ ok := skipper("/api/public/docs")       // true
 ok = skipper("/api/private/users")      // false
 ```
 
-- `transport.BuildMethodSkipper(methods) MethodSkipper` — 返回 `func(method string) bool`，用于中间件跳过指定路径/方法
-- 内部被 `grpcserver.WithPublicMethods`、`gateway.WithPublicMethods` 等选项使用
+- `transport.BuildMethodSkipper(methods) MethodSkipper` — 返回 `func(method string) bool`，用于自定义中间件跳过指定路径/方法
+- Gateway 的公开接口由 proto option 声明，不再通过手动方法白名单配置
 
 ## transport/tls — TLS 配置工具（tlsx）
 

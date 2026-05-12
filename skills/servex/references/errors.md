@@ -7,17 +7,26 @@ import "github.com/Tsukikage7/servex/v2/errors"
 
 // 定义错误常量（通常在包级别）
 var (
-    ErrNotFound    = errors.New(404001, "not_found", "资源不存在").
-                        WithHTTP(http.StatusNotFound).
-                        WithGRPC(codes.NotFound)
+    ErrNotFound    = errors.NewWithKind(
+                        404001,
+                        "not_found",
+                        "资源不存在",
+                        errors.KindNotFound,
+                    )
 
-    ErrPermission  = errors.New(403001, "permission_denied", "权限不足").
-                        WithHTTP(http.StatusForbidden).
-                        WithGRPC(codes.PermissionDenied)
+    ErrPermission  = errors.NewWithKind(
+                        403001,
+                        "permission_denied",
+                        "权限不足",
+                        errors.KindPermissionDenied,
+                    )
 
-    ErrInternal    = errors.New(500001, "internal", "服务器内部错误").
-                        WithHTTP(http.StatusInternalServerError).
-                        WithGRPC(codes.Internal)
+    ErrInternal    = errors.NewWithKind(
+                        500001,
+                        "internal",
+                        "服务器内部错误",
+                        errors.KindInternal,
+                    )
 )
 ```
 
@@ -25,8 +34,7 @@ var (
 - `Code` — 业务错误码（int）
 - `Key` — 错误标识（string，如 "not_found"）
 - `Message` — 面向用户的错误消息
-- `HTTP` — 对应的 HTTP 状态码
-- `GRPC` — 对应的 gRPC Code
+- `Kind` — 业务错误语义，HTTP 状态码与 gRPC Code 由它统一推导
 - `Metadata` — 附加元数据
 
 ## 错误传播 -- 包装与提取
@@ -67,7 +75,7 @@ errors.WriteError(w, ErrNotFound)
 
 // 从任意 error 写入响应
 errors.WriteErrorFrom(w, err)
-// 若 err 不是 *Error，返回 500 + error.Error() 作为 message
+// 若 err 不是 *Error，返回 500 + 通用内部错误 message，并记录原始错误
 ```
 
 **HTTP JSON 响应格式：**
@@ -82,17 +90,18 @@ errors.WriteErrorFrom(w, err)
 
 ## gRPC 错误映射
 
-`errors` 包（`errors.ToGRPCStatus`）和 `response` 包（`response.GRPCStatus`）是两套独立的 gRPC 错误体系，
-**不要混用**（两者 message 格式不同，混用会导致 GatewayErrorHandler 无法正确解析）。
+`response` 包统一委托 `errors.ToGRPCStatus` 输出同一种 JSON 格式。
+业务 API 推荐从 `response.Code.ToError()` 创建错误，再由 response/gateway/http server 适配层自动处理。
+更底层的包可以直接使用 `errors.NewWithKind(...)`，由 `Kind` 统一推导 HTTP/gRPC 映射。
 
 **`response` 包**（推荐用于 response 体系）：
 
 ```go
 import "github.com/Tsukikage7/servex/v2/transport/response"
 
-// error → gRPC Status（message 嵌入 JSON 保留细粒度业务 Code）
+// error → gRPC Status（message 嵌入统一 JSON，保留细粒度业务 Code）
 st := response.GRPCStatus(err)
-// st.Message() = `{"num":30002,"http":400,"key":"error.missing_param","msg":"缺少必需参数"}`
+// st.Message() = `{"code":30002,"key":"error.missing_param","message":"缺少必需参数","kind":"invalid_argument"}`
 
 // gRPC Status → Code（优先读取 JSON，回退到 gRPC code 映射）
 code := response.FromGRPCStatus(st)
@@ -122,15 +131,15 @@ grpcserver.New(
 ```
 
 **gRPC 映射流程（response 体系）：**
-1. 业务层返回 `*response.BusinessError`
+1. 业务层返回 `response.Code.ToError()` 生成的统一错误
 2. 拦截器调用 `GRPCStatus(err)` 转为 gRPC Status，message 嵌入 JSON
 3. gRPC-gateway `GatewayErrorHandler` 调用 `FromGRPCStatus` 还原完整 Code
-4. 若 JSON 解析失败（非 servex 来源），自动回退到 gRPC code 反向映射
+4. 若不是 servex 统一错误格式（非 servex 来源），按原生 gRPC code 映射
 
 ## 错误码段分配（v2.0.6+）
 
-从 v2.0.6 开始，servex 所有对外暴露的错误统一使用 `errors.New(code, key, msg)` 定义，
-每个错误都包含 HTTP 状态码和 gRPC Code 的映射。错误码段分配如下：
+servex 所有对外暴露的错误统一使用 `errors.NewWithKind(code, key, msg, kind)` 定义，
+HTTP 状态码和 gRPC Code 由 `Kind` 统一推导。错误码段分配如下：
 
 | 码段 | 范围 | 领域 | 示例 |
 |------|------|------|------|
@@ -154,13 +163,9 @@ import "github.com/Tsukikage7/servex/v2/errors"
 
 // errors/codes.go — 错误码定义
 var (
-    ErrUserNotFound = errors.New(100404, "user_not_found", "用户不存在").
-        WithHTTP(http.StatusNotFound).
-        WithGRPC(codes.NotFound)
+    ErrUserNotFound = errors.NewWithKind(100404, "user_not_found", "用户不存在", errors.KindNotFound)
 
-    ErrUserExists = errors.New(100409, "user_exists", "用户已存在").
-        WithHTTP(http.StatusConflict).
-        WithGRPC(codes.AlreadyExists)
+    ErrUserExists = errors.NewWithKind(100409, "user_exists", "用户已存在", errors.KindConflict)
 )
 
 // service 层

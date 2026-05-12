@@ -175,7 +175,7 @@ cache 包**强制要求**提供 `logger.Logger` 实例，不提供会返回 `Err
 ```go
 import (
     "github.com/Tsukikage7/servex/cache"
-    "github.com/Tsukikage7/servex/observability/logger"
+    "github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // 创建 logger（必需）

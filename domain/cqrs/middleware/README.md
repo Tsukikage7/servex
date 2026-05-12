@@ -32,7 +32,7 @@ import (
 
     "github.com/Tsukikage7/servex/domain/cqrs"
     "github.com/Tsukikage7/servex/domain/cqrs/middleware"
-    "github.com/Tsukikage7/servex/observability/logger"
+    "github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 type CreateOrderCmd struct{ UserID string }

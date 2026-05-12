@@ -148,7 +148,7 @@ import (
     "time"
 
     "github.com/Tsukikage7/servex/database"
-    "github.com/Tsukikage7/servex/observability/logger"
+    "github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 type User struct {

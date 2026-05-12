@@ -71,9 +71,10 @@ package main
 
 import (
     "context"
-    "errors"
+    stderrors "errors"
     "time"
 
+    servexerr "github.com/Tsukikage7/servex/v2/errors"
     "github.com/Tsukikage7/servex/retry"
     "github.com/Tsukikage7/servex/transport"
 )
@@ -92,8 +93,8 @@ func main() {
         Backoff:     retry.ExponentialBackoff,
         Retryable: func(err error) bool {
             // 不重试业务错误
-            var bizErr *BusinessError
-            if errors.As(err, &bizErr) {
+            var bizErr *servexerr.Error
+            if stderrors.As(err, &bizErr) {
                 return false
             }
             return true

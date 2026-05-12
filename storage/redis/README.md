@@ -17,7 +17,7 @@
 ```go
 import (
     "github.com/Tsukikage7/servex/storage/redis"
-    "github.com/Tsukikage7/servex/observability/logger"
+    "github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 log, _ := logger.NewLogger()

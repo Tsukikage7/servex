@@ -11,7 +11,7 @@
 - `observability/logger`：新增 `Timezone` 配置项和 `WithLocation` 选项，默认 UTC，支持任意 IANA 时区
 
 ### Changed
-- `transport/response`：统一 response 与 errors 双错误体系，新增 `Code.ToError()`，`GRPCStatus`/拦截器委托 `errors` 包实现，`BusinessError` 标记 Deprecated 向后兼容
+- `transport/response`：统一 response 与 errors 双错误体系，新增 `Code.ToError()`，`GRPCStatus`/拦截器委托 `errors` 包实现
 
 ### Fixed
 - `transport/botserver/discord`：`Start()` 在 ctx 已取消时立即返回，修复 flaky test

@@ -35,7 +35,7 @@ import (
 
     "github.com/Tsukikage7/servex/messaging/pubsub"
     pubsubRedis "github.com/Tsukikage7/servex/messaging/pubsub/redis"
-    "github.com/Tsukikage7/servex/observability/logger"
+    "github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 func main() {

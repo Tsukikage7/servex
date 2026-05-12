@@ -35,7 +35,7 @@ import (
 
     "github.com/Tsukikage7/servex/messaging/pubsub"
     "github.com/Tsukikage7/servex/messaging/pubsub/rabbitmq"
-    "github.com/Tsukikage7/servex/observability/logger"
+    "github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 func main() {
