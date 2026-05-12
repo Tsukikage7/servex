@@ -868,8 +868,8 @@ func TestNewJWT_Panics(t *testing.T) {
 		})
 	})
 
-	t.Run("no logger", func(t *testing.T) {
-		assert.Panics(t, func() {
+	t.Run("no logger uses nop", func(t *testing.T) {
+		assert.NotPanics(t, func() {
 			NewJWT(WithSecretKey("a-key-that-is-at-least-32-bytes!"))
 		})
 	})

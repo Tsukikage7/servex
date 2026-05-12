@@ -1,6 +1,6 @@
 # auth/rbac
 
-基于角色的访问控制（Role-Based Access Control）实现，支持角色继承、权限通配符、超级管理员和可插拔存储后端。
+可选的基于角色访问控制（Role-Based Access Control）适配，支持角色继承、权限通配符、超级管理员和可插拔存储后端。
 
 ## 特性
 
@@ -16,9 +16,9 @@
 ## 快速开始
 
 ```go
-import "github.com/Tsukikage7/servex/auth/rbac"
+import "github.com/Tsukikage7/servex/v2/auth/rbac"
 
-// 内存存储（开发/测试）
+// 内存存储（测试）
 store := rbac.NewMemoryStore()
 
 // GORM 存储（生产）
@@ -54,8 +54,12 @@ ok, _ = mgr.HasPermission(ctx, "user-1", "users", "delete")   // false
 ## HTTP 中间件
 
 ```go
-// 需要先配置 JWT/APIKey 中间件将 auth.Principal 写入 context
-mux.Handle("/articles", rbac.HTTPMiddleware(mgr, "articles", "write")(articleHandler))
+authorizer := rbac.NewAuthorizer(mgr)
+handler = auth.HTTPMiddleware(
+    authenticator,
+    auth.WithAuthorizer(authorizer),
+    auth.WithTarget(auth.Target{Resource: "articles", Action: "write"}),
+)(handler)
 ```
 
 ## 缓存集成
@@ -77,7 +81,7 @@ mgr := rbac.NewManager(store,
 | `rbac.Permission` | 权限（Resource + Action） |
 | `rbac.Store` | 存储接口 |
 | `NewManager(store, opts...)` | 创建管理器 |
+| `NewAuthorizer(mgr)` | 转为 `auth.Authorizer` |
 | `NewMemoryStore()` | 内存存储 |
 | `NewGORMStore(db)` | GORM 存储 |
-| `HTTPMiddleware(mgr, resource, action)` | HTTP 鉴权中间件 |
 | `ParsePermission(s)` | 解析 `"resource:action"` 字符串 |

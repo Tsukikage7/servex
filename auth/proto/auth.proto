@@ -7,7 +7,7 @@ syntax = "proto3";
 
 package microservice.kit.auth;
 
-option go_package = "github.com/Tsukikage7/servex/auth/proto;authpb";
+option go_package = "github.com/Tsukikage7/servex/v2/auth/proto;authpb";
 
 import "google/protobuf/descriptor.proto";
 
@@ -15,7 +15,7 @@ import "google/protobuf/descriptor.proto";
 //
 // 使用示例:
 //
-//   import "github.com/Tsukikage7/servex/auth/proto/auth.proto";
+//   import "github.com/Tsukikage7/servex/v2/auth/proto/auth.proto";
 //
 //   service AuthService {
 //     rpc Login(LoginRequest) returns (LoginResponse) {

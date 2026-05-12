@@ -101,7 +101,7 @@ type JWT struct {
 
 // NewJWT 创建 JWT 服务.
 //
-// 必须设置 logger，且必须配置以下签名方式之一:
+// 必须配置以下签名方式之一:
 //   - HMAC: 使用 WithSecretKey（对称签名，默认 HS256）
 //   - RSA: 使用 WithRSAKeys 或 WithRSAKeyFiles（RS256）
 //   - ECDSA: 使用 WithECDSAKeys 或 WithECDSAKeyFiles（ES256）
@@ -116,8 +116,9 @@ func NewJWT(opts ...Option) *JWT {
 	}
 
 	if o.logger == nil {
-		panic("jwt: 必须设置 logger")
+		o.logger = logger.Nop()
 	}
+	o.logger = logger.WithComponent(o.logger, "Auth")
 
 	// 非对称签名模式：验证公钥是否存在
 	if o.signingMethod != nil {
@@ -159,7 +160,7 @@ func (j *JWT) Generate(ctx context.Context, claims Claims) (string, error) {
 		j.opts.logger.With(
 			logger.String("name", j.opts.name),
 			logger.Err(err),
-		).Error("[JWT] 生成令牌失败")
+		).Error("令牌生成失败")
 		return "", ErrTokenInvalid.WithCause(err)
 	}
 
@@ -169,7 +170,7 @@ func (j *JWT) Generate(ctx context.Context, claims Claims) (string, error) {
 	// 存储到缓存
 	if j.opts.store != nil {
 		if err := j.cacheToken(ctx, tokenString, claims); err != nil {
-			j.opts.logger.With(logger.Err(err)).Debug("[JWT] 令牌缓存存储失败")
+			j.opts.logger.With(logger.Err(err)).Debug("令牌缓存存储失败")
 		}
 	}
 
@@ -177,7 +178,7 @@ func (j *JWT) Generate(ctx context.Context, claims Claims) (string, error) {
 	j.opts.logger.With(
 		logger.String("name", j.opts.name),
 		logger.String("subject", subject),
-	).Debug("[JWT] 令牌生成成功")
+	).Debug("令牌生成成功")
 	return tokenString, nil
 }
 
@@ -240,7 +241,7 @@ func (j *JWT) ValidateWithClaims(ctx context.Context, tokenString string, claims
 		j.opts.logger.With(
 			logger.String("name", j.opts.name),
 			logger.Err(err),
-		).Warn("[JWT] 令牌验证失败")
+		).Warn("令牌验证失败")
 		return nil, ErrTokenInvalid.WithCause(err)
 	}
 
@@ -310,7 +311,7 @@ func (j *JWT) RefreshWithClaims(ctx context.Context, tokenString string, oldClai
 	j.opts.logger.With(
 		logger.String("name", j.opts.name),
 		logger.String("subject", newSubject),
-	).Debug("[JWT] 令牌刷新成功")
+	).Debug("令牌刷新成功")
 	return newToken, nil
 }
 
@@ -320,7 +321,7 @@ func (j *JWT) Revoke(ctx context.Context, subject string) error {
 		j.opts.logger.With(
 			logger.String("name", j.opts.name),
 			logger.String("subject", subject),
-		).Debug("[JWT] 未配置存储，无需撤销令牌")
+		).Debug("未配置存储，无需撤销令牌")
 		return nil
 	}
 
@@ -334,7 +335,7 @@ func (j *JWT) Revoke(ctx context.Context, subject string) error {
 				logger.String("name", j.opts.name),
 				logger.String("pattern", pattern),
 				logger.Err(err),
-			).Error("[JWT] 查询令牌 key 失败")
+			).Error("令牌索引查询失败")
 			return ErrTokenStoreQuery.WithCause(err)
 		}
 
@@ -344,7 +345,7 @@ func (j *JWT) Revoke(ctx context.Context, subject string) error {
 					logger.String("name", j.opts.name),
 					logger.String("subject", subject),
 					logger.Err(err),
-				).Error("[JWT] 删除令牌失败")
+				).Error("令牌删除失败")
 				return ErrTokenStoreDelete.WithCause(err)
 			}
 		}
@@ -356,7 +357,7 @@ func (j *JWT) Revoke(ctx context.Context, subject string) error {
 				logger.String("name", j.opts.name),
 				logger.String("subject", subject),
 				logger.Err(err),
-			).Error("[JWT] 设置撤销标记失败")
+			).Error("撤销标记设置失败")
 			return ErrTokenStoreRevoke.WithCause(err)
 		}
 	}
@@ -364,7 +365,7 @@ func (j *JWT) Revoke(ctx context.Context, subject string) error {
 	j.opts.logger.With(
 		logger.String("name", j.opts.name),
 		logger.String("subject", subject),
-	).Info("[JWT] 令牌已撤销")
+	).Info("令牌已撤销")
 
 	return nil
 }
@@ -550,7 +551,7 @@ func (j *JWT) validateCachedToken(ctx context.Context, tokenString string, claim
 			logger.String("name", j.opts.name),
 			logger.String("subject", subject),
 			logger.Err(revokeErr),
-		).Warn("[JWT] 缓存撤销标记查询失败")
+		).Warn("撤销标记查询失败")
 		if j.opts.revokeFailClose {
 			return ErrTokenStoreQuery.WithCause(revokeErr)
 		}
@@ -568,7 +569,7 @@ func (j *JWT) validateCachedToken(ctx context.Context, tokenString string, claim
 			logger.String("name", j.opts.name),
 			logger.String("subject", subject),
 			logger.Err(err),
-		).Warn("[JWT] 缓存令牌查询失败")
+		).Warn("令牌缓存查询失败")
 		if j.opts.revokeFailClose {
 			return ErrTokenStoreQuery.WithCause(err)
 		}

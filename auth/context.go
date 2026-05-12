@@ -21,6 +21,15 @@ func FromContext(ctx context.Context) (*Principal, bool) {
 	return principal, ok
 }
 
+// RequirePrincipal 从 context 获取身份主体，不存在时返回 ErrUnauthenticated。
+func RequirePrincipal(ctx context.Context) (*Principal, error) {
+	principal, ok := FromContext(ctx)
+	if !ok || principal == nil {
+		return nil, ErrUnauthenticated
+	}
+	return principal, nil
+}
+
 // MustFromContext 从 context 获取身份主体，不存在则 panic.
 func MustFromContext(ctx context.Context) *Principal {
 	principal, ok := FromContext(ctx)
@@ -66,4 +75,16 @@ func GetPrincipalID(ctx context.Context) (string, bool) {
 		return "", false
 	}
 	return principal.ID, true
+}
+
+// RequirePrincipalID 从 context 获取主体 ID，不存在时返回 ErrUnauthenticated。
+func RequirePrincipalID(ctx context.Context) (string, error) {
+	principal, err := RequirePrincipal(ctx)
+	if err != nil {
+		return "", err
+	}
+	if principal.ID == "" {
+		return "", ErrUnauthenticated
+	}
+	return principal.ID, nil
 }

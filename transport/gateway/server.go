@@ -65,19 +65,18 @@ func New(opts ...Option) *Server {
 	}
 
 	if o.logger == nil {
-		panic("gateway: 日志记录器不能为空")
+		o.logger = logger.Nop()
 	}
 
 	// 按照优先级顺序应用 gRPC 拦截器（由外到内）:
 	// 1. Recovery
-	// 2. RequestID
-	// 3. Logging
-	// 4. Tracing（已在 WithTrace 中添加）
-	// 5. Metrics
-	// 6. RateLimit
-	// 7. ClientIP
-	// 8. Tenant
-	// 9. Auth（在 applyAuthInterceptors 中添加）
+	// 2. Logging
+	// 3. Tracing（已在 WithTrace 中添加）
+	// 4. Metrics
+	// 5. RateLimit
+	// 6. ClientIP
+	// 7. Tenant
+	// 8. Auth（在 applyAuthInterceptors 中添加）
 	applyNewInterceptors(o)
 
 	// 应用 recovery 拦截器（必须在所有 option 处理之后，放在拦截器链最前面）
@@ -137,7 +136,7 @@ func (s *Server) Stop(ctx context.Context) error {
 	var errs []error
 
 	if s.httpServer != nil {
-		s.opts.logger.With(logger.String("name", s.opts.name)).Info("[Gateway] HTTP服务器正在停止")
+		s.opts.logger.With(logger.String("name", s.opts.name)).Info("[Gateway] HTTP 服务器正在停止")
 		if err := s.httpServer.Shutdown(ctx); err != nil {
 			errs = append(errs, err)
 		}
@@ -148,7 +147,7 @@ func (s *Server) Stop(ctx context.Context) error {
 	}
 
 	if s.grpcServer != nil {
-		s.opts.logger.With(logger.String("name", s.opts.name)).Info("[Gateway] gRPC服务器正在停止")
+		s.opts.logger.With(logger.String("name", s.opts.name)).Info("[Gateway] gRPC 服务器正在停止")
 		done := make(chan struct{})
 		go func() {
 			s.grpcServer.GracefulStop()
@@ -250,9 +249,10 @@ func (s *Server) startGRPC() error {
 	s.healthServer = health.NewGRPCServer(s.health)
 	s.healthServer.Register(s.grpcServer)
 
-	// 如果启用自动发现，扫描注册的服务并填充 discoveredMethods
-	if s.opts.enableAutoDiscovery && s.opts.discoveredMethods != nil {
-		s.discoverPublicMethods()
+	// 启用 auth 时，扫描注册的服务并填充 proto 认证策略。
+	// 没有 proto option 的方法默认不公开，仍按普通认证方法处理。
+	if s.opts.discoveredPolicies != nil {
+		s.discoverAuthPolicies()
 	}
 
 	if s.opts.enableReflection {
@@ -269,33 +269,58 @@ func (s *Server) startGRPC() error {
 			s.opts.logger.With(
 				logger.String("name", s.opts.name),
 				logger.Err(err),
-			).Error("[Gateway] gRPC Serve 错误")
+			).Error("[Gateway] gRPC 服务运行错误")
 		}
 	}()
 	return nil
 }
 
-// discoverPublicMethods 从注册的服务中发现公开方法.
-func (s *Server) discoverPublicMethods() {
+// discoverAuthPolicies 从注册的服务中发现 proto 认证策略.
+func (s *Server) discoverAuthPolicies() {
 	result := auth.DiscoverFromServer(s.grpcServer)
 
-	// 填充 discoveredMethods map
-	for _, method := range result.PublicMethods {
-		s.opts.discoveredMethods[method] = true
+	for method, info := range result.MethodAuthInfos {
+		s.opts.discoveredPolicies[method] = info
 	}
+	applyBuiltinAuthPolicies(s.opts.discoveredPolicies)
+
+	s.opts.logger.With(
+		logger.String("name", s.opts.name),
+		logger.Int("policies", len(s.opts.discoveredPolicies)),
+		logger.Int("public", countPublicPolicies(s.opts.discoveredPolicies)),
+	).Info("[Gateway] 自动发现认证策略")
 
 	if len(result.PublicMethods) > 0 {
-		s.opts.logger.With(
-			logger.String("name", s.opts.name),
-			logger.Int("count", len(result.PublicMethods)),
-		).Info("[Gateway] 自动发现公开方法")
-
 		for _, method := range result.PublicMethods {
 			s.opts.logger.With(
 				logger.String("method", method),
 			).Debug("[Gateway] 发现公开方法")
 		}
 	}
+}
+
+func applyBuiltinAuthPolicies(policies auth.MethodPolicyMap) {
+	if policies == nil {
+		return
+	}
+	policies["/grpc.health.v1.Health/Check"] = &auth.MethodAuthInfo{
+		FullMethod: "/grpc.health.v1.Health/Check",
+		Public:     true,
+	}
+	policies["/grpc.health.v1.Health/Watch"] = &auth.MethodAuthInfo{
+		FullMethod: "/grpc.health.v1.Health/Watch",
+		Public:     true,
+	}
+}
+
+func countPublicPolicies(policies auth.MethodPolicyMap) int {
+	count := 0
+	for _, policy := range policies {
+		if policy != nil && policy.Public {
+			count++
+		}
+	}
+	return count
 }
 
 func (s *Server) connectGateway() error {
@@ -333,7 +358,7 @@ func (s *Server) startHTTP(ctx context.Context) error {
 	// 构建 HTTP 中间件链（由内到外包装）
 	//
 	// 最终请求执行顺序:
-	// Recovery → RequestID → Logging → Tracing → Metrics → CORS →
+	// Recovery → Logging → Tracing → Metrics → CORS →
 	// RateLimit → ClientIP → Tenant → Auth(via gRPC) → Health → handler
 	var handler http.Handler = health.Middleware(s.health)(s.mux)
 
@@ -387,8 +412,6 @@ func (s *Server) startHTTP(ctx context.Context) error {
 			logging.WithSkipPaths(s.opts.loggingSkipPaths...),
 		)(handler)
 	}
-
-	// 2. RequestID（已由 trace 中间件统一处理，保留开关兼容）
 
 	// 1. Recovery（HTTP 端，最外层）
 	if s.opts.enableRecovery {

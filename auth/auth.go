@@ -2,7 +2,7 @@
 //
 // 特性:
 //   - 可扩展的认证器接口
-//   - 简单的角色/权限授权
+//   - 可插拔授权器接口
 //   - HTTP/gRPC/Endpoint 中间件
 //   - 内置 JWT 支持（auth/jwt 子包）
 //
@@ -165,11 +165,35 @@ type Authenticator interface {
 // Authorizer 授权器接口.
 type Authorizer interface {
 	// Authorize 检查主体是否有权限执行操作.
-	Authorize(ctx context.Context, principal *Principal, action string, resource string) error
+	Authorize(ctx context.Context, principal *Principal, target Target) error
 }
 
 // CredentialsExtractor 凭据提取器函数.
 type CredentialsExtractor func(ctx context.Context, request any) (*Credentials, error)
+
+// Target 描述一次授权检查的目标.
+type Target struct {
+	// Resource 是业务资源名，如 "orders".
+	Resource string
+
+	// Action 是业务动作名，如 "read".
+	Action string
+
+	// Method 是 transport 方法名，如 HTTP method 或 gRPC full method.
+	Method string
+
+	// Path 是 HTTP path.
+	Path string
+
+	// Metadata 扩展授权上下文.
+	Metadata map[string]string
+
+	// Permissions 是声明式策略要求的权限列表.
+	Permissions []string
+
+	// AllPermissions 表示是否需要满足所有 Permissions.
+	AllPermissions bool
+}
 
 // Skipper 跳过检查函数.
 type Skipper func(ctx context.Context, request any) bool

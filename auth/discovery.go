@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"context"
 	"fmt"
 
 	"google.golang.org/grpc"
@@ -47,7 +46,7 @@ type DiscoveryResult struct {
 //	userService.RegisterGRPC(server)
 //
 //	result := auth.DiscoverFromServer(server)
-//	fmt.Println("Public methods:", result.PublicMethods)
+//	fmt.Println("公开方法:", result.PublicMethods)
 func DiscoverFromServer(server *grpc.Server) *DiscoveryResult {
 	result := &DiscoveryResult{
 		PublicMethods:   make([]string, 0),
@@ -89,13 +88,6 @@ func DiscoverFromServer(server *grpc.Server) *DiscoveryResult {
 	}
 
 	return result
-}
-
-// DiscoverPublicMethods 从 gRPC 服务器发现公开方法列表.
-//
-// 这是 DiscoverFromServer 的便捷方法，仅返回公开方法列表.
-func DiscoverPublicMethods(server *grpc.Server) []string {
-	return DiscoverFromServer(server).PublicMethods
 }
 
 // getServiceAuthOptions 获取服务级别的认证选项.
@@ -168,22 +160,4 @@ func getMethodAuthOptions(serviceName, methodName string) *authpb.MethodAuthOpti
 	}
 
 	return methodOpts
-}
-
-// BuildSkipperFromDiscovery 根据发现结果构建 Skipper.
-//
-// 返回的 Skipper 会跳过所有标记为 public 的方法.
-func BuildSkipperFromDiscovery(result *DiscoveryResult) Skipper {
-	publicSet := make(map[string]bool, len(result.PublicMethods))
-	for _, m := range result.PublicMethods {
-		publicSet[m] = true
-	}
-
-	return func(ctx context.Context, _ any) bool {
-		method, ok := grpc.Method(ctx)
-		if !ok {
-			return false
-		}
-		return publicSet[method]
-	}
 }

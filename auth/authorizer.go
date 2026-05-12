@@ -2,86 +2,58 @@ package auth
 
 import "context"
 
-// RoleAuthorizer 基于角色的简单授权器.
-type RoleAuthorizer struct {
-	requiredRoles []string
-	requireAll    bool
+// AuthorizerFunc 将函数适配为 Authorizer。
+type AuthorizerFunc func(ctx context.Context, principal *Principal, target Target) error
+
+// Authorize 实现 Authorizer 接口。
+func (f AuthorizerFunc) Authorize(ctx context.Context, principal *Principal, target Target) error {
+	return f(ctx, principal, target)
 }
 
-// NewRoleAuthorizer 创建角色授权器.
-//
-// 默认只需要任一角色匹配即可，设置 requireAll=true 需要所有角色.
-func NewRoleAuthorizer(roles []string, requireAll ...bool) *RoleAuthorizer {
-	r := &RoleAuthorizer{
-		requiredRoles: roles,
-		requireAll:    false,
-	}
-	if len(requireAll) > 0 {
-		r.requireAll = requireAll[0]
-	}
-	return r
+// MethodRule 定义一个 gRPC 方法的授权规则。
+type MethodRule struct {
+	// Method 是 gRPC full method，例如 /package.Service/Method。
+	Method string
+
+	// Action 和 Resource 会覆盖传入 Target 的对应字段。
+	Action   string
+	Resource string
+
+	// Authorizer 是该方法使用的授权器。
+	Authorizer Authorizer
 }
 
-// Authorize 实现 Authorizer 接口.
-func (r *RoleAuthorizer) Authorize(_ context.Context, principal *Principal, _, _ string) error {
-	if principal == nil {
-		return ErrUnauthenticated
+// MethodAuthorizer 根据 gRPC full method 分发授权规则。
+type MethodAuthorizer struct {
+	rules map[string]MethodRule
+}
+
+// NewMethodAuthorizer 创建按方法分发的授权器。
+func NewMethodAuthorizer(rules ...MethodRule) *MethodAuthorizer {
+	a := &MethodAuthorizer{rules: make(map[string]MethodRule, len(rules))}
+	for _, rule := range rules {
+		if rule.Method == "" || rule.Authorizer == nil {
+			continue
+		}
+		a.rules[rule.Method] = rule
 	}
-	if len(r.requiredRoles) == 0 {
+	return a
+}
+
+// Authorize 实现 Authorizer 接口。未配置规则的方法默认放行。
+func (a *MethodAuthorizer) Authorize(ctx context.Context, principal *Principal, target Target) error {
+	if a == nil {
 		return nil
 	}
-	if r.requireAll {
-		if principal.HasAllRoles(r.requiredRoles...) {
-			return nil
-		}
-	} else {
-		if principal.HasAnyRole(r.requiredRoles...) {
-			return nil
-		}
-	}
-	return ErrForbidden
-}
-
-// PermissionAuthorizer 基于权限的简单授权器.
-type PermissionAuthorizer struct {
-	requiredPermissions []string
-	requireAll          bool
-}
-
-// NewPermissionAuthorizer 创建权限授权器.
-//
-// 默认只需要任一权限匹配即可，设置 requireAll=true 需要所有权限.
-func NewPermissionAuthorizer(permissions []string, requireAll ...bool) *PermissionAuthorizer {
-	p := &PermissionAuthorizer{
-		requiredPermissions: permissions,
-		requireAll:          false,
-	}
-	if len(requireAll) > 0 {
-		p.requireAll = requireAll[0]
-	}
-	return p
-}
-
-// Authorize 实现 Authorizer 接口.
-func (p *PermissionAuthorizer) Authorize(_ context.Context, principal *Principal, _, _ string) error {
-	if principal == nil {
-		return ErrUnauthenticated
-	}
-	if len(p.requiredPermissions) == 0 {
+	rule, ok := a.rules[target.Resource]
+	if !ok {
 		return nil
 	}
-	if p.requireAll {
-		for _, perm := range p.requiredPermissions {
-			if !principal.HasPermission(perm) {
-				return ErrForbidden
-			}
-		}
-		return nil
+	if rule.Action != "" {
+		target.Action = rule.Action
 	}
-	for _, perm := range p.requiredPermissions {
-		if principal.HasPermission(perm) {
-			return nil
-		}
+	if rule.Resource != "" {
+		target.Resource = rule.Resource
 	}
-	return ErrForbidden
+	return rule.Authorizer.Authorize(ctx, principal, target)
 }

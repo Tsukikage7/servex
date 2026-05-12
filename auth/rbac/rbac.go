@@ -37,16 +37,28 @@ import (
 
 var (
 	// ErrRoleNotFound 角色未找到错误.
-	ErrRoleNotFound = errors.New(20301, "RBAC_ROLE_NOT_FOUND", "角色未找到").
-		WithHTTP(404).WithGRPC(5) // codes.NotFound
+	ErrRoleNotFound = errors.NewWithKind(
+		20301,
+		"RBAC_ROLE_NOT_FOUND",
+		"角色未找到",
+		errors.KindNotFound,
+	)
 
 	// ErrRoleExists 角色已存在错误.
-	ErrRoleExists = errors.New(20302, "RBAC_ROLE_EXISTS", "角色已存在").
-		WithHTTP(409).WithGRPC(6) // codes.AlreadyExists
+	ErrRoleExists = errors.NewWithKind(
+		20302,
+		"RBAC_ROLE_EXISTS",
+		"角色已存在",
+		errors.KindConflict,
+	)
 
 	// ErrPermissionDenied 权限被拒绝错误.
-	ErrPermissionDenied = errors.New(20303, "RBAC_PERMISSION_DENIED", "权限被拒绝").
-		WithHTTP(403).WithGRPC(7) // codes.PermissionDenied
+	ErrPermissionDenied = errors.NewWithKind(
+		20303,
+		"RBAC_PERMISSION_DENIED",
+		"权限被拒绝",
+		errors.KindPermissionDenied,
+	)
 )
 
 // Role 角色.
@@ -195,7 +207,7 @@ func (m *manager) GetUserRoles(ctx context.Context, userID string) ([]*Role, err
 		role, err := m.store.GetRole(ctx, name)
 		if err != nil {
 			// 记录不存在或查询失败的角色，便于排查数据不一致问题
-			slog.Warn("rbac: 获取用户角色失败", "user_id", userID, "role", name, "error", err)
+			slog.Warn("[RBAC] 获取用户角色失败", "user_id", userID, "role", name, "error", err)
 			continue
 		}
 		roles = append(roles, role)
@@ -318,7 +330,7 @@ func HTTPMiddleware(rbac RBAC, resource, action string) func(http.Handler) http.
 			has, err := rbac.HasPermission(r.Context(), principal.ID, resource, action)
 			if err != nil {
 				// 不暴露内部错误详情到客户端
-				slog.Error("rbac: 权限检查错误", "user_id", principal.ID, "error", err)
+				slog.Error("[RBAC] 权限检查错误", "user_id", principal.ID, "error", err)
 				http.Error(w, "权限检查失败", http.StatusInternalServerError)
 				return
 			}

@@ -1,6 +1,10 @@
 package auth
 
-import "github.com/Tsukikage7/servex/v2/observability/logger"
+import (
+	"context"
+
+	"github.com/Tsukikage7/servex/v2/observability/logger"
+)
 
 const (
 	// AuthorizationHeader HTTP Authorization 请求头.
@@ -26,8 +30,8 @@ type options struct {
 	skipper              Skipper
 	errorHandler         ErrorHandler
 	logger               logger.Logger
-	resource             string // 授权检查的资源名
-	action               string // 授权检查的操作名
+	target               Target
+	policyProvider       MethodPolicyProvider
 }
 
 // Option 中间件配置选项.
@@ -57,7 +61,14 @@ func WithCredentialsExtractor(extractor CredentialsExtractor) Option {
 // WithSkipper 设置跳过函数.
 func WithSkipper(skipper Skipper) Option {
 	return func(o *options) {
-		o.skipper = skipper
+		if o.skipper == nil {
+			o.skipper = skipper
+			return
+		}
+		previous := o.skipper
+		o.skipper = func(ctx context.Context, request any) bool {
+			return previous(ctx, request) || skipper(ctx, request)
+		}
 	}
 }
 
@@ -78,13 +89,27 @@ func WithLogger(log logger.Logger) Option {
 // WithResource 设置授权检查的资源名.
 func WithResource(resource string) Option {
 	return func(o *options) {
-		o.resource = resource
+		o.target.Resource = resource
 	}
 }
 
 // WithAction 设置授权检查的操作名.
 func WithAction(action string) Option {
 	return func(o *options) {
-		o.action = action
+		o.target.Action = action
+	}
+}
+
+// WithTarget 设置授权检查目标.
+func WithTarget(target Target) Option {
+	return func(o *options) {
+		o.target = target
+	}
+}
+
+// WithPolicyProvider 设置方法级认证授权策略提供者.
+func WithPolicyProvider(provider MethodPolicyProvider) Option {
+	return func(o *options) {
+		o.policyProvider = provider
 	}
 }

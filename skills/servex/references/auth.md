@@ -110,7 +110,22 @@ srv := httpserver.New(mux,
 - `StaticValidator` — 返回 `Validator` 函数类型
 - `CacheValidator(lookupFn, ttl)` — 带内存缓存的动态验证
 
-## auth/rbac — 基于角色的访问控制
+## 授权模型
+
+`auth` 核心只定义 `auth.Authorizer` 抽象，不默认选择 RBAC、Casbin 或其它策略引擎。需要角色权限模型时显式使用 `auth/rbac`；需要 Casbin policy model 时显式使用 `auth/casbin`。
+
+```go
+authorizer := auth.AuthorizerFunc(func(ctx context.Context, principal *auth.Principal, target auth.Target) error {
+    if principal == nil {
+        return auth.ErrUnauthenticated
+    }
+    return nil
+})
+
+handler = auth.HTTPMiddleware(authenticator, auth.WithAuthorizer(authorizer))(handler)
+```
+
+## auth/rbac — 可选 RBAC 授权适配
 
 ```go
 // 创建管理器（内存存储适合测试，GORM 存储适合生产）
@@ -145,11 +160,15 @@ ok, _ := mgr.HasPermission(ctx, "user-1", "articles", "read")
 perms, _ := mgr.GetUserPermissions(ctx, "user-1")
 ```
 
-**HTTP 中间件：**
+**auth 中间件集成：**
 
 ```go
-// 从 auth.FromContext 取 userID，检查 resource + action
-mux.Handle("/articles", rbac.HTTPMiddleware(mgr, "articles", "write")(handler))
+authorizer := rbac.NewAuthorizer(mgr)
+handler = auth.HTTPMiddleware(
+    authenticator,
+    auth.WithAuthorizer(authorizer),
+    auth.WithTarget(auth.Target{Resource: "articles", Action: "write"}),
+)(handler)
 ```
 
 **缓存集成：**
@@ -166,5 +185,31 @@ mgr := rbac.NewManager(store,
 - `rbac.RBAC` — 权限管理器接口
 - `rbac.Role` — 角色（ID/Name/Permissions/ParentID/Description）
 - `rbac.Store` — 存储接口（`NewMemoryStore` / `NewGORMStore`）
-- `rbac.HTTPMiddleware(mgr, resource, action)` — HTTP 鉴权中间件
+- `rbac.NewAuthorizer(mgr)` — 转为 `auth.Authorizer`
 - `rbac.ParsePermission("resource:action")` — 解析权限字符串
+
+## auth/casbin — 可选 Casbin 授权适配
+
+```go
+import authcasbin "github.com/Tsukikage7/servex/v2/auth/casbin"
+
+authorizer := authcasbin.NewAuthorizer(enforcer)
+handler = auth.HTTPMiddleware(authenticator, auth.WithAuthorizer(authorizer))(handler)
+```
+
+默认映射为：
+
+```go
+enforcer.Enforce(principal.ID, target.Resource, target.Action)
+```
+
+domain model 或 ABAC model 用 `WithRequestBuilder` 显式声明：
+
+```go
+authorizer := authcasbin.NewAuthorizer(enforcer,
+    authcasbin.WithRequestBuilder(func(ctx context.Context, p *auth.Principal, target auth.Target) []interface{} {
+        tenantID, _ := p.GetMetadata("tenant_id")
+        return []interface{}{p.ID, tenantID, target.Resource, target.Action}
+    }),
+)
+```

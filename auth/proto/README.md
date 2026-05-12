@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/auth/proto"
+import "github.com/Tsukikage7/servex/v2/auth/proto"
 // Go package 名：authpb
 ```
 
@@ -64,10 +64,23 @@ service PublicService {
 }
 ```
 
-在 Go 代码中读取选项：
+在 Gateway 中启用声明式策略：
 
 ```go
-import authpb "github.com/Tsukikage7/servex/auth/proto"
+srv := gateway.New(
+    gateway.WithAuth(authenticator, auth.WithAuthorizer(authorizer)),
+)
+```
+
+`public: true` 会跳过认证；`permissions` 会在认证后交给显式配置的
+`auth.Authorizer` 执行授权；`all_permissions: true` 表示必须满足全部权限。
+没有 proto option 的方法不会被公开，会按普通认证接口处理。如果声明了 `permissions`
+但没有配置授权器，请求会被拒绝。
+
+在 Go 代码中手动读取选项：
+
+```go
+import authpb "github.com/Tsukikage7/servex/v2/auth/proto"
 import "google.golang.org/protobuf/proto"
 
 opts := method.Desc.Options()

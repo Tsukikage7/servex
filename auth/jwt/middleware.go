@@ -242,7 +242,7 @@ func UnaryServerInterceptor(j *JWT) grpc.UnaryServerInterceptor {
 		token, err := j.ExtractToken(ctx, req)
 		if err != nil {
 			// 不向客户端暴露内部错误细节，仅记录日志
-			j.opts.logger.With(logger.Err(err)).Warn("[JWT] gRPC 令牌提取失败")
+			j.opts.logger.With(logger.Err(err)).Warn("gRPC 令牌提取失败")
 			return nil, status.Error(codes.Unauthenticated, "认证失败")
 		}
 
@@ -250,7 +250,7 @@ func UnaryServerInterceptor(j *JWT) grpc.UnaryServerInterceptor {
 		claims, err := j.Validate(ctx, token)
 		if err != nil {
 			// 不向客户端暴露内部错误细节，仅记录日志
-			j.opts.logger.With(logger.Err(err)).Warn("[JWT] gRPC 令牌验证失败")
+			j.opts.logger.With(logger.Err(err)).Warn("gRPC 令牌验证失败")
 			return nil, status.Error(codes.Unauthenticated, "认证失败")
 		}
 
@@ -281,15 +281,15 @@ func UnaryServerInterceptorWithClaims(j *JWT, cf ClaimsFactory) grpc.UnaryServer
 		token, err := j.ExtractToken(ctx, req)
 		if err != nil {
 			// 不向客户端暴露内部错误细节，仅记录日志
-			j.opts.logger.With(logger.Err(err)).Warn("[JWT] gRPC 令牌提取失败")
+			j.opts.logger.With(logger.Err(err)).Warn("gRPC 令牌提取失败")
 			return nil, status.Error(codes.Unauthenticated, "认证失败")
 		}
 
-		// ��证令牌（使用自定义 Claims 类型）
+		// 验证令牌（使用自定义 Claims 类型）
 		claims, err := j.ValidateWithClaims(ctx, token, cf())
 		if err != nil {
 			// 不向客户端暴露内部错误细节，仅记录日志
-			j.opts.logger.With(logger.Err(err)).Warn("[JWT] gRPC 令牌验证失败")
+			j.opts.logger.With(logger.Err(err)).Warn("gRPC 令牌验证失败")
 			return nil, status.Error(codes.Unauthenticated, "认证失败")
 		}
 
@@ -329,7 +329,7 @@ func StreamServerInterceptor(j *JWT) grpc.StreamServerInterceptor {
 		token, err := j.ExtractToken(ctx, nil)
 		if err != nil {
 			// 不向客户端暴露内部错误细节，仅记录日志
-			j.opts.logger.With(logger.Err(err)).Warn("[JWT] gRPC 流令牌提取失败")
+			j.opts.logger.With(logger.Err(err)).Warn("gRPC 流令牌提取失败")
 			return status.Error(codes.Unauthenticated, "认证失败")
 		}
 
@@ -337,7 +337,7 @@ func StreamServerInterceptor(j *JWT) grpc.StreamServerInterceptor {
 		claims, err := j.Validate(ctx, token)
 		if err != nil {
 			// 不向客户端暴露内部错误细节，仅记录日志
-			j.opts.logger.With(logger.Err(err)).Warn("[JWT] gRPC 流令牌验证失败")
+			j.opts.logger.With(logger.Err(err)).Warn("gRPC 流令牌验证失败")
 			return status.Error(codes.Unauthenticated, "认证失败")
 		}
 
@@ -371,7 +371,7 @@ func StreamServerInterceptorWithClaims(j *JWT, cf ClaimsFactory) grpc.StreamServ
 		token, err := j.ExtractToken(ctx, nil)
 		if err != nil {
 			// 不向客户端暴露内部错误细节，仅记录日志
-			j.opts.logger.With(logger.Err(err)).Warn("[JWT] gRPC 流令牌提取失败")
+			j.opts.logger.With(logger.Err(err)).Warn("gRPC 流令牌提取失败")
 			return status.Error(codes.Unauthenticated, "认证失败")
 		}
 
@@ -379,7 +379,7 @@ func StreamServerInterceptorWithClaims(j *JWT, cf ClaimsFactory) grpc.StreamServ
 		claims, err := j.ValidateWithClaims(ctx, token, cf())
 		if err != nil {
 			// 不向客户端暴露内部错误细节，仅记录日志
-			j.opts.logger.With(logger.Err(err)).Warn("[JWT] gRPC 流令牌验证失败")
+			j.opts.logger.With(logger.Err(err)).Warn("gRPC 流令牌验证失败")
 			return status.Error(codes.Unauthenticated, "认证失败")
 		}
 

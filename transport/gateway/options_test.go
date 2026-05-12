@@ -1,9 +1,14 @@
 package gateway
 
 import (
+	"context"
 	"testing"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+
+	"github.com/Tsukikage7/servex/v2/auth"
 	"github.com/Tsukikage7/servex/v2/httpx/clientip"
 	"github.com/Tsukikage7/servex/v2/middleware/cors"
 	"github.com/Tsukikage7/servex/v2/middleware/ratelimit"
@@ -92,19 +97,6 @@ func TestGateway_WithLogging(t *testing.T) {
 	}
 }
 
-func TestGateway_WithRequestID(t *testing.T) {
-	log := testx.NopLogger()
-
-	srv := New(
-		WithLogger(log),
-		WithRequestID(),
-	)
-
-	if !srv.opts.enableRequestID {
-		t.Error("期望 RequestID 已启用")
-	}
-}
-
 func TestGateway_Options_Applied(t *testing.T) {
 	log := testx.NopLogger()
 	limiter := ratelimit.NewTokenBucket(100, 200)
@@ -121,7 +113,6 @@ func TestGateway_Options_Applied(t *testing.T) {
 		WithGRPCAddr(":0"),
 		WithHTTPAddr(":0"),
 		WithRecovery(),
-		WithRequestID(),
 		WithLogging("/health"),
 		WithTrace("test-service"),
 		WithMetrics(collector),
@@ -137,9 +128,6 @@ func TestGateway_Options_Applied(t *testing.T) {
 	}
 	if !srv.opts.enableRecovery {
 		t.Error("期望 recovery 已启用")
-	}
-	if !srv.opts.enableRequestID {
-		t.Error("期望 requestID 已启用")
 	}
 	if !srv.opts.enableLogging {
 		t.Error("期望 logging 已启用")
@@ -219,4 +207,88 @@ func TestGateway_DefaultOptions(t *testing.T) {
 	if srv.opts.httpReadTimeout != 30*time.Second {
 		t.Errorf("期望默认 httpReadTimeout=30s，实际为 %v", srv.opts.httpReadTimeout)
 	}
+}
+
+func TestBuildProtoPolicySkipper_UsesDiscoveredPolicyPublic(t *testing.T) {
+	o := defaultOptions()
+	o.discoveredPolicies = auth.MethodPolicyMap{
+		"/svc.Auth/Login": {
+			FullMethod: "/svc.Auth/Login",
+			Public:     true,
+		},
+		"/svc.Order/Create": {
+			FullMethod:  "/svc.Order/Create",
+			Permissions: []string{"orders:create"},
+		},
+	}
+
+	skipper := buildProtoPolicySkipper(o)
+	if skipper == nil {
+		t.Fatal("skipper is nil")
+	}
+	if !skipper(contextWithMethod("/svc.Auth/Login"), nil) {
+		t.Fatal("public discovered policy should skip auth")
+	}
+	if skipper(contextWithMethod("/svc.Order/Create"), nil) {
+		t.Fatal("permission policy should not skip auth")
+	}
+}
+
+func TestBuildProtoPolicySkipper_NoProtoPolicyDoesNotSkip(t *testing.T) {
+	o := defaultOptions()
+	o.discoveredPolicies = auth.MethodPolicyMap{}
+
+	skipper := buildProtoPolicySkipper(o)
+	if skipper == nil {
+		t.Fatal("skipper is nil")
+	}
+	if skipper(contextWithMethod("/svc.Order/List"), nil) {
+		t.Fatal("method without proto public policy should not skip auth")
+	}
+}
+
+func TestBuiltinAuthPolicies_PublicHealthMethods(t *testing.T) {
+	policies := auth.MethodPolicyMap{}
+	applyBuiltinAuthPolicies(policies)
+
+	o := defaultOptions()
+	o.discoveredPolicies = policies
+	skipper := buildProtoPolicySkipper(o)
+
+	if !skipper(contextWithMethod("/grpc.health.v1.Health/Check"), nil) {
+		t.Fatal("gRPC health Check should skip auth")
+	}
+	if !skipper(contextWithMethod("/grpc.health.v1.Health/Watch"), nil) {
+		t.Fatal("gRPC health Watch should skip auth")
+	}
+	if countPublicPolicies(policies) != 2 {
+		t.Fatalf("public policy count = %d, want 2", countPublicPolicies(policies))
+	}
+}
+
+type testServerTransportStream struct {
+	method string
+}
+
+func (s testServerTransportStream) Method() string {
+	return s.method
+}
+
+func (testServerTransportStream) SetHeader(metadata.MD) error {
+	return nil
+}
+
+func (testServerTransportStream) SendHeader(metadata.MD) error {
+	return nil
+}
+
+func (testServerTransportStream) SetTrailer(metadata.MD) error {
+	return nil
+}
+
+func contextWithMethod(method string) context.Context {
+	return grpc.NewContextWithServerTransportStream(
+		context.Background(),
+		testServerTransportStream{method: method},
+	)
 }

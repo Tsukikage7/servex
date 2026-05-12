@@ -12,14 +12,14 @@
 - 支持客户端 IP 提取、多租户解析（gRPC + HTTP 双端）
 - 支持 HTTP 端 TLS
 - 支持统一响应格式
-- 支持 proto option 自动发现公开方法
+- 支持 proto option 自动发现公开方法和权限策略
 - 可自定义 protojson 序列化选项和 ServeMux 选项
 - 实现 `transport.HealthCheckable` 接口
 
 ## 安装
 
 ```bash
-go get github.com/Tsukikage7/servex/transport/gateway
+go get github.com/Tsukikage7/servex/v2/transport/gateway
 ```
 
 ## API
@@ -75,47 +75,49 @@ type Registrar interface {
 | `WithResponse`          | -                | 启用统一响应格式（含细粒度错误码保留） |
 | `WithRecovery`          | -                | 启用 panic 恢复（gRPC + HTTP） |
 | `WithAuth`              | -                | 启用认证                       |
-| `WithPublicMethods`     | -                | 设置公开方法（无需认证）       |
-| `WithAutoDiscovery`     | -                | 启用 proto option 自动发现     |
 | `WithCORS`              | -                | 启用 CORS（仅 HTTP 端）        |
 | `WithRateLimit`         | -                | 启用限流（gRPC + HTTP）        |
 | `WithMetrics`           | -                | 启用指标采集（gRPC + HTTP）    |
 | `WithLogging`           | -                | 启用请求日志（gRPC + HTTP）    |
-| `WithRequestID`         | -                | 启用 Request ID（gRPC + HTTP） |
 | `WithClientIP`          | -                | 启用客户端 IP 提取（gRPC + HTTP）|
 | `WithTenant`            | -                | 启用多租户解析（gRPC + HTTP）  |
 | `WithHTTPTLS`           | -                | 启用 HTTP 端 TLS               |
 
-### 认证与公开方法
+### 认证与声明式策略
 
 由于 gRPC-Gateway 会将 HTTP 请求转换为 gRPC 调用，只需在 gRPC 层添加认证拦截器即可同时保护两种协议：
 
 ```go
 srv := gateway.New(
-    gateway.WithAuth(authenticator),
-    gateway.WithPublicMethods(
-        "/api.user.v1.AuthService/Login",
-        "/api.user.v1.AuthService/*",
-    ),
-    gateway.WithAutoDiscovery(),
+    gateway.WithAuth(authenticator, auth.WithAuthorizer(authorizer)),
 )
 ```
+
+启用 `WithAuth` 后，Gateway 会自动读取 `auth/proto` 中声明的 `public`、`permissions` 和 `all_permissions`：
+
+- `public: true`：跳过认证，适合登录、注册、健康检查等公共接口。
+- `permissions`：认证通过后交给 `auth.Authorizer` 校验。默认是 OR 语义，满足任一权限即可。
+- `all_permissions: true`：将 `permissions` 切换为 AND 语义，必须全部满足。
+- 没有 proto option：不公开，也不附加权限要求，按普通认证接口处理。
+
+权限字符串默认按 `resource:action` 解析，例如 `orders:create` 会传给授权器
+`auth.Target{Resource: "orders", Action: "create"}`。如果方法声明了 `permissions`
+但 `WithAuth` 没有显式传入 `auth.WithAuthorizer(...)`，框架会拒绝访问，避免策略声明失效。
 
 ### 中间件执行顺序
 
 Gateway 对 HTTP 和 gRPC 请求分别应用中间件，执行顺序如下：
 
 1. Recovery（HTTP + gRPC）
-2. RequestID（HTTP + gRPC）
-3. Logging（HTTP + gRPC）
-4. Tracing（HTTP + gRPC）
-5. Metrics（HTTP + gRPC）
-6. CORS（仅 HTTP）
-7. RateLimit（HTTP + gRPC）
-8. ClientIP（HTTP + gRPC）
-9. Tenant（HTTP + gRPC）
-10. Auth（gRPC 拦截器，HTTP 请求通过 gRPC 代理自动受保护）
-11. Health（HTTP）
+2. Logging（HTTP + gRPC）
+3. Tracing（HTTP + gRPC）
+4. Metrics（HTTP + gRPC）
+5. CORS（仅 HTTP）
+6. RateLimit（HTTP + gRPC）
+7. ClientIP（HTTP + gRPC）
+8. Tenant（HTTP + gRPC）
+9. Auth（gRPC 拦截器，HTTP 请求通过 gRPC 代理自动受保护）
+10. Health（HTTP）
 
 ### 完整配置示例
 
@@ -126,7 +128,6 @@ srv := gateway.New(
     gateway.WithGRPCAddr(":9090"),
     gateway.WithHTTPAddr(":8080"),
     gateway.WithRecovery(),
-    gateway.WithRequestID(),
     gateway.WithLogging("/grpc.health.v1.Health/Check"),
     gateway.WithTrace("api-gateway"),
     gateway.WithMetrics(collector),
@@ -134,8 +135,7 @@ srv := gateway.New(
     gateway.WithRateLimit(limiter),
     gateway.WithClientIP(),
     gateway.WithTenant(resolver),
-    gateway.WithAuth(authenticator),
-    gateway.WithPublicMethods("/api.auth.v1.AuthService/*"),
+    gateway.WithAuth(authenticator, auth.WithAuthorizer(authorizer)),
     gateway.WithResponse(),
 )
 ```

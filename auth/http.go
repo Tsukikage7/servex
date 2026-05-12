@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
-
-	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // HTTPMiddleware 返回 HTTP 认证中间件.
@@ -41,51 +39,20 @@ func HTTPMiddleware(authenticator Authenticator, opts ...Option) func(http.Handl
 				return
 			}
 
-			// 提取凭据
-			creds, err := o.credentialsExtractor(ctx, r)
+			target := Target{
+				Resource: r.URL.Path,
+				Action:   r.Method,
+				Method:   r.Method,
+				Path:     r.URL.Path,
+			}
+			authCtx, _, err := authenticateAndAuthorize(ctx, r, o, target)
 			if err != nil {
-				if o.logger != nil {
-					logger.FromContext(ctx).Debug("[Auth] HTTP凭据提取失败",
-						logger.String("path", r.URL.Path),
-						logger.Err(err),
-					)
-				}
-				writeHTTPError(w, http.StatusUnauthorized, "Unauthorized")
+				err = handleError(ctx, err, o)
+				writeHTTPError(w, httpStatusForError(err), httpMessageForError(err))
 				return
 			}
 
-			// 认证
-			principal, err := authenticator.Authenticate(ctx, *creds)
-			if err != nil {
-				if o.logger != nil {
-					logger.FromContext(ctx).Warn("[Auth] HTTP认证失败",
-						logger.String("path", r.URL.Path),
-						logger.Err(err),
-					)
-				}
-				writeHTTPError(w, http.StatusUnauthorized, "Unauthorized")
-				return
-			}
-
-			// 将主体存入 context
-			ctx = WithPrincipal(ctx, principal)
-
-			// 授权
-			if o.authorizer != nil {
-				if err := o.authorizer.Authorize(ctx, principal, "", r.URL.Path); err != nil {
-					if o.logger != nil {
-						logger.FromContext(ctx).Warn("[Auth] HTTP授权失败",
-							logger.String("principal_id", principal.ID),
-							logger.String("path", r.URL.Path),
-							logger.Err(err),
-						)
-					}
-					writeHTTPError(w, http.StatusForbidden, "Forbidden")
-					return
-				}
-			}
-
-			next.ServeHTTP(w, r.WithContext(ctx))
+			next.ServeHTTP(w, r.WithContext(authCtx))
 		})
 	}
 }
@@ -179,6 +146,20 @@ func writeHTTPError(w http.ResponseWriter, code int, message string) {
 	w.WriteHeader(code)
 	body, _ := json.Marshal(map[string]string{"error": message})
 	_, _ = w.Write(body)
+}
+
+func httpStatusForError(err error) int {
+	if IsForbidden(err) {
+		return http.StatusForbidden
+	}
+	return http.StatusUnauthorized
+}
+
+func httpMessageForError(err error) string {
+	if IsForbidden(err) {
+		return "Forbidden"
+	}
+	return "Unauthorized"
 }
 
 // HTTPSkipPaths 返回跳过指定路径的 Skipper.

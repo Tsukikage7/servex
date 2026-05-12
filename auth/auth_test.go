@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/Tsukikage7/servex/v2/endpoint"
 )
 
 func TestPrincipal_HasRole(t *testing.T) {
@@ -203,117 +205,31 @@ func TestMustFromContext_Panic(t *testing.T) {
 	MustFromContext(ctx)
 }
 
-func TestRoleAuthorizer(t *testing.T) {
+func TestMethodAuthorizer(t *testing.T) {
 	ctx := t.Context()
-
-	tests := []struct {
-		name      string
-		roles     []string
-		principal *Principal
-		wantErr   bool
-	}{
-		{
-			name:  "has required role",
-			roles: []string{"admin"},
-			principal: &Principal{
-				Roles: []string{"admin", "user"},
-			},
-			wantErr: false,
-		},
-		{
-			name:  "does not have required role",
-			roles: []string{"superuser"},
-			principal: &Principal{
-				Roles: []string{"admin", "user"},
-			},
-			wantErr: true,
-		},
-		{
-			name:      "nil principal",
-			roles:     []string{"admin"},
-			principal: nil,
-			wantErr:   true,
-		},
-		{
-			name:  "empty required roles",
-			roles: []string{},
-			principal: &Principal{
-				Roles: []string{"user"},
-			},
-			wantErr: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			auth := NewRoleAuthorizer(tt.roles)
-			err := auth.Authorize(ctx, tt.principal, "", "")
-			if (err != nil) != tt.wantErr {
-				t.Errorf("RoleAuthorizer.Authorize() error = %v, wantErr %v", err, tt.wantErr)
+	principal := &Principal{ID: "user-1"}
+	var gotAction, gotResource string
+	authorizer := NewMethodAuthorizer(MethodRule{
+		Method:   "/svc.Admin/Create",
+		Action:   "create",
+		Resource: "admin",
+		Authorizer: AuthorizerFunc(func(_ context.Context, p *Principal, target Target) error {
+			if p == nil || p.ID != "user-1" {
+				t.Fatalf("principal = %+v", p)
 			}
-		})
+			gotAction, gotResource = target.Action, target.Resource
+			return nil
+		}),
+	})
+
+	if err := authorizer.Authorize(ctx, principal, Target{Resource: "/svc.Admin/Create"}); err != nil {
+		t.Fatalf("Authorize 失败: %v", err)
 	}
-}
-
-func TestRoleAuthorizer_RequireAll(t *testing.T) {
-	ctx := t.Context()
-	auth := NewRoleAuthorizer([]string{"admin", "editor"}, true)
-
-	// 有所有角色
-	principal := &Principal{Roles: []string{"admin", "editor", "user"}}
-	if err := auth.Authorize(ctx, principal, "", ""); err != nil {
-		t.Errorf("should authorize: %v", err)
+	if gotAction != "create" || gotResource != "admin" {
+		t.Fatalf("授权目标 = %q/%q, want create/admin", gotAction, gotResource)
 	}
-
-	// 缺少角色
-	principal = &Principal{Roles: []string{"admin"}}
-	if err := auth.Authorize(ctx, principal, "", ""); err == nil {
-		t.Error("should not authorize")
-	}
-}
-
-func TestPermissionAuthorizer(t *testing.T) {
-	ctx := t.Context()
-	auth := NewPermissionAuthorizer([]string{"read:orders", "write:orders"})
-
-	// 有权限
-	principal := &Principal{Permissions: []string{"read:orders"}}
-	if err := auth.Authorize(ctx, principal, "", ""); err != nil {
-		t.Errorf("should authorize: %v", err)
-	}
-
-	// 无权限
-	principal = &Principal{Permissions: []string{"delete:orders"}}
-	if err := auth.Authorize(ctx, principal, "", ""); err == nil {
-		t.Error("should not authorize")
-	}
-}
-
-func TestPermissionAuthorizer_RequireAll(t *testing.T) {
-	ctx := t.Context()
-	auth := NewPermissionAuthorizer([]string{"read:orders", "write:orders"}, true)
-
-	// 有所有权限
-	principal := &Principal{Permissions: []string{"read:orders", "write:orders", "delete:orders"}}
-	if err := auth.Authorize(ctx, principal, "", ""); err != nil {
-		t.Errorf("should authorize: %v", err)
-	}
-
-	// 缺少权限
-	principal = &Principal{Permissions: []string{"read:orders"}}
-	if err := auth.Authorize(ctx, principal, "", ""); err == nil {
-		t.Error("should not authorize")
-	}
-
-	// nil principal
-	if err := auth.Authorize(ctx, nil, "", ""); err == nil {
-		t.Error("should not authorize nil principal")
-	}
-
-	// 空权限列表
-	emptyAuth := NewPermissionAuthorizer([]string{})
-	if err := emptyAuth.Authorize(ctx, &Principal{}, "", ""); err != nil {
-		t.Error("empty permissions should authorize")
+	if err := authorizer.Authorize(ctx, principal, Target{Resource: "/svc.Admin/List"}); err != nil {
+		t.Fatalf("未配置方法应放行: %v", err)
 	}
 }
 
@@ -325,6 +241,47 @@ func TestMiddleware_Panic(t *testing.T) {
 	}()
 
 	Middleware(nil)
+}
+
+func TestMiddleware_PassesAuthorizationTarget(t *testing.T) {
+	authenticator := &mockAuthenticator{principal: &Principal{ID: "user-1"}}
+	var gotAction, gotResource string
+	var gotPrincipal *Principal
+	var gotCredentials *Credentials
+	middleware := Middleware(
+		authenticator,
+		WithCredentialsExtractor(func(context.Context, any) (*Credentials, error) {
+			return &Credentials{Type: CredentialTypeBearer, Token: "token"}, nil
+		}),
+		WithAction("create"),
+		WithResource("order"),
+		WithAuthorizer(AuthorizerFunc(func(_ context.Context, _ *Principal, target Target) error {
+			gotAction, gotResource = target.Action, target.Resource
+			return nil
+		})),
+	)
+
+	_, err := middleware(endpoint.Nop)(t.Context(), struct{}{})
+	if err != nil {
+		t.Fatalf("Middleware 返回错误: %v", err)
+	}
+	_, err = middleware(func(ctx context.Context, _ any) (any, error) {
+		gotPrincipal, _ = FromContext(ctx)
+		gotCredentials, _ = CredentialsFromContext(ctx)
+		return struct{}{}, nil
+	})(t.Context(), struct{}{})
+	if err != nil {
+		t.Fatalf("Middleware 返回错误: %v", err)
+	}
+	if gotAction != "create" || gotResource != "order" {
+		t.Fatalf("授权目标 = %q/%q, want create/order", gotAction, gotResource)
+	}
+	if gotPrincipal == nil || gotPrincipal.ID != "user-1" {
+		t.Fatalf("Principal 未写入 context: %+v", gotPrincipal)
+	}
+	if gotCredentials == nil || gotCredentials.Token != "token" {
+		t.Fatalf("Credentials 未写入 context: %+v", gotCredentials)
+	}
 }
 
 func TestIsUnauthenticated(t *testing.T) {
@@ -516,7 +473,9 @@ func TestHTTPMiddleware_WithSkipper(t *testing.T) {
 func TestHTTPMiddleware_WithAuthorizer(t *testing.T) {
 	principal := &Principal{ID: "user-1", Roles: []string{"user"}}
 	auth := &mockAuthenticator{principal: principal}
-	authorizer := NewRoleAuthorizer([]string{"admin"})
+	authorizer := AuthorizerFunc(func(context.Context, *Principal, Target) error {
+		return ErrForbidden
+	})
 
 	inner := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -532,6 +491,75 @@ func TestHTTPMiddleware_WithAuthorizer(t *testing.T) {
 
 	if rec.Code != http.StatusForbidden {
 		t.Errorf("expected 403, got %d", rec.Code)
+	}
+}
+
+func TestHTTPMiddleware_PassesTarget(t *testing.T) {
+	principal := &Principal{ID: "user-1"}
+	auth := &mockAuthenticator{principal: principal}
+	var got Target
+
+	handler := HTTPMiddleware(auth, WithAuthorizer(AuthorizerFunc(func(_ context.Context, _ *Principal, target Target) error {
+		got = target
+		return nil
+	})))(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodPost, "/api/orders", nil)
+	req.Header.Set("Authorization", "Bearer valid-token")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rec.Code)
+	}
+	if got.Resource != "/api/orders" || got.Action != http.MethodPost || got.Path != "/api/orders" || got.Method != http.MethodPost {
+		t.Fatalf("target = %+v", got)
+	}
+}
+
+func TestHTTPMiddleware_WithExplicitTarget(t *testing.T) {
+	principal := &Principal{ID: "user-1"}
+	auth := &mockAuthenticator{principal: principal}
+	var got Target
+
+	handler := HTTPMiddleware(
+		auth,
+		WithTarget(Target{Resource: "orders", Action: "create"}),
+		WithAuthorizer(AuthorizerFunc(func(_ context.Context, _ *Principal, target Target) error {
+			got = target
+			return nil
+		})),
+	)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodPost, "/api/orders", nil)
+	req.Header.Set("Authorization", "Bearer valid-token")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if got.Resource != "orders" || got.Action != "create" || got.Path != "/api/orders" || got.Method != http.MethodPost {
+		t.Fatalf("target = %+v", got)
+	}
+}
+
+func TestHTTPMiddleware_ExpiredPrincipal(t *testing.T) {
+	expiredAt := time.Now().Add(-time.Minute)
+	auth := &mockAuthenticator{principal: &Principal{ID: "user-1", ExpiresAt: &expiredAt}}
+
+	handler := HTTPMiddleware(auth)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/api/test", nil)
+	req.Header.Set("Authorization", "Bearer expired-token")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401, got %d", rec.Code)
 	}
 }
 
@@ -681,6 +709,27 @@ func TestHTTPSkipPaths(t *testing.T) {
 	}
 }
 
+func TestWithSkipper_ComposesSkippers(t *testing.T) {
+	opts := defaultOptions(&mockAuthenticator{})
+
+	WithSkipper(func(_ context.Context, request any) bool {
+		return request == "first"
+	})(opts)
+	WithSkipper(func(_ context.Context, request any) bool {
+		return request == "second"
+	})(opts)
+
+	if !opts.skipper(t.Context(), "first") {
+		t.Fatal("first skipper should match")
+	}
+	if !opts.skipper(t.Context(), "second") {
+		t.Fatal("second skipper should match")
+	}
+	if opts.skipper(t.Context(), "third") {
+		t.Fatal("unknown request should not match")
+	}
+}
+
 func TestEndpointMiddleware(t *testing.T) {
 	t.Run("success with credentials in context", func(t *testing.T) {
 		principal := &Principal{ID: "user-1", Roles: []string{"admin"}}
@@ -759,7 +808,9 @@ func TestEndpointMiddleware(t *testing.T) {
 	t.Run("with authorizer denied", func(t *testing.T) {
 		principal := &Principal{ID: "user-1", Roles: []string{"user"}}
 		auth := &mockAuthenticator{principal: principal}
-		authorizer := NewRoleAuthorizer([]string{"admin"})
+		authorizer := AuthorizerFunc(func(context.Context, *Principal, Target) error {
+			return ErrForbidden
+		})
 
 		mw := Middleware(auth, WithAuthorizer(authorizer))
 		wrapped := mw(func(ctx context.Context, req any) (any, error) {
@@ -772,42 +823,4 @@ func TestEndpointMiddleware(t *testing.T) {
 			t.Error("expected error for unauthorized role")
 		}
 	})
-}
-
-func TestRequireRoles(t *testing.T) {
-	principal := &Principal{ID: "user-1", Roles: []string{"admin"}}
-	auth := &mockAuthenticator{principal: principal}
-
-	mw := RequireRoles(auth, []string{"admin"})
-	wrapped := mw(func(ctx context.Context, req any) (any, error) {
-		return "ok", nil
-	})
-
-	ctx := WithCredentials(t.Context(), &Credentials{Type: CredentialTypeBearer, Token: "test"})
-	resp, err := wrapped(ctx, nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if resp != "ok" {
-		t.Errorf("expected 'ok', got %v", resp)
-	}
-}
-
-func TestRequirePermissions(t *testing.T) {
-	principal := &Principal{ID: "user-1", Permissions: []string{"read:orders"}}
-	auth := &mockAuthenticator{principal: principal}
-
-	mw := RequirePermissions(auth, []string{"read:orders"})
-	wrapped := mw(func(ctx context.Context, req any) (any, error) {
-		return "ok", nil
-	})
-
-	ctx := WithCredentials(t.Context(), &Credentials{Type: CredentialTypeBearer, Token: "test"})
-	resp, err := wrapped(ctx, nil)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if resp != "ok" {
-		t.Errorf("expected 'ok', got %v", resp)
-	}
 }

@@ -75,9 +75,6 @@ type options struct {
 	corsOpts   []cors.Option
 	enableCORS bool
 
-	// RequestID（已由 trace 中间件统一处理，保留开关兼容）
-	enableRequestID bool
-
 	// Logging
 	enableLogging    bool
 	loggingSkipPaths []string
@@ -103,11 +100,9 @@ type options struct {
 	grpcTLSConfig *tls.Config
 
 	// Auth
-	authenticator       auth.Authenticator
-	authOptions         []auth.Option
-	publicMethods       []string        // 公开方法（无需认证）
-	enableAutoDiscovery bool            // 启用 proto option 自动发现
-	discoveredMethods   map[string]bool // 自动发现的公开方法（延迟填充）
+	authenticator      auth.Authenticator
+	authOptions        []auth.Option
+	discoveredPolicies auth.MethodPolicyMap
 
 	logger logger.Logger
 }
@@ -168,9 +163,6 @@ func WithConfig(cfg transport.GatewayConfig) Option {
 		}
 		if cfg.KeepaliveTime > 0 {
 			o.keepaliveTime = cfg.KeepaliveTime
-		}
-		if len(cfg.PublicMethods) > 0 {
-			o.publicMethods = cfg.PublicMethods
 		}
 	}
 }
@@ -326,62 +318,11 @@ func WithRecovery() Option {
 //
 //	server := gateway.New(
 //	    gateway.WithAuth(authenticator),
-//	    gateway.WithPublicMethods(
-//	        "/api.user.v1.AuthService/Login",
-//	        "/api.user.v1.AuthService/Register",
-//	    ),
 //	)
 func WithAuth(authenticator auth.Authenticator, opts ...auth.Option) Option {
 	return func(o *options) {
 		o.authenticator = authenticator
 		o.authOptions = opts
-	}
-}
-
-// WithPublicMethods 设置公开方法（无需认证）.
-//
-// 方法名格式为 gRPC 完整方法名，如:
-//   - "/api.user.v1.AuthService/Login"
-//   - "/api.user.v1.AuthService/Register"
-//   - "/api.product.v1.ProductService/List"
-//
-// 也支持服务级别的通配:
-//   - "/api.user.v1.AuthService/*" (该服务下所有方法)
-func WithPublicMethods(methods ...string) Option {
-	return func(o *options) {
-		o.publicMethods = append(o.publicMethods, methods...)
-	}
-}
-
-// WithAutoDiscovery 启用 proto option 自动发现.
-//
-// 启用后，服务器会在启动时自动扫描注册的 gRPC 服务，
-// 从 proto 定义中发现标记为 public 的方法，无需手动配置 WithPublicMethods.
-//
-// 在 proto 中标记公开方法:
-//
-//	import "github.com/Tsukikage7/servex/v2/auth/proto/auth.proto";
-//
-//	service AuthService {
-//	  rpc Login(LoginRequest) returns (LoginResponse) {
-//	    option (microservice.kit.auth.method) = {
-//	      public: true
-//	    };
-//	  }
-//	}
-//
-// 也可以标记整个服务为公开:
-//
-//	service PublicService {
-//	  option (microservice.kit.auth.service) = {
-//	    public: true
-//	  };
-//	}
-//
-// 注意: 自动发现会与手动配置的 WithPublicMethods 合并.
-func WithAutoDiscovery() Option {
-	return func(o *options) {
-		o.enableAutoDiscovery = true
 	}
 }
 
@@ -476,19 +417,6 @@ func WithClientIP(opts ...clientip.Option) Option {
 	return func(o *options) {
 		o.enableClientIP = true
 		o.clientIPOpts = opts
-	}
-}
-
-// WithRequestID 启用 Request ID（gRPC + HTTP 双端）.
-//
-// Deprecated: Request ID 已由 trace 中间件统一处理，此选项保留兼容但不再生效.
-//
-// 示例:
-//
-//	gateway.WithRequestID()
-func WithRequestID() Option {
-	return func(o *options) {
-		o.enableRequestID = true
 	}
 }
 
@@ -604,13 +532,10 @@ func applyAuthInterceptors(o *options) {
 		return
 	}
 
-	// 如果启用自动发现，初始化 map
-	if o.enableAutoDiscovery {
-		o.discoveredMethods = make(map[string]bool)
-	}
+	o.discoveredPolicies = make(auth.MethodPolicyMap)
 
-	// 构建 skipper（支持手动配置 + 自动发现）
-	skipper := buildCombinedSkipper(o)
+	// 构建 proto public skipper
+	skipper := buildProtoPolicySkipper(o)
 
 	// 合并选项
 	authOpts := append([]auth.Option{}, o.authOptions...)
@@ -619,6 +544,9 @@ func applyAuthInterceptors(o *options) {
 	}
 	if o.logger != nil {
 		authOpts = append(authOpts, auth.WithLogger(o.logger))
+	}
+	if o.discoveredPolicies != nil {
+		authOpts = append(authOpts, auth.WithPolicyProvider(o.discoveredPolicies))
 	}
 
 	// 添加到拦截器链（在 recovery 之后）
@@ -632,14 +560,11 @@ func applyAuthInterceptors(o *options) {
 	)
 }
 
-// buildCombinedSkipper 构建组合跳过器（手动配置 + 自动发现）.
-func buildCombinedSkipper(o *options) auth.Skipper {
-	// 如果没有任何配置，返回 nil
-	if len(o.publicMethods) == 0 && !o.enableAutoDiscovery {
+// buildProtoPolicySkipper 构建 proto public 跳过器.
+func buildProtoPolicySkipper(o *options) auth.Skipper {
+	if o.discoveredPolicies == nil {
 		return nil
 	}
-
-	skip := transport.BuildMethodSkipper(o.publicMethods)
 
 	return func(ctx context.Context, _ any) bool {
 		method, ok := grpc.Method(ctx)
@@ -647,13 +572,8 @@ func buildCombinedSkipper(o *options) auth.Skipper {
 			return false
 		}
 
-		// 1. 检查手动配置的方法（精确匹配 + 前缀匹配）
-		if skip(method) {
-			return true
-		}
-
-		// 2. 检查自动发现的方法（延迟填充）
-		if o.discoveredMethods != nil && o.discoveredMethods[method] {
+		policy, ok := o.discoveredPolicies[method]
+		if ok && policy != nil && policy.Public {
 			return true
 		}
 

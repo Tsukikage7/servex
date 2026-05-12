@@ -9,7 +9,6 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
-	"github.com/Tsukikage7/servex/v2/observability/logger"
 	"github.com/Tsukikage7/servex/v2/transport/grpcx"
 )
 
@@ -46,48 +45,12 @@ func UnaryServerInterceptor(authenticator Authenticator, opts ...Option) grpc.Un
 			return handler(ctx, req)
 		}
 
-		// 提取凭据
-		creds, err := o.credentialsExtractor(ctx, req)
+		authCtx, _, err := authenticateAndAuthorize(ctx, req, o, grpcTarget(info.FullMethod))
 		if err != nil {
-			if o.logger != nil {
-				logger.FromContext(ctx).Debug("[Auth] gRPC凭据提取失败",
-					logger.String("method", info.FullMethod),
-					logger.Err(err),
-				)
-			}
-			return nil, status.Error(codes.Unauthenticated, "凭据未找到")
+			return nil, grpcErrorForAuthError(handleError(ctx, err, o))
 		}
 
-		// 认证
-		principal, err := authenticator.Authenticate(ctx, *creds)
-		if err != nil {
-			if o.logger != nil {
-				logger.FromContext(ctx).Warn("[Auth] gRPC认证失败",
-					logger.String("method", info.FullMethod),
-					logger.Err(err),
-				)
-			}
-			return nil, status.Error(codes.Unauthenticated, "认证失败")
-		}
-
-		// 将主体存入 context
-		ctx = WithPrincipal(ctx, principal)
-
-		// 授权
-		if o.authorizer != nil {
-			if err := o.authorizer.Authorize(ctx, principal, "", info.FullMethod); err != nil {
-				if o.logger != nil {
-					logger.FromContext(ctx).Warn("[Auth] gRPC授权失败",
-						logger.String("principal_id", principal.ID),
-						logger.String("method", info.FullMethod),
-						logger.Err(err),
-					)
-				}
-				return nil, status.Error(codes.PermissionDenied, "权限被拒绝")
-			}
-		}
-
-		return handler(ctx, req)
+		return handler(authCtx, req)
 	}
 }
 
@@ -119,48 +82,12 @@ func StreamServerInterceptor(authenticator Authenticator, opts ...Option) grpc.S
 			return handler(srv, ss)
 		}
 
-		// 提取凭据
-		creds, err := o.credentialsExtractor(ctx, nil)
+		authCtx, _, err := authenticateAndAuthorize(ctx, nil, o, grpcTarget(info.FullMethod))
 		if err != nil {
-			if o.logger != nil {
-				logger.FromContext(ctx).Debug("[Auth] gRPC流凭据提取失败",
-					logger.String("method", info.FullMethod),
-					logger.Err(err),
-				)
-			}
-			return status.Error(codes.Unauthenticated, "凭据未找到")
+			return grpcErrorForAuthError(handleError(ctx, err, o))
 		}
 
-		// 认证
-		principal, err := authenticator.Authenticate(ctx, *creds)
-		if err != nil {
-			if o.logger != nil {
-				logger.FromContext(ctx).Warn("[Auth] gRPC流认证失败",
-					logger.String("method", info.FullMethod),
-					logger.Err(err),
-				)
-			}
-			return status.Error(codes.Unauthenticated, "认证失败")
-		}
-
-		// 将主体存入 context
-		ctx = WithPrincipal(ctx, principal)
-
-		// 授权
-		if o.authorizer != nil {
-			if err := o.authorizer.Authorize(ctx, principal, "", info.FullMethod); err != nil {
-				if o.logger != nil {
-					logger.FromContext(ctx).Warn("[Auth] gRPC流授权失败",
-						logger.String("principal_id", principal.ID),
-						logger.String("method", info.FullMethod),
-						logger.Err(err),
-					)
-				}
-				return status.Error(codes.PermissionDenied, "权限被拒绝")
-			}
-		}
-
-		wrapped := grpcx.WrapServerStream(ss, ctx)
+		wrapped := grpcx.WrapServerStream(ss, authCtx)
 		return handler(srv, wrapped)
 	}
 }
@@ -198,6 +125,20 @@ func DefaultGRPCCredentialsExtractor(ctx context.Context, _ any) (*Credentials, 
 	}
 
 	return nil, ErrCredentialsNotFound
+}
+
+func grpcTarget(fullMethod string) Target {
+	return Target{
+		Resource: fullMethod,
+		Method:   fullMethod,
+	}
+}
+
+func grpcErrorForAuthError(err error) error {
+	if IsForbidden(err) {
+		return status.Error(codes.PermissionDenied, "权限被拒绝")
+	}
+	return status.Error(codes.Unauthenticated, "认证失败")
 }
 
 // GRPCBearerExtractor 仅提取 Bearer Token.
