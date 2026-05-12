@@ -59,7 +59,6 @@ type GRPCConfig struct {
 	EnableReflection *bool         `json:"enable_reflection" yaml:"enable_reflection" mapstructure:"enable_reflection"`
 	KeepaliveTime    time.Duration `json:"keepalive_time" yaml:"keepalive_time" mapstructure:"keepalive_time"`
 	KeepaliveTimeout time.Duration `json:"keepalive_timeout" yaml:"keepalive_timeout" mapstructure:"keepalive_timeout"`
-	PublicMethods    []string      `json:"public_methods" yaml:"public_methods" mapstructure:"public_methods"`
 }
 
 // GatewayConfig Gateway 服务器配置.
@@ -67,6 +66,5 @@ type GatewayConfig struct {
 	Name          string        `json:"name" yaml:"name" mapstructure:"name"`
 	GRPCAddr      string        `json:"grpc_addr" yaml:"grpc_addr" mapstructure:"grpc_addr"`
 	HTTPAddr      string        `json:"http_addr" yaml:"http_addr" mapstructure:"http_addr"`
-	PublicMethods []string      `json:"public_methods" yaml:"public_methods" mapstructure:"public_methods"`
 	KeepaliveTime time.Duration `json:"keepalive_time" yaml:"keepalive_time" mapstructure:"keepalive_time"`
 }
