@@ -198,35 +198,35 @@ func (r *Relay) cleanupLoop(ctx context.Context) {
 // 日志辅助方法.
 
 func (r *Relay) logger() logger.Logger {
-	return r.opts.logger
+	return logger.WithComponent(r.opts.logger, "Outbox")
 }
 
 func (r *Relay) logDebug(msg string) {
 	if log := r.logger(); log != nil {
-		log.Debug("[Outbox] " + msg)
+		log.Debug(msg)
 	}
 }
 
 func (r *Relay) logDebugf(format string, args ...any) {
 	if log := r.logger(); log != nil {
-		log.Debugf("[Outbox] "+format, args...)
+		log.Debugf(format, args...)
 	}
 }
 
 func (r *Relay) logWarn(msg string) {
 	if log := r.logger(); log != nil {
-		log.Warn("[Outbox] " + msg)
+		log.Warn(msg)
 	}
 }
 
 func (r *Relay) logWarnf(format string, args ...any) {
 	if log := r.logger(); log != nil {
-		log.Warnf("[Outbox] "+format, args...)
+		log.Warnf(format, args...)
 	}
 }
 
 func (r *Relay) logErrorf(format string, args ...any) {
 	if log := r.logger(); log != nil {
-		log.Errorf("[Outbox] "+format, args...)
+		log.Errorf(format, args...)
 	}
 }

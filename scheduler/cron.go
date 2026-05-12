@@ -376,29 +376,29 @@ func (s *cronScheduler) runWithRetry(ctx context.Context, job *Job, jc *JobConte
 // 日志辅助方法.
 
 func (s *cronScheduler) logger() logger.Logger {
-	return s.opts.logger
+	return logger.WithComponent(s.opts.logger, "Scheduler")
 }
 
 func (s *cronScheduler) logDebug(msg string) {
 	if log := s.logger(); log != nil {
-		log.Debug("[Scheduler] " + msg)
+		log.Debug(msg)
 	}
 }
 
 func (s *cronScheduler) logDebugf(format string, args ...any) {
 	if log := s.logger(); log != nil {
-		log.Debugf("[Scheduler] "+format, args...)
+		log.Debugf(format, args...)
 	}
 }
 
 func (s *cronScheduler) logWarn(msg string) {
 	if log := s.logger(); log != nil {
-		log.Warn("[Scheduler] " + msg)
+		log.Warn(msg)
 	}
 }
 
 func (s *cronScheduler) logErrorf(format string, args ...any) {
 	if log := s.logger(); log != nil {
-		log.Errorf("[Scheduler] "+format, args...)
+		log.Errorf(format, args...)
 	}
 }

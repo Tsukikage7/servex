@@ -11,6 +11,8 @@ import (
 // Logging 返回记录请求日志的中间件.
 // 记录内容：模型名称、prompt tokens、completion tokens、总耗时.
 func Logging(log logger.Logger) Middleware {
+	log = logger.WithComponent(log, "LLM")
+
 	return func(next llm.ChatModel) llm.ChatModel {
 		return Wrap(
 			func(ctx context.Context, messages []llm.Message, opts ...llm.CallOption) (*llm.ChatResponse, error) {
@@ -28,7 +30,7 @@ func Logging(log logger.Logger) Middleware {
 				}
 				if err != nil {
 					fields = append(fields, logger.Field{Key: "error", Value: err.Error()})
-					log.With(fields...).Error("[LLM] 生成失败")
+					log.With(fields...).Error("生成失败")
 				} else {
 					fields = append(fields,
 						logger.Field{Key: "finish_reason", Value: resp.FinishReason},
@@ -36,7 +38,7 @@ func Logging(log logger.Logger) Middleware {
 						logger.Field{Key: "completion_tokens", Value: resp.Usage.CompletionTokens},
 						logger.Field{Key: "total_tokens", Value: resp.Usage.TotalTokens},
 					)
-					log.With(fields...).Info("[LLM] 生成完成")
+					log.With(fields...).Info("生成完成")
 				}
 				return resp, err
 			},
@@ -55,9 +57,9 @@ func Logging(log logger.Logger) Middleware {
 				}
 				if err != nil {
 					fields = append(fields, logger.Field{Key: "error", Value: err.Error()})
-					log.With(fields...).Error("[LLM] 流式生成失败")
+					log.With(fields...).Error("流式生成失败")
 				} else {
-					log.With(fields...).Info("[LLM] 流式生成已建立")
+					log.With(fields...).Info("流式生成已建立")
 				}
 				return reader, err
 			},

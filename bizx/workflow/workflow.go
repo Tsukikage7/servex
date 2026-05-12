@@ -116,7 +116,9 @@ type Option func(*Engine)
 // WithLogger 设置日志记录器.
 func WithLogger(logger *slog.Logger) Option {
 	return func(e *Engine) {
-		e.logger = logger
+		if logger != nil {
+			e.logger = logger.With(slog.String("component", "Workflow"))
+		}
 	}
 }
 
@@ -165,7 +167,7 @@ func New(store Store, opts ...Option) *Engine {
 	e := &Engine{
 		store:       store,
 		definitions: make(map[string]*Definition),
-		logger:      slog.Default(),
+		logger:      slog.Default().With(slog.String("component", "Workflow")),
 		maxParallel: 5,
 		maxSteps:    1000,
 	}
@@ -277,7 +279,7 @@ func (e *Engine) Execute(ctx context.Context, instanceID string) error {
 			// 持久化中间状态，崩溃恢复时可从此节点继续
 			if e.checkpoint != nil {
 				if err := e.checkpoint(ctx, instance); err != nil {
-					e.logger.WarnContext(ctx, "[Workflow] 检查点持久化失败", "instance_id", instance.ID, "error", err)
+					e.logger.WarnContext(ctx, "检查点持久化失败", "instance_id", instance.ID, "error", err)
 				}
 			}
 
@@ -305,7 +307,7 @@ func (e *Engine) Execute(ctx context.Context, instanceID string) error {
 			// 持久化中间状态
 			if e.checkpoint != nil {
 				if err := e.checkpoint(ctx, instance); err != nil {
-					e.logger.WarnContext(ctx, "[Workflow] 检查点持久化失败", "instance_id", instance.ID, "error", err)
+					e.logger.WarnContext(ctx, "检查点持久化失败", "instance_id", instance.ID, "error", err)
 				}
 			}
 
@@ -326,7 +328,7 @@ func (e *Engine) Execute(ctx context.Context, instanceID string) error {
 			// 持久化中间状态
 			if e.checkpoint != nil {
 				if err := e.checkpoint(ctx, instance); err != nil {
-					e.logger.WarnContext(ctx, "[Workflow] 检查点持久化失败", "instance_id", instance.ID, "error", err)
+					e.logger.WarnContext(ctx, "检查点持久化失败", "instance_id", instance.ID, "error", err)
 				}
 			}
 

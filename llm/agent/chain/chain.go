@@ -89,7 +89,7 @@ func WithModel(model llm.ChatModel) Option {
 
 // WithLogger 设置日志记录器.
 func WithLogger(log logger.Logger) Option {
-	return func(c *Chain) { c.log = log }
+	return func(c *Chain) { c.log = logger.WithComponent(log, "Agent") }
 }
 
 // WithOnStep 设置步骤完成后的回调.
@@ -220,7 +220,7 @@ func (c *Chain) Run(ctx context.Context, input any, opts ...llm.CallOption) (*Re
 				logger.String("step", step.Name),
 				logger.Duration("duration", duration),
 				logger.Int("tokens", resp.Usage.TotalTokens),
-			).Info("[Agent] 链式步骤完成")
+			).Info("链式步骤完成")
 		}
 
 		// 触发步骤回调

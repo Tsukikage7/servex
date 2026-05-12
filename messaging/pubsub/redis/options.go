@@ -14,7 +14,7 @@ type PublisherOption func(*publisherOptions)
 // WithPublisherLogger 设置日志器.
 func WithPublisherLogger(log logger.Logger) PublisherOption {
 	return func(o *publisherOptions) {
-		o.logger = log
+		o.logger = logger.WithComponent(log, "PubSub")
 	}
 }
 
@@ -39,7 +39,7 @@ type SubscriberOption func(*subscriberOptions)
 // WithSubscriberLogger 设置日志器.
 func WithSubscriberLogger(log logger.Logger) SubscriberOption {
 	return func(o *subscriberOptions) {
-		o.logger = log
+		o.logger = logger.WithComponent(log, "PubSub")
 	}
 }
 

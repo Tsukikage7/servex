@@ -141,7 +141,7 @@ func (p *Publisher) reconnectLoop() {
 
 func (p *Publisher) logf(format string, args ...any) {
 	if p.opts.logger != nil {
-		p.opts.logger.Infof("[RabbitMQ] 发布者 "+format, args...)
+		p.opts.logger.Infof("发布者 "+format, args...)
 	}
 }
 

@@ -69,7 +69,7 @@ func WithBilling(b billing.Billing) Option {
 
 // WithLogger 设置日志记录器.
 func WithLogger(log logger.Logger) Option {
-	return func(p *Proxy) { p.log = log }
+	return func(p *Proxy) { p.log = logger.WithComponent(log, "LLM") }
 }
 
 // WithModeration 设置内容审核器，用于过滤有害内容.

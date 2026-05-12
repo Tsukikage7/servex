@@ -38,7 +38,9 @@ func WithSnapshotEvery[T Aggregate](n int64) RepositoryOption[T] {
 // WithLogger 设置日志记录器.
 func WithLogger[T Aggregate](l *slog.Logger) RepositoryOption[T] {
 	return func(r *Repository[T]) {
-		r.logger = l
+		if l != nil {
+			r.logger = l.With(slog.String("component", "EventSourcing"))
+		}
 	}
 }
 
@@ -79,7 +81,7 @@ func (r *Repository[T]) Save(ctx context.Context, aggregate T) error {
 		data, err := json.Marshal(aggregate)
 		if err != nil {
 			if r.logger != nil {
-				r.logger.Warn("[EventSourcing] 快照序列化失败",
+				r.logger.Warn("快照序列化失败",
 					"aggregate_id", aggregate.AggregateID(),
 					"error", err,
 				)
@@ -91,7 +93,7 @@ func (r *Repository[T]) Save(ctx context.Context, aggregate T) error {
 			Data:          data,
 		}); err != nil {
 			if r.logger != nil {
-				r.logger.Warn("[EventSourcing] 快照保存失败",
+				r.logger.Warn("快照保存失败",
 					"aggregate_id", aggregate.AggregateID(),
 					"version", aggregate.Version(),
 					"error", err,
@@ -121,7 +123,7 @@ func (r *Repository[T]) Load(ctx context.Context, aggregateID string) (T, error)
 		snapshot, err := r.snapshotStore.Load(ctx, aggregateID)
 		if err != nil {
 			if r.logger != nil {
-				r.logger.Warn("[EventSourcing] 快照加载失败，将从头重放事件",
+				r.logger.Warn("快照加载失败，将从头重放事件",
 					"aggregate_id", aggregateID,
 					"error", err,
 				)
@@ -130,7 +132,7 @@ func (r *Repository[T]) Load(ctx context.Context, aggregateID string) (T, error)
 		} else if snapshot != nil {
 			if err := json.Unmarshal(snapshot.Data, aggregate); err != nil {
 				if r.logger != nil {
-					r.logger.Warn("[EventSourcing] 快照反序列化失败，将从头重放事件",
+					r.logger.Warn("快照反序列化失败，将从头重放事件",
 						"aggregate_id", aggregateID,
 						"error", err,
 					)

@@ -84,7 +84,7 @@ func (h *BatchHandler) HandleBatch(ctx context.Context, messages [][]byte) error
 		if err := h.tracker.opts.store.SetLastActive(ctx, userID, event); err != nil {
 			// 记录错误但继续处理
 			if h.tracker.opts.logger != nil {
-				h.tracker.opts.logger.Error("[Activity] 批量设置最后活跃时间失败",
+				h.tracker.opts.logger.Error("批量设置最后活跃时间失败",
 					"user_id", userID,
 					"error", err,
 				)
@@ -92,7 +92,7 @@ func (h *BatchHandler) HandleBatch(ctx context.Context, messages [][]byte) error
 		}
 		if err := h.tracker.opts.store.SetOnline(ctx, userID, h.tracker.opts.onlineTTL); err != nil {
 			if h.tracker.opts.logger != nil {
-				h.tracker.opts.logger.Error("[Activity] 批量设置在线状态失败",
+				h.tracker.opts.logger.Error("批量设置在线状态失败",
 					"user_id", userID,
 					"error", err,
 				)

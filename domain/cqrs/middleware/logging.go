@@ -15,7 +15,7 @@ func CommandLogging[C, R any](log logger.Logger, commandName string) cqrs.Comman
 	return func(next cqrs.CommandHandler[C, R]) cqrs.CommandHandler[C, R] {
 		return &commandLoggingHandler[C, R]{
 			next:        next,
-			logger:      log,
+			logger:      logger.WithComponent(log, "CQRS"),
 			commandName: commandName,
 		}
 	}
@@ -37,12 +37,12 @@ func (h *commandLoggingHandler[C, R]) Handle(ctx context.Context, cmd C) (C, R, 
 			logger.String("command", h.commandName),
 			logger.Duration("elapsed", elapsed),
 			logger.Err(err),
-		).Error("[CQRS] 命令执行失败")
+		).Error("命令执行失败")
 	} else {
 		h.logger.With(
 			logger.String("command", h.commandName),
 			logger.Duration("elapsed", elapsed),
-		).Debug("[CQRS] 命令执行成功")
+		).Debug("命令执行成功")
 	}
 
 	return c, r, err
@@ -54,7 +54,7 @@ func QueryLogging[Q, R any](log logger.Logger, queryName string) cqrs.QueryMiddl
 	return func(next cqrs.QueryHandler[Q, R]) cqrs.QueryHandler[Q, R] {
 		return &queryLoggingHandler[Q, R]{
 			next:      next,
-			logger:    log,
+			logger:    logger.WithComponent(log, "CQRS"),
 			queryName: queryName,
 		}
 	}
@@ -76,12 +76,12 @@ func (h *queryLoggingHandler[Q, R]) Handle(ctx context.Context, query Q) (R, err
 			logger.String("query", h.queryName),
 			logger.Duration("elapsed", elapsed),
 			logger.Err(err),
-		).Error("[CQRS] 查询执行失败")
+		).Error("查询执行失败")
 	} else {
 		h.logger.With(
 			logger.String("query", h.queryName),
 			logger.Duration("elapsed", elapsed),
-		).Debug("[CQRS] 查询执行成功")
+		).Debug("查询执行成功")
 	}
 
 	return r, err

@@ -108,7 +108,7 @@ func New(opts ...Option) Bus {
 		bufferSize:  1024,
 		errorHandler: func(err error) {
 			// 默认通过标准日志输出错误，避免静默丢弃事件.
-			log.Printf("[Event] 处理失败 error=%v", err)
+			log.Printf("component=Event 处理失败 error=%v", err)
 		},
 	}
 	for _, opt := range opts {

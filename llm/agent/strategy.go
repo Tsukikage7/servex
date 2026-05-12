@@ -9,11 +9,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/Tsukikage7/servex/v2/llm"
 	"github.com/Tsukikage7/servex/v2/llm/agent/checkpoint"
 	"github.com/Tsukikage7/servex/v2/llm/agent/toolcall"
 	"github.com/Tsukikage7/servex/v2/observability/logger"
-	"github.com/google/uuid"
 )
 
 // Strategy Agent 执行策略接口.
@@ -37,6 +38,8 @@ func NewReActStrategy() Strategy {
 
 // Execute 同步执行 ReAct 策略.
 func (s *reActStrategy) Execute(ctx context.Context, model llm.ChatModel, tools *toolcall.Registry, messages []llm.Message, maxIter int, log logger.Logger, opts ...llm.CallOption) (*Result, error) {
+	log = logger.WithComponent(log, "Agent")
+
 	cb := buildAgentCallbackHandler(getAgentCallbacks(ctx))
 
 	// 无工具时直接调用模型
@@ -75,9 +78,9 @@ func (s *reActStrategy) Execute(ctx context.Context, model llm.ChatModel, tools 
 			allToolResults = append(allToolResults, event.ToolResults...)
 			if log != nil {
 				if event.IsFinal {
-					log.Debugf("[Agent] ReAct 策略第 %d 轮完成（最终轮）", event.Round+1)
+					log.Debugf("ReAct 策略第 %d 轮完成（最终轮）", event.Round+1)
 				} else {
-					log.Debugf("[Agent] ReAct 策略第 %d 轮完成，执行了 %d 个工具调用", event.Round+1, len(event.ToolResults))
+					log.Debugf("ReAct 策略第 %d 轮完成，执行了 %d 个工具调用", event.Round+1, len(event.ToolResults))
 				}
 			}
 		}),
@@ -140,6 +143,8 @@ func (s *reActStrategy) Execute(ctx context.Context, model llm.ChatModel, tools 
 
 // ExecuteStream 流式执行 ReAct 策略.
 func (s *reActStrategy) ExecuteStream(ctx context.Context, model llm.ChatModel, tools *toolcall.Registry, messages []llm.Message, maxIter int, log logger.Logger, opts ...llm.CallOption) (<-chan Event, error) {
+	log = logger.WithComponent(log, "Agent")
+
 	ch := make(chan Event, 16)
 
 	go func() {
@@ -249,6 +254,8 @@ const planPromptTemplate = `请将以下任务分解为步骤列表，输出 JSO
 
 // Execute 同步执行 PlanExecute 策略.
 func (s *planExecuteStrategy) Execute(ctx context.Context, model llm.ChatModel, tools *toolcall.Registry, messages []llm.Message, maxIter int, log logger.Logger, opts ...llm.CallOption) (*Result, error) {
+	log = logger.WithComponent(log, "Agent")
+
 	// 提取用户输入（最后一条用户消息）
 	userInput := extractUserInput(messages)
 
@@ -259,7 +266,7 @@ func (s *planExecuteStrategy) Execute(ctx context.Context, model llm.ChatModel, 
 	}
 
 	if log != nil {
-		log.Debugf("[Agent] PlanExecute 策略开始生成计划")
+		log.Debugf("PlanExecute 策略开始生成计划")
 	}
 
 	planResp, err := model.Generate(ctx, planMessages, opts...)
@@ -274,7 +281,7 @@ func (s *planExecuteStrategy) Execute(ctx context.Context, model llm.ChatModel, 
 	}
 
 	if log != nil {
-		log.Debugf("[Agent] PlanExecute 策略计划包含 %d 个步骤", len(steps))
+		log.Debugf("PlanExecute 策略计划包含 %d 个步骤", len(steps))
 	}
 
 	// 第二步：逐步执行
@@ -293,7 +300,7 @@ func (s *planExecuteStrategy) Execute(ctx context.Context, model llm.ChatModel, 
 		}
 
 		if log != nil {
-			log.With(logger.String("step", step)).Debugf("[Agent] PlanExecute 策略执行步骤 %d/%d", i+1, len(steps))
+			log.With(logger.String("step", step)).Debugf("PlanExecute 策略执行步骤 %d/%d", i+1, len(steps))
 		}
 
 		// 构建步骤消息
@@ -349,6 +356,8 @@ func (s *planExecuteStrategy) Execute(ctx context.Context, model llm.ChatModel, 
 
 // ExecuteStream 流式执行 PlanExecute 策略.
 func (s *planExecuteStrategy) ExecuteStream(ctx context.Context, model llm.ChatModel, tools *toolcall.Registry, messages []llm.Message, maxIter int, log logger.Logger, opts ...llm.CallOption) (<-chan Event, error) {
+	log = logger.WithComponent(log, "Agent")
+
 	ch := make(chan Event, 16)
 
 	go func() {
