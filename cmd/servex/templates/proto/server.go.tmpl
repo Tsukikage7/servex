@@ -2,11 +2,17 @@ package service
 
 import (
 	"context"
+{{if .WithConnect}}	"net/http"
+{{end}}
 
+{{if .WithConnect}}	"connectrpc.com/connect"
+{{end}}
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 
 	pb "{{.Module}}/api/{{.Name}}/v1"
+{{if .WithConnect}}	connectpb "{{.Module}}/api/{{.Name}}/v1/{{.Name}}v1connect"
+{{end}}
 )
 
 // {{.PascalName}}Service {{.PascalName}} 服务实现.
@@ -28,6 +34,13 @@ func (s *{{.PascalName}}Service) RegisterGRPC(server *grpc.Server) {
 func (s *{{.PascalName}}Service) RegisterGateway(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
 	return pb.Register{{.PascalName}}ServiceHandlerClient(ctx, mux, pb.New{{.PascalName}}ServiceClient(conn))
 }
+
+{{if .WithConnect}}// RegisterConnect 注册 Connect 处理器（实现 connectserver.Registrar 接口）.
+func (s *{{.PascalName}}Service) RegisterConnect(mux *http.ServeMux, opts ...connect.HandlerOption) {
+	path, handler := connectpb.New{{.PascalName}}ServiceHandler(s, opts...)
+	mux.Handle(path, handler)
+}
+{{end}}
 {{range .RPCs}}
 // {{.MethodName}} 处理 {{.MethodName}} 请求.
 func (s *{{$.PascalName}}Service) {{.MethodName}}(ctx context.Context, req *pb.{{.RequestType}}) (*pb.{{.ReplyType}}, error) {

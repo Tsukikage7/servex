@@ -347,7 +347,10 @@ var protoAddCmd = &cobra.Command{
 	},
 }
 
-var protoClientOutput string
+var (
+	protoClientOutput   string
+	protoClientProtocol string
+)
 
 // protoClientCmd Proto 客户端代码生成命令.
 var protoClientCmd = &cobra.Command{
@@ -362,6 +365,7 @@ var protoClientCmd = &cobra.Command{
 var (
 	protoServerTarget  string
 	protoServerService string
+	protoServerConnect bool
 )
 
 // protoServerCmd Proto 服务端桩代码生成命令.
@@ -370,7 +374,7 @@ var protoServerCmd = &cobra.Command{
 	Short: "从 proto 文件生成服务端实现桩代码",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return runProtoServer(buildProtoServerArgs(args[0], protoServerTarget, protoServerService))
+		return runProtoServer(buildProtoServerArgs(args[0], protoServerTarget, protoServerService, protoServerConnect))
 	},
 }
 
@@ -461,17 +465,23 @@ func buildProtoClientArgs(protoFile, output string) []string {
 	if output != "" {
 		args = append(args, "-output", output)
 	}
+	if protoClientProtocol != "" {
+		args = append(args, "-protocol", protoClientProtocol)
+	}
 	return args
 }
 
 // buildProtoServerArgs 构建 proto server 参数列表.
-func buildProtoServerArgs(protoFile, target, service string) []string {
+func buildProtoServerArgs(protoFile, target, service string, withConnect bool) []string {
 	args := []string{protoFile}
 	if target != "internal/service" {
 		args = append(args, "-target", target)
 	}
 	if service != "" {
 		args = append(args, "-service", service)
+	}
+	if withConnect {
+		args = append(args, "-with-connect")
 	}
 	return args
 }
@@ -557,10 +567,12 @@ func init() {
 
 	// proto client
 	protoClientCmd.Flags().StringVar(&protoClientOutput, "output", "", "输出目录 (默认: proto 文件所在目录)")
+	protoClientCmd.Flags().StringVar(&protoClientProtocol, "protocol", "auto", "生成协议: auto|grpc|gateway|connect")
 
 	// proto server
 	protoServerCmd.Flags().StringVar(&protoServerTarget, "target", "internal/service", "输出目录")
 	protoServerCmd.Flags().StringVar(&protoServerService, "service", "", "目标服务名[monorepo 模式]")
+	protoServerCmd.Flags().BoolVar(&protoServerConnect, "with-connect", false, "生成 Connect 注册方法")
 
 	// proto 子命令
 	protoCmd.AddCommand(protoAddCmd, protoClientCmd, protoServerCmd, protoLintCmd, protoBreakingCmd)

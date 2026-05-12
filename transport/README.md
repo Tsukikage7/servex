@@ -103,6 +103,7 @@ transport/
 ├── grpcclient/     # gRPC 客户端
 ├── httpclient/     # HTTP 客户端
 ├── gateway/        # gRPC-Gateway 双协议服务器
+├── connectserver/  # Connect RPC 服务器（选配）
 ├── health/         # 健康检查（HTTP + gRPC）
 ├── websocket/      # WebSocket 实时通信
 ├── response/       # 统一响应格式

@@ -3,6 +3,7 @@ module github.com/Tsukikage7/servex/v2
 go 1.26.1
 
 require (
+	connectrpc.com/connect v1.19.2
 	github.com/ClickHouse/clickhouse-go/v2 v2.30.0
 	github.com/IBM/sarama v1.46.3
 	github.com/apolloconfig/agollo/v4 v4.4.0

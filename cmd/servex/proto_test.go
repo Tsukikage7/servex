@@ -99,8 +99,14 @@ func TestRunProtoAddGeneratesBufConfig(t *testing.T) {
 	if !contains(text, "version: v2") {
 		t.Error("buf.yaml 缺少 version: v2")
 	}
-	if !contains(text, "path: ../third_party") {
+	if !contains(text, "path: third_party") {
 		t.Error("buf.yaml 缺少本地 third_party 依赖")
+	}
+	if contains(text, "../third_party") {
+		t.Error("buf.yaml 不应引用 api 目录外的 third_party")
+	}
+	if _, err := os.Stat(filepath.Join(dir, "api", "third_party", "google", "api", "annotations.proto")); err != nil {
+		t.Fatalf("third_party proto 未生成: %v", err)
 	}
 
 	// 检查 buf.gen.yaml 已生成
@@ -231,6 +237,63 @@ func TestGenerateBufGenYaml(t *testing.T) {
 	if !contains(text, "gateway") {
 		t.Error("HTTP 模板应包含 gateway 插件")
 	}
+
+	// Connect
+	pathConnect := filepath.Join(dir, "connect.yaml")
+	protoFile := filepath.Join(dir, "order.proto")
+	if err := os.WriteFile(protoFile, []byte(`syntax = "proto3";`), 0o644); err != nil {
+		t.Fatalf("写入 proto 文件失败: %v", err)
+	}
+	if err := generateBufGenYamlForProtocol(pathConnect, protoFile, "connect"); err != nil {
+		t.Fatalf("generateBufGenYamlForProtocol(connect) 失败: %v", err)
+	}
+	content, _ = os.ReadFile(pathConnect)
+	text = string(content)
+	if !contains(text, "buf.build/connectrpc/go") {
+		t.Error("Connect 模板应包含 connect-go 插件")
+	}
+}
+
+func TestResolveBufGenYamlExplicitProtocol(t *testing.T) {
+	dir := t.TempDir()
+	apiDir := filepath.Join(dir, "api")
+	protoDir := filepath.Join(apiDir, "order", "v1")
+	if err := os.MkdirAll(protoDir, 0o755); err != nil {
+		t.Fatalf("创建 proto 目录失败: %v", err)
+	}
+	protoFile := filepath.Join(protoDir, "order.proto")
+	if err := os.WriteFile(protoFile, []byte(`syntax = "proto3";`), 0o644); err != nil {
+		t.Fatalf("写入 proto 文件失败: %v", err)
+	}
+	existing := filepath.Join(apiDir, "buf.gen.yaml")
+	if err := os.WriteFile(existing, []byte("version: v2\n# custom\n"), 0o644); err != nil {
+		t.Fatalf("写入已有 buf.gen.yaml 失败: %v", err)
+	}
+
+	got, generated, err := resolveBufGenYaml(protoFile, apiDir, "connect")
+	if err != nil {
+		t.Fatalf("resolveBufGenYaml 失败: %v", err)
+	}
+	if !generated {
+		t.Fatal("显式协议应生成独立 buf.gen 配置")
+	}
+	if filepath.Base(got) != "buf.gen.connect.yaml" {
+		t.Fatalf("buf.gen 路径 = %s，期望 buf.gen.connect.yaml", got)
+	}
+	content, err := os.ReadFile(got)
+	if err != nil {
+		t.Fatalf("读取 Connect buf.gen 失败: %v", err)
+	}
+	if !contains(string(content), "buf.build/connectrpc/go") {
+		t.Error("Connect buf.gen 应包含 connect-go 插件")
+	}
+	existingContent, err := os.ReadFile(existing)
+	if err != nil {
+		t.Fatalf("读取已有 buf.gen.yaml 失败: %v", err)
+	}
+	if string(existingContent) != "version: v2\n# custom\n" {
+		t.Error("显式协议不应覆盖已有 buf.gen.yaml")
+	}
 }
 
 // TestRunProtoLintNoArgs 测试 proto lint 默认参数.
@@ -349,6 +412,35 @@ func TestRunProtoServer(t *testing.T) {
 	}
 }
 
+func TestRunProtoServerWithConnect(t *testing.T) {
+	dir := t.TempDir()
+
+	if err := runProtoAdd([]string{"order", "--module", "github.com/example/myapp", "--output", dir}); err != nil {
+		t.Fatalf("runProtoAdd 失败: %v", err)
+	}
+
+	protoPath := filepath.Join(dir, "api/order/v1/order.proto")
+	targetDir := filepath.Join(dir, "internal/service")
+	if err := runProtoServer([]string{protoPath, "--target", targetDir, "--with-connect"}); err != nil {
+		t.Fatalf("runProtoServer --with-connect 失败: %v", err)
+	}
+
+	content, err := os.ReadFile(filepath.Join(targetDir, "order.go"))
+	if err != nil {
+		t.Fatalf("读取服务端桩代码失败: %v", err)
+	}
+	text := string(content)
+	if !contains(text, "RegisterConnect") {
+		t.Error("服务端桩代码应包含 RegisterConnect")
+	}
+	if !contains(text, "connectrpc.com/connect") {
+		t.Error("服务端桩代码应包含 connect 依赖")
+	}
+	if !contains(text, "orderv1connect") {
+		t.Error("服务端桩代码应导入 connect 生成包")
+	}
+}
+
 // TestRunProtoServerNoArgs 测试无参数调用 proto server.
 func TestRunProtoServerNoArgs(t *testing.T) {
 	err := runProtoServer(nil)
@@ -443,13 +535,13 @@ func TestProtoServerMonorepo(t *testing.T) {
 // TestBuildProtoServerArgs 测试 proto server 参数构建.
 func TestBuildProtoServerArgs(t *testing.T) {
 	// 默认参数: 仅 proto 文件
-	args := buildProtoServerArgs("test.proto", "internal/service", "")
+	args := buildProtoServerArgs("test.proto", "internal/service", "", false)
 	if len(args) != 1 || args[0] != "test.proto" {
 		t.Errorf("默认参数 = %v, 期望 [test.proto]", args)
 	}
 
 	// 自定义 target
-	args = buildProtoServerArgs("test.proto", "custom/path", "")
+	args = buildProtoServerArgs("test.proto", "custom/path", "", false)
 	if len(args) != 3 {
 		t.Fatalf("含 target 参数: 长度 = %d, 期望 3", len(args))
 	}
@@ -458,11 +550,17 @@ func TestBuildProtoServerArgs(t *testing.T) {
 	}
 
 	// 带 service 标志
-	args = buildProtoServerArgs("test.proto", "internal/service", "order")
+	args = buildProtoServerArgs("test.proto", "internal/service", "order", false)
 	if len(args) != 3 {
 		t.Fatalf("含 service 参数: 长度 = %d, 期望 3", len(args))
 	}
 	if args[1] != "-service" || args[2] != "order" {
 		t.Errorf("含 service 参数 = %v, 期望 [test.proto -service order]", args)
+	}
+
+	// 带 Connect 标志
+	args = buildProtoServerArgs("test.proto", "internal/service", "", true)
+	if len(args) != 2 || args[1] != "-with-connect" {
+		t.Errorf("含 Connect 参数 = %v, 期望 [test.proto -with-connect]", args)
 	}
 }

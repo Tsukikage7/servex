@@ -25,10 +25,11 @@ type ProtoData struct {
 
 // ServerData server 模板数据.
 type ServerData struct {
-	Name       string    // 原始名称 (小写)
-	PascalName string    // PascalCase 名称
-	Module     string    // Go module 路径
-	RPCs       []RPCInfo // RPC 方法列表
+	Name        string    // 原始名称 (小写)
+	PascalName  string    // PascalCase 名称
+	Module      string    // Go module 路径
+	RPCs        []RPCInfo // RPC 方法列表
+	WithConnect bool      // 是否生成 Connect 注册方法
 }
 
 // RPCInfo RPC 方法信息.
@@ -103,8 +104,12 @@ func runProtoAdd(args []string) error {
 	fmt.Printf("  服务: %sService\n", data.PascalName)
 	fmt.Printf("  包名: %s.v1\n", name)
 
-	// 自动生成 buf 配置文件 (如不存在)
 	apiDir := filepath.Join(*output, "api")
+	if err := ensureProtoThirdParty(apiDir); err != nil {
+		return fmt.Errorf("复制 third_party: %w", err)
+	}
+
+	// 自动生成 buf 配置文件 (如不存在)
 	bufYamlPath := filepath.Join(apiDir, "buf.yaml")
 	if _, err := os.Stat(bufYamlPath); os.IsNotExist(err) {
 		if err := generateBufYaml(bufYamlPath); err != nil {
@@ -124,15 +129,26 @@ func runProtoAdd(args []string) error {
 	return nil
 }
 
+func ensureProtoThirdParty(apiDir string) error {
+	dst := filepath.Join(apiDir, "third_party")
+	if _, err := os.Stat(dst); err == nil {
+		return nil
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+	return copyEmbedDir(projectTemplates, "templates/project/api/third_party", dst)
+}
+
 // runProtoClient 执行 servex proto client 命令，使用 buf generate 生成代码.
 func runProtoClient(args []string) error {
 	fs := flag.NewFlagSet("proto client", flag.ExitOnError)
 	output := fs.String("output", "", "输出目录 (默认: proto 文件所在目录)")
+	protocol := fs.String("protocol", "auto", "生成协议: auto|grpc|gateway|connect")
 	fs.Usage = func() {
 		fmt.Println("用法: servex proto client <proto-file> [options]")
 		fmt.Println()
 		fmt.Println("从 proto 文件使用 buf 生成 Go 客户端代码.")
-		fmt.Println("生成: *.pb.go, *_grpc.pb.go, *_http.pb.go")
+		fmt.Println("生成: *.pb.go, *_grpc.pb.go, *_http.pb.go, *_connect.go")
 		fmt.Println()
 		fmt.Println("前置条件:")
 		fmt.Println("  brew install bufbuild/buf/buf")
@@ -169,21 +185,18 @@ func runProtoClient(args []string) error {
 		return fmt.Errorf("未找到 buf，请先安装:\n\n  macOS:   brew install bufbuild/buf/buf\n  Linux:   sudo apt install -y buf 或 npm install -g @bufbuild/buf\n  手动:    https://buf.build/docs/installation")
 	}
 
-	// 查找或自动生成 buf.gen.yaml
-	genYamlPath := findBufGenYaml(protoFile)
-	if genYamlPath == "" {
-		apiDir := findAPIDir(protoFile)
-		genPath := filepath.Join(apiDir, "buf.gen.yaml")
-		withHTTP := hasHTTPAnnotations(protoFile)
-		if err := generateBufGenYaml(genPath, withHTTP); err != nil {
-			return fmt.Errorf("生成 buf.gen.yaml: %w", err)
-		}
-		genYamlPath = genPath
+	apiDir := findAPIDir(protoFile)
+
+	// 查找或自动生成 buf.gen.yaml。显式协议使用独立配置，避免覆盖用户默认配置。
+	genYamlPath, generated, err := resolveBufGenYaml(protoFile, apiDir, *protocol)
+	if err != nil {
+		return fmt.Errorf("生成 buf.gen.yaml: %w", err)
+	}
+	if generated {
 		fmt.Printf("自动生成 buf.gen.yaml: %s\n", genYamlPath)
 	}
 
 	// 确保 buf.yaml 存在
-	apiDir := findAPIDir(protoFile)
 	bufYamlPath := filepath.Join(apiDir, "buf.yaml")
 	if _, err := os.Stat(bufYamlPath); os.IsNotExist(err) {
 		if err := generateBufYaml(bufYamlPath); err != nil {
@@ -205,6 +218,26 @@ func runProtoClient(args []string) error {
 
 	fmt.Printf("客户端代码已生成: %s\n", outDir)
 	return nil
+}
+
+func resolveBufGenYaml(protoFile, apiDir, protocol string) (string, bool, error) {
+	if protocol != "" && protocol != "auto" {
+		genPath := filepath.Join(apiDir, "buf.gen."+protocol+".yaml")
+		if err := generateBufGenYamlForProtocol(genPath, protoFile, protocol); err != nil {
+			return "", false, err
+		}
+		return genPath, true, nil
+	}
+
+	if genYamlPath := findBufGenYaml(protoFile); genYamlPath != "" {
+		return genYamlPath, false, nil
+	}
+
+	genPath := filepath.Join(apiDir, "buf.gen.yaml")
+	if err := generateBufGenYamlForProtocol(genPath, protoFile, protocol); err != nil {
+		return "", false, err
+	}
+	return genPath, true, nil
 }
 
 // runProtoLint 执行 servex proto lint 命令.
@@ -352,6 +385,25 @@ func generateBufGenYaml(path string, withHTTP bool) error {
 	if withHTTP {
 		tmplName = "templates/proto/buf.gen.http.yaml.tmpl"
 	}
+	return writeProtoTemplate(path, tmplName)
+}
+
+func generateBufGenYamlForProtocol(path, protoFile, protocol string) error {
+	switch protocol {
+	case "", "auto":
+		return generateBufGenYaml(path, hasHTTPAnnotations(protoFile))
+	case "grpc":
+		return generateBufGenYaml(path, false)
+	case "gateway":
+		return generateBufGenYaml(path, true)
+	case "connect":
+		return writeProtoTemplate(path, "templates/proto/buf.gen.connect.yaml.tmpl")
+	default:
+		return fmt.Errorf("不支持的 proto 生成协议: %s", protocol)
+	}
+}
+
+func writeProtoTemplate(path, tmplName string) error {
 	content, err := protoTemplates.ReadFile(tmplName)
 	if err != nil {
 		return err
@@ -384,6 +436,7 @@ func runProtoServer(args []string) error {
 	fs := flag.NewFlagSet("proto server", flag.ExitOnError)
 	target := fs.String("target", "internal/service", "输出目录")
 	service := fs.String("service", "", "目标服务名[monorepo 模式]")
+	withConnect := fs.Bool("with-connect", false, "生成 Connect 注册方法")
 	fs.Usage = func() {
 		fmt.Println("用法: servex proto server <proto-file> [options]")
 		fmt.Println()
@@ -419,10 +472,11 @@ func runProtoServer(args []string) error {
 
 	name := strings.ToLower(serviceName)
 	data := ServerData{
-		Name:       name,
-		PascalName: serviceName,
-		Module:     modulePath,
-		RPCs:       rpcs,
+		Name:        name,
+		PascalName:  serviceName,
+		Module:      modulePath,
+		RPCs:        rpcs,
+		WithConnect: *withConnect,
 	}
 
 	// monorepo 模式: 若指定 --service 且检测到 monorepo，输出到 services/<service>-service/internal/service/

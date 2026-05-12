@@ -171,6 +171,7 @@ myproject/
 | [transport/httpclient](./transport/httpclient/) | HTTP 客户端（Config 驱动、retry/circuitbreaker/tracing/metrics 内置中间件） |
 | [transport/grpcclient](./transport/grpcclient/) | gRPC 客户端（服务发现/重试/熔断/追踪/负载均衡） |
 | [transport/gateway](./transport/gateway/) | API 网关（gRPC+HTTP 双协议/CORS/限流/追踪/认证） |
+| [transport/connectserver](./transport/connectserver/) | Connect RPC 服务器（选配，面向 Connect-Web/gRPC-Web） |
 | [transport/ginserver](./transport/ginserver/) | Gin 适配 |
 | [transport/echoserver](./transport/echoserver/) | Echo 适配 |
 | [transport/hertzserver](./transport/hertzserver/) | Hertz 适配 |
