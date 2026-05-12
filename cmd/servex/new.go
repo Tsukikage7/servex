@@ -104,7 +104,9 @@ var monorepoGitkeepDirs = []string{
 	"domain",
 	"application",
 	"services",
+	"api",
 	"infrastructure",
+	"deploy/docker",
 	"deploy/k8s",
 }
 

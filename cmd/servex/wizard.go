@@ -159,7 +159,6 @@ func runNewWizard() (ProjectData, error) {
 				Title("认证").
 				Options(
 					huh.NewOption("JWT", "jwt"),
-					huh.NewOption("RBAC 角色权限", "rbac"),
 				).
 				Value(&auth),
 		).Title("认证"),
@@ -306,7 +305,6 @@ func runAddServiceWizard() (addServiceWizardResult, error) {
 				Title("认证").
 				Options(
 					huh.NewOption("JWT", "jwt"),
-					huh.NewOption("RBAC 角色权限", "rbac"),
 				).
 				Value(&result.Auth),
 		).Title("认证"),

@@ -1026,6 +1026,9 @@ func TestNewStandalone(t *testing.T) {
 		"myservice/internal/server/http.go",
 		"myservice/internal/server/grpc.go",
 		"myservice/internal/service/service.go",
+		"myservice/api/third_party/google/api/annotations.proto",
+		"myservice/deploy/docker/infra/docker-compose.yaml",
+		"myservice/deploy/docker/app/docker-compose.yaml",
 	}
 
 	for _, f := range expectedFiles {
@@ -1040,9 +1043,7 @@ func TestNewStandalone(t *testing.T) {
 		"myservice/services",
 		"myservice/domain",
 		"myservice/application",
-		"myservice/api",
 		"myservice/infrastructure",
-		"myservice/deploy",
 	}
 	for _, f := range monorepoPaths {
 		path := filepath.Join(dir, f)

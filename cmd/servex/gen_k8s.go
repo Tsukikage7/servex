@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"path/filepath"
 )
@@ -63,28 +62,4 @@ func generateK8s(data K8sData, outputDir string) error {
 	fmt.Printf("  %s/hpa.yaml         (HPA, %d-%d 副本)\n", outputDir, data.Replicas, data.MaxReplicas)
 
 	return nil
-}
-
-// runGenK8sLegacy 旧版 flag 模式的 servex gen k8s 命令.
-func runGenK8sLegacy(args []string) error {
-	fs := flag.NewFlagSet("gen k8s", flag.ExitOnError)
-	name := fs.String("name", "server", "服务名称")
-	port := fs.Int("port", 8080, "容器端口")
-	replicas := fs.Int("replicas", 2, "副本数")
-	image := fs.String("image", "", "容器镜像 (默认: <name>:latest)")
-	output := fs.String("output", ".", "输出目录")
-	fs.Usage = func() {
-		fmt.Println("用法: servex gen k8s [options]")
-		fmt.Println()
-		fmt.Println("生成 K8s 清单文件 (Deployment / Service / HPA).")
-		fmt.Println()
-		fmt.Println("选项:")
-		fs.PrintDefaults()
-	}
-
-	if err := fs.Parse(args); err != nil {
-		return err
-	}
-
-	return runGenK8s(*name, *port, *replicas, *image, *output)
 }

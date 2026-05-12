@@ -488,7 +488,7 @@ func init() {
 	addServiceCmd.Flags().BoolVar(&addWithGateway, "with-gateway", false, "包含 API 网关[HTTP+gRPC 双协议]")
 	addServiceCmd.Flags().StringVar(&addInfra, "infra", "", "基础设施: mysql,postgres,sqlite,mongo,es,clickhouse,s3,minio,neo4j,redis,kafka,rabbitmq")
 	addServiceCmd.Flags().StringVar(&addObserve, "observe", "", "可观测性: metrics,tracing,profiling")
-	addServiceCmd.Flags().StringVar(&addAuth, "auth", "", "认证: jwt,rbac")
+	addServiceCmd.Flags().StringVar(&addAuth, "auth", "", "认证: jwt")
 	addServiceCmd.Flags().StringVar(&addDiscovery, "discovery", "", "服务发现: consul,etcd,nacos")
 	addServiceCmd.Flags().StringVar(&addOther, "other", "", "其他: scheduler,i18n,tenant")
 

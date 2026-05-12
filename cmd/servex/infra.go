@@ -14,7 +14,6 @@ type ComponentDef struct {
 	Alias        string   // import 别名[可选，如 srvredis]
 	ConfigKey    string   // config.yaml 中的 key
 	ConfigYAML   string   // 默认配置 YAML 片段[缩进好的]
-	InitCode     string   // main.go 初始化代码[保留兼容]
 	CloseCode    string   // defer 关闭代码[可选]
 	ExtraImports []string // 额外 stdlib import[如 "context", "time", "net/http"]
 	// Wire DI 字段
@@ -36,15 +35,6 @@ var componentRegistry = map[string]ComponentDef{
   max_open_conns: 20
   max_idle_conns: 10
   max_lifetime: 300s`,
-		InitCode: `// 初始化 MySQL 数据库
-	db, err := rdbms.NewDatabase(&rdbms.Config{
-		Driver: rdbms.DriverMySQL,
-		DSN:    envOr("DB_DSN", "root:password@tcp(127.0.0.1:3306)/mydb?charset=utf8mb4&parseTime=True&loc=Local"),
-	}, log)
-	if err != nil {
-		log.Fatalf("init mysql: %v", err)
-	}
-	_ = db`,
 		ProviderFunc: "provideMySQL",
 		ProviderCode: `func provideMySQL(cfg *Config, log logger.Logger) (*gorm.DB, func(), error) {
 	db, err := rdbms.NewDatabase(&cfg.Database, log)
@@ -67,15 +57,6 @@ var componentRegistry = map[string]ComponentDef{
   max_open_conns: 20
   max_idle_conns: 10
   max_lifetime: 300s`,
-		InitCode: `// 初始化 PostgreSQL 数据库
-	db, err := rdbms.NewDatabase(&rdbms.Config{
-		Driver: rdbms.DriverPostgres,
-		DSN:    envOr("DB_DSN", "host=127.0.0.1 port=5432 user=postgres password=postgres dbname=mydb sslmode=disable"),
-	}, log)
-	if err != nil {
-		log.Fatalf("init postgres: %v", err)
-	}
-	_ = db`,
 		ProviderFunc: "providePostgres",
 		ProviderCode: `func providePostgres(cfg *Config, log logger.Logger) (*gorm.DB, func(), error) {
 	db, err := rdbms.NewDatabase(&cfg.Database, log)
@@ -95,15 +76,6 @@ var componentRegistry = map[string]ComponentDef{
 		ConfigYAML: `database:
   driver: sqlite
   dsn: "./data.db"`,
-		InitCode: `// 初始化 SQLite 数据库
-	db, err := rdbms.NewDatabase(&rdbms.Config{
-		Driver: rdbms.DriverSQLite,
-		DSN:    envOr("DB_DSN", "./data.db"),
-	}, log)
-	if err != nil {
-		log.Fatalf("init sqlite: %v", err)
-	}
-	_ = db`,
 		ProviderFunc: "provideSQLite",
 		ProviderCode: `func provideSQLite(cfg *Config, log logger.Logger) (*gorm.DB, func(), error) {
 	db, err := rdbms.NewDatabase(&cfg.Database, log)
@@ -126,14 +98,6 @@ var componentRegistry = map[string]ComponentDef{
   password: ""
   db: 0
   pool_size: 10`,
-		InitCode: `// 初始化 Redis
-	rdb, err := srvredis.NewClient(&srvredis.Config{
-		Addr: envOr("REDIS_ADDR", "127.0.0.1:6379"),
-	}, log)
-	if err != nil {
-		log.Fatalf("init redis: %v", err)
-	}
-	defer rdb.Close()`,
 		ProviderFunc: "provideRedis",
 		ProviderCode: `func provideRedis(cfg *Config, log logger.Logger) (*redis.Client, func(), error) {
 	rdb, err := srvredis.NewClient(&cfg.Redis, log)
@@ -152,15 +116,6 @@ var componentRegistry = map[string]ComponentDef{
 		ConfigYAML: `mongodb:
   uri: "mongodb://localhost:27017"
   database: "mydb"`,
-		InitCode: `// 初始化 MongoDB
-	mongoClient, err := mongodb.NewClient(&mongodb.Config{
-		URI:      envOr("MONGO_URI", "mongodb://localhost:27017"),
-		Database: envOr("MONGO_DATABASE", "mydb"),
-	}, log)
-	if err != nil {
-		log.Fatalf("init mongodb: %v", err)
-	}
-	defer mongoClient.Close()`,
 		ProviderFunc: "provideMongo",
 		ProviderCode: `func provideMongo(cfg *Config, log logger.Logger) (*mongodb.Client, func(), error) {
 	client, err := mongodb.NewClient(&cfg.MongoDB, log)
@@ -181,14 +136,6 @@ var componentRegistry = map[string]ComponentDef{
     - "http://localhost:9200"
   username: ""
   password: ""`,
-		InitCode: `// 初始化 Elasticsearch
-	esClient, err := elasticsearch.NewClient(&elasticsearch.Config{
-		Addresses: []string{"http://localhost:9200"},
-	}, log)
-	if err != nil {
-		log.Fatalf("init elasticsearch: %v", err)
-	}
-	defer esClient.Close()`,
 		ProviderFunc: "provideElasticsearch",
 		ProviderCode: `func provideElasticsearch(cfg *Config, log logger.Logger) (*elasticsearch.Client, func(), error) {
 	client, err := elasticsearch.NewClient(&cfg.Elasticsearch, log)
@@ -211,15 +158,6 @@ var componentRegistry = map[string]ComponentDef{
   max_open_conns: 10
   max_idle_conns: 5
   compression: "lz4"`,
-		InitCode: `// 初始化 ClickHouse
-	chClient, err := clickhouse.NewClient(&clickhouse.Config{
-		Addrs:    []string{"localhost:9000"},
-		Database: envOr("CLICKHOUSE_DATABASE", "default"),
-	}, log)
-	if err != nil {
-		log.Fatalf("init clickhouse: %v", err)
-	}
-	defer chClient.Close()`,
 		ProviderFunc: "provideClickHouse",
 		ProviderCode: `func provideClickHouse(cfg *Config, log logger.Logger) (*clickhouse.Client, func(), error) {
 	client, err := clickhouse.NewClient(&cfg.ClickHouse, log)
@@ -241,18 +179,6 @@ var componentRegistry = map[string]ComponentDef{
   access_key: "minioadmin"
   secret_key: "minioadmin"
   bucket: "my-bucket"`,
-		InitCode: `// 初始化 S3
-	s3Client, err := s3.NewClient(&s3.Config{
-		Endpoint:  envOr("S3_ENDPOINT", "http://localhost:9000"),
-		Region:    envOr("S3_REGION", "us-east-1"),
-		AccessKey: envOr("S3_ACCESS_KEY", "minioadmin"),
-		SecretKey: envOr("S3_SECRET_KEY", "minioadmin"),
-		Bucket:    envOr("S3_BUCKET", "my-bucket"),
-	}, log)
-	if err != nil {
-		log.Fatalf("init s3: %v", err)
-	}
-	_ = s3Client`,
 		ProviderFunc: "provideS3",
 		ProviderCode: `func provideS3(cfg *Config, log logger.Logger) (*s3.Client, func(), error) {
 	client, err := s3.NewClient(&cfg.S3, log)
@@ -274,17 +200,6 @@ var componentRegistry = map[string]ComponentDef{
   secret_key: "minioadmin"
   bucket: "my-bucket"
   use_ssl: false`,
-		InitCode: `// 初始化 MinIO
-	minioClient, err := minio.NewClient(&minio.Config{
-		Endpoint:  envOr("MINIO_ENDPOINT", "localhost:9000"),
-		AccessKey: envOr("MINIO_ACCESS_KEY", "minioadmin"),
-		SecretKey: envOr("MINIO_SECRET_KEY", "minioadmin"),
-		Bucket:    envOr("MINIO_BUCKET", "my-bucket"),
-	}, minio.WithLogger(log))
-	if err != nil {
-		log.Fatalf("init minio: %v", err)
-	}
-	_ = minioClient`,
 		ProviderFunc: "provideMinIO",
 		ProviderCode: `func provideMinIO(cfg *Config, log logger.Logger) (*minio.Client, func(), error) {
 	client, err := minio.NewClient(&cfg.MinIO, log, minio.WithLogger(log))
@@ -306,17 +221,6 @@ var componentRegistry = map[string]ComponentDef{
   username: "neo4j"
   password: "neo4j"
   database: "neo4j"`,
-		InitCode: `// 初始化 Neo4j
-	neo4jClient, err := srvneo4j.NewClient(&srvneo4j.Config{
-		URI:      envOr("NEO4J_URI", "bolt://localhost:7687"),
-		Username: envOr("NEO4J_USERNAME", "neo4j"),
-		Password: envOr("NEO4J_PASSWORD", "neo4j"),
-		Database: envOr("NEO4J_DATABASE", "neo4j"),
-	}, srvneo4j.WithLogger(log))
-	if err != nil {
-		log.Fatalf("init neo4j: %v", err)
-	}
-	_ = neo4jClient`,
 		ProviderFunc: "provideNeo4j",
 		ProviderCode: `func provideNeo4j(cfg *Config, log logger.Logger) (*srvneo4j.Client, func(), error) {
 	client, err := srvneo4j.NewClient(&cfg.Neo4j, srvneo4j.WithLogger(log))
@@ -336,14 +240,6 @@ var componentRegistry = map[string]ComponentDef{
   brokers:
     - "localhost:9092"
   group: "my-group"`,
-		InitCode: `// 初始化 Kafka Publisher
-	kafkaPub, err := kafka.NewPublisherFromConfig(
-		[]string{"localhost:9092"}, log,
-	)
-	if err != nil {
-		log.Fatalf("init kafka publisher: %v", err)
-	}
-	defer kafkaPub.Close()`,
 		ProviderFunc: "provideKafka",
 		ProviderCode: `func provideKafka(cfg *Config, log logger.Logger) (*kafka.Publisher, func(), error) {
 	pub, err := kafka.NewPublisherFromConfig(cfg.Kafka.Brokers, log)
@@ -361,14 +257,6 @@ var componentRegistry = map[string]ComponentDef{
 		ConfigKey:   "rabbitmq",
 		ConfigYAML: `rabbitmq:
   url: "amqp://guest:guest@localhost:5672/"`,
-		InitCode: `// 初始化 RabbitMQ Publisher
-	rmqPub, err := rabbitmq.NewPublisherFromConfig(
-		envOr("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/"), log,
-	)
-	if err != nil {
-		log.Fatalf("init rabbitmq publisher: %v", err)
-	}
-	defer rmqPub.Close()`,
 		ProviderFunc: "provideRabbitMQ",
 		ProviderCode: `func provideRabbitMQ(cfg *Config, log logger.Logger) (*rabbitmq.Publisher, func(), error) {
 	pub, err := rabbitmq.NewPublisherFromConfig(cfg.RabbitMQ.URL, log)
@@ -390,16 +278,6 @@ var componentRegistry = map[string]ComponentDef{
 		ConfigYAML: `metrics:
   namespace: "app"
   path: "/metrics"`,
-		InitCode: `// 初始化 Prometheus 指标收集器
-	collector, err := metrics.NewPrometheus(&metrics.Config{
-		Namespace: envOr("METRICS_NAMESPACE", "app"),
-		Path:      envOr("METRICS_PATH", "/metrics"),
-	})
-	if err != nil {
-		log.Fatalf("init metrics: %v", err)
-	}
-	http.Handle("/metrics", collector.GetHandler())
-	_ = collector`,
 		ExtraImports: []string{"net/http"},
 		ProviderFunc: "provideMetrics",
 		ProviderCode: `func provideMetrics(cfg *Config, log logger.Logger) (*metrics.Prometheus, func(), error) {
@@ -421,20 +299,6 @@ var componentRegistry = map[string]ComponentDef{
   sampling_rate: 1.0
   otlp:
     endpoint: "localhost:4318"`,
-		InitCode: `// 初始化 OpenTelemetry 链路追踪
-	tp, err := tracing.NewTracer(&tracing.TracingConfig{
-		Enabled:        true,
-		ServiceName:    envOr("SERVICE_NAME", "my-service"),
-		ServiceVersion: "1.0.0",
-		SamplingRate:   1.0,
-		OTLP: &tracing.OTLPConfig{
-			Endpoint: envOr("OTEL_ENDPOINT", "localhost:4318"),
-		},
-	})
-	if err != nil {
-		log.Fatalf("init tracing: %v", err)
-	}
-	defer func() { _ = tp.Shutdown(context.Background()) }()`,
 		ExtraImports: []string{"context"},
 		ProviderFunc: "provideTracing",
 		ProviderCode: `func provideTracing(cfg *Config, log logger.Logger) (*tracing.Tracer, func(), error) {
@@ -457,19 +321,6 @@ var componentRegistry = map[string]ComponentDef{
   types:
     - cpu
     - heap`,
-		InitCode: `// 初始化持续性能剖析
-	profiler, err := profiling.New(&profiling.Config{
-		Enabled:  true,
-		Interval: 60 * time.Second,
-		Types:    []profiling.ProfileType{profiling.ProfileCPU, profiling.ProfileHeap},
-	})
-	if err != nil {
-		log.Fatalf("init profiling: %v", err)
-	}
-	if err := profiler.Start(context.Background()); err != nil {
-		log.Fatalf("start profiling: %v", err)
-	}
-	defer func() { _ = profiler.Stop(context.Background()) }()`,
 		ExtraImports: []string{"context", "time"},
 		ProviderFunc: "provideProfiling",
 		ProviderCode: `func provideProfiling(cfg *Config, log logger.Logger) (*profiling.Profiler, func(), error) {
@@ -498,12 +349,6 @@ var componentRegistry = map[string]ComponentDef{
   secret: "change-me"
   access_duration: 2h
   refresh_duration: 168h`,
-		InitCode: `// 初始化 JWT 认证
-	jwtSvc := srvjwt.NewJWT(
-		srvjwt.WithSecretKey(envOr("JWT_SECRET", "change-me")),
-		srvjwt.WithLogger(log),
-	)
-	_ = jwtSvc`,
 		ProviderFunc: "provideJWT",
 		ProviderCode: `func provideJWT(cfg *Config, log logger.Logger) (*srvjwt.JWT, func(), error) {
 	jwtSvc := srvjwt.NewJWT(
@@ -514,25 +359,6 @@ var componentRegistry = map[string]ComponentDef{
 }`,
 		ConfigField: "JWT srvjwt.Config `yaml:\"jwt\" mapstructure:\"jwt\"`",
 	},
-	"rbac": {
-		Key:         "rbac",
-		DisplayName: "RBAC 权限",
-		Import:      "github.com/Tsukikage7/servex/v2/auth/rbac",
-		ConfigKey:   "rbac",
-		ConfigYAML:  `# rbac: 权限规则通常在代码中定义`,
-		InitCode: `// 初始化 RBAC 权限管理
-	rbacStore := rbac.NewMemoryStore()
-	rbacMgr := rbac.NewManager(rbacStore)
-	_ = rbacMgr`,
-		ProviderFunc: "provideRBAC",
-		ProviderCode: `func provideRBAC(log logger.Logger) (*rbac.Manager, func(), error) {
-	store := rbac.NewMemoryStore()
-	mgr := rbac.NewManager(store)
-	return mgr, func() {}, nil
-}`,
-		ConfigField: "",
-	},
-
 	// ── Service Discovery ────────────────────────────────────────────────
 
 	"consul": {
@@ -543,15 +369,6 @@ var componentRegistry = map[string]ComponentDef{
 		ConfigYAML: `discovery:
   type: "consul"
   addr: "127.0.0.1:8500"`,
-		InitCode: `// 初始化 Consul 服务发现
-	disc, err := discovery.NewDiscovery(&discovery.Config{
-		Type: discovery.TypeConsul,
-		Addr: envOr("CONSUL_ADDR", "127.0.0.1:8500"),
-	}, log)
-	if err != nil {
-		log.Fatalf("init consul discovery: %v", err)
-	}
-	_ = disc`,
 		ProviderFunc: "provideConsul",
 		ProviderCode: `func provideConsul(cfg *Config, log logger.Logger) (*discovery.Discovery, func(), error) {
 	disc, err := discovery.NewDiscovery(&cfg.Discovery, log)
@@ -571,15 +388,6 @@ var componentRegistry = map[string]ComponentDef{
   type: "etcd"
   etcd_endpoints:
     - "127.0.0.1:2379"`,
-		InitCode: `// 初始化 etcd 服务发现
-	disc, err := discovery.NewDiscovery(&discovery.Config{
-		Type:          discovery.TypeEtcd,
-		EtcdEndpoints: []string{envOr("ETCD_ENDPOINTS", "127.0.0.1:2379")},
-	}, log)
-	if err != nil {
-		log.Fatalf("init etcd discovery: %v", err)
-	}
-	_ = disc`,
 		ProviderFunc: "provideEtcd",
 		ProviderCode: `func provideEtcd(cfg *Config, log logger.Logger) (*discovery.Discovery, func(), error) {
 	disc, err := discovery.NewDiscovery(&cfg.Discovery, log)
@@ -599,15 +407,6 @@ var componentRegistry = map[string]ComponentDef{
   type: "nacos"
   nacos_endpoints:
     - "127.0.0.1:8848"`,
-		InitCode: `// 初始化 Nacos 服务发现
-	disc, err := discovery.NewDiscovery(&discovery.Config{
-		Type:           discovery.TypeNacos,
-		NacosEndpoints: []string{envOr("NACOS_ENDPOINTS", "127.0.0.1:8848")},
-	}, log)
-	if err != nil {
-		log.Fatalf("init nacos discovery: %v", err)
-	}
-	_ = disc`,
 		ProviderFunc: "provideNacos",
 		ProviderCode: `func provideNacos(cfg *Config, log logger.Logger) (*discovery.Discovery, func(), error) {
 	disc, err := discovery.NewDiscovery(&cfg.Discovery, log)
@@ -622,18 +421,11 @@ var componentRegistry = map[string]ComponentDef{
 	// ── Other ────────────────────────────────────────────────────────────
 
 	"scheduler": {
-		Key:         "scheduler",
-		DisplayName: "定时任务",
-		Import:      "github.com/Tsukikage7/servex/v2/scheduler",
-		ConfigKey:   "scheduler",
-		ConfigYAML:  `# scheduler: 任务规则通常在代码中定义`,
-		InitCode: `// 初始化定时任务调度器
-	sched, err := scheduler.NewScheduler()
-	if err != nil {
-		log.Fatalf("init scheduler: %v", err)
-	}
-	defer sched.Stop()
-	_ = sched`,
+		Key:          "scheduler",
+		DisplayName:  "定时任务",
+		Import:       "github.com/Tsukikage7/servex/v2/scheduler",
+		ConfigKey:    "scheduler",
+		ConfigYAML:   `# scheduler: 任务规则通常在代码中定义`,
 		ProviderFunc: "provideScheduler",
 		ProviderCode: `func provideScheduler(log logger.Logger) (*scheduler.Scheduler, func(), error) {
 	sched, err := scheduler.NewScheduler()
@@ -654,9 +446,6 @@ var componentRegistry = map[string]ComponentDef{
   supported_langs:
     - "zh"
     - "en"`,
-		InitCode: `// 初始化国际化消息包
-	i18nBundle := i18n.NewBundle(language.Chinese)
-	_ = i18nBundle`,
 		ProviderFunc: "provideI18n",
 		ProviderCode: `func provideI18n(cfg *Config, log logger.Logger) (*i18n.Bundle, func(), error) {
 	bundle := i18n.NewBundle(cfg.I18n.DefaultLang)
@@ -665,15 +454,11 @@ var componentRegistry = map[string]ComponentDef{
 		ConfigField: "I18n i18n.Config `yaml:\"i18n\" mapstructure:\"i18n\"`",
 	},
 	"tenant": {
-		Key:         "tenant",
-		DisplayName: "多租户",
-		Import:      "github.com/Tsukikage7/servex/v2/tenant",
-		ConfigKey:   "tenant",
-		ConfigYAML:  `# tenant: 租户解析通常在代码中配置`,
-		InitCode: `// 多租户中间件[需要自定义 Resolver 实现]
-	// resolver := tenant.NewXxxResolver(...)
-	// tenantMW := tenant.Middleware(resolver)
-	_ = tenant.ID // 占位：使用 tenant.FromContext(ctx) 获取当前租户`,
+		Key:          "tenant",
+		DisplayName:  "多租户",
+		Import:       "github.com/Tsukikage7/servex/v2/tenant",
+		ConfigKey:    "tenant",
+		ConfigYAML:   `# tenant: 租户解析通常在代码中配置`,
 		ProviderFunc: "provideTenant",
 		ProviderCode: `func provideTenant(log logger.Logger) (*tenant.Manager, func(), error) {
 	mgr := tenant.NewManager()
@@ -713,7 +498,7 @@ func init() {
 	// 注意：此操作会修改 componentRegistry 的内容（删除已分类的条目），
 	// 使得 componentRegistry 仅保留基础设施组件.
 	observeKeys := map[string]bool{"metrics": true, "tracing": true, "profiling": true}
-	authKeys := map[string]bool{"jwt": true, "rbac": true}
+	authKeys := map[string]bool{"jwt": true}
 	discoveryKeys := map[string]bool{"consul": true, "etcd": true, "nacos": true}
 	otherKeys := map[string]bool{"scheduler": true, "i18n": true, "tenant": true}
 
@@ -794,7 +579,7 @@ func componentList() string {
 	sb.WriteString("可用组件:\n\n")
 	sb.WriteString("  --infra:      mysql, postgres, sqlite, mongo, es, clickhouse, s3, minio, neo4j, redis, kafka, rabbitmq\n")
 	sb.WriteString("  --observe:    metrics, tracing, profiling\n")
-	sb.WriteString("  --auth:       jwt, rbac\n")
+	sb.WriteString("  --auth:       jwt\n")
 	sb.WriteString("  --discovery:  consul, etcd, nacos\n")
 	sb.WriteString("  --other:      scheduler, i18n, tenant\n")
 	return sb.String()

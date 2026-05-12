@@ -99,8 +99,8 @@ func TestRunProtoAddGeneratesBufConfig(t *testing.T) {
 	if !contains(text, "version: v2") {
 		t.Error("buf.yaml 缺少 version: v2")
 	}
-	if !contains(text, "buf.build/googleapis/googleapis") {
-		t.Error("buf.yaml 缺少 googleapis 依赖")
+	if !contains(text, "path: ../third_party") {
+		t.Error("buf.yaml 缺少本地 third_party 依赖")
 	}
 
 	// 检查 buf.gen.yaml 已生成
