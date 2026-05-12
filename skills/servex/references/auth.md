@@ -48,15 +48,20 @@ sub, _ := parsed.GetSubject()
 
 完整示例：`docs/superpowers/examples/jwt/main.go`
 
-**与 httpserver 集成：**
+**纯 HTTP 集成：**
 
 ```go
 // NewAuthenticator 将 JWT 服务包装为 auth.Authenticator 接口
 authenticator := jwt.NewAuthenticator(jwtSrv)
 
-srv := httpserver.New(mux,
+router := httpserver.NewRouter()
+router.POST("/login", httpserver.Handle(loginHandler)) // 公开路由不挂认证中间件
+
+api := router.Group("/api/v1", auth.HTTPMiddleware(authenticator))
+api.GET("/profile", httpserver.Handle(profileHandler))
+
+srv := httpserver.New(router,
     httpserver.WithLogger(log),
-    httpserver.WithAuth(authenticator, "/api/login", "/healthz"), // 白名单路径无需认证
 )
 ```
 
@@ -99,10 +104,10 @@ validator := apikey.CacheValidator(
 // 包装为 Authenticator 接口
 authenticator := apikey.New(validator)
 
-// 集成到 httpserver（从 X-API-Key header 读取）
-srv := httpserver.New(mux,
-    httpserver.WithAuth(authenticator, "/healthz"),
-)
+// 纯 HTTP 集成：公开路由不挂认证中间件，受保护路由显式分组
+router := httpserver.NewRouter()
+api := router.Group("/api", auth.HTTPMiddleware(authenticator))
+api.GET("/internal/status", httpserver.Handle(statusHandler))
 ```
 
 **关键选项：**
@@ -124,6 +129,46 @@ authorizer := auth.AuthorizerFunc(func(ctx context.Context, principal *auth.Prin
 
 handler = auth.HTTPMiddleware(authenticator, auth.WithAuthorizer(authorizer))(handler)
 ```
+
+## auth/proto — 声明式认证与授权策略
+
+Gateway / gRPC 标准用法是在 `.proto` 中声明公开接口和权限要求，代码侧只启用认证器和可选授权器，不再维护手动公开方法列表。
+
+```protobuf
+import "auth/proto/auth.proto";
+
+service UserService {
+  option (microservice.kit.auth.service) = {
+    default_permissions: ["user:read"]
+  };
+
+  rpc Login(LoginRequest) returns (LoginResponse) {
+    option (microservice.kit.auth.method) = {
+      public: true
+    };
+  }
+
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse) {
+    option (microservice.kit.auth.method) = {
+      permissions: ["user:delete", "admin"]
+      all_permissions: true
+    };
+  }
+}
+```
+
+```go
+srv := gateway.New(
+    gateway.WithAuth(authenticator, auth.WithAuthorizer(authorizer)),
+)
+```
+
+规则：
+- `public: true`：跳过认证，适合登录、注册、健康检查等公共接口。
+- `permissions`：认证通过后交给显式配置的 `auth.Authorizer` 校验。
+- `all_permissions: true`：要求满足全部权限；默认是任一权限即可。
+- 没有 proto option：不公开，也不附加权限要求，按普通认证接口处理。
+- 声明了权限但没有配置 `auth.Authorizer`：请求会被拒绝，避免策略静默失效。
 
 ## auth/rbac — 可选 RBAC 授权适配
 

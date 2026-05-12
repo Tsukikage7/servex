@@ -213,8 +213,9 @@ myproject/
 
 | 包 | 说明 |
 | --- | --- |
-| [auth/jwt](./auth/jwt/) | JWT 认证（HS256/RS256/ES256/EdDSA/签发/验证/白名单） |
+| [auth/jwt](./auth/jwt/) | JWT 认证（HS256/RS256/ES256/EdDSA/签发/验证/claims） |
 | [auth/apikey](./auth/apikey/) | API Key 认证 |
+| [auth/proto](./auth/proto/) | Protobuf 声明式认证与授权策略 |
 | [auth/rbac](./auth/rbac/) | 可选 RBAC 授权适配 |
 | [auth/casbin](./auth/casbin/) | 可选 Casbin 授权适配 |
 
@@ -429,8 +430,6 @@ myproject/
 - **消息队列追踪** — Pub/Sub 和 JobQueue 支持 trace context 跨消息传播，factory 自动包装
 - **`servex dev`** — 开发模式，air 热重载（文件变更自动重启）
 - **`servex gen k8s`** — K8s Deployment/Service/HPA manifest 生成
-
-详细迁移指南请参阅 [MIGRATION_V2.md](./MIGRATION_V2.md)。
 
 ## 设计原则
 

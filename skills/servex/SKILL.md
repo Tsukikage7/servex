@@ -298,7 +298,7 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 
 | 模块 | 包路径 | 描述 | 核心类型/函数 |
 |------|--------|------|--------------|
-| errors | `errors` | 统一业务错误（含 HTTP/gRPC 状态映射） | `New`, `Error`, `WithHTTP`, `WithGRPC`, `FromHTTPStatus`, `FromGRPCCode` |
+| errors | `errors` | 统一业务错误（Kind 推导 HTTP/gRPC 状态） | `NewWithKind`, `Error`, `Kind`, `WithKind`, `ToHTTPStatus`, `ToGRPCStatus`, `FromError` |
 
 ### 输入校验
 

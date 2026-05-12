@@ -1,16 +1,24 @@
 # servex 传输层
 
-## httpserver — 带认证的 HTTP 服务器
+## httpserver — HTTP 服务器
 
 ```go
-// 适用场景：需要 JWT 认证、结构化日志、链路追踪的 HTTP 服务
-srv := httpserver.New(mux,
+// 适用场景：需要结构化日志、链路追踪和显式路由分组的 HTTP 服务
+router := httpserver.NewRouter()
+
+// 公开路由不挂认证中间件
+router.POST("/login", httpserver.Handle(loginHandler))
+
+// 受保护路由显式挂认证中间件
+api := router.Group("/api/v1", auth.HTTPMiddleware(authenticator))
+api.GET("/profile", httpserver.Handle(profileHandler))
+
+srv := httpserver.New(router,
     httpserver.WithLogger(log),
     httpserver.WithAddr(":8080"),
     httpserver.WithRecovery(),
     httpserver.WithLogging("/healthz"),           // 跳过健康检查路径的日志
     httpserver.WithTrace("my-service"),           // OpenTelemetry 服务名
-    httpserver.WithAuth(authenticator, "/api/login"), // 公开路径白名单
 )
 if err := srv.Start(ctx); err != nil {
     log.Error(ctx, "启动失败", err)
@@ -40,8 +48,8 @@ httpserver:
 var cfg httpserver.Config
 // 通过 config 包加载后
 srv := httpserver.NewFromConfig(mux, &cfg, log,
-    // Config 无法表达的运行时选项（Auth、Tenant 等）可通过 additionalOpts 补充
-    httpserver.WithAuth(authenticator, "/api/login"),
+    // Config 无法表达的运行时选项（Tenant、自定义中间件等）可通过 additionalOpts 补充
+    httpserver.WithMiddlewares(requestIDMiddleware),
 )
 if err := srv.Start(ctx); err != nil {
     log.Error(ctx, "启动失败", err)
@@ -54,7 +62,6 @@ if err := srv.Start(ctx); err != nil {
 - `WithRecovery()` — 捕获 panic，返回 500
 - `WithLogging(skipPaths...)` — 结构化访问日志，跳过指定路径
 - `WithTrace(serviceName)` — OpenTelemetry 中间件
-- `WithAuth(authenticator, publicPaths...)` — 认证中间件，白名单外均需认证
 - `WithMiddlewares(mws...)` — 注入自定义 `func(http.Handler) http.Handler`
 - `WithClientIP()` — 提取客户端真实 IP，写入 context
 - `WithVersion(v)` — 设置服务版本，注入到健康检查响应的 `version` 字段（v2.0.5+）
@@ -69,7 +76,7 @@ router := httpserver.NewRouter()
 router.POST("/login", httpserver.Handle(loginHandler))
 
 // 带认证的 API 分组（继承 router 的所有中间件）
-api := router.Group("/api/v1", jwtMiddleware)
+api := router.Group("/api/v1", auth.HTTPMiddleware(authenticator))
 api.GET("/users/{id}", httpserver.HandleWith(decodeID, getUser))
 api.POST("/users", httpserver.Handle(createUser))
 
@@ -641,7 +648,7 @@ combined := gqlserver.ChainMiddleware(
 ### BuildMethodSkipper — 方法跳过器
 
 ```go
-// 构建方法跳过器，支持精确匹配和前缀通配
+// 构建方法跳过器，支持精确匹配和前缀通配。仅用于自定义中间件。
 skipper := transport.BuildMethodSkipper([]string{
     "/health",                           // 精确匹配
     "/api/public/*",                     // 前缀通配
@@ -654,7 +661,7 @@ ok = skipper("/api/private/users")      // false
 ```
 
 - `transport.BuildMethodSkipper(methods) MethodSkipper` — 返回 `func(method string) bool`，用于自定义中间件跳过指定路径/方法
-- Gateway 的公开接口由 proto option 声明，不再通过手动方法白名单配置
+- Gateway / gRPC 的公开接口由 proto option 声明，不通过手动方法列表配置
 
 ## transport/tls — TLS 配置工具（tlsx）
 
