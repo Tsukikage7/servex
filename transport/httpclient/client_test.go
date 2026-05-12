@@ -77,13 +77,16 @@ func TestNew(t *testing.T) {
 		}
 	})
 
-	t.Run("未设置logger时返回错误", func(t *testing.T) {
-		_, err := New(
+	t.Run("未设置logger时使用空日志", func(t *testing.T) {
+		client, err := New(
 			WithServiceName("test-service"),
 			WithDiscovery(&mockDiscovery{addrs: []string{"localhost:8080"}}),
 		)
-		if err == nil {
-			t.Error("expected error when logger not set")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if client == nil {
+			t.Fatal("client should not be nil")
 		}
 	})
 

@@ -79,7 +79,7 @@ func WithDiscovery(d discovery.Discovery) Option {
 	}
 }
 
-// WithLogger 设置日志实例（必需）.
+// WithLogger 设置日志实例.
 func WithLogger(l logger.Logger) Option {
 	return func(o *options) {
 		o.logger = l

@@ -24,7 +24,7 @@ type Client struct {
 	opts *options
 }
 
-// New 创建 gRPC 客户端，必需设置 serviceName、discovery、logger，否则返回错误.
+// New 创建 gRPC 客户端，必需设置 serviceName 和 discovery.
 func New(opts ...Option) (*Client, error) {
 	o := defaultOptions()
 	for _, opt := range opts {
@@ -39,7 +39,7 @@ func New(opts ...Option) (*Client, error) {
 		return nil, ErrMissingDiscovery
 	}
 	if o.logger == nil {
-		return nil, ErrMissingLogger
+		o.logger = logger.Nop()
 	}
 
 	// 服务发现

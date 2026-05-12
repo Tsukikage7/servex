@@ -21,7 +21,7 @@ type Handler func(ctx any, p any, stack []byte) error
 
 // Options 配置选项.
 type Options struct {
-	// Logger 日志记录器，必需.
+	// Logger 日志记录器。未设置时会回退到 context 中的 logger 或空日志实现.
 	Logger logger.Logger
 
 	// Handler 自定义 panic 处理函数.

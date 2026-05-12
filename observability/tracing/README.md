@@ -5,7 +5,7 @@
 ## 安装
 
 ```go
-import "github.com/Tsukikage7/servex/tracing"
+import "github.com/Tsukikage7/servex/v2/observability/tracing"
 ```
 
 ## API
@@ -196,7 +196,7 @@ import (
     "log"
     "net/http"
 
-    "github.com/Tsukikage7/servex/tracing"
+    "github.com/Tsukikage7/servex/v2/observability/tracing"
     "go.opentelemetry.io/otel/attribute"
 )
 
@@ -265,7 +265,7 @@ import (
     "log"
     "net"
 
-    "github.com/Tsukikage7/servex/tracing"
+    "github.com/Tsukikage7/servex/v2/observability/tracing"
     "google.golang.org/grpc"
     pb "your-project/proto"
 )
@@ -330,7 +330,7 @@ import (
     "context"
     "log"
 
-    "github.com/Tsukikage7/servex/tracing"
+    "github.com/Tsukikage7/servex/v2/observability/tracing"
     "google.golang.org/grpc"
     "google.golang.org/grpc/credentials/insecure"
     pb "your-project/proto"

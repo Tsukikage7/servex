@@ -84,7 +84,7 @@ func WithKeepalive(time, timeout time.Duration) Option {
 	}
 }
 
-// WithLogger 设置日志记录器（必需）.
+// WithLogger 设置日志记录器.
 func WithLogger(log logger.Logger) Option {
 	return func(o *options) {
 		o.logger = log

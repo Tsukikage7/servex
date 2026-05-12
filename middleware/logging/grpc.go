@@ -13,9 +13,6 @@ import (
 // UnaryServerInterceptor 返回记录一元 RPC 请求日志的拦截器.
 func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor {
 	o := applyOptions(opts)
-	if o.Logger == nil {
-		panic("logging: 日志记录器不能为空")
-	}
 
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		if shouldSkip(info.FullMethod, o.SkipPaths) {
@@ -25,7 +22,7 @@ func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor {
 		start := time.Now()
 		resp, err := handler(ctx, req)
 
-		logger.FromContext(ctx).Info("[grpc]",
+		logger.FromContextOr(ctx, o.Logger).Info("[gRPC] 请求完成",
 			logger.String("method", info.FullMethod),
 			logger.String("code", status.Code(err).String()),
 			logger.String("duration", time.Since(start).String()),
@@ -37,9 +34,6 @@ func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor {
 // StreamServerInterceptor 返回记录流式 RPC 请求日志的拦截器.
 func StreamServerInterceptor(opts ...Option) grpc.StreamServerInterceptor {
 	o := applyOptions(opts)
-	if o.Logger == nil {
-		panic("logging: 日志记录器不能为空")
-	}
 
 	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		if shouldSkip(info.FullMethod, o.SkipPaths) {
@@ -49,7 +43,7 @@ func StreamServerInterceptor(opts ...Option) grpc.StreamServerInterceptor {
 		start := time.Now()
 		err := handler(srv, ss)
 
-		logger.FromContext(ss.Context()).Info("[grpc stream]",
+		logger.FromContextOr(ss.Context(), o.Logger).Info("[gRPC] 流式请求完成",
 			logger.String("method", info.FullMethod),
 			logger.String("code", status.Code(err).String()),
 			logger.String("duration", time.Since(start).String()),

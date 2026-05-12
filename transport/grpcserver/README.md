@@ -57,11 +57,6 @@ type Registrar interface {
 | `WithStreamInterceptor` | -          | 添加流拦截器                 |
 | `WithServerOption`      | -          | 自定义 gRPC ServerOption     |
 | `WithConfig`            | -          | 从 GRPCConfig 结构体加载配置 |
-| `WithTrace`             | -          | 启用链路追踪                 |
-| `WithRecovery`          | -          | 启用 panic 恢复              |
-| `WithAuth`              | -          | 启用认证                     |
-| `WithPublicMethods`     | -          | 设置公开方法（无需认证）     |
-| `WithAutoDiscovery`     | -          | 启用 proto option 自动发现   |
 | `WithClientIP`          | -          | 启用客户端 IP 提取           |
 | `WithHealthTimeout`     | `5s`       | 健康检查超时                 |
 | `WithReadinessChecker`  | -          | 添加就绪检查器               |
@@ -128,19 +123,6 @@ handler := grpcserver.PassthroughHandler(
 handler := grpcserver.NewEndpointHandler(e,
     grpcserver.PassthroughDecode,
     grpcserver.PassthroughEncode,
-)
-```
-
-### 认证与公开方法
-
-```go
-srv := grpcserver.New(
-    grpcserver.WithAuth(authenticator),
-    grpcserver.WithPublicMethods(
-        "/api.user.v1.AuthService/Login",
-        "/api.user.v1.AuthService/*",  // 服务级别通配
-    ),
-    grpcserver.WithAutoDiscovery(),  // 从 proto option 自动发现
 )
 ```
 

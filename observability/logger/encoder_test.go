@@ -244,6 +244,27 @@ func (s *ConsoleEncoderTestSuite) TestConsoleEncoder_NoFields() {
 	s.Contains(output, "INFO")
 }
 
+// TestConsoleEncoder_Component 测试组件字段渲染为消息前缀.
+func (s *ConsoleEncoderTestSuite) TestConsoleEncoder_Component() {
+	buf := &bytes.Buffer{}
+
+	config := zapcore.EncoderConfig{
+		MessageKey:       "msg",
+		ConsoleSeparator: "\t",
+	}
+
+	encoder := newConsoleEncoder(config)
+	core := zapcore.NewCore(encoder, zapcore.AddSync(buf), zapcore.DebugLevel)
+	log := zap.New(core).With(zap.String(ComponentKey, "Auth"))
+
+	log.Warn("主体已过期", zap.String("principal_id", "user-1"))
+
+	output := buf.String()
+	s.Contains(output, "[Auth] 主体已过期")
+	s.Contains(output, "[principal_id:user-1]")
+	s.NotContains(output, "[component:Auth]")
+}
+
 // TestConsoleEncoder_Clone 测试克隆.
 func (s *ConsoleEncoderTestSuite) TestConsoleEncoder_Clone() {
 	config := zapcore.EncoderConfig{

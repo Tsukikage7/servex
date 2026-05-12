@@ -47,13 +47,11 @@ func TestNew(t *testing.T) {
 		}
 	})
 
-	t.Run("未设置logger时panic", func(t *testing.T) {
-		defer func() {
-			if r := recover(); r == nil {
-				t.Error("expected panic when logger not set")
-			}
-		}()
-		New(mux, WithAddr(":8080"))
+	t.Run("未设置logger时使用空日志", func(t *testing.T) {
+		srv := New(mux, WithAddr(":8080"))
+		if srv == nil {
+			t.Fatal("server should not be nil")
+		}
 	})
 
 	t.Run("默认值", func(t *testing.T) {

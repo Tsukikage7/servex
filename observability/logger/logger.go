@@ -93,6 +93,11 @@ const (
 	loggerKey contextKey = "logger:instance"
 )
 
+const (
+	// ComponentKey 用于标记日志所属组件.
+	ComponentKey = "component"
+)
+
 // Field 表示一个日志字段.
 type Field struct {
 	Key   string
@@ -131,19 +136,25 @@ func NewContext(ctx context.Context, l Logger) context.Context {
 }
 
 // FromContext 从 context 中取出 Logger.
-// 如果 context 中没有 Logger（中间件未注入），回退到从 context 中提取
-// traceId/spanId 构建一个带链路信息的 nop logger.
+// 如果 context 中没有 Logger（中间件未注入），返回空日志实现.
 // 业务代码推荐用法:
 //
 //	logger.FromContext(ctx).Info("处理请求")
 func FromContext(ctx context.Context) Logger {
+	return FromContextOr(ctx, nil)
+}
+
+// FromContextOr 从 context 中取出 Logger，缺失时使用 fallback.
+// 如果 context 中有 traceId/spanId，且使用 fallback，则会自动为 fallback 附加链路字段.
+// 这让中间件既能继承 server/gateway 注入的请求 logger，也能在独立使用时回退到自身配置的 logger.
+func FromContextOr(ctx context.Context, fallback Logger) Logger {
 	if ctx == nil {
-		return &nopLogger{}
+		return fallbackOrNop(fallback)
 	}
 	if l, ok := ctx.Value(loggerKey).(Logger); ok {
 		return l
 	}
-	return &nopLogger{}
+	return withContextFields(ctx, fallbackOrNop(fallback))
 }
 
 // ContextWithTraceID 将 traceId 注入到 context.
@@ -156,8 +167,45 @@ func ContextWithSpanID(ctx context.Context, spanID string) context.Context {
 	return context.WithValue(ctx, SpanIDKey, spanID)
 }
 
+func fallbackOrNop(l Logger) Logger {
+	if l != nil {
+		return l
+	}
+	return &nopLogger{}
+}
+
+func withContextFields(ctx context.Context, l Logger) Logger {
+	fields := make([]Field, 0, 2)
+	if traceID, ok := ctx.Value(TraceIDKey).(string); ok && traceID != "" {
+		fields = append(fields, String("traceId", traceID))
+	}
+	if spanID, ok := ctx.Value(SpanIDKey).(string); ok && spanID != "" {
+		fields = append(fields, String("spanId", spanID))
+	}
+	if len(fields) == 0 {
+		return l
+	}
+	return l.With(fields...)
+}
+
 // Nop 返回空日志实现，不输出任何内容.
 func Nop() Logger { return &nopLogger{} }
+
+// WithComponent 返回绑定组件名的 logger.
+func WithComponent(l Logger, component string) Logger {
+	if l == nil {
+		l = Nop()
+	}
+	if component == "" {
+		return l
+	}
+	return l.With(Component(component))
+}
+
+// For 从 context 读取 logger 并绑定组件名.
+func For(ctx context.Context, component string) Logger {
+	return WithComponent(FromContext(ctx), component)
+}
 
 // nopLogger 空日志实现，FromContext 在 context 中找不到 logger 时的回退.
 type nopLogger struct{}

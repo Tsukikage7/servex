@@ -21,6 +21,6 @@ var (
 	// ErrMissingDiscovery 必须设置 discovery.
 	ErrMissingDiscovery = errors.New(60006, "transport.httpclient.missing_discovery", "必须设置 discovery")
 
-	// ErrMissingLogger 必须设置 logger.
+	// ErrMissingLogger 已不再由默认构造流程返回，保留给外部自定义校验使用.
 	ErrMissingLogger = errors.New(60007, "transport.httpclient.missing_logger", "必须设置 logger")
 )

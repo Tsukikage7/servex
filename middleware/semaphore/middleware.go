@@ -61,7 +61,7 @@ func EndpointMiddleware(sem Semaphore, opts ...MiddlewareOption) endpoint.Middle
 			if o.block {
 				if err := sem.Acquire(ctx); err != nil {
 					if o.logger != nil {
-						logger.FromContext(ctx).Warn(
+						logger.FromContextOr(ctx, o.logger).Warn(
 							"[Semaphore] 获取许可失败",
 							logger.Err(err),
 						)
@@ -73,7 +73,7 @@ func EndpointMiddleware(sem Semaphore, opts ...MiddlewareOption) endpoint.Middle
 				acquired = sem.TryAcquire(ctx)
 				if !acquired {
 					if o.logger != nil {
-						logger.FromContext(ctx).Debug("[Semaphore] 无可用许可")
+						logger.FromContextOr(ctx, o.logger).Debug("[Semaphore] 无可用许可")
 					}
 					return nil, ErrNoPermit
 				}
@@ -110,7 +110,7 @@ func HTTPMiddleware(sem Semaphore, opts ...MiddlewareOption) func(http.Handler) 
 			if o.block {
 				if err := sem.Acquire(ctx); err != nil {
 					if o.logger != nil {
-						logger.FromContext(ctx).Warn(
+						logger.FromContextOr(ctx, o.logger).Warn(
 							"[Semaphore] 获取许可失败",
 							logger.String("method", r.Method),
 							logger.String("path", r.URL.Path),
@@ -125,7 +125,7 @@ func HTTPMiddleware(sem Semaphore, opts ...MiddlewareOption) func(http.Handler) 
 				acquired = sem.TryAcquire(ctx)
 				if !acquired {
 					if o.logger != nil {
-						logger.FromContext(ctx).Debug(
+						logger.FromContextOr(ctx, o.logger).Debug(
 							"[Semaphore] 无可用许可",
 							logger.String("method", r.Method),
 							logger.String("path", r.URL.Path),
@@ -174,7 +174,7 @@ func UnaryServerInterceptor(sem Semaphore, opts ...MiddlewareOption) grpc.UnaryS
 		if o.block {
 			if err := sem.Acquire(ctx); err != nil {
 				if o.logger != nil {
-					logger.FromContext(ctx).Warn(
+					logger.FromContextOr(ctx, o.logger).Warn(
 						"[Semaphore] 获取许可失败",
 						logger.String("method", info.FullMethod),
 						logger.Err(err),
@@ -187,7 +187,7 @@ func UnaryServerInterceptor(sem Semaphore, opts ...MiddlewareOption) grpc.UnaryS
 			acquired = sem.TryAcquire(ctx)
 			if !acquired {
 				if o.logger != nil {
-					logger.FromContext(ctx).Debug(
+					logger.FromContextOr(ctx, o.logger).Debug(
 						"[Semaphore] 无可用许可",
 						logger.String("method", info.FullMethod),
 					)
@@ -226,7 +226,7 @@ func StreamServerInterceptor(sem Semaphore, opts ...MiddlewareOption) grpc.Strea
 		if o.block {
 			if err := sem.Acquire(ctx); err != nil {
 				if o.logger != nil {
-					logger.FromContext(ctx).Warn(
+					logger.FromContextOr(ctx, o.logger).Warn(
 						"[Semaphore] 获取许可失败",
 						logger.String("method", info.FullMethod),
 						logger.Err(err),
@@ -239,7 +239,7 @@ func StreamServerInterceptor(sem Semaphore, opts ...MiddlewareOption) grpc.Strea
 			acquired = sem.TryAcquire(ctx)
 			if !acquired {
 				if o.logger != nil {
-					logger.FromContext(ctx).Debug(
+					logger.FromContextOr(ctx, o.logger).Debug(
 						"[Semaphore] 无可用许可",
 						logger.String("method", info.FullMethod),
 					)

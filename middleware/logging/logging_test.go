@@ -48,13 +48,19 @@ func TestHTTPMiddlewareSkipPaths(t *testing.T) {
 	}
 }
 
-func TestHTTPMiddlewarePanicOnNilLogger(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Fatal("expected panic with nil logger")
-		}
-	}()
-	HTTPMiddleware()
+func TestHTTPMiddlewareWithoutLogger(t *testing.T) {
+	inner := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	handler := HTTPMiddleware()(inner)
+	req := httptest.NewRequest(http.MethodGet, "/api/test", nil)
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", w.Code)
+	}
 }
 
 func TestShouldSkip(t *testing.T) {

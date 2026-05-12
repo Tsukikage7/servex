@@ -20,9 +20,6 @@ import (
 //	http.ListenAndServe(":8080", wrapped)
 func HTTPMiddleware(opts ...Option) func(http.Handler) http.Handler {
 	o := applyOptions(opts)
-	if o.Logger == nil {
-		panic("recovery: 日志记录器不能为空")
-	}
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -31,8 +28,8 @@ func HTTPMiddleware(opts ...Option) func(http.Handler) http.Handler {
 					stack := captureStack(o.StackSize, o.StackAll)
 
 					// 记录 panic 日志
-					logger.FromContext(r.Context()).Error(
-						"http panic recovered",
+					logger.FromContextOr(r.Context(), o.Logger).Error(
+						"[Recovery] HTTP 异常已恢复",
 						logger.Any("panic", p),
 						logger.String("method", r.Method),
 						logger.String("path", r.URL.Path),

@@ -36,7 +36,7 @@ type Client struct {
 	lastDiscover time.Time
 }
 
-// New 创建 HTTP 客户端，必需设置 serviceName、discovery、logger，否则返回错误.
+// New 创建 HTTP 客户端，必需设置 serviceName 和 discovery.
 func New(opts ...Option) (*Client, error) {
 	o := defaultOptions()
 	for _, opt := range opts {
@@ -51,7 +51,7 @@ func New(opts ...Option) (*Client, error) {
 		return nil, ErrMissingDiscovery
 	}
 	if o.logger == nil {
-		return nil, ErrMissingLogger
+		o.logger = logger.Nop()
 	}
 
 	// 初始服务发现
@@ -268,7 +268,7 @@ func WithDiscovery(d discovery.Discovery) Option {
 	}
 }
 
-// WithLogger 设置日志实例（必需）.
+// WithLogger 设置日志实例.
 func WithLogger(l logger.Logger) Option {
 	return func(o *options) {
 		o.logger = l

@@ -43,7 +43,7 @@ func New(handler http.Handler, opts ...Option) *Server {
 	}
 
 	if o.logger == nil {
-		panic("http server: logger is required")
+		o.logger = logger.Nop()
 	}
 
 	// 创建健康检查
@@ -70,7 +70,7 @@ func New(handler http.Handler, opts ...Option) *Server {
 
 	if o.profiling != "" {
 		if o.profilingAuth == nil {
-			o.logger.Warn("[HTTP] pprof 端点已启用但未配置认证函数，建议使用 WithProfilingAuth 设置认证")
+			o.logger.Warn("[HTTP] 性能分析端点已启用但未配置认证函数")
 		}
 		wrapped = wrapProfiling(wrapped, o.profiling, o.profilingAuth)
 	}
@@ -240,7 +240,7 @@ func defaultOptions() *options {
 	}
 }
 
-// WithLogger 设置日志记录器（必需）.
+// WithLogger 设置日志记录器.
 func WithLogger(l logger.Logger) Option {
 	return func(o *options) { o.logger = l }
 }

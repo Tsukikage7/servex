@@ -18,9 +18,6 @@ import (
 //	)(handler)
 func HTTPMiddleware(opts ...Option) func(http.Handler) http.Handler {
 	o := applyOptions(opts)
-	if o.Logger == nil {
-		panic("logging: 日志记录器不能为空")
-	}
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -34,7 +31,7 @@ func HTTPMiddleware(opts ...Option) func(http.Handler) http.Handler {
 
 			next.ServeHTTP(rec, r)
 
-			logger.FromContext(r.Context()).Info("[http]",
+			logger.FromContextOr(r.Context(), o.Logger).Info("[HTTP] 请求完成",
 				logger.String("method", r.Method),
 				logger.String("path", r.URL.Path),
 				logger.Int("status", rec.status),

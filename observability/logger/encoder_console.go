@@ -18,6 +18,7 @@ type consoleEncoder struct {
 	config    zapcore.EncoderConfig
 	fields    *buffer.Buffer // 存储通过 With() 添加的字段
 	fieldsNum int            // 字段数量
+	component string         // 组件名，控制台输出时渲染为 [Component] 前缀
 }
 
 // newConsoleEncoder 创建自定义 console 编码器.
@@ -35,6 +36,7 @@ func (c *consoleEncoder) Clone() zapcore.Encoder {
 		config:    c.config,
 		fields:    bufferPool.Get(),
 		fieldsNum: c.fieldsNum,
+		component: c.component,
 	}
 	// 复制已有字段
 	if c.fields.Len() > 0 {
@@ -46,6 +48,7 @@ func (c *consoleEncoder) Clone() zapcore.Encoder {
 // EncodeEntry 编码日志条目.
 func (c *consoleEncoder) EncodeEntry(entry zapcore.Entry, fields []zapcore.Field) (*buffer.Buffer, error) {
 	buf := bufferPool.Get()
+	component := c.component
 
 	// 编码时间
 	if c.config.TimeKey != "" && c.config.EncodeTime != nil {
@@ -66,11 +69,26 @@ func (c *consoleEncoder) EncodeEntry(entry zapcore.Entry, fields []zapcore.Field
 	}
 
 	// 编码消息
+	for _, field := range fields {
+		if v, ok := componentFromField(field); ok {
+			component = v
+			break
+		}
+	}
+	if component != "" {
+		buf.AppendByte('[')
+		buf.AppendString(component)
+		buf.AppendByte(']')
+		if entry.Message != "" {
+			buf.AppendByte(' ')
+		}
+	}
 	buf.AppendString(entry.Message)
 
 	// 编码通过 With() 添加的字段
 	hasWithFields := c.fields.Len() > 0
-	hasCallFields := len(fields) > 0
+	callFields := fieldsWithoutComponent(fields)
+	hasCallFields := len(callFields) > 0
 
 	if hasWithFields {
 		buf.AppendString(c.config.ConsoleSeparator)
@@ -82,11 +100,13 @@ func (c *consoleEncoder) EncodeEntry(entry zapcore.Entry, fields []zapcore.Field
 		if !hasWithFields {
 			buf.AppendString(c.config.ConsoleSeparator)
 		}
-		for i, field := range fields {
-			if i > 0 || c.fieldsNum > 0 {
+		written := 0
+		for _, field := range callFields {
+			if written > 0 || c.fieldsNum > 0 {
 				buf.AppendByte(' ')
 			}
 			c.encodeFieldTo(buf, field)
+			written++
 		}
 	}
 
@@ -98,6 +118,10 @@ func (c *consoleEncoder) EncodeEntry(entry zapcore.Entry, fields []zapcore.Field
 
 // AddString 添加字符串字段.
 func (c *consoleEncoder) AddString(key, val string) {
+	if key == ComponentKey {
+		c.component = val
+		return
+	}
 	c.addSeparator()
 	formatField(c.fields, key, val)
 }
@@ -212,6 +236,10 @@ func (c *consoleEncoder) AddComplex64(key string, val complex64) {
 
 // AddReflected 添加反射类型字段.
 func (c *consoleEncoder) AddReflected(key string, val any) error {
+	if key == ComponentKey {
+		c.component = fmt.Sprint(val)
+		return nil
+	}
 	c.addSeparator()
 	var value string
 	switch v := val.(type) {
@@ -316,6 +344,34 @@ func (c *consoleEncoder) encodeFieldTo(buf *buffer.Buffer, field zapcore.Field) 
 	}
 
 	formatField(buf, field.Key, value)
+}
+
+func componentFromField(field zapcore.Field) (string, bool) {
+	if field.Key != ComponentKey {
+		return "", false
+	}
+	switch field.Type {
+	case zapcore.StringType:
+		return field.String, true
+	default:
+		if field.Interface != nil {
+			return fmt.Sprint(field.Interface), true
+		}
+		return "", true
+	}
+}
+
+func fieldsWithoutComponent(fields []zapcore.Field) []zapcore.Field {
+	if len(fields) == 0 {
+		return nil
+	}
+	result := fields[:0]
+	for _, field := range fields {
+		if field.Key != ComponentKey {
+			result = append(result, field)
+		}
+	}
+	return result
 }
 
 // decodeTime 解码时间字段.

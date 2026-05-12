@@ -56,8 +56,8 @@ func UnaryServerInterceptor(timeout time.Duration, opts ...Option) grpc.UnarySer
 		select {
 		case <-ctx.Done():
 			if o.logger != nil {
-				logger.FromContext(ctx).Warn(
-					"[Timeout] gRPC一元请求超时",
+				logger.FromContextOr(ctx, o.logger).Warn(
+					"[Timeout] gRPC 一元请求超时",
 					logger.String("method", info.FullMethod),
 					logger.Duration("timeout", o.timeout),
 				)
@@ -115,8 +115,8 @@ func StreamServerInterceptor(timeout time.Duration, opts ...Option) grpc.StreamS
 		select {
 		case <-ctx.Done():
 			if o.logger != nil {
-				logger.FromContext(ctx).Warn(
-					"[Timeout] gRPC流请求超时",
+				logger.FromContextOr(ctx, o.logger).Warn(
+					"[Timeout] gRPC 流请求超时",
 					logger.String("method", info.FullMethod),
 					logger.Duration("timeout", o.timeout),
 				)
@@ -164,8 +164,8 @@ func UnaryClientInterceptor(timeout time.Duration, opts ...Option) grpc.UnaryCli
 		err := invoker(ctx, method, req, reply, cc, callOpts...)
 		if err != nil && ctx.Err() == context.DeadlineExceeded {
 			if o.logger != nil {
-				logger.FromContext(ctx).Warn(
-					"[Timeout] gRPC客户端请求超时",
+				logger.FromContextOr(ctx, o.logger).Warn(
+					"[Timeout] gRPC 客户端请求超时",
 					logger.String("method", method),
 					logger.Duration("timeout", o.timeout),
 				)
@@ -205,8 +205,8 @@ func StreamClientInterceptor(timeout time.Duration, opts ...Option) grpc.StreamC
 		stream, err := streamer(ctx, desc, cc, method, callOpts...)
 		if err != nil && ctx.Err() == context.DeadlineExceeded {
 			if o.logger != nil {
-				logger.FromContext(ctx).Warn(
-					"[Timeout] gRPC客户端流超时",
+				logger.FromContextOr(ctx, o.logger).Warn(
+					"[Timeout] gRPC 客户端流超时",
 					logger.String("method", method),
 					logger.Duration("timeout", o.timeout),
 				)

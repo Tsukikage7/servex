@@ -19,9 +19,6 @@ import (
 //	endpoint = recovery.EndpointMiddleware(recovery.WithLogger(log))(endpoint)
 func EndpointMiddleware(opts ...Option) endpoint.Middleware {
 	o := applyOptions(opts)
-	if o.Logger == nil {
-		panic("recovery: 日志记录器不能为空")
-	}
 
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request any) (response any, err error) {
@@ -30,8 +27,8 @@ func EndpointMiddleware(opts ...Option) endpoint.Middleware {
 					stack := captureStack(o.StackSize, o.StackAll)
 
 					// 记录 panic 日志
-					logger.FromContext(ctx).Error(
-						"endpoint panic recovered",
+					logger.FromContextOr(ctx, o.Logger).Error(
+						"[Recovery] 端点异常已恢复",
 						logger.Any("panic", p),
 						logger.String("stack", string(stack)),
 					)

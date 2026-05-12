@@ -98,19 +98,13 @@ func TestHTTPMiddleware_WithPanic(t *testing.T) {
 	if !log.errorCalled {
 		t.Error("error should be called when panic")
 	}
-	if log.lastMessage != "http panic recovered" {
+	if log.lastMessage != "[Recovery] HTTP 异常已恢复" {
 		t.Errorf("unexpected message: %s", log.lastMessage)
 	}
 }
 
-// TestHTTPMiddleware_NilLogger 测试未设置 logger 时 panic.
+// TestHTTPMiddleware_NilLogger 测试未设置 logger 时回退到空日志.
 func TestHTTPMiddleware_NilLogger(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Error("expected panic when logger not set")
-		}
-	}()
-
 	HTTPMiddleware()
 }
 
@@ -223,14 +217,8 @@ func TestUnaryServerInterceptor_WithPanic(t *testing.T) {
 	}
 }
 
-// TestUnaryServerInterceptor_NilLogger 测试未设置 logger 时 panic.
+// TestUnaryServerInterceptor_NilLogger 测试未设置 logger 时回退到空日志.
 func TestUnaryServerInterceptor_NilLogger(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Error("expected panic when logger not set")
-		}
-	}()
-
 	UnaryServerInterceptor()
 }
 
@@ -290,14 +278,8 @@ func TestStreamServerInterceptor_WithPanic(t *testing.T) {
 	}
 }
 
-// TestStreamServerInterceptor_NilLogger 测试未设置 logger 时 panic.
+// TestStreamServerInterceptor_NilLogger 测试未设置 logger 时回退到空日志.
 func TestStreamServerInterceptor_NilLogger(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Error("expected panic when logger not set")
-		}
-	}()
-
 	StreamServerInterceptor()
 }
 
@@ -355,14 +337,8 @@ func TestEndpointMiddleware_WithPanic(t *testing.T) {
 	}
 }
 
-// TestEndpointMiddleware_NilLogger 测试未设置 logger 时 panic.
+// TestEndpointMiddleware_NilLogger 测试未设置 logger 时回退到空日志.
 func TestEndpointMiddleware_NilLogger(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Error("expected panic when logger not set")
-		}
-	}()
-
 	EndpointMiddleware()
 }
 

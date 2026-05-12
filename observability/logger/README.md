@@ -9,13 +9,13 @@
 - 日志轮转：支持按天/小时自动轮转
 - 级别分离：可按日志级别输出到不同文件
 - 结构化：支持添加结构化字段
-- 上下文：支持从 context 自动提取 trace_id、request_id
+- 上下文：支持通过 context 注入 logger，并在 fallback 场景自动附加 traceId/spanId
 - 预设配置：提供开发、生产环境预设配置
 
 ## 安装
 
 ```bash
-go get github.com/Tsukikage7/servex/observability/logger
+go get github.com/Tsukikage7/servex/v2/observability/logger
 ```
 
 ## 配置选项
@@ -65,7 +65,7 @@ log, err := logger.NewLogger(config)
 | 配置项            | 类型   | 默认值    | 说明                       |
 | ----------------- | ------ | --------- | -------------------------- |
 | `Level`           | string | `info`    | 日志级别                   |
-| `Format`          | string | `json`    | 输出格式                   |
+| `Format`          | string | `console` | 输出格式                   |
 | `Output`          | string | `console` | 输出目标                   |
 | `LogDir`          | string | -         | 日志目录（文件输出时必填） |
 | `ServiceName`     | string | `service` | 服务名                     |
@@ -80,19 +80,17 @@ log, err := logger.NewLogger(config)
 ### 添加字段
 
 ```go
-// 使用 With 添加字段
-userLog := log.With(
+// 推荐：消息正文 + 结构化字段
+log.Info("[User] 执行动作",
     logger.String("user_id", "12345"),
     logger.Int("age", 25),
     logger.Bool("vip", true),
 )
-userLog.Info("user action")
-// 输出: {"level":"INFO","timestamp":"2024-01-15 10:30:45","msg":"user action","user_id":"12345","age":25,"vip":true}
+// 输出: {"level":"INFO","timestamp":"2024-01-15 10:30:45","msg":"[User] 执行动作","user_id":"12345","age":25,"vip":true}
 
-// 链式调用
-log.With(logger.String("module", "auth")).
-    With(logger.String("action", "login")).
-    Info("user logged in")
+// 需要绑定固定字段时使用 With
+authLog := log.With(logger.Component("Auth"))
+authLog.Warn("主体已过期", logger.String("principal_id", "u_123"))
 ```
 
 ### 支持的字段类型
@@ -111,51 +109,48 @@ logger.Any("key", anyValue)             // 任意类型
 
 ## 上下文集成
 
-### 与 trace 包集成（推荐）
+### 请求上下文使用（推荐）
 
-当使用 OpenTelemetry 追踪时，可以自动从 span 中提取 traceId 和 spanId：
+HTTP server、gRPC server 和 Gateway 会把 logger 注入请求 context。业务代码和中间件优先从 context 读取：
 
 ```go
 import (
-    "github.com/Tsukikage7/servex/observability/logger"
-    "github.com/Tsukikage7/servex/tracing"
+    "github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
-// 在应用启动时设置（需要 trace 的服务）
-logger.SetTraceExtractor(tracing.NewLoggerExtractor())
-
-// 使用 trace 中间件
-handler := trace.HTTPMiddleware(&trace.Config{Logger: log})(mux)
-
-// 在业务代码中
 func handleRequest(w http.ResponseWriter, r *http.Request) {
-    ctx := r.Context()
-
-    // 日志自动携带 traceId 和 spanId
-    logger.FromContext(ctx).Info("处理请求")
-    // 输出: {"level":"INFO","timestamp":"...","msg":"处理请求","traceId":"abc123...","spanId":"def456..."}
+    logger.FromContext(r.Context()).Info("[HTTP] 处理请求",
+        logger.String("method", r.Method),
+        logger.String("path", r.URL.Path),
+    )
 }
 ```
 
-### 不使用 trace 包的方式
+### 独立中间件 fallback
 
-如果不需要 OpenTelemetry 追踪，可以手动将 logger 注入 context：
+独立使用中间件时，context 中可能还没有 logger。此时使用 `FromContextOr`，优先读取 context，缺失时回退到传入的 logger：
 
 ```go
-import "github.com/Tsukikage7/servex/observability/logger"
+func Middleware(log logger.Logger) func(http.Handler) http.Handler {
+    return func(next http.Handler) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            logger.FromContextOr(r.Context(), log).Info("[HTTP] 请求完成",
+                logger.String("path", r.URL.Path),
+            )
+            next.ServeHTTP(w, r)
+        })
+    }
+}
+```
 
-// 手动将带 trace 信息的 logger 存入 context
+### 手动注入 context
+
+```go
 ctx := context.Background()
 log := logger.MustNewLogger(logger.DefaultConfig())
-ctxLog := log.With(
-    logger.String("traceId", "trace-abc123"),
-    logger.String("spanId", "span-xyz789"),
-)
-ctx = logger.NewContext(ctx, ctxLog)
+ctx = logger.NewContext(ctx, log.With(logger.String("request_id", "req_123")))
 
-// 业务代码通过 FromContext 取出
-logger.FromContext(ctx).Info("request processed")
-// 输出: {"level":"INFO","timestamp":"...","msg":"request processed","traceId":"trace-abc123","spanId":"span-xyz789"}
+logger.FromContext(ctx).Info("[Worker] 处理任务")
 ```
 
 ### 在 HTTP 中间件中使用
@@ -164,8 +159,8 @@ logger.FromContext(ctx).Info("request processed")
 
 ```go
 import (
-    "github.com/Tsukikage7/servex/observability/logger"
-    "github.com/Tsukikage7/servex/middleware/trace"
+    "github.com/Tsukikage7/servex/v2/observability/logger"
+    "github.com/Tsukikage7/servex/v2/middleware/trace"
 )
 
 func main() {
@@ -182,7 +177,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
     ctx := r.Context()
 
     // 自动携带 traceId 和 spanId
-    logger.FromContext(ctx).Info("request started",
+    logger.FromContext(ctx).Info("[HTTP] 请求开始",
         logger.String("method", r.Method),
         logger.String("path", r.URL.Path),
     )
@@ -276,11 +271,9 @@ func HandleRequest(ctx context.Context) {
     // 从 context 取出 logger（已由 trace 中间件注入 traceId）
     log := logger.FromContext(ctx)
 
-    reqLog := log.With(
+    log.Info("[Handler] 处理请求",
         logger.String("handler", "HandleRequest"),
     )
-
-    reqLog.Info("processing request")
     // 业务逻辑...
 }
 ```

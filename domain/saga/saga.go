@@ -117,7 +117,7 @@ func (s *Saga) ExecuteWithData(ctx context.Context, data *Data) error {
 	state.Status = SagaStatusRunning
 	if err := s.opts.store.Save(ctx, state); err != nil {
 		if s.opts.logger != nil {
-			logger.FromContext(ctx).Warn(
+			logger.FromContextOr(ctx, s.opts.logger).Warn(
 				"[Saga] 保存初始状态失败",
 				logger.String("saga", s.name),
 				logger.Err(err),
@@ -172,7 +172,7 @@ func (s *Saga) ExecuteWithData(ctx context.Context, data *Data) error {
 			lastErr = err
 
 			if s.opts.logger != nil {
-				logger.FromContext(ctx).Error(
+				logger.FromContextOr(ctx, s.opts.logger).Error(
 					"[Saga] 步骤执行失败",
 					logger.String("saga", s.name),
 					logger.String("step", step.Name),
@@ -187,7 +187,7 @@ func (s *Saga) ExecuteWithData(ctx context.Context, data *Data) error {
 		completedSteps = i + 1
 
 		if s.opts.logger != nil {
-			logger.FromContext(ctx).Debug(
+			logger.FromContextOr(ctx, s.opts.logger).Debug(
 				"[Saga] 步骤执行完成",
 				logger.String("saga", s.name),
 				logger.String("step", step.Name),
@@ -204,7 +204,7 @@ func (s *Saga) ExecuteWithData(ctx context.Context, data *Data) error {
 		_ = s.saveState(ctx, state)
 
 		if s.opts.logger != nil {
-			logger.FromContext(ctx).Info(
+			logger.FromContextOr(ctx, s.opts.logger).Info(
 				"[Saga] 执行成功",
 				logger.String("saga", s.name),
 			)
@@ -219,7 +219,7 @@ func (s *Saga) ExecuteWithData(ctx context.Context, data *Data) error {
 	_ = s.saveState(ctx, state)
 
 	if s.opts.logger != nil {
-		logger.FromContext(ctx).Info(
+		logger.FromContextOr(ctx, s.opts.logger).Info(
 			"[Saga] 开始执行补偿",
 			logger.String("saga", s.name),
 			logger.Int("completed_steps", completedSteps),
@@ -262,7 +262,7 @@ func (s *Saga) executeStepWithRetry(ctx context.Context, step Step, data *Data) 
 			}
 
 			if s.opts.logger != nil {
-				logger.FromContext(ctx).Debug(
+				logger.FromContextOr(ctx, s.opts.logger).Debug(
 					"[Saga] 重试步骤",
 					logger.String("step", step.Name),
 					logger.Int("attempt", attempt+1),
@@ -304,7 +304,7 @@ func (s *Saga) compensate(ctx context.Context, data *Data, state *State, complet
 			lastErr = err
 
 			if s.opts.logger != nil {
-				logger.FromContext(ctx).Error(
+				logger.FromContextOr(ctx, s.opts.logger).Error(
 					"[Saga] 补偿执行失败",
 					logger.String("saga", s.name),
 					logger.String("step", step.Name),
@@ -319,7 +319,7 @@ func (s *Saga) compensate(ctx context.Context, data *Data, state *State, complet
 		state.StepResults[i].Status = StepStatusCompensated
 
 		if s.opts.logger != nil {
-			logger.FromContext(ctx).Debug(
+			logger.FromContextOr(ctx, s.opts.logger).Debug(
 				"[Saga] 步骤已补偿",
 				logger.String("saga", s.name),
 				logger.String("step", step.Name),
@@ -334,7 +334,7 @@ func (s *Saga) compensate(ctx context.Context, data *Data, state *State, complet
 func (s *Saga) saveState(ctx context.Context, state *State) error {
 	if err := s.opts.store.Save(ctx, state); err != nil {
 		if s.opts.logger != nil {
-			logger.FromContext(ctx).Warn(
+			logger.FromContextOr(ctx, s.opts.logger).Warn(
 				"[Saga] 保存状态失败",
 				logger.String("saga", s.name),
 				logger.String("status", string(state.Status)),

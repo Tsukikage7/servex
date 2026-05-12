@@ -65,7 +65,7 @@ func UnaryServerInterceptor(store Store, opts ...Option) grpc.UnaryServerInterce
 		if err != nil {
 			if o.skipOnError {
 				if o.logger != nil {
-					logger.FromContext(ctx).Warn(
+					logger.FromContextOr(ctx, o.logger).Warn(
 						"[Idempotency] 存储获取失败，跳过检查",
 						logger.String("key", key),
 						logger.String("method", info.FullMethod),
@@ -80,7 +80,7 @@ func UnaryServerInterceptor(store Store, opts ...Option) grpc.UnaryServerInterce
 		if result != nil {
 			// 返回之前的结果
 			if o.logger != nil {
-				logger.FromContext(ctx).Debug(
+				logger.FromContextOr(ctx, o.logger).Debug(
 					"[Idempotency] 缓存命中",
 					logger.String("key", key),
 					logger.String("method", info.FullMethod),
@@ -94,7 +94,7 @@ func UnaryServerInterceptor(store Store, opts ...Option) grpc.UnaryServerInterce
 		if err != nil {
 			if o.skipOnError {
 				if o.logger != nil {
-					logger.FromContext(ctx).Warn(
+					logger.FromContextOr(ctx, o.logger).Warn(
 						"[Idempotency] 获取锁失败，跳过检查",
 						logger.String("key", key),
 						logger.String("method", info.FullMethod),
@@ -129,7 +129,7 @@ func UnaryServerInterceptor(store Store, opts ...Option) grpc.UnaryServerInterce
 
 		if saveErr := store.Set(ctx, key, saveResult, o.ttl); saveErr != nil {
 			if o.logger != nil {
-				logger.FromContext(ctx).Warn(
+				logger.FromContextOr(ctx, o.logger).Warn(
 					"[Idempotency] 存储写入失败",
 					logger.String("key", key),
 					logger.String("method", info.FullMethod),

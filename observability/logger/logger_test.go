@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -171,6 +172,75 @@ func (s *LoggerTestSuite) TestLoggerWith() {
 			With(Bool("debug", true)).
 			Info("chained fields")
 	})
+}
+
+func (s *LoggerTestSuite) TestFromContextOrUsesContextLoggerFirst() {
+	ctxLog := &captureLogger{}
+	fallback := &captureLogger{}
+	ctx := NewContext(context.Background(), ctxLog)
+
+	FromContextOr(ctx, fallback).Info("来自 context")
+
+	s.Equal([]string{"来自 context"}, ctxLog.messages)
+	s.Empty(fallback.messages)
+}
+
+func (s *LoggerTestSuite) TestFromContextOrUsesFallbackLogger() {
+	fallback := &captureLogger{}
+
+	FromContextOr(context.Background(), fallback).Info("来自 fallback")
+
+	s.Equal([]string{"来自 fallback"}, fallback.messages)
+}
+
+func (s *LoggerTestSuite) TestFromContextOrAddsTraceFieldsToFallback() {
+	fallback := &captureLogger{}
+	ctx := ContextWithTraceID(context.Background(), "trace-1")
+	ctx = ContextWithSpanID(ctx, "span-1")
+
+	FromContextOr(ctx, fallback).Info("带链路字段")
+
+	s.Equal([]string{"带链路字段"}, fallback.messages)
+	s.Equal("trace-1", fallback.fields["traceId"])
+	s.Equal("span-1", fallback.fields["spanId"])
+}
+
+type captureLogger struct {
+	messages []string
+	fields   map[string]any
+}
+
+func (l *captureLogger) Debug(args ...any)                 { l.record(args...) }
+func (l *captureLogger) Debugf(format string, args ...any) {}
+func (l *captureLogger) Info(args ...any)                  { l.record(args...) }
+func (l *captureLogger) Infof(format string, args ...any)  {}
+func (l *captureLogger) Warn(args ...any)                  { l.record(args...) }
+func (l *captureLogger) Warnf(format string, args ...any)  {}
+func (l *captureLogger) Error(args ...any)                 { l.record(args...) }
+func (l *captureLogger) Errorf(format string, args ...any) {}
+func (l *captureLogger) Fatal(args ...any)                 { l.record(args...) }
+func (l *captureLogger) Fatalf(format string, args ...any) {}
+func (l *captureLogger) Panic(args ...any)                 { l.record(args...) }
+func (l *captureLogger) Panicf(format string, args ...any) {}
+func (l *captureLogger) With(fields ...Field) Logger {
+	if l.fields == nil {
+		l.fields = make(map[string]any, len(fields))
+	}
+	for _, f := range fields {
+		l.fields[f.Key] = f.Value
+	}
+	return l
+}
+func (l *captureLogger) Sync() error  { return nil }
+func (l *captureLogger) Close() error { return nil }
+
+func (l *captureLogger) record(args ...any) {
+	if len(args) == 0 {
+		return
+	}
+	if msg, ok := args[0].(string); ok {
+		l.messages = append(l.messages, msg)
+	}
 }
 
 // ConstantsTestSuite 常量测试套件.

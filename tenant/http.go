@@ -39,7 +39,7 @@ func HTTPMiddleware(resolver Resolver, opts ...Option) func(http.Handler) http.H
 			token, err := o.tokenExtractor(ctx, r)
 			if err != nil {
 				if o.logger != nil {
-					logger.FromContext(ctx).Debug("[Tenant] HTTP令牌提取失败",
+					logger.FromContextOr(ctx, o.logger).Debug("[Tenant] HTTP 令牌提取失败",
 						logger.String("path", r.URL.Path),
 						logger.Err(err),
 					)
@@ -52,7 +52,7 @@ func HTTPMiddleware(resolver Resolver, opts ...Option) func(http.Handler) http.H
 			t, err := resolver.Resolve(ctx, token)
 			if err != nil {
 				if o.logger != nil {
-					logger.FromContext(ctx).Warn("[Tenant] HTTP解析失败",
+					logger.FromContextOr(ctx, o.logger).Warn("[Tenant] HTTP 解析失败",
 						logger.String("path", r.URL.Path),
 						logger.Err(err),
 					)
@@ -64,7 +64,7 @@ func HTTPMiddleware(resolver Resolver, opts ...Option) func(http.Handler) http.H
 			// 检查租户是否启用
 			if !t.TenantEnabled() {
 				if o.logger != nil {
-					logger.FromContext(ctx).Warn("[Tenant] HTTP租户已禁用",
+					logger.FromContextOr(ctx, o.logger).Warn("[Tenant] HTTP 租户已禁用",
 						logger.String("tenant_id", t.TenantID()),
 						logger.String("path", r.URL.Path),
 					)

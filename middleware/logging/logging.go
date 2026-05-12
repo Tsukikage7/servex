@@ -9,7 +9,7 @@ import (
 
 // Options 配置选项.
 type Options struct {
-	// Logger 日志记录器，必需.
+	// Logger 日志记录器。未设置时会回退到 context 中的 logger 或空日志实现.
 	Logger logger.Logger
 
 	// SkipPaths 跳过记录的路径列表（如 /health、/metrics）.

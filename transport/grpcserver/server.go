@@ -40,7 +40,7 @@ type Server struct {
 	started   bool
 }
 
-// New 创建 gRPC 服务器，如果未设置 logger 会 panic.
+// New 创建 gRPC 服务器.
 func New(opts ...Option) *Server {
 	o := defaultOptions()
 	for _, opt := range opts {
@@ -48,7 +48,7 @@ func New(opts ...Option) *Server {
 	}
 
 	if o.logger == nil {
-		panic("grpc server: 必须设置 logger")
+		o.logger = logger.Nop()
 	}
 
 	// 创建内置健康检查管理器
