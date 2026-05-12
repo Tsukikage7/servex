@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"go.etcd.io/etcd/client/v3"
+	clientv3 "go.etcd.io/etcd/client/v3"
 
 	"github.com/Tsukikage7/servex/v2/observability/logger"
 	"github.com/Tsukikage7/servex/v2/transport"
@@ -45,6 +45,8 @@ var _ Discovery = (*etcdDiscovery)(nil)
 
 // newEtcdDiscovery 创建 etcd 服务发现实例.
 func newEtcdDiscovery(config *Config, log logger.Logger) (Discovery, error) {
+	log = logger.WithComponent(log, "Discovery")
+
 	endpoints := config.EtcdEndpoints
 	if len(endpoints) == 0 {
 		endpoints = []string{"127.0.0.1:2379"}
@@ -60,7 +62,7 @@ func newEtcdDiscovery(config *Config, log logger.Logger) (Discovery, error) {
 		DialTimeout: dialTimeout,
 	})
 	if err != nil {
-		log.With(logger.Err(err)).Error("[Discovery] 创建 etcd 客户端失败")
+		log.With(logger.Err(err)).Error("创建 etcd 客户端失败")
 		return nil, ErrClientCreate
 	}
 
@@ -120,14 +122,14 @@ func (e *etcdDiscovery) RegisterWithHealthEndpoint(ctx context.Context, serviceN
 	// 申请 lease
 	lease, err := e.client.Grant(ctx, defaultEtcdLeaseTTL)
 	if err != nil {
-		e.logger.With(logger.Err(err)).Error("[Discovery] etcd 申请 lease 失败")
+		e.logger.With(logger.Err(err)).Error("etcd 申请 lease 失败")
 		return "", ErrRegister
 	}
 
 	// 写入服务信息并绑定 lease
 	_, err = e.client.Put(ctx, key, string(value), clientv3.WithLease(lease.ID))
 	if err != nil {
-		e.logger.With(logger.Err(err)).Error("[Discovery] etcd 写入服务信息失败")
+		e.logger.With(logger.Err(err)).Error("etcd 写入服务信息失败")
 		return "", ErrRegister
 	}
 
@@ -136,7 +138,7 @@ func (e *etcdDiscovery) RegisterWithHealthEndpoint(ctx context.Context, serviceN
 	keepAliveCh, err := e.client.KeepAlive(keepAliveCtx, lease.ID)
 	if err != nil {
 		keepAliveCancel()
-		e.logger.With(logger.Err(err)).Error("[Discovery] etcd 续约失败")
+		e.logger.With(logger.Err(err)).Error("etcd 续约失败")
 		return "", ErrRegister
 	}
 
@@ -160,7 +162,7 @@ func (e *etcdDiscovery) RegisterWithHealthEndpoint(ctx context.Context, serviceN
 		logger.String("serviceID", serviceID),
 		logger.String("address", info.Address),
 		logger.String("protocol", protocol),
-	).Debug("[Discovery] 服务注册成功")
+	).Debug("服务注册成功")
 
 	return serviceID, nil
 }
@@ -192,12 +194,12 @@ func (e *etcdDiscovery) Unregister(ctx context.Context, serviceID string) error 
 			e.logger.With(
 				logger.String("serviceID", serviceID),
 				logger.Err(err),
-			).Error("[Discovery] etcd 撤销 lease 失败")
+			).Error("etcd 撤销 lease 失败")
 			return ErrUnregister
 		}
 	}
 
-	e.logger.With(logger.String("serviceID", serviceID)).Debug("[Discovery] 服务注销成功")
+	e.logger.With(logger.String("serviceID", serviceID)).Debug("服务注销成功")
 	return nil
 }
 
@@ -213,7 +215,7 @@ func (e *etcdDiscovery) Discover(ctx context.Context, serviceName string) ([]str
 		e.logger.With(
 			logger.String("serviceName", serviceName),
 			logger.Err(err),
-		).Error("[Discovery] etcd 服务发现失败")
+		).Error("etcd 服务发现失败")
 		return nil, ErrDiscover
 	}
 
@@ -221,18 +223,18 @@ func (e *etcdDiscovery) Discover(ctx context.Context, serviceName string) ([]str
 	for _, kv := range resp.Kvs {
 		var info etcdServiceInfo
 		if err := json.Unmarshal(kv.Value, &info); err != nil {
-			e.logger.With(logger.Err(err)).Warn("[Discovery] 解析服务信息失败，跳过")
+			e.logger.With(logger.Err(err)).Warn("解析服务信息失败，跳过")
 			continue
 		}
 		addresses = append(addresses, info.Address)
 		e.logger.With(
 			logger.String("serviceName", serviceName),
 			logger.String("addr", info.Address),
-		).Debug("[Discovery] 发现服务实例")
+		).Debug("发现服务实例")
 	}
 
 	if len(addresses) == 0 {
-		e.logger.With(logger.String("serviceName", serviceName)).Warn("[Discovery] 未发现任何服务实例")
+		e.logger.With(logger.String("serviceName", serviceName)).Warn("未发现任何服务实例")
 	}
 
 	return addresses, nil
@@ -246,6 +248,6 @@ func (e *etcdDiscovery) Close() error {
 		delete(e.cancels, id)
 	}
 	e.mu.Unlock()
-	e.logger.Debug("[Discovery] etcd 服务发现连接已关闭")
+	e.logger.Debug("etcd 服务发现连接已关闭")
 	return e.client.Close()
 }

@@ -23,6 +23,7 @@ func NewRedisCache(config *Config, log logger.Logger) (Cache, error) {
 	if config == nil {
 		return nil, ErrNilConfig
 	}
+	log = logger.WithComponent(log, "Cache")
 
 	if config.Addr == "" {
 		return nil, ErrEmptyAddr
@@ -49,14 +50,14 @@ func NewRedisCache(config *Config, log logger.Logger) (Cache, error) {
 		log.With(
 			logger.String("addr", config.Addr),
 			logger.Err(err),
-		).Error("[Cache] Redis 连接失败")
+		).Error("Redis 连接失败")
 		return nil, ErrConnect
 	}
 
 	log.With(
 		logger.String("addr", config.Addr),
 		logger.Int("db", config.DB),
-	).Debug("[Cache] Redis 连接成功")
+	).Debug("Redis 连接成功")
 
 	return &redisCache{
 		client: client,
@@ -76,7 +77,7 @@ func (r *redisCache) Set(ctx context.Context, key string, value any, ttl time.Du
 		r.logger.With(
 			logger.String("key", key),
 			logger.Err(err),
-		).Error("[Cache] SET 操作失败")
+		).Error("SET 操作失败")
 		return err
 	}
 	return nil
@@ -92,7 +93,7 @@ func (r *redisCache) Get(ctx context.Context, key string) (string, error) {
 		r.logger.With(
 			logger.String("key", key),
 			logger.Err(err),
-		).Error("[Cache] GET 操作失败")
+		).Error("GET 操作失败")
 		return "", err
 	}
 	return result, nil
@@ -108,7 +109,7 @@ func (r *redisCache) Del(ctx context.Context, keys ...string) error {
 		r.logger.With(
 			logger.Any("keys", keys),
 			logger.Err(err),
-		).Error("[Cache] DEL 操作失败")
+		).Error("DEL 操作失败")
 		return err
 	}
 	return nil
@@ -121,7 +122,7 @@ func (r *redisCache) Exists(ctx context.Context, key string) (bool, error) {
 		r.logger.With(
 			logger.String("key", key),
 			logger.Err(err),
-		).Error("[Cache] EXISTS 操作失败")
+		).Error("EXISTS 操作失败")
 		return false, err
 	}
 	return result > 0, nil
@@ -139,7 +140,7 @@ func (r *redisCache) SetNX(ctx context.Context, key string, value any, ttl time.
 		r.logger.With(
 			logger.String("key", key),
 			logger.Err(err),
-		).Error("[Cache] SETNX 操作失败")
+		).Error("SETNX 操作失败")
 		return false, err
 	}
 	return result, nil
@@ -152,7 +153,7 @@ func (r *redisCache) Increment(ctx context.Context, key string) (int64, error) {
 		r.logger.With(
 			logger.String("key", key),
 			logger.Err(err),
-		).Error("[Cache] INCR 操作失败")
+		).Error("INCR 操作失败")
 		return 0, err
 	}
 	return result, nil
@@ -165,7 +166,7 @@ func (r *redisCache) IncrementBy(ctx context.Context, key string, value int64) (
 		r.logger.With(
 			logger.String("key", key),
 			logger.Err(err),
-		).Error("[Cache] INCRBY 操作失败")
+		).Error("INCRBY 操作失败")
 		return 0, err
 	}
 	return result, nil
@@ -178,7 +179,7 @@ func (r *redisCache) Decrement(ctx context.Context, key string) (int64, error) {
 		r.logger.With(
 			logger.String("key", key),
 			logger.Err(err),
-		).Error("[Cache] DECR 操作失败")
+		).Error("DECR 操作失败")
 		return 0, err
 	}
 	return result, nil
@@ -190,7 +191,7 @@ func (r *redisCache) Expire(ctx context.Context, key string, ttl time.Duration) 
 		r.logger.With(
 			logger.String("key", key),
 			logger.Err(err),
-		).Error("[Cache] EXPIRE 操作失败")
+		).Error("EXPIRE 操作失败")
 		return err
 	}
 	return nil
@@ -203,7 +204,7 @@ func (r *redisCache) TTL(ctx context.Context, key string) (time.Duration, error)
 		r.logger.With(
 			logger.String("key", key),
 			logger.Err(err),
-		).Error("[Cache] TTL 操作失败")
+		).Error("TTL 操作失败")
 		return 0, err
 	}
 	return result, nil
@@ -216,7 +217,7 @@ func (r *redisCache) TryLock(ctx context.Context, key string, value string, ttl 
 		r.logger.With(
 			logger.String("key", key),
 			logger.Err(err),
-		).Error("[Cache] 获取锁失败")
+		).Error("获取锁失败")
 		return false, err
 	}
 	return result, nil
@@ -238,7 +239,7 @@ func (r *redisCache) Unlock(ctx context.Context, key string, value string) error
 		r.logger.With(
 			logger.String("key", key),
 			logger.Err(err),
-		).Error("[Cache] 释放锁失败")
+		).Error("释放锁失败")
 		return err
 	}
 
@@ -247,7 +248,7 @@ func (r *redisCache) Unlock(ctx context.Context, key string, value string) error
 		r.logger.With(
 			logger.String("key", key),
 			logger.String("reason", "值不匹配或已过期"),
-		).Warn("[Cache] 释放锁已跳过")
+		).Warn("释放锁已跳过")
 		return ErrLockNotHeld
 	}
 
@@ -270,7 +271,7 @@ func (r *redisCache) ExtendLock(ctx context.Context, key string, value string, t
 		r.logger.With(
 			logger.String("key", key),
 			logger.Err(err),
-		).Error("[Cache] 延长锁失败")
+		).Error("延长锁失败")
 		return false, err
 	}
 
@@ -292,7 +293,7 @@ func (r *redisCache) MGet(ctx context.Context, keys ...string) ([]string, error)
 		r.logger.With(
 			logger.Any("keys", keys),
 			logger.Err(err),
-		).Error("[Cache] MGET 操作失败")
+		).Error("MGET 操作失败")
 		return nil, err
 	}
 
@@ -323,7 +324,7 @@ func (r *redisCache) MSet(ctx context.Context, pairs map[string]any, ttl time.Du
 
 	_, err := pipe.Exec(ctx)
 	if err != nil {
-		r.logger.With(logger.Err(err)).Error("[Cache] MSET 操作失败")
+		r.logger.With(logger.Err(err)).Error("MSET 操作失败")
 		return err
 	}
 	return nil
@@ -337,10 +338,10 @@ func (r *redisCache) Ping(ctx context.Context) error {
 // Close 关闭连接.
 func (r *redisCache) Close() error {
 	if err := r.client.Close(); err != nil {
-		r.logger.With(logger.Err(err)).Error("[Cache] Redis 关闭失败")
+		r.logger.With(logger.Err(err)).Error("Redis 关闭失败")
 		return err
 	}
-	r.logger.Debug("[Cache] Redis 连接已关闭")
+	r.logger.Debug("Redis 连接已关闭")
 	return nil
 }
 

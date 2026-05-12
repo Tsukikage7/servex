@@ -40,6 +40,7 @@ func New(opts ...Option) *Application {
 	if o.logger == nil {
 		o.logger = logger.Nop()
 	}
+	o.logger = logger.WithComponent(o.logger, "App")
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -83,7 +84,7 @@ func (a *Application) Run() error {
 	a.opts.logger.With(
 		logger.String("name", a.opts.name),
 		logger.String("version", a.opts.version),
-	).Info("[App] 正在启动")
+	).Info("正在启动")
 
 	if err := a.start(); err != nil {
 		// 启动失败，清理 running 标记
@@ -94,7 +95,7 @@ func (a *Application) Run() error {
 	}
 
 	if err := a.opts.hooks.runAfterStart(a.ctx); err != nil {
-		a.opts.logger.With(logger.Err(err)).Error("[App] 启动后钩子执行失败")
+		a.opts.logger.With(logger.Err(err)).Error("启动后钩子执行失败")
 	}
 
 	return a.waitForShutdown()
@@ -122,7 +123,7 @@ func (a *Application) Version() string {
 
 func (a *Application) start() error {
 	if len(a.servers) == 0 {
-		a.opts.logger.Warn("[App] 未注册服务")
+		a.opts.logger.Warn("未注册服务")
 		return nil
 	}
 
@@ -134,7 +135,7 @@ func (a *Application) start() error {
 			a.opts.logger.With(
 				logger.String("server", s.Name()),
 				logger.String("addr", s.Addr()),
-			).Info("[App] 正在启动服务")
+			).Info("正在启动服务")
 			if err := s.Start(a.ctx); err != nil {
 				errCh <- err
 			}
@@ -144,7 +145,7 @@ func (a *Application) start() error {
 	// 后台持续读取服务器错误，记录日志并触发关闭
 	go func() {
 		for err := range errCh {
-			a.opts.logger.With(logger.Err(err)).Error("[App] 服务异常，开始关闭")
+			a.opts.logger.With(logger.Err(err)).Error("服务异常，开始关闭")
 			a.cancel()
 		}
 	}()
@@ -172,9 +173,9 @@ func (a *Application) waitForShutdown() error {
 
 	select {
 	case sig := <-sigCh:
-		a.opts.logger.With(logger.String("signal", sig.String())).Info("[App] 收到信号")
+		a.opts.logger.With(logger.String("signal", sig.String())).Info("收到信号")
 	case <-a.ctx.Done():
-		a.opts.logger.Info("[App] 上下文已取消")
+		a.opts.logger.Info("上下文已取消")
 	}
 
 	return a.shutdown()
@@ -183,25 +184,25 @@ func (a *Application) waitForShutdown() error {
 func (a *Application) shutdown() error {
 	a.opts.logger.With(
 		logger.Duration("timeout", a.opts.gracefulTimeout),
-	).Info("[App] 正在关闭")
+	).Info("正在关闭")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), a.opts.gracefulTimeout)
 	defer cancel()
 
 	if err := a.opts.hooks.runBeforeStop(shutdownCtx); err != nil {
-		a.opts.logger.With(logger.Err(err)).Error("[App] 停止前钩子执行失败")
+		a.opts.logger.With(logger.Err(err)).Error("停止前钩子执行失败")
 	}
 
 	var wg sync.WaitGroup
 	for _, srv := range a.servers {
 		s := srv
 		wg.Go(func() {
-			a.opts.logger.With(logger.String("server", s.Name())).Info("[App] 正在停止服务")
+			a.opts.logger.With(logger.String("server", s.Name())).Info("正在停止服务")
 			if err := s.Stop(shutdownCtx); err != nil {
 				a.opts.logger.With(
 					logger.String("server", s.Name()),
 					logger.Err(err),
-				).Error("[App] 服务停止失败")
+				).Error("服务停止失败")
 			}
 		})
 	}
@@ -214,22 +215,22 @@ func (a *Application) shutdown() error {
 
 	select {
 	case <-done:
-		a.opts.logger.Info("[App] 所有服务已停止")
+		a.opts.logger.Info("所有服务已停止")
 	case <-shutdownCtx.Done():
-		a.opts.logger.Warn("[App] 关闭超时")
+		a.opts.logger.Warn("关闭超时")
 	}
 
 	a.runCleanups(shutdownCtx)
 
 	if err := a.opts.hooks.runAfterStop(context.Background()); err != nil {
-		a.opts.logger.With(logger.Err(err)).Error("[App] 停止后钩子执行失败")
+		a.opts.logger.With(logger.Err(err)).Error("停止后钩子执行失败")
 	}
 
 	a.mu.Lock()
 	a.running = false
 	a.mu.Unlock()
 
-	a.opts.logger.Info("[App] 已停止")
+	a.opts.logger.Info("已停止")
 	return nil
 }
 
@@ -245,16 +246,16 @@ func (a *Application) runCleanups(ctx context.Context) {
 		return cmp.Compare(a.Priority, b.Priority)
 	})
 
-	a.opts.logger.With(logger.Int("count", len(cleanups))).Info("[App] 正在执行清理任务")
+	a.opts.logger.With(logger.Int("count", len(cleanups))).Info("正在执行清理任务")
 
 	for _, c := range cleanups {
 		if err := c.Fn(ctx); err != nil {
 			a.opts.logger.With(
 				logger.String("cleanup", c.Name),
 				logger.Err(err),
-			).Error("[App] 清理任务执行失败")
+			).Error("清理任务执行失败")
 		} else {
-			a.opts.logger.With(logger.String("cleanup", c.Name)).Info("[App] 清理任务执行完成")
+			a.opts.logger.With(logger.String("cleanup", c.Name)).Info("清理任务执行完成")
 		}
 	}
 }

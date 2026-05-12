@@ -43,6 +43,8 @@ var _ Discovery = (*nacosDiscovery)(nil)
 
 // newNacosDiscovery 创建 Nacos 服务发现实例.
 func newNacosDiscovery(config *Config, log logger.Logger) (Discovery, error) {
+	log = logger.WithComponent(log, "Discovery")
+
 	endpoints := config.NacosEndpoints
 	if len(endpoints) == 0 {
 		endpoints = []string{"127.0.0.1:8848"}
@@ -52,12 +54,12 @@ func newNacosDiscovery(config *Config, log logger.Logger) (Discovery, error) {
 	for _, ep := range endpoints {
 		host, portStr, err := net.SplitHostPort(ep)
 		if err != nil {
-			log.With(logger.Err(err)).Error("[Discovery] 解析 Nacos 端点失败")
+			log.With(logger.Err(err)).Error("解析 Nacos 端点失败")
 			return nil, ErrClientCreate
 		}
 		port, err := strconv.ParseUint(portStr, 10, 64)
 		if err != nil {
-			log.With(logger.Err(err)).Error("[Discovery] 解析 Nacos 端口失败")
+			log.With(logger.Err(err)).Error("解析 Nacos 端口失败")
 			return nil, ErrClientCreate
 		}
 		serverConfigs = append(serverConfigs, constant.ServerConfig{
@@ -78,7 +80,7 @@ func newNacosDiscovery(config *Config, log logger.Logger) (Discovery, error) {
 		},
 	)
 	if err != nil {
-		log.With(logger.Err(err)).Error("[Discovery] 创建 Nacos 客户端失败")
+		log.With(logger.Err(err)).Error("创建 Nacos 客户端失败")
 		return nil, ErrClientCreate
 	}
 
@@ -144,7 +146,7 @@ func (n *nacosDiscovery) RegisterWithHealthEndpoint(ctx context.Context, service
 		Metadata:    metadata,
 	})
 	if err != nil || !success {
-		n.logger.With(logger.Err(err)).Error("[Discovery] Nacos 注册服务失败")
+		n.logger.With(logger.Err(err)).Error("Nacos 注册服务失败")
 		return "", ErrRegister
 	}
 
@@ -161,7 +163,7 @@ func (n *nacosDiscovery) RegisterWithHealthEndpoint(ctx context.Context, service
 		logger.String("serviceID", serviceID),
 		logger.String("address", fmt.Sprintf("%s:%d", host, port)),
 		logger.String("protocol", protocol),
-	).Debug("[Discovery] 服务注册成功")
+	).Debug("服务注册成功")
 
 	return serviceID, nil
 }
@@ -224,11 +226,11 @@ func (n *nacosDiscovery) Unregister(ctx context.Context, serviceID string) error
 		n.logger.With(
 			logger.String("serviceID", serviceID),
 			logger.Err(err),
-		).Error("[Discovery] Nacos 注销服务失败")
+		).Error("Nacos 注销服务失败")
 		return ErrUnregister
 	}
 
-	n.logger.With(logger.String("serviceID", serviceID)).Debug("[Discovery] 服务注销成功")
+	n.logger.With(logger.String("serviceID", serviceID)).Debug("服务注销成功")
 	return nil
 }
 
@@ -247,7 +249,7 @@ func (n *nacosDiscovery) Discover(ctx context.Context, serviceName string) ([]st
 		n.logger.With(
 			logger.String("serviceName", serviceName),
 			logger.Err(err),
-		).Error("[Discovery] Nacos 服务发现失败")
+		).Error("Nacos 服务发现失败")
 		return nil, ErrDiscover
 	}
 
@@ -258,11 +260,11 @@ func (n *nacosDiscovery) Discover(ctx context.Context, serviceName string) ([]st
 		n.logger.With(
 			logger.String("serviceName", serviceName),
 			logger.String("addr", addr),
-		).Debug("[Discovery] 发现服务实例")
+		).Debug("发现服务实例")
 	}
 
 	if len(addresses) == 0 {
-		n.logger.With(logger.String("serviceName", serviceName)).Warn("[Discovery] 未发现任何服务实例")
+		n.logger.With(logger.String("serviceName", serviceName)).Warn("未发现任何服务实例")
 	}
 
 	return addresses, nil
@@ -270,7 +272,7 @@ func (n *nacosDiscovery) Discover(ctx context.Context, serviceName string) ([]st
 
 // Close 关闭 Nacos 客户端.
 func (n *nacosDiscovery) Close() error {
-	n.logger.Debug("[Discovery] Nacos 服务发现连接已关闭")
+	n.logger.Debug("Nacos 服务发现连接已关闭")
 	n.client.CloseClient()
 	return nil
 }

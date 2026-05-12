@@ -207,7 +207,7 @@ func (m *manager) GetUserRoles(ctx context.Context, userID string) ([]*Role, err
 		role, err := m.store.GetRole(ctx, name)
 		if err != nil {
 			// 记录不存在或查询失败的角色，便于排查数据不一致问题
-			slog.Warn("[RBAC] 获取用户角色失败", "user_id", userID, "role", name, "error", err)
+			slog.Warn("获取用户角色失败", "component", "RBAC", "user_id", userID, "role", name, "error", err)
 			continue
 		}
 		roles = append(roles, role)
@@ -330,7 +330,7 @@ func HTTPMiddleware(rbac RBAC, resource, action string) func(http.Handler) http.
 			has, err := rbac.HasPermission(r.Context(), principal.ID, resource, action)
 			if err != nil {
 				// 不暴露内部错误详情到客户端
-				slog.Error("[RBAC] 权限检查错误", "user_id", principal.ID, "error", err)
+				slog.Error("权限检查错误", "component", "RBAC", "user_id", principal.ID, "error", err)
 				http.Error(w, "权限检查失败", http.StatusInternalServerError)
 				return
 			}

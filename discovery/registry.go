@@ -40,10 +40,10 @@ func WithAdvertiseAddr(addr string) RegistryOption {
 }
 
 // NewServiceRegistry 创建服务注册器.
-func NewServiceRegistry(discovery Discovery, logger logger.Logger, opts ...RegistryOption) *ServiceRegistry {
+func NewServiceRegistry(discovery Discovery, log logger.Logger, opts ...RegistryOption) *ServiceRegistry {
 	r := &ServiceRegistry{
 		discovery:  discovery,
-		logger:     logger,
+		logger:     logger.WithComponent(log, "Discovery"),
 		services:   make([]ServiceInfo, 0),
 		serviceIDs: make([]string, 0),
 	}
@@ -161,7 +161,7 @@ func (r *ServiceRegistry) RegisterAll(ctx context.Context) error {
 				logger.String("addr", svc.Addr),
 				logger.String("protocol", svc.Protocol),
 				logger.Err(err),
-			).Error("[Discovery] 注册服务失败")
+			).Error("注册服务失败")
 			r.unregisterAllLocked(ctx)
 			return err
 		}
@@ -177,7 +177,7 @@ func (r *ServiceRegistry) RegisterAll(ctx context.Context) error {
 			logger.String("protocol", svc.Protocol),
 			logger.String("healthCheckType", healthType),
 			logger.String("serviceID", serviceID),
-		).Info("[Discovery] 服务已注册")
+		).Info("服务已注册")
 	}
 	return nil
 }
@@ -196,10 +196,10 @@ func (r *ServiceRegistry) unregisterAllLocked(ctx context.Context) error {
 			r.logger.With(
 				logger.String("serviceID", serviceID),
 				logger.Err(err),
-			).Error("[Discovery] 注销服务失败")
+			).Error("注销服务失败")
 			lastErr = err
 		} else {
-			r.logger.With(logger.String("serviceID", serviceID)).Info("[Discovery] 服务已注销")
+			r.logger.With(logger.String("serviceID", serviceID)).Info("服务已注销")
 		}
 	}
 	r.serviceIDs = r.serviceIDs[:0]

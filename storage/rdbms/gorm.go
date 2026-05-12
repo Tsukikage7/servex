@@ -182,7 +182,7 @@ func (l *gormLoggerAdapter) LogMode(level gormlogger.LogLevel) gormlogger.Interf
 }
 
 func (l *gormLoggerAdapter) log(ctx context.Context) logger.Logger {
-	return logger.For(ctx, "Database")
+	return logger.ForOr(ctx, l.logger, "Database")
 }
 
 // Info 信息日志.

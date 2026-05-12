@@ -32,7 +32,7 @@ type Option func(*Bundle)
 // WithLogger 设置日志记录器.
 func WithLogger(l logger.Logger) Option {
 	return func(b *Bundle) {
-		b.logger = l
+		b.logger = logger.WithComponent(l, "I18n")
 	}
 }
 
@@ -60,7 +60,7 @@ func (b *Bundle) LoadMessageFile(tag language.Tag, path string) error {
 			b.logger.With(
 				logger.String("file", path),
 				logger.Err(err),
-			).Warn("[I18n] 消息文件加载失败")
+			).Warn("消息文件加载失败")
 		}
 		return err
 	}
@@ -71,7 +71,7 @@ func (b *Bundle) LoadMessageFile(tag language.Tag, path string) error {
 			b.logger.With(
 				logger.String("file", path),
 				logger.Err(err),
-			).Warn("[I18n] 消息文件解析失败")
+			).Warn("消息文件解析失败")
 		}
 		return err
 	}
@@ -86,7 +86,7 @@ func (b *Bundle) LoadMessageFile(tag language.Tag, path string) error {
 	b.matcher = language.NewMatcher(b.tags)
 
 	if b.logger != nil {
-		b.logger.With(logger.String("file", path)).Debug("[I18n] 消息文件已加载")
+		b.logger.With(logger.String("file", path)).Debug("消息文件已加载")
 	}
 	return nil
 }

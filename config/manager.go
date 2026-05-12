@@ -7,8 +7,9 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/Tsukikage7/servex/v2/validation"
 	"gopkg.in/yaml.v3"
+
+	"github.com/Tsukikage7/servex/v2/validation"
 )
 
 // Observer 配置变更观察者回调.
@@ -199,19 +200,19 @@ func (m *Manager[T]) watchLoop(w Watcher) {
 		// 重新从所有源加载（确保合并一致性）
 		kvs, err := m.loadAll()
 		if err != nil {
-			slog.Error("[Config] 热加载失败: 加载数据源出错", slog.Any("error", err))
+			slog.Error("热加载失败: 加载数据源出错", slog.String("component", "Config"), slog.Any("error", err))
 			continue
 		}
 		cfg, err := m.decoder(kvs)
 		if err != nil {
-			slog.Error("[Config] 热加载失败: 解码配置出错", slog.Any("error", err))
+			slog.Error("热加载失败: 解码配置出错", slog.String("component", "Config"), slog.Any("error", err))
 			continue
 		}
 
 		// 验证
 		if v, ok := any(cfg).(validation.Validatable); ok {
 			if err := v.Validate(); err != nil {
-				slog.Error("[Config] 热加载失败: 配置验证出错", slog.Any("error", err))
+				slog.Error("热加载失败: 配置验证出错", slog.String("component", "Config"), slog.Any("error", err))
 				continue
 			}
 		}
@@ -222,7 +223,7 @@ func (m *Manager[T]) watchLoop(w Watcher) {
 			func() {
 				defer func() {
 					if r := recover(); r != nil {
-						slog.Error("[Config] 观察者回调发生异常", slog.Any("recover", r))
+						slog.Error("观察者回调发生异常", slog.String("component", "Config"), slog.Any("recover", r))
 					}
 				}()
 				obs(old, cfg)

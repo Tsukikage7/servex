@@ -113,7 +113,7 @@ type Option func(*Client)
 // WithLogger 设置日志记录器.
 func WithLogger(log logger.Logger) Option {
 	return func(c *Client) {
-		c.log = log
+		c.log = logger.WithComponent(log, "Neo4j")
 	}
 }
 
@@ -208,7 +208,7 @@ func NewClient(cfg *Config, opts ...Option) (*Client, error) {
 	}
 
 	if client.log != nil {
-		client.log.Info("[Neo4j] 连接成功", "host", maskNeo4jURI(cfg.URI), "database", cfg.Database)
+		client.log.Info("连接成功", "host", maskNeo4jURI(cfg.URI), "database", cfg.Database)
 	}
 
 	return client, nil
@@ -220,7 +220,7 @@ func (c *Client) Close(ctx context.Context) error {
 		return ErrNotConnected
 	}
 	if c.log != nil {
-		c.log.Info("[Neo4j] 连接关闭")
+		c.log.Info("连接关闭")
 	}
 	return c.driver.Close(ctx)
 }

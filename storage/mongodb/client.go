@@ -20,6 +20,8 @@ type mongoClient struct {
 
 // newMongoClient 创建 MongoDB 客户端.
 func newMongoClient(config *Config, log logger.Logger) (*mongoClient, error) {
+	log = logger.WithComponent(log, "MongoDB")
+
 	// 构建客户端选项
 	opts := options.Client().ApplyURI(config.URI)
 
@@ -65,7 +67,7 @@ func newMongoClient(config *Config, log logger.Logger) (*mongoClient, error) {
 		return nil, err
 	}
 
-	log.Info("[MongoDB] 连接成功", "uri", maskURI(config.URI), "database", config.Database)
+	log.Info("连接成功", "uri", maskURI(config.URI), "database", config.Database)
 
 	return &mongoClient{
 		client:   client,
@@ -109,7 +111,7 @@ func (c *mongoClient) Ping(ctx context.Context) error {
 }
 
 func (c *mongoClient) Close(ctx context.Context) error {
-	c.log.Info("[MongoDB] 连接关闭")
+	c.log.Info("连接关闭")
 	return c.client.Disconnect(ctx)
 }
 

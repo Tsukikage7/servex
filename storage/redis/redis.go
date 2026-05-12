@@ -187,6 +187,8 @@ func NewClient(config *Config, log logger.Logger) (Client, error) {
 	if log == nil {
 		return nil, ErrNilLogger
 	}
+	log = logger.WithComponent(log, "Redis")
+
 	// 先填充默认值，再校验
 	config.ApplyDefaults()
 
@@ -223,7 +225,7 @@ func NewClient(config *Config, log logger.Logger) (Client, error) {
 		return nil, err
 	}
 
-	log.Info("[Redis] 连接成功", "addr", config.Addr, "db", config.DB)
+	log.Info("连接成功", "addr", config.Addr, "db", config.DB)
 
 	return &redisClient{
 		client: rdb,

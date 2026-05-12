@@ -112,7 +112,7 @@ type clientOptions struct {
 // WithLogger 设置日志记录器.
 func WithLogger(log logger.Logger) Option {
 	return func(o *clientOptions) {
-		o.log = log
+		o.log = logger.WithComponent(log, "MinIO")
 	}
 }
 
@@ -159,7 +159,7 @@ func NewClient(cfg *Config, opts ...Option) (*Client, error) {
 	}
 
 	if c.log != nil {
-		c.log.Info("[MinIO] 连接成功", "endpoint", cfg.Endpoint, "bucket", cfg.Bucket)
+		c.log.Info("连接成功", "endpoint", cfg.Endpoint, "bucket", cfg.Bucket)
 	}
 
 	return c, nil

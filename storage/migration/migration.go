@@ -102,7 +102,7 @@ func NewRunner(db *gorm.DB, registry *Registry, log logger.Logger) (Runner, erro
 		db:       db,
 		registry: registry,
 		store:    store,
-		log:      log,
+		log:      logger.WithComponent(log, "Migration"),
 	}
 	r.ensureMigrated = sync.OnceValue(func() error {
 		return store.AutoMigrate(context.Background())

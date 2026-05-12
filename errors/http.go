@@ -40,7 +40,7 @@ func WriteError(w http.ResponseWriter, err *Error) {
 	w.WriteHeader(err.Kind.HTTPStatus())
 	if encErr := json.NewEncoder(w).Encode(resp); encErr != nil {
 		// JSON 编码失败时记录日志，响应头已发送无法回滚
-		slog.Error("[Errors] JSON 编码失败", "error", encErr)
+		slog.Error("JSON 编码失败", "component", "Errors", "error", encErr)
 	}
 }
 
@@ -49,7 +49,7 @@ func WriteError(w http.ResponseWriter, err *Error) {
 func WriteErrorFrom(w http.ResponseWriter, err error) {
 	e, ok := FromError(err)
 	if !ok {
-		slog.Error("[Errors] 内部服务器错误", "error", err)
+		slog.Error("内部服务器错误", "component", "Errors", "error", err)
 		e = internalHTTPError()
 	}
 	WriteError(w, e)

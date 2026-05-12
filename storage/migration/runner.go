@@ -196,7 +196,7 @@ func (r *runner) applyUp(ctx context.Context, m Migration) error {
 	r.log.With(
 		logger.Int64("version", m.Version),
 		logger.String("description", m.Description),
-	).Info("[Migration] 执行升级迁移")
+	).Info("执行升级迁移")
 
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := m.Up(tx); err != nil {
@@ -214,7 +214,7 @@ func (r *runner) applyDown(ctx context.Context, m Migration) error {
 	r.log.With(
 		logger.Int64("version", m.Version),
 		logger.String("description", m.Description),
-	).Info("[Migration] 执行降级迁移")
+	).Info("执行降级迁移")
 
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := m.Down(tx); err != nil {
