@@ -11,7 +11,7 @@ import (
 
 	"github.com/Tsukikage7/servex/v2/llm"
 	"github.com/Tsukikage7/servex/v2/llm/agent"
-	toolcall "github.com/Tsukikage7/servex/v2/llm/agent/toolcall"
+	"github.com/Tsukikage7/servex/v2/llm/agent/toolcall"
 )
 
 // mockStreamModel 返回固定 token 序列的 mock ChatModel.

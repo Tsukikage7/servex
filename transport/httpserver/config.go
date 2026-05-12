@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/Tsukikage7/servex/v2/observability/logger"
-	tlsx "github.com/Tsukikage7/servex/v2/transport/tls"
+	"github.com/Tsukikage7/servex/v2/transport/tls"
 )
 
 // Config HTTP 服务器配置.

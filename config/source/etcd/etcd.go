@@ -5,8 +5,8 @@ import (
 	"context"
 	"time"
 
-	mvccpb "go.etcd.io/etcd/api/v3/mvccpb"
-	clientv3 "go.etcd.io/etcd/client/v3"
+	"go.etcd.io/etcd/api/v3/mvccpb"
+	"go.etcd.io/etcd/client/v3"
 
 	"github.com/Tsukikage7/servex/v2/config"
 )
