@@ -80,13 +80,14 @@ log, err := logger.NewLogger(config)
 ### 添加字段
 
 ```go
-// 推荐：消息正文 + 结构化字段
-log.Info("[User] 执行动作",
+// 推荐：组件字段 + 消息正文 + 结构化字段
+userLog := logger.WithComponent(log, "User")
+userLog.Info("执行动作",
     logger.String("user_id", "12345"),
     logger.Int("age", 25),
     logger.Bool("vip", true),
 )
-// 输出: {"level":"INFO","timestamp":"2024-01-15 10:30:45","msg":"[User] 执行动作","user_id":"12345","age":25,"vip":true}
+// 控制台输出会渲染为: [User] 执行动作
 
 // 需要绑定固定字段时使用 With
 authLog := log.With(logger.Component("Auth"))
@@ -119,7 +120,7 @@ import (
 )
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
-    logger.FromContext(r.Context()).Info("[HTTP] 处理请求",
+    logger.For(r.Context(), "HTTP").Info("处理请求",
         logger.String("method", r.Method),
         logger.String("path", r.URL.Path),
     )
@@ -134,7 +135,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 func Middleware(log logger.Logger) func(http.Handler) http.Handler {
     return func(next http.Handler) http.Handler {
         return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-            logger.FromContextOr(r.Context(), log).Info("[HTTP] 请求完成",
+            logger.ForOr(r.Context(), log, "HTTP").Info("请求完成",
                 logger.String("path", r.URL.Path),
             )
             next.ServeHTTP(w, r)
@@ -150,7 +151,7 @@ ctx := context.Background()
 log := logger.MustNewLogger(logger.DefaultConfig())
 ctx = logger.NewContext(ctx, log.With(logger.String("request_id", "req_123")))
 
-logger.FromContext(ctx).Info("[Worker] 处理任务")
+logger.For(ctx, "Worker").Info("处理任务")
 ```
 
 ### 在 HTTP 中间件中使用
@@ -177,7 +178,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
     ctx := r.Context()
 
     // 自动携带 traceId 和 spanId
-    logger.FromContext(ctx).Info("[HTTP] 请求开始",
+    logger.For(ctx, "HTTP").Info("请求开始",
         logger.String("method", r.Method),
         logger.String("path", r.URL.Path),
     )
@@ -269,9 +270,9 @@ func main() {
 ```go
 func HandleRequest(ctx context.Context) {
     // 从 context 取出 logger（已由 trace 中间件注入 traceId）
-    log := logger.FromContext(ctx)
+    log := logger.For(ctx, "Handler")
 
-    log.Info("[Handler] 处理请求",
+    log.Info("处理请求",
         logger.String("handler", "HandleRequest"),
     )
     // 业务逻辑...

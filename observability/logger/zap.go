@@ -215,8 +215,8 @@ func createLevelSeparateLogger(config *Config, minLevel zapcore.Level, encoder z
 // - 类型为 Field 的参数被识别为结构化字段
 // - 其余参数按出现顺序拼成 msg(用 fmt.Sprint 风格)
 //
-// 这让 logger.FromContext(ctx).Info("[HTTP] 请求完成", logger.String("k", v))
-// 等价于 logger.FromContext(ctx).With(logger.String("k", v)).Info("[HTTP] 请求完成"),
+// 这让 logger.For(ctx, "HTTP").Info("请求完成", logger.String("k", v))
+// 等价于 logger.For(ctx, "HTTP").With(logger.String("k", v)).Info("请求完成"),
 // 而不是用默认 %v 把 Field 拼到 msg 里面变成 "{k v}"。
 func splitArgs(args []any) (string, []zap.Field) {
 	if len(args) == 0 {

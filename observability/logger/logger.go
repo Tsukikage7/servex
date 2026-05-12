@@ -207,6 +207,11 @@ func For(ctx context.Context, component string) Logger {
 	return WithComponent(FromContext(ctx), component)
 }
 
+// ForOr 从 context 读取 logger 并绑定组件名，缺失时使用 fallback.
+func ForOr(ctx context.Context, fallback Logger, component string) Logger {
+	return WithComponent(FromContextOr(ctx, fallback), component)
+}
+
 // nopLogger 空日志实现，FromContext 在 context 中找不到 logger 时的回退.
 type nopLogger struct{}
 

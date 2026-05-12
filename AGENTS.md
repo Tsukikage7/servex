@@ -21,7 +21,7 @@ If `just` is unavailable, run `go test ./...`, `go vet ./...`, and `go build ./.
 
 ## Coding Style & Naming Conventions
 
-Format Go code with `gofmt -s` and `goimports -local github.com/Tsukikage7/servex/v2`. Keep packages small and cohesive. Prefer explicit, domain-oriented names. Avoid custom import aliases unless they are required to resolve name conflicts, adapt generated code, or support side-effect imports; use the package’s declared name by default. Public APIs need clear Go doc comments. Use structured logging through `observability/logger`; messages should follow `[Module] Chinese action description`, with dynamic values in `logger.String`, `logger.Int`, or `logger.Err` fields.
+Format Go code with `gofmt -s` and `goimports -local github.com/Tsukikage7/servex/v2`. Keep packages small and cohesive. Prefer explicit, domain-oriented names. Avoid custom import aliases unless they are required to resolve name conflicts, adapt generated code, or support side-effect imports; use the package’s declared name by default. Public APIs need clear Go doc comments. Use structured logging through `observability/logger`; business code should not handwrite `[Component]` prefixes in messages. Bind component names with `logger.WithComponent` / `logger.ForOr` inside servex helpers; applications should pass the base logger to `app`, `gateway`, `jobqueue`, and `rdbms`. Domain workers such as Paper may bind their own component explicitly. Log messages should be Chinese action descriptions, with dynamic values in `logger.String`, `logger.Int`, or `logger.Err` fields.
 
 ## Testing Guidelines
 
