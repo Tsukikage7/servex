@@ -98,7 +98,7 @@ func TestHTTPMiddleware_WithPanic(t *testing.T) {
 	if !log.errorCalled {
 		t.Error("error should be called when panic")
 	}
-	if log.lastMessage != "[Recovery] HTTP 异常已恢复" {
+	if log.lastMessage != "HTTP 异常已恢复" {
 		t.Errorf("unexpected message: %s", log.lastMessage)
 	}
 }

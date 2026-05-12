@@ -59,8 +59,8 @@ func HTTPMiddleware(store Store, opts ...Option) func(http.Handler) http.Handler
 			if err != nil {
 				if o.skipOnError {
 					if o.logger != nil {
-						logger.FromContextOr(ctx, o.logger).Warn(
-							"[Idempotency] 存储获取失败，跳过检查",
+						logger.ForOr(ctx, o.logger, "Idempotency").Warn(
+							"存储获取失败，跳过检查",
 							logger.String("key", key),
 							logger.Err(err),
 						)
@@ -75,8 +75,8 @@ func HTTPMiddleware(store Store, opts ...Option) func(http.Handler) http.Handler
 			if result != nil {
 				// 返回之前的结果
 				if o.logger != nil {
-					logger.FromContextOr(ctx, o.logger).Debug(
-						"[Idempotency] 缓存命中",
+					logger.ForOr(ctx, o.logger, "Idempotency").Debug(
+						"缓存命中",
 						logger.String("key", key),
 						logger.String("method", r.Method),
 						logger.String("path", r.URL.Path),
@@ -91,8 +91,8 @@ func HTTPMiddleware(store Store, opts ...Option) func(http.Handler) http.Handler
 			if err != nil {
 				if o.skipOnError {
 					if o.logger != nil {
-						logger.FromContextOr(ctx, o.logger).Warn(
-							"[Idempotency] 获取锁失败，跳过检查",
+						logger.ForOr(ctx, o.logger, "Idempotency").Warn(
+							"获取锁失败，跳过检查",
 							logger.String("key", key),
 							logger.Err(err),
 						)
@@ -138,8 +138,8 @@ func HTTPMiddleware(store Store, opts ...Option) func(http.Handler) http.Handler
 
 			if saveErr := store.Set(ctx, key, saveResult, o.ttl); saveErr != nil {
 				if o.logger != nil {
-					logger.FromContextOr(ctx, o.logger).Warn(
-						"[Idempotency] 存储写入失败",
+					logger.ForOr(ctx, o.logger, "Idempotency").Warn(
+						"存储写入失败",
 						logger.String("key", key),
 						logger.Err(saveErr),
 					)

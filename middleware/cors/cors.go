@@ -97,13 +97,13 @@ func HTTPMiddleware(opts ...Option) func(http.Handler) http.Handler {
 	// 安全警告：AllowOrigins 为 ["*"] 允许任意来源跨域访问，
 	// 在生产环境应明确指定允许的来源列表.
 	if isAllOrigins(o.AllowOrigins) {
-		slog.Warn("[CORS] 允许来源设置为通配符，生产环境建议明确指定允许来源")
+		slog.Warn("允许来源设置为通配符，生产环境建议明确指定允许来源", "component", "CORS")
 	}
 
 	// 安全警告：AllowCredentials 与 AllowOrigins "*" 冲突
 	// 浏览器不允许 Access-Control-Allow-Origin: * 与 Access-Control-Allow-Credentials: true 同时使用.
 	if o.AllowCredentials && isAllOrigins(o.AllowOrigins) {
-		slog.Warn("[CORS] 凭据跨域与通配来源冲突，浏览器将拒绝携带凭据的跨域请求")
+		slog.Warn("凭据跨域与通配来源冲突，浏览器将拒绝携带凭据的跨域请求", "component", "CORS")
 	}
 
 	return func(next http.Handler) http.Handler {

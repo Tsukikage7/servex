@@ -41,7 +41,7 @@ type Option func(*Options)
 // WithLogger 设置日志记录器.
 func WithLogger(l logger.Logger) Option {
 	return func(o *Options) {
-		o.Logger = l
+		o.Logger = logger.WithComponent(l, "Recovery")
 	}
 }
 

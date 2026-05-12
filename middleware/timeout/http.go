@@ -62,8 +62,8 @@ func HTTPMiddleware(timeout time.Duration, opts ...Option) func(http.Handler) ht
 				if !tw.written {
 					// 还没写入响应，返回超时错误
 					if o.logger != nil {
-						logger.FromContextOr(ctx, o.logger).Warn(
-							"[Timeout] HTTP 请求超时",
+						logger.ForOr(ctx, o.logger, "Timeout").Warn(
+							"HTTP 请求超时",
 							logger.String("method", r.Method),
 							logger.String("path", r.URL.Path),
 							logger.Duration("timeout", o.timeout),
@@ -155,8 +155,8 @@ func HTTPTimeoutHandler(h http.Handler, dt time.Duration, msg string, opts ...Op
 
 			if !tw.written {
 				if o.logger != nil {
-					logger.FromContextOr(ctx, o.logger).Warn(
-						"[Timeout] HTTP 处理器超时",
+					logger.ForOr(ctx, o.logger, "Timeout").Warn(
+						"HTTP 处理器超时",
 						logger.String("method", r.Method),
 						logger.String("path", r.URL.Path),
 						logger.Duration("timeout", dt),

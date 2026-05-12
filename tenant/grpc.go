@@ -44,7 +44,7 @@ func UnaryServerInterceptor(resolver Resolver, opts ...Option) grpc.UnaryServerI
 		token, err := o.tokenExtractor(ctx, req)
 		if err != nil {
 			if o.logger != nil {
-				logger.FromContextOr(ctx, o.logger).Debug("[Tenant] gRPC 令牌提取失败",
+				logger.FromContextOr(ctx, o.logger).Debug("gRPC 令牌提取失败",
 					logger.String("method", info.FullMethod),
 					logger.Err(err),
 				)
@@ -56,7 +56,7 @@ func UnaryServerInterceptor(resolver Resolver, opts ...Option) grpc.UnaryServerI
 		t, err := resolver.Resolve(ctx, token)
 		if err != nil {
 			if o.logger != nil {
-				logger.FromContextOr(ctx, o.logger).Warn("[Tenant] gRPC 解析失败",
+				logger.FromContextOr(ctx, o.logger).Warn("gRPC 解析失败",
 					logger.String("method", info.FullMethod),
 					logger.Err(err),
 				)
@@ -67,7 +67,7 @@ func UnaryServerInterceptor(resolver Resolver, opts ...Option) grpc.UnaryServerI
 		// 检查租户是否启用
 		if !t.TenantEnabled() {
 			if o.logger != nil {
-				logger.FromContextOr(ctx, o.logger).Warn("[Tenant] gRPC 租户已禁用",
+				logger.FromContextOr(ctx, o.logger).Warn("gRPC 租户已禁用",
 					logger.String("tenant_id", t.TenantID()),
 					logger.String("method", info.FullMethod),
 				)
@@ -109,7 +109,7 @@ func StreamServerInterceptor(resolver Resolver, opts ...Option) grpc.StreamServe
 		token, err := o.tokenExtractor(ctx, nil)
 		if err != nil {
 			if o.logger != nil {
-				logger.FromContextOr(ctx, o.logger).Debug("[Tenant] gRPC 流令牌提取失败",
+				logger.FromContextOr(ctx, o.logger).Debug("gRPC 流令牌提取失败",
 					logger.String("method", info.FullMethod),
 					logger.Err(err),
 				)
@@ -121,7 +121,7 @@ func StreamServerInterceptor(resolver Resolver, opts ...Option) grpc.StreamServe
 		t, err := resolver.Resolve(ctx, token)
 		if err != nil {
 			if o.logger != nil {
-				logger.FromContextOr(ctx, o.logger).Warn("[Tenant] gRPC 流解析失败",
+				logger.FromContextOr(ctx, o.logger).Warn("gRPC 流解析失败",
 					logger.String("method", info.FullMethod),
 					logger.Err(err),
 				)
@@ -132,7 +132,7 @@ func StreamServerInterceptor(resolver Resolver, opts ...Option) grpc.StreamServe
 		// 检查租户是否启用
 		if !t.TenantEnabled() {
 			if o.logger != nil {
-				logger.FromContextOr(ctx, o.logger).Warn("[Tenant] gRPC 流租户已禁用",
+				logger.FromContextOr(ctx, o.logger).Warn("gRPC 流租户已禁用",
 					logger.String("tenant_id", t.TenantID()),
 					logger.String("method", info.FullMethod),
 				)

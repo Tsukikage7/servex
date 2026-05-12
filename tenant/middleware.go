@@ -30,7 +30,7 @@ func Middleware(resolver Resolver, opts ...Option) endpoint.Middleware {
 			token, err := extractToken(ctx, request, o)
 			if err != nil {
 				if o.logger != nil {
-					logger.FromContextOr(ctx, o.logger).Debug("[Tenant] 令牌提取失败", logger.Err(err))
+					logger.FromContextOr(ctx, o.logger).Debug("令牌提取失败", logger.Err(err))
 				}
 				return nil, handleError(ctx, ErrMissingToken, o)
 			}
@@ -41,7 +41,7 @@ func Middleware(resolver Resolver, opts ...Option) endpoint.Middleware {
 				if o.logger != nil {
 					// 日志中脱敏令牌，仅保留前 4 位，防止泄露完整令牌
 					masked := maskToken(token)
-					logger.FromContextOr(ctx, o.logger).Warn("[Tenant] 解析失败",
+					logger.FromContextOr(ctx, o.logger).Warn("解析失败",
 						logger.String("token", masked),
 						logger.Err(err),
 					)
@@ -52,7 +52,7 @@ func Middleware(resolver Resolver, opts ...Option) endpoint.Middleware {
 			// 检查租户是否启用
 			if !t.TenantEnabled() {
 				if o.logger != nil {
-					logger.FromContextOr(ctx, o.logger).Warn("[Tenant] 租户已禁用",
+					logger.FromContextOr(ctx, o.logger).Warn("租户已禁用",
 						logger.String("tenant_id", t.TenantID()),
 					)
 				}

@@ -37,8 +37,8 @@ func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor {
 				stack := captureStack(o.StackSize, o.StackAll)
 
 				// 记录 panic 日志
-				logger.FromContextOr(ctx, o.Logger).Error(
-					"[Recovery] gRPC 一元请求异常已恢复",
+				logger.ForOr(ctx, o.Logger, "Recovery").Error(
+					"gRPC 一元请求异常已恢复",
 					logger.Any("panic", p),
 					logger.String("method", info.FullMethod),
 					logger.String("stack", string(stack)),
@@ -85,8 +85,8 @@ func StreamServerInterceptor(opts ...Option) grpc.StreamServerInterceptor {
 				stack := captureStack(o.StackSize, o.StackAll)
 
 				// 记录 panic 日志
-				logger.FromContextOr(ss.Context(), o.Logger).Error(
-					"[Recovery] gRPC 流请求异常已恢复",
+				logger.ForOr(ss.Context(), o.Logger, "Recovery").Error(
+					"gRPC 流请求异常已恢复",
 					logger.Any("panic", p),
 					logger.String("method", info.FullMethod),
 					logger.String("stream_type", streamType(info)),

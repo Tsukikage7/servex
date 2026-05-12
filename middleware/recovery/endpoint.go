@@ -27,8 +27,8 @@ func EndpointMiddleware(opts ...Option) endpoint.Middleware {
 					stack := captureStack(o.StackSize, o.StackAll)
 
 					// 记录 panic 日志
-					logger.FromContextOr(ctx, o.Logger).Error(
-						"[Recovery] 端点异常已恢复",
+					logger.ForOr(ctx, o.Logger, "Recovery").Error(
+						"端点异常已恢复",
 						logger.Any("panic", p),
 						logger.String("stack", string(stack)),
 					)

@@ -52,7 +52,7 @@ func WithErrorHandler(h ErrorHandler) Option {
 
 // WithLogger 设置日志记录器.
 func WithLogger(l logger.Logger) Option {
-	return func(o *options) { o.logger = l }
+	return func(o *options) { o.logger = logger.WithComponent(l, "Tenant") }
 }
 
 // handleError 处理错误.

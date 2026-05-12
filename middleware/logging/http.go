@@ -31,7 +31,7 @@ func HTTPMiddleware(opts ...Option) func(http.Handler) http.Handler {
 
 			next.ServeHTTP(rec, r)
 
-			logger.FromContextOr(r.Context(), o.Logger).Info("[HTTP] 请求完成",
+			logger.ForOr(r.Context(), o.Logger, "HTTP").Info("请求完成",
 				logger.String("method", r.Method),
 				logger.String("path", r.URL.Path),
 				logger.Int("status", rec.status),

@@ -36,7 +36,7 @@ func applyOptions(timeout time.Duration, opts []Option) *options {
 // 设置后，超时事件会被记录到日志.
 func WithLogger(log logger.Logger) Option {
 	return func(o *options) {
-		o.logger = log
+		o.logger = logger.WithComponent(log, "Timeout")
 	}
 }
 

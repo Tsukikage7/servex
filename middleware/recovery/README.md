@@ -45,7 +45,8 @@ handler := recovery.HTTPMiddleware(
 ```json
 {
   "level": "error",
-  "msg": "[Recovery] HTTP 异常已恢复",
+  "component": "Recovery",
+  "msg": "HTTP 异常已恢复",
   "panic": "something went wrong",
   "method": "GET",
   "path": "/api/users",

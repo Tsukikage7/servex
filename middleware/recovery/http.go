@@ -28,8 +28,8 @@ func HTTPMiddleware(opts ...Option) func(http.Handler) http.Handler {
 					stack := captureStack(o.StackSize, o.StackAll)
 
 					// 记录 panic 日志
-					logger.FromContextOr(r.Context(), o.Logger).Error(
-						"[Recovery] HTTP 异常已恢复",
+					logger.ForOr(r.Context(), o.Logger, "Recovery").Error(
+						"HTTP 异常已恢复",
 						logger.Any("panic", p),
 						logger.String("method", r.Method),
 						logger.String("path", r.URL.Path),

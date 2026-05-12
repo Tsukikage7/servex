@@ -56,7 +56,7 @@ func WithMaxLatency(d time.Duration) Option {
 // WithLogger 设置日志记录器.
 func WithLogger(l logger.Logger) Option {
 	return func(o *Options) {
-		o.Logger = l
+		o.Logger = logger.WithComponent(l, "Loadshed")
 	}
 }
 
@@ -138,7 +138,7 @@ func HTTPMiddleware(opts ...Option) func(http.Handler) http.Handler {
 // shed 执行负载卸载：记录日志并返回 503.
 func shed(w http.ResponseWriter, o *Options, reason string) {
 	if o.Logger != nil {
-		o.Logger.Warn("[Loadshed] 拒绝请求",
+		o.Logger.Warn("拒绝请求",
 			logger.String("reason", reason),
 		)
 	}

@@ -57,8 +57,8 @@ func EndpointMiddleware(timeout time.Duration, opts ...Option) endpoint.Middlewa
 			case <-ctx.Done():
 				// 超时或取消
 				if o.logger != nil {
-					logger.FromContextOr(ctx, o.logger).Warn(
-						"[Timeout] 端点执行超时",
+					logger.ForOr(ctx, o.logger, "Timeout").Warn(
+						"端点执行超时",
 						logger.Duration("timeout", o.timeout),
 					)
 				}
@@ -118,8 +118,8 @@ func EndpointMiddlewareWithFallback(
 			select {
 			case <-ctx.Done():
 				if o.logger != nil {
-					logger.FromContextOr(ctx, o.logger).Warn(
-						"[Timeout] 端点执行超时，使用降级响应",
+					logger.ForOr(ctx, o.logger, "Timeout").Warn(
+						"端点执行超时，使用降级响应",
 						logger.Duration("timeout", o.timeout),
 					)
 				}

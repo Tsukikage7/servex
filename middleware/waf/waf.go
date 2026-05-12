@@ -49,7 +49,7 @@ func WithBlockHandler(fn func(w http.ResponseWriter, r *http.Request, reason str
 // WithLogger 设置日志记录器.
 func WithLogger(l logger.Logger) Option {
 	return func(o *Options) {
-		o.Logger = l
+		o.Logger = logger.WithComponent(l, "WAF")
 	}
 }
 
@@ -79,7 +79,7 @@ func HTTPMiddleware(opts ...Option) func(http.Handler) http.Handler {
 				if matched {
 					// 记录日志
 					if o.Logger != nil {
-						o.Logger.Warn("[WAF] 拦截请求",
+						logger.ForOr(r.Context(), o.Logger, "WAF").Warn("拦截请求",
 							logger.String("method", r.Method),
 							logger.String("path", r.URL.Path),
 							logger.String("remote_addr", r.RemoteAddr),
