@@ -28,7 +28,7 @@ func Logging(log logger.Logger) Middleware {
 				}
 				if err != nil {
 					fields = append(fields, logger.Field{Key: "error", Value: err.Error()})
-					log.With(fields...).Error("ai generate 失败")
+					log.With(fields...).Error("[LLM] 生成失败")
 				} else {
 					fields = append(fields,
 						logger.Field{Key: "finish_reason", Value: resp.FinishReason},
@@ -36,7 +36,7 @@ func Logging(log logger.Logger) Middleware {
 						logger.Field{Key: "completion_tokens", Value: resp.Usage.CompletionTokens},
 						logger.Field{Key: "total_tokens", Value: resp.Usage.TotalTokens},
 					)
-					log.With(fields...).Info("ai generate 完成")
+					log.With(fields...).Info("[LLM] 生成完成")
 				}
 				return resp, err
 			},
@@ -55,9 +55,9 @@ func Logging(log logger.Logger) Middleware {
 				}
 				if err != nil {
 					fields = append(fields, logger.Field{Key: "error", Value: err.Error()})
-					log.With(fields...).Error("ai stream 失败")
+					log.With(fields...).Error("[LLM] 流式生成失败")
 				} else {
-					log.With(fields...).Info("ai stream 已建立")
+					log.With(fields...).Info("[LLM] 流式生成已建立")
 				}
 				return reader, err
 			},

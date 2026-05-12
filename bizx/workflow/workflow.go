@@ -277,7 +277,7 @@ func (e *Engine) Execute(ctx context.Context, instanceID string) error {
 			// 持久化中间状态，崩溃恢复时可从此节点继续
 			if e.checkpoint != nil {
 				if err := e.checkpoint(ctx, instance); err != nil {
-					e.logger.WarnContext(ctx, "workflow: 检查点持久化失败", "instance_id", instance.ID, "error", err)
+					e.logger.WarnContext(ctx, "[Workflow] 检查点持久化失败", "instance_id", instance.ID, "error", err)
 				}
 			}
 
@@ -305,7 +305,7 @@ func (e *Engine) Execute(ctx context.Context, instanceID string) error {
 			// 持久化中间状态
 			if e.checkpoint != nil {
 				if err := e.checkpoint(ctx, instance); err != nil {
-					e.logger.WarnContext(ctx, "workflow: 检查点持久化失败", "instance_id", instance.ID, "error", err)
+					e.logger.WarnContext(ctx, "[Workflow] 检查点持久化失败", "instance_id", instance.ID, "error", err)
 				}
 			}
 
@@ -326,7 +326,7 @@ func (e *Engine) Execute(ctx context.Context, instanceID string) error {
 			// 持久化中间状态
 			if e.checkpoint != nil {
 				if err := e.checkpoint(ctx, instance); err != nil {
-					e.logger.WarnContext(ctx, "workflow: 检查点持久化失败", "instance_id", instance.ID, "error", err)
+					e.logger.WarnContext(ctx, "[Workflow] 检查点持久化失败", "instance_id", instance.ID, "error", err)
 				}
 			}
 

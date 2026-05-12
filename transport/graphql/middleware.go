@@ -50,12 +50,12 @@ func LoggingMiddleware(log logger.Logger) Middleware {
 					logger.Field{Key: "field", Value: fieldName},
 					logger.Field{Key: "duration_ms", Value: elapsed.Milliseconds()},
 					logger.Field{Key: "error", Value: err.Error()},
-				).Error("graphql resolve 失败")
+				).Error("[GraphQL] 解析器执行失败")
 			} else {
 				log.With(
 					logger.Field{Key: "field", Value: fieldName},
 					logger.Field{Key: "duration_ms", Value: elapsed.Milliseconds()},
-				).Debug("graphql resolve 完成")
+				).Debug("[GraphQL] 解析器执行完成")
 			}
 			return result, err
 		}
@@ -71,7 +71,7 @@ func RecoveryMiddleware(log logger.Logger) Middleware {
 					log.With(
 						logger.Field{Key: "field", Value: p.Info.FieldName},
 						logger.Field{Key: "panic", Value: fmt.Sprintf("%v", r)},
-					).Error("graphql resolve panic 已恢复")
+					).Error("[GraphQL] 解析器异常已恢复")
 					err = ErrInternalError
 				}
 			}()

@@ -193,7 +193,10 @@ func (r *runner) CurrentVersion(ctx context.Context) (int64, error) {
 
 // applyUp 在事务中执行升级迁移并记录.
 func (r *runner) applyUp(ctx context.Context, m Migration) error {
-	r.log.Infof("migration: 执行升级 version=%d description=%s", m.Version, m.Description)
+	r.log.With(
+		logger.Int64("version", m.Version),
+		logger.String("description", m.Description),
+	).Info("[Migration] 执行升级迁移")
 
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := m.Up(tx); err != nil {
@@ -208,7 +211,10 @@ func (r *runner) applyUp(ctx context.Context, m Migration) error {
 
 // applyDown 在事务中执行降级迁移并移除记录.
 func (r *runner) applyDown(ctx context.Context, m Migration) error {
-	r.log.Infof("migration: 执行降级 version=%d description=%s", m.Version, m.Description)
+	r.log.With(
+		logger.Int64("version", m.Version),
+		logger.String("description", m.Description),
+	).Info("[Migration] 执行降级迁移")
 
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := m.Down(tx); err != nil {

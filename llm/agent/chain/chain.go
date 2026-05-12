@@ -216,8 +216,11 @@ func (c *Chain) Run(ctx context.Context, input any, opts ...llm.CallOption) (*Re
 
 		// 记录日志
 		if c.log != nil {
-			c.log.Infof("chain: 步骤 %q 完成，耗时 %s，tokens=%d",
-				step.Name, duration, resp.Usage.TotalTokens)
+			c.log.With(
+				logger.String("step", step.Name),
+				logger.Duration("duration", duration),
+				logger.Int("tokens", resp.Usage.TotalTokens),
+			).Info("[Agent] 链式步骤完成")
 		}
 
 		// 触发步骤回调

@@ -37,7 +37,7 @@ func New(token string, opts ...Option) (*TelegramBot, error) {
 		store:       botserver.NewMemoryStateStore(),
 		webhookPath: "/bot/telegram",
 		errHandler: func(ctx botserver.Context, err error) {
-			log.Printf("telegram: handler error [chat=%s]: %v", ctx.ChatID(), err)
+			log.Printf("[Telegram] 处理器执行失败 chat=%s error=%v", ctx.ChatID(), err)
 		},
 	}
 
@@ -78,13 +78,13 @@ func (b *TelegramBot) Start(_ context.Context) error {
 		if _, err = b.client.Request(wh); err != nil {
 			return err
 		}
-		log.Printf("telegram: webhook set to %s", b.webhookURL)
+		log.Printf("[Telegram] Webhook 已设置 url=%s", b.webhookURL)
 	}
 
 	// 2. 若配置了 httpRouter，注册 POST 路由
 	if b.httpRouter != nil {
 		b.httpRouter.POST(b.webhookPath, http.HandlerFunc(b.handleUpdate))
-		log.Printf("telegram: webhook handler registered at POST %s", b.webhookPath)
+		log.Printf("[Telegram] Webhook 处理器已注册 method=POST path=%s", b.webhookPath)
 	}
 
 	return nil
@@ -100,7 +100,7 @@ func (b *TelegramBot) Stop() error {
 func (b *TelegramBot) handleUpdate(w http.ResponseWriter, r *http.Request) {
 	var update tgbotapi.Update
 	if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
-		log.Printf("telegram: failed to decode update: %v", err)
+		log.Printf("[Telegram] 更新消息解码失败 error=%v", err)
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
@@ -114,7 +114,7 @@ func (b *TelegramBot) handleUpdate(w http.ResponseWriter, r *http.Request) {
 	ctx := newTgContext(&update, b.client, b.store)
 	if err := b.router.Dispatch(ctx); err != nil {
 		// 错误已由 router 内部 errHandler 处理，此处仍返回 200 避免 Telegram 重试
-		log.Printf("telegram: dispatch error: %v", err)
+		log.Printf("[Telegram] 分发消息失败 error=%v", err)
 	}
 
 	w.WriteHeader(http.StatusOK)

@@ -97,7 +97,7 @@ func (s *Source) Watch() (config.Watcher, error) {
 			case w.ch <- data:
 			default:
 				// channel 满，丢弃本次变更通知（下次变更会携带最新配置）
-				slog.Warn("nacos: watcher channel 已满，丢弃变更通知", slog.String("dataId", dataId), slog.String("group", group))
+				slog.Warn("[Nacos] 监听通道已满，丢弃变更通知", slog.String("dataId", dataId), slog.String("group", group))
 			}
 		},
 	})

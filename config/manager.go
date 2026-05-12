@@ -7,6 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/Tsukikage7/servex/v2/validation"
 	"gopkg.in/yaml.v3"
 )
 
@@ -87,7 +88,7 @@ func (m *Manager[T]) Load() error {
 		}
 	}
 	// 验证
-	if v, ok := any(cfg).(Validatable); ok {
+	if v, ok := any(cfg).(validation.Validatable); ok {
 		if err := v.Validate(); err != nil {
 			return &ConfigFieldError{
 				Source:  m.sourceNames(),
@@ -198,19 +199,19 @@ func (m *Manager[T]) watchLoop(w Watcher) {
 		// 重新从所有源加载（确保合并一致性）
 		kvs, err := m.loadAll()
 		if err != nil {
-			slog.Error("[config] 热加载失败: 加载数据源出错", slog.Any("error", err))
+			slog.Error("[Config] 热加载失败: 加载数据源出错", slog.Any("error", err))
 			continue
 		}
 		cfg, err := m.decoder(kvs)
 		if err != nil {
-			slog.Error("[config] 热加载失败: 解码配置出错", slog.Any("error", err))
+			slog.Error("[Config] 热加载失败: 解码配置出错", slog.Any("error", err))
 			continue
 		}
 
 		// 验证
-		if v, ok := any(cfg).(Validatable); ok {
+		if v, ok := any(cfg).(validation.Validatable); ok {
 			if err := v.Validate(); err != nil {
-				slog.Error("[config] 热加载失败: 配置验证出错", slog.Any("error", err))
+				slog.Error("[Config] 热加载失败: 配置验证出错", slog.Any("error", err))
 				continue
 			}
 		}
@@ -221,7 +222,7 @@ func (m *Manager[T]) watchLoop(w Watcher) {
 			func() {
 				defer func() {
 					if r := recover(); r != nil {
-						slog.Error("[config] 观察者回调 panic", slog.Any("recover", r))
+						slog.Error("[Config] 观察者回调发生异常", slog.Any("recover", r))
 					}
 				}()
 				obs(old, cfg)

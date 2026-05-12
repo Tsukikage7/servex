@@ -32,7 +32,7 @@ func New(token string, opts ...Option) (*DiscordBot, error) {
 		stateStore: botserver.NewMemoryStateStore(),
 		prefix:     "/",
 		errHandler: func(ctx botserver.Context, err error) {
-			log.Printf("discord: handler error [chat=%s]: %v", ctx.ChatID(), err)
+			log.Printf("[Discord] 处理器执行失败 chat=%s error=%v", ctx.ChatID(), err)
 		},
 	}
 
@@ -80,7 +80,7 @@ func (b *DiscordBot) Start(ctx context.Context) error {
 	if err := b.session.Open(); err != nil {
 		return err
 	}
-	log.Printf("discord: gateway connected")
+	log.Printf("[Discord] 网关已连接")
 
 	// 阻塞直到 ctx 取消
 	<-ctx.Done()
@@ -107,6 +107,6 @@ func (b *DiscordBot) handleMessageCreate(s *discordgo.Session, m *discordgo.Mess
 
 	ctx := newDiscordContext(m, s, b.stateStore, b.prefix)
 	if err := b.router.Dispatch(ctx); err != nil {
-		log.Printf("discord: dispatch error: %v", err)
+		log.Printf("[Discord] 分发消息失败 error=%v", err)
 	}
 }

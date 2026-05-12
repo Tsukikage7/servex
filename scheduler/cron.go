@@ -76,7 +76,7 @@ func (s *cronScheduler) Add(job *Job) error {
 	}
 
 	s.jobs[job.Name] = job
-	s.logDebugf("任务已添加: %s [schedule:%s, singleton:%v, distributed:%v]",
+	s.logDebugf("任务已添加 job=%s schedule=%s singleton=%v distributed=%v",
 		job.Name, job.Schedule, job.Singleton, job.Distributed)
 
 	return nil
@@ -147,7 +147,7 @@ func (s *cronScheduler) Start() error {
 
 	s.logDebug("调度器已启动")
 	for _, job := range s.jobs {
-		s.logDebugf("已注册: %s [schedule:%s]", job.Name, job.Schedule)
+		s.logDebugf("任务已注册 job=%s schedule=%s", job.Name, job.Schedule)
 	}
 
 	return nil
@@ -286,7 +286,7 @@ func (s *cronScheduler) executeJob(job *Job) {
 
 		acquired, err := s.opts.locker.TryLock(ctx, lockKey, lockTTL)
 		if err != nil {
-			s.logErrorf("获取分布式锁失败 [job:%s] [error:%v]", job.Name, err)
+			s.logErrorf("获取分布式锁失败 job=%s error=%v", job.Name, err)
 			jc.Skipped = true
 			jc.SkipReason = "failed to acquire distributed lock"
 			jc.Error = err
@@ -304,14 +304,14 @@ func (s *cronScheduler) executeJob(job *Job) {
 		}
 		defer func() {
 			if err := s.opts.locker.Unlock(ctx, lockKey); err != nil {
-				s.logErrorf("释放分布式锁失败 [job:%s] [error:%v]", job.Name, err)
+				s.logErrorf("释放分布式锁失败 job=%s error=%v", job.Name, err)
 			}
 		}()
 	}
 
 	// 3. 执行前置钩子
 	if err := s.opts.hooks.runBeforeHooks(ctx, jc); err != nil {
-		s.logDebugf("前置钩子阻止任务执行 [job:%s] [error:%v]", job.Name, err)
+		s.logDebugf("前置钩子阻止任务执行 job=%s error=%v", job.Name, err)
 		return
 	}
 
@@ -332,7 +332,7 @@ func (s *cronScheduler) runWithRetry(ctx context.Context, job *Job, jc *JobConte
 		start := time.Now()
 		job.stats.recordStart()
 
-		s.logDebugf("开始执行任务: %s [attempt:%d/%d]", job.Name, attempt, maxAttempts)
+		s.logDebugf("开始执行任务 job=%s attempt=%d/%d", job.Name, attempt, maxAttempts)
 
 		err := job.Handler(execCtx)
 		duration := time.Since(start)
@@ -344,12 +344,12 @@ func (s *cronScheduler) runWithRetry(ctx context.Context, job *Job, jc *JobConte
 		if err == nil {
 			job.stats.recordSuccess(duration)
 			s.opts.hooks.runAfterHooks(ctx, jc)
-			s.logDebugf("任务执行成功: %s [duration:%v]", job.Name, duration)
+			s.logDebugf("任务执行成功 job=%s duration=%v", job.Name, duration)
 			return
 		}
 
 		job.stats.recordFail(duration, err)
-		s.logErrorf("任务执行失败: %s [attempt:%d/%d] [error:%v]", job.Name, attempt, maxAttempts, err)
+		s.logErrorf("任务执行失败 job=%s attempt=%d/%d error=%v", job.Name, attempt, maxAttempts, err)
 
 		// 最后一次尝试失败
 		if attempt >= maxAttempts {

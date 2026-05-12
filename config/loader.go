@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/Tsukikage7/servex/v2/validation"
 	"github.com/spf13/viper"
 )
 
@@ -141,7 +142,7 @@ func unmarshalAndValidate[T any](v *viper.Viper, source string) (*T, error) {
 	}
 
 	// 如果实现了 Validatable 接口，进行验证
-	if validator, ok := any(config).(Validatable); ok {
+	if validator, ok := any(config).(validation.Validatable); ok {
 		if err := validator.Validate(); err != nil {
 			return nil, &ConfigFieldError{
 				Source:  source,

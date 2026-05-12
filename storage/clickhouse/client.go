@@ -56,7 +56,7 @@ func newCHClient(config *Config, log logger.Logger) (*chClient, error) {
 		return nil, err
 	}
 
-	log.Info("clickhouse 连接成功", "addrs", config.Addrs, "database", config.Database)
+	log.Info("[ClickHouse] 连接成功", "addrs", config.Addrs, "database", config.Database)
 
 	return &chClient{
 		conn: conn,
@@ -89,7 +89,7 @@ func (c *chClient) Ping(ctx context.Context) error {
 }
 
 func (c *chClient) Close() error {
-	c.log.Info("clickhouse 连接关闭")
+	c.log.Info("[ClickHouse] 连接关闭")
 	return c.conn.Close()
 }
 

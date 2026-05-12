@@ -75,9 +75,9 @@ func (s *reActStrategy) Execute(ctx context.Context, model llm.ChatModel, tools 
 			allToolResults = append(allToolResults, event.ToolResults...)
 			if log != nil {
 				if event.IsFinal {
-					log.Debugf("agent[ReAct] 第 %d 轮完成（最终轮）", event.Round+1)
+					log.Debugf("[Agent] ReAct 策略第 %d 轮完成（最终轮）", event.Round+1)
 				} else {
-					log.Debugf("agent[ReAct] 第 %d 轮完成，执行了 %d 个工具调用", event.Round+1, len(event.ToolResults))
+					log.Debugf("[Agent] ReAct 策略第 %d 轮完成，执行了 %d 个工具调用", event.Round+1, len(event.ToolResults))
 				}
 			}
 		}),
@@ -259,7 +259,7 @@ func (s *planExecuteStrategy) Execute(ctx context.Context, model llm.ChatModel, 
 	}
 
 	if log != nil {
-		log.Debugf("agent[PlanExecute] 开始生成计划")
+		log.Debugf("[Agent] PlanExecute 策略开始生成计划")
 	}
 
 	planResp, err := model.Generate(ctx, planMessages, opts...)
@@ -274,7 +274,7 @@ func (s *planExecuteStrategy) Execute(ctx context.Context, model llm.ChatModel, 
 	}
 
 	if log != nil {
-		log.Debugf("agent[PlanExecute] 计划包含 %d 个步骤", len(steps))
+		log.Debugf("[Agent] PlanExecute 策略计划包含 %d 个步骤", len(steps))
 	}
 
 	// 第二步：逐步执行
@@ -293,7 +293,7 @@ func (s *planExecuteStrategy) Execute(ctx context.Context, model llm.ChatModel, 
 		}
 
 		if log != nil {
-			log.Debugf("agent[PlanExecute] 执行步骤 %d/%d: %s", i+1, len(steps), step)
+			log.With(logger.String("step", step)).Debugf("[Agent] PlanExecute 策略执行步骤 %d/%d", i+1, len(steps))
 		}
 
 		// 构建步骤消息

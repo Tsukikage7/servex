@@ -28,11 +28,11 @@ type NodeRunInfo struct {
 // NoopCallbackHandler 空实现（零开销默认值）.
 type NoopCallbackHandler struct{}
 
-func (NoopCallbackHandler) OnGraphStart(_ context.Context, _ GraphRunInfo, _ any)              {}
-func (NoopCallbackHandler) OnGraphEnd(_ context.Context, _ GraphRunInfo, _ any, _ error)       {}
-func (NoopCallbackHandler) OnNodeStart(_ context.Context, _ NodeRunInfo, _ any)                {}
-func (NoopCallbackHandler) OnNodeEnd(_ context.Context, _ NodeRunInfo, _ any, _ error)         {}
-func (NoopCallbackHandler) OnNodeSkip(_ context.Context, _ NodeRunInfo, _ string)              {}
+func (NoopCallbackHandler) OnGraphStart(_ context.Context, _ GraphRunInfo, _ any)        {}
+func (NoopCallbackHandler) OnGraphEnd(_ context.Context, _ GraphRunInfo, _ any, _ error) {}
+func (NoopCallbackHandler) OnNodeStart(_ context.Context, _ NodeRunInfo, _ any)          {}
+func (NoopCallbackHandler) OnNodeEnd(_ context.Context, _ NodeRunInfo, _ any, _ error)   {}
+func (NoopCallbackHandler) OnNodeSkip(_ context.Context, _ NodeRunInfo, _ string)        {}
 
 var _ CallbackHandler = NoopCallbackHandler{}
 

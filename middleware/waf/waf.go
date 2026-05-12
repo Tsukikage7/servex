@@ -79,7 +79,7 @@ func HTTPMiddleware(opts ...Option) func(http.Handler) http.Handler {
 				if matched {
 					// 记录日志
 					if o.Logger != nil {
-						o.Logger.Warn("WAF 拦截请求",
+						o.Logger.Warn("[WAF] 拦截请求",
 							logger.String("method", r.Method),
 							logger.String("path", r.URL.Path),
 							logger.String("remote_addr", r.RemoteAddr),

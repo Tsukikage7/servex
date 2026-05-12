@@ -199,7 +199,7 @@ func NewUpgrader(config *Config) *Upgrader {
 		}
 	} else {
 		// 未配置 CheckOrigin 时仅在初始化时打印一次警告，不在每���请求时打印
-		slog.Warn("[WebSocket] 未配置 CheckOrigin，默认允许所有 Origin，生产环境请务必配置")
+		slog.Warn("[WebSocket] 未配置来源检查，默认允许所有来源，生产环境请务必配置")
 		u.upgrader.CheckOrigin = func(r *http.Request) bool {
 			return true
 		}

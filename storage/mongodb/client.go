@@ -65,7 +65,7 @@ func newMongoClient(config *Config, log logger.Logger) (*mongoClient, error) {
 		return nil, err
 	}
 
-	log.Info("mongodb 连接成功", "uri", maskURI(config.URI), "database", config.Database)
+	log.Info("[MongoDB] 连接成功", "uri", maskURI(config.URI), "database", config.Database)
 
 	return &mongoClient{
 		client:   client,
@@ -109,7 +109,7 @@ func (c *mongoClient) Ping(ctx context.Context) error {
 }
 
 func (c *mongoClient) Close(ctx context.Context) error {
-	c.log.Info("mongodb 连接关闭")
+	c.log.Info("[MongoDB] 连接关闭")
 	return c.client.Disconnect(ctx)
 }
 

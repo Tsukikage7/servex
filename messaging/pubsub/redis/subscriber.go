@@ -107,7 +107,7 @@ func (s *Subscriber) readGroup(ctx context.Context, stream string, out chan<- *p
 				continue
 			}
 			if s.opts.logger != nil {
-				s.opts.logger.Errorf("[PubSub/Redis] XREADGROUP 错误 [stream:%s group:%s]: %v", stream, s.opts.groupID, err)
+				s.opts.logger.Errorf("[PubSub] Redis XREADGROUP 错误 stream=%s group=%s error=%v", stream, s.opts.groupID, err)
 			}
 			// 退避等待，避免错误风暴
 			backoffTimer := time.NewTimer(time.Second)
@@ -156,7 +156,7 @@ func (s *Subscriber) readStream(ctx context.Context, stream string, out chan<- *
 				continue
 			}
 			if s.opts.logger != nil {
-				s.opts.logger.Errorf("[PubSub/Redis] XREAD 错误 [stream:%s]: %v", stream, err)
+				s.opts.logger.Errorf("[PubSub] Redis XREAD 错误 stream=%s error=%v", stream, err)
 			}
 			// 退避等待，避免错误风暴
 			backoffTimer := time.NewTimer(time.Second)

@@ -52,12 +52,12 @@ func newNacosDiscovery(config *Config, log logger.Logger) (Discovery, error) {
 	for _, ep := range endpoints {
 		host, portStr, err := net.SplitHostPort(ep)
 		if err != nil {
-			log.With(logger.Err(err)).Error("[Discovery] 解析Nacos端点失败")
+			log.With(logger.Err(err)).Error("[Discovery] 解析 Nacos 端点失败")
 			return nil, ErrClientCreate
 		}
 		port, err := strconv.ParseUint(portStr, 10, 64)
 		if err != nil {
-			log.With(logger.Err(err)).Error("[Discovery] 解析Nacos端口失败")
+			log.With(logger.Err(err)).Error("[Discovery] 解析 Nacos 端口失败")
 			return nil, ErrClientCreate
 		}
 		serverConfigs = append(serverConfigs, constant.ServerConfig{
@@ -78,7 +78,7 @@ func newNacosDiscovery(config *Config, log logger.Logger) (Discovery, error) {
 		},
 	)
 	if err != nil {
-		log.With(logger.Err(err)).Error("[Discovery] 创建Nacos客户端失败")
+		log.With(logger.Err(err)).Error("[Discovery] 创建 Nacos 客户端失败")
 		return nil, ErrClientCreate
 	}
 
@@ -144,7 +144,7 @@ func (n *nacosDiscovery) RegisterWithHealthEndpoint(ctx context.Context, service
 		Metadata:    metadata,
 	})
 	if err != nil || !success {
-		n.logger.With(logger.Err(err)).Error("[Discovery] Nacos注册服务失败")
+		n.logger.With(logger.Err(err)).Error("[Discovery] Nacos 注册服务失败")
 		return "", ErrRegister
 	}
 
@@ -224,7 +224,7 @@ func (n *nacosDiscovery) Unregister(ctx context.Context, serviceID string) error
 		n.logger.With(
 			logger.String("serviceID", serviceID),
 			logger.Err(err),
-		).Error("[Discovery] Nacos注销服务失败")
+		).Error("[Discovery] Nacos 注销服务失败")
 		return ErrUnregister
 	}
 
@@ -247,7 +247,7 @@ func (n *nacosDiscovery) Discover(ctx context.Context, serviceName string) ([]st
 		n.logger.With(
 			logger.String("serviceName", serviceName),
 			logger.Err(err),
-		).Error("[Discovery] Nacos服务发现失败")
+		).Error("[Discovery] Nacos 服务发现失败")
 		return nil, ErrDiscover
 	}
 
@@ -270,7 +270,7 @@ func (n *nacosDiscovery) Discover(ctx context.Context, serviceName string) ([]st
 
 // Close 关闭 Nacos 客户端.
 func (n *nacosDiscovery) Close() error {
-	n.logger.Debug("[Discovery] Nacos服务发现连接已关闭")
+	n.logger.Debug("[Discovery] Nacos 服务发现连接已关闭")
 	n.client.CloseClient()
 	return nil
 }

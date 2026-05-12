@@ -75,7 +75,7 @@ func NewClient(cfg *Config, log logger.Logger) (Client, error) {
 		o.UsePathStyle = cfg.UsePathStyle
 	})
 
-	log.Info("s3 连接成功", "endpoint", cfg.Endpoint, "bucket", cfg.Bucket)
+	log.Info("[S3] 连接成功", "endpoint", cfg.Endpoint, "bucket", cfg.Bucket)
 
 	return &s3Client{
 		client:    client,
@@ -517,7 +517,7 @@ func (c *s3Client) UseBucket(bucket string) Client {
 }
 
 func (c *s3Client) Close() error {
-	c.log.Info("s3 连接关闭")
+	c.log.Info("[S3] 连接关闭")
 	return nil
 }
 

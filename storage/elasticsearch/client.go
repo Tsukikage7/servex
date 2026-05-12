@@ -74,7 +74,7 @@ func newESClient(config *Config, log logger.Logger) (*esClient, error) {
 		return nil, fmt.Errorf("elasticsearch: ping returned status %s", res.Status())
 	}
 
-	log.Info("elasticsearch 连接成功", "addrs", config.Addresses)
+	log.Info("[Elasticsearch] 连接成功", "addrs", config.Addresses)
 
 	return &esClient{
 		client: client,
@@ -104,7 +104,7 @@ func (c *esClient) Ping(ctx context.Context) error {
 }
 
 func (c *esClient) Close() error {
-	c.log.Info("elasticsearch 连接关闭")
+	c.log.Info("[Elasticsearch] 连接关闭")
 	// go-elasticsearch 客户端无需显式关闭
 	return nil
 }

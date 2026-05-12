@@ -33,7 +33,7 @@ func newConsulDiscovery(config *Config, log logger.Logger) (Discovery, error) {
 		log.With(
 			logger.String("addr", consulConfig.Address),
 			logger.Err(err),
-		).Error("[Discovery] 创建consul客户端失败")
+		).Error("[Discovery] 创建 Consul 客户端失败")
 		return nil, ErrClientCreate
 	}
 
@@ -96,7 +96,7 @@ func (c *consulDiscovery) Register(ctx context.Context, serviceName, address str
 			logger.String("host", host),
 			logger.Int("port", port),
 			logger.Err(err),
-		).Error("[Discovery] consul服务注册失败")
+		).Error("[Discovery] Consul 服务注册失败")
 		return "", ErrRegister
 	}
 
@@ -174,7 +174,7 @@ func (c *consulDiscovery) RegisterWithProtocol(ctx context.Context, serviceName,
 			logger.String("host", host),
 			logger.Int("port", port),
 			logger.Err(err),
-		).Error("[Discovery] consul服务注册失败")
+		).Error("[Discovery] Consul 服务注册失败")
 		return "", ErrRegister
 	}
 
@@ -254,7 +254,7 @@ func (c *consulDiscovery) RegisterWithHealthEndpoint(ctx context.Context, servic
 			logger.String("host", host),
 			logger.Int("port", port),
 			logger.Err(err),
-		).Error("[Discovery] consul服务注册失败")
+		).Error("[Discovery] Consul 服务注册失败")
 		return "", ErrRegister
 	}
 
@@ -303,7 +303,7 @@ func (c *consulDiscovery) Unregister(ctx context.Context, serviceID string) erro
 			c.logger.With(
 				logger.String("serviceID", serviceID),
 				logger.Err(err),
-			).Error("[Discovery] consul服务注销失败")
+			).Error("[Discovery] Consul 服务注销失败")
 			return ErrUnregister
 		}
 	}
@@ -332,7 +332,7 @@ func (c *consulDiscovery) Discover(ctx context.Context, serviceName string) ([]s
 		c.logger.With(
 			logger.String("serviceName", serviceName),
 			logger.Err(err),
-		).Error("[Discovery] consul服务发现失败")
+		).Error("[Discovery] Consul 服务发现失败")
 		return nil, ErrDiscover
 	}
 
@@ -356,7 +356,7 @@ func (c *consulDiscovery) Discover(ctx context.Context, serviceName string) ([]s
 
 // Close 关闭服务发现连接.
 func (c *consulDiscovery) Close() error {
-	c.logger.Debug("[Discovery] consul服务发现连接已关闭")
+	c.logger.Debug("[Discovery] Consul 服务发现连接已关闭")
 	return nil
 }
 

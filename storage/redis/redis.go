@@ -24,8 +24,8 @@ import (
 	"errors"
 	"time"
 
-	goredis "github.com/redis/go-redis/v9"
 	"github.com/redis/go-redis/extra/redisotel/v9"
+	goredis "github.com/redis/go-redis/v9"
 
 	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
@@ -223,7 +223,7 @@ func NewClient(config *Config, log logger.Logger) (Client, error) {
 		return nil, err
 	}
 
-	log.Info("redis 连接成功", "addr", config.Addr, "db", config.DB)
+	log.Info("[Redis] 连接成功", "addr", config.Addr, "db", config.DB)
 
 	return &redisClient{
 		client: rdb,

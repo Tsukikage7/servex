@@ -19,7 +19,7 @@ type Router struct {
 func newRouter() *Router {
 	return &Router{
 		errHandler: func(ctx Context, err error) {
-			log.Printf("botserver: handler error [chat=%s]: %v", ctx.ChatID(), err)
+			log.Printf("[BotServer] 处理器执行失败 chat=%s error=%v", ctx.ChatID(), err)
 		},
 	}
 }

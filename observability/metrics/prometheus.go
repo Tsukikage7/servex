@@ -252,7 +252,7 @@ func (c *PrometheusCollector) Counter(name string, labels map[string]string) {
 			if err := c.registry.Register(counter); err == nil {
 				c.counters[name] = counter
 			} else {
-				slog.Error("[metrics] 注册自定义 Counter 失败", slog.String("name", name), slog.Any("error", err))
+				slog.Error("[Metrics] 注册自定义 Counter 失败", slog.String("name", name), slog.Any("error", err))
 			}
 		}
 		c.mu.Unlock()
@@ -292,7 +292,7 @@ func (c *PrometheusCollector) Histogram(name string, value float64, labels map[s
 			if err := c.registry.Register(histogram); err == nil {
 				c.histograms[name] = histogram
 			} else {
-				slog.Error("[metrics] 注册自定义 Histogram 失败", slog.String("name", name), slog.Any("error", err))
+				slog.Error("[Metrics] 注册自定义 Histogram 失败", slog.String("name", name), slog.Any("error", err))
 			}
 		}
 		c.mu.Unlock()
@@ -331,7 +331,7 @@ func (c *PrometheusCollector) Gauge(name string, value float64, labels map[strin
 			if err := c.registry.Register(gauge); err == nil {
 				c.gauges[name] = gauge
 			} else {
-				slog.Error("[metrics] 注册自定义 Gauge 失败", slog.String("name", name), slog.Any("error", err))
+				slog.Error("[Metrics] 注册自定义 Gauge 失败", slog.String("name", name), slog.Any("error", err))
 			}
 		}
 		c.mu.Unlock()

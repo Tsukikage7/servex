@@ -145,7 +145,7 @@ func (s *Subscriber) reconnectLoop() {
 
 func (s *Subscriber) logf(format string, args ...any) {
 	if s.opts.logger != nil {
-		s.opts.logger.Infof("[RabbitMQ/Subscriber] "+format, args...)
+		s.opts.logger.Infof("[RabbitMQ] 订阅者 "+format, args...)
 	}
 }
 

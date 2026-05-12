@@ -32,6 +32,8 @@ type gormDatabase struct {
 
 // newGORMDatabase 创建 GORM 数据库连接.
 func newGORMDatabase(config *Config, log logger.Logger) (Database, error) {
+	log = logger.WithComponent(log, "Database")
+
 	dialector, err := getDialector(config.Driver, config.DSN)
 	if err != nil {
 		return nil, err
@@ -98,16 +100,16 @@ func (g *gormDatabase) GORM() *gorm.DB {
 // AutoMigrate 自动迁移表结构.
 func (g *gormDatabase) AutoMigrate(models ...any) error {
 	if !g.config.AutoMigrate {
-		g.logger.Debug("[Database] 自动迁移已禁用，跳过表结构创建")
+		g.logger.Debug("自动迁移已禁用，跳过表结构创建")
 		return nil
 	}
 
-	g.logger.Debug("[Database] 开始自动迁移表结构")
+	g.logger.Debug("开始自动迁移表结构")
 	if err := g.db.AutoMigrate(models...); err != nil {
-		g.logger.Error("[Database] 自动迁移失败", "error", err)
+		g.logger.Error("自动迁移失败", logger.Err(err))
 		return err
 	}
-	g.logger.Debug("[Database] 表结构迁移完成")
+	g.logger.Debug("表结构迁移完成")
 	return nil
 }
 
@@ -179,24 +181,28 @@ func (l *gormLoggerAdapter) LogMode(level gormlogger.LogLevel) gormlogger.Interf
 	return &newLogger
 }
 
+func (l *gormLoggerAdapter) log(ctx context.Context) logger.Logger {
+	return logger.For(ctx, "Database")
+}
+
 // Info 信息日志.
 func (l *gormLoggerAdapter) Info(ctx context.Context, msg string, data ...any) {
 	if l.logLevel >= gormlogger.Info {
-		logger.FromContext(ctx).Infof(msg, data...)
+		l.log(ctx).Infof(msg, data...)
 	}
 }
 
 // Warn 警告日志.
 func (l *gormLoggerAdapter) Warn(ctx context.Context, msg string, data ...any) {
 	if l.logLevel >= gormlogger.Warn {
-		logger.FromContext(ctx).Warnf(msg, data...)
+		l.log(ctx).Warnf(msg, data...)
 	}
 }
 
 // Error 错误日志.
 func (l *gormLoggerAdapter) Error(ctx context.Context, msg string, data ...any) {
 	if l.logLevel >= gormlogger.Error {
-		logger.FromContext(ctx).Errorf(msg, data...)
+		l.log(ctx).Errorf(msg, data...)
 	}
 }
 
@@ -211,7 +217,7 @@ func (l *gormLoggerAdapter) Trace(ctx context.Context, begin time.Time, fc func(
 
 	// 使用结构化字段，让 logger 根据 Format 配置自动格式化
 	// 先添加业务字段，再添加 trace 信息，保持 traceId/spanId 在最后
-	log := logger.FromContext(ctx).With(
+	log := l.log(ctx).With(
 		logger.Duration("elapsed", elapsed),
 		logger.Int64("rows", rows),
 		logger.String("sql", sql),
@@ -219,13 +225,13 @@ func (l *gormLoggerAdapter) Trace(ctx context.Context, begin time.Time, fc func(
 
 	switch {
 	case err != nil && !errors.Is(err, gorm.ErrRecordNotFound):
-		log.With(logger.Any("error", err)).Error("[Database] SQL执行失败")
+		log.With(logger.Err(err)).Error("SQL 执行失败")
 	case elapsed > l.slowThreshold && l.slowThreshold > 0:
-		log.With(logger.Duration("threshold", l.slowThreshold)).Warn("[Database] 慢查询")
+		log.With(logger.Duration("threshold", l.slowThreshold)).Warn("慢查询")
 	default:
 		// 根据配置级别输出：info 级别显示 SQL，低于 info 则不显示
 		if l.logLevel >= gormlogger.Info {
-			log.Info("[Database] SQL执行成功")
+			log.Info("SQL 执行成功")
 		}
 	}
 }

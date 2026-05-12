@@ -284,11 +284,11 @@ func (m *redisQuotaManager) Reset(ctx context.Context, key string) error {
 	iter := m.client.Scan(ctx, 0, pattern, 100).Iterator()
 	for iter.Next(ctx) {
 		if err := m.client.Del(ctx, iter.Val()).Err(); err != nil {
-			slog.ErrorContext(ctx, "ratelimit: 删除配额键失败", "key", iter.Val(), "error", err)
+			slog.ErrorContext(ctx, "[RateLimit] 删除配额键失败", "key", iter.Val(), "error", err)
 		}
 	}
 	if err := iter.Err(); err != nil {
-		slog.ErrorContext(ctx, "ratelimit: SCAN 迭代配额键失败", "pattern", pattern, "error", err)
+		slog.ErrorContext(ctx, "[RateLimit] SCAN 迭代配额键失败", "pattern", pattern, "error", err)
 		return err
 	}
 	return nil

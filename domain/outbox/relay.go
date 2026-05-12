@@ -122,9 +122,9 @@ func (r *Relay) poll(ctx context.Context) {
 	var sentIDs []uint64
 	for _, msg := range msgs {
 		if err := r.send(ctx, msg); err != nil {
-			r.logErrorf("发送消息失败 [id:%d topic:%s]: %v", msg.ID, msg.Topic, err)
+			r.logErrorf("发送消息失败 id=%d topic=%s error=%v", msg.ID, msg.Topic, err)
 			if markErr := r.store.MarkFailed(dbCtx, msg.ID, err.Error()); markErr != nil {
-				r.logErrorf("标记消息失败状态失败 [id:%d]: %v", msg.ID, markErr)
+				r.logErrorf("标记消息失败状态失败 id=%d error=%v", msg.ID, markErr)
 			}
 			continue
 		}
@@ -141,7 +141,7 @@ func (r *Relay) poll(ctx context.Context) {
 // send 发送单条消息到消息队列.
 func (r *Relay) send(ctx context.Context, msg *OutboxMessage) error {
 	if msg.RetryCount >= r.opts.maxRetries {
-		r.logWarnf("消息已达最大重试次数，标记为死信 [id:%d retries:%d]", msg.ID, msg.RetryCount)
+		r.logWarnf("消息已达最大重试次数，标记为死信 id=%d retries=%d", msg.ID, msg.RetryCount)
 		return ErrMaxRetriesExceeded
 	}
 	return r.publisher.Publish(ctx, msg.Topic, msg.ToMessage())

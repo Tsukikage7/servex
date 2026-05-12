@@ -9,6 +9,7 @@ import (
 
 	"github.com/Tsukikage7/servex/v2/llm"
 	"github.com/Tsukikage7/servex/v2/llm/serving/apikey"
+	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // chatCompletionRequest OpenAI 格式请求.
@@ -96,7 +97,7 @@ func (p *Proxy) handleChatCompletion(w http.ResponseWriter, r *http.Request) {
 	var req chatCompletionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		if p.log != nil {
-			p.log.Errorf("解析请求体失败: %v", err)
+			p.log.With(logger.Err(err)).Error("[LLM] 代理解析请求体失败")
 		}
 		writeError(w, http.StatusBadRequest, "无效的请求体")
 		return
@@ -123,7 +124,7 @@ func (p *Proxy) handleChatCompletion(w http.ResponseWriter, r *http.Request) {
 		result, err := p.moderator.ModerateMessages(r.Context(), msgs)
 		if err != nil {
 			if p.log != nil {
-				p.log.Errorf("内容审核失败: %v", err)
+				p.log.With(logger.Err(err)).Error("[LLM] 代理内容审核失败")
 			}
 			writeError(w, http.StatusInternalServerError, "内容审核失败")
 			return
@@ -138,7 +139,7 @@ func (p *Proxy) handleChatCompletion(w http.ResponseWriter, r *http.Request) {
 	model, err := p.Route(req.Model)
 	if err != nil {
 		if p.log != nil {
-			p.log.Errorf("路由模型 %q 失败: %v", req.Model, err)
+			p.log.With(logger.String("model", req.Model), logger.Err(err)).Error("[LLM] 代理路由模型失败")
 		}
 		writeError(w, http.StatusNotFound, "路由失败")
 		return
@@ -175,7 +176,7 @@ func (p *Proxy) handleGenerate(
 	resp, err := model.Generate(r.Context(), messages, callOpts...)
 	if err != nil {
 		if p.log != nil {
-			p.log.Errorf("模型调用失败 model=%s: %v", modelName, err)
+			p.log.With(logger.String("model", modelName), logger.Err(err)).Error("[LLM] 代理模型调用失败")
 		}
 		writeError(w, http.StatusInternalServerError, "模型调用失败，请稍后重试")
 		return
@@ -185,7 +186,7 @@ func (p *Proxy) handleGenerate(
 	if p.billing != nil && keyID != "" {
 		if berr := p.billing.Record(r.Context(), keyID, resp.ModelID, resp.Usage); berr != nil {
 			if p.log != nil {
-				p.log.Errorf("计费记录失败: %v", berr)
+				p.log.With(logger.Err(berr)).Error("[LLM] 代理计费记录失败")
 			}
 		}
 	}
@@ -226,7 +227,7 @@ func (p *Proxy) handleStream(
 	reader, err := model.Stream(r.Context(), messages, callOpts...)
 	if err != nil {
 		if p.log != nil {
-			p.log.Errorf("流式模型调用失败 model=%s: %v", modelName, err)
+			p.log.With(logger.String("model", modelName), logger.Err(err)).Error("[LLM] 代理流式模型调用失败")
 		}
 		writeError(w, http.StatusInternalServerError, "流式模型调用失败，请稍后重试")
 		return
@@ -252,7 +253,7 @@ func (p *Proxy) handleStream(
 		}
 		if recvErr != nil {
 			if p.log != nil {
-				p.log.Errorf("流式读取失败 model=%s: %v", modelName, recvErr)
+				p.log.With(logger.String("model", modelName), logger.Err(recvErr)).Error("[LLM] 代理流式读取失败")
 			}
 			break
 		}
@@ -293,7 +294,7 @@ func (p *Proxy) handleStream(
 		if finalResp := reader.Response(); finalResp != nil {
 			if berr := p.billing.Record(r.Context(), keyID, finalResp.ModelID, finalResp.Usage); berr != nil {
 				if p.log != nil {
-					p.log.Errorf("计费记录失败: %v", berr)
+					p.log.With(logger.Err(berr)).Error("[LLM] 代理计费记录失败")
 				}
 			}
 		}

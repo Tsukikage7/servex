@@ -65,7 +65,7 @@ func (c *tgContext) Args() []string {
 func (c *tgContext) State() string {
 	val, err := c.store.Get(c.chatID)
 	if err != nil {
-		log.Printf("telegram: State Get error [chat=%s]: %v", c.chatID, err)
+		log.Printf("[Telegram] 读取状态失败 chat=%s error=%v", c.chatID, err)
 		return ""
 	}
 	return val
@@ -74,7 +74,7 @@ func (c *tgContext) State() string {
 // SetState 设置当前 chat 的对话状态。StateStore 错误仅记录日志。
 func (c *tgContext) SetState(state string) {
 	if err := c.store.Set(c.chatID, state); err != nil {
-		log.Printf("telegram: SetState error [chat=%s]: %v", c.chatID, err)
+		log.Printf("[Telegram] 设置状态失败 chat=%s error=%v", c.chatID, err)
 	}
 }
 

@@ -94,7 +94,7 @@ func (w *worker) fetchJob(ctx context.Context) *Job {
 
 func (w *worker) processJob(ctx context.Context, job *Job) {
 	if err := w.store.MarkRunning(ctx, job.ID); err != nil {
-		w.logErrorf("标记任务为运行中失败 [id:%s]: %v", job.ID, err)
+		w.logErrorf("标记任务为运行中失败 id=%s error=%v", job.ID, err)
 		return // 状态更新失败，放弃执行以避免重复处理
 	}
 
@@ -104,7 +104,7 @@ func (w *worker) processJob(ctx context.Context, job *Job) {
 
 	if !ok {
 		if err := w.store.MarkFailed(ctx, job.ID, ErrNoHandler); err != nil {
-			w.logErrorf("标记任务为失败失败 [id:%s]: %v", job.ID, err)
+			w.logErrorf("标记任务为失败失败 id=%s error=%v", job.ID, err)
 		}
 		return
 	}
@@ -121,13 +121,13 @@ func (w *worker) processJob(ctx context.Context, job *Job) {
 		job.LastError = err.Error()
 		if job.Retried >= job.MaxRetries {
 			if markErr := w.store.MarkDead(ctx, job.ID); markErr != nil {
-				w.logErrorf("标记任务为死信失败 [id:%s]: %v", job.ID, markErr)
+				w.logErrorf("标记任务为死信失败 id=%s error=%v", job.ID, markErr)
 			}
 		} else {
 			job.Status = StatusPending
 			job.ScheduledAt = time.Now().Add(w.backoff(job.Retried))
 			if requeueErr := w.store.Requeue(ctx, job); requeueErr != nil {
-				w.logErrorf("重新入队任务失败 [id:%s]: %v", job.ID, requeueErr)
+				w.logErrorf("重新入队任务失败 id=%s error=%v", job.ID, requeueErr)
 			}
 		}
 		return
@@ -143,7 +143,7 @@ func (w *worker) markDoneWithRetry(ctx context.Context, id string) {
 	backoff := 100 * time.Millisecond
 	for i := range maxAttempts {
 		if err := w.store.MarkDone(ctx, id); err != nil {
-			w.logErrorf("标记任务完成失败 [id:%s attempt:%d]: %v", id, i+1, err)
+			w.logErrorf("标记任务完成失败 id=%s attempt=%d error=%v", id, i+1, err)
 			if i < maxAttempts-1 {
 				time.Sleep(backoff)
 				backoff *= 2

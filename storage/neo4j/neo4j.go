@@ -208,7 +208,7 @@ func NewClient(cfg *Config, opts ...Option) (*Client, error) {
 	}
 
 	if client.log != nil {
-		client.log.Info("neo4j 连接成功", "host", maskNeo4jURI(cfg.URI), "database", cfg.Database)
+		client.log.Info("[Neo4j] 连接成功", "host", maskNeo4jURI(cfg.URI), "database", cfg.Database)
 	}
 
 	return client, nil
@@ -220,7 +220,7 @@ func (c *Client) Close(ctx context.Context) error {
 		return ErrNotConnected
 	}
 	if c.log != nil {
-		c.log.Info("neo4j 连接关闭")
+		c.log.Info("[Neo4j] 连接关闭")
 	}
 	return c.driver.Close(ctx)
 }

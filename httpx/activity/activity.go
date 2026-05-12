@@ -169,7 +169,7 @@ func (t *Tracker) Track(ctx context.Context, event *Event) error {
 			if err := t.opts.producer.Publish(ctx, t.opts.topic, event); err != nil {
 				// 记录错误但不影响主流程
 				if t.opts.logger != nil {
-					t.opts.logger.Error("activity: failed to publish event", "error", err)
+					t.opts.logger.Error("[Activity] 发布事件失败", "error", err)
 				}
 			}
 		}()

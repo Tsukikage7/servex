@@ -108,7 +108,7 @@ func HTTPMiddleware(opts ...Option) func(http.Handler) http.Handler {
 				defer func() {
 					if p := recover(); p != nil {
 						if o.Logger != nil {
-							o.Logger.Error("下游 handler 发生 panic",
+							o.Logger.Error("[Fallback] 下游处理器发生 panic",
 								logger.Any("panic", p),
 								logger.String("method", r.Method),
 								logger.String("path", r.URL.Path),
@@ -126,7 +126,7 @@ func HTTPMiddleware(opts ...Option) func(http.Handler) http.Handler {
 
 			if needFallback {
 				if o.Logger != nil && !panicked {
-					o.Logger.Warn("下游返回错误，触发降级",
+					o.Logger.Warn("[Fallback] 下游返回错误，触发降级",
 						logger.String("method", r.Method),
 						logger.String("path", r.URL.Path),
 						logger.Any("status", rec.statusCode),

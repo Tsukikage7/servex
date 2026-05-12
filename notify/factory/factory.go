@@ -3,10 +3,7 @@ package factory
 
 import (
 	"fmt"
-	"net/http"
 	"time"
-
-	"google.golang.org/grpc/codes"
 
 	"github.com/Tsukikage7/servex/v2/errors"
 	"github.com/Tsukikage7/servex/v2/notify"
@@ -74,11 +71,11 @@ type APNsPushConfig struct {
 }
 
 var (
-	errNilConfig           = errors.New(70051, "notify.factory.nil_config", "config 不能为空").WithHTTP(http.StatusBadRequest).WithGRPC(codes.InvalidArgument)
-	errEmailSenderFailed   = errors.New(70052, "notify.factory.email_sender_failed", "创建 email sender 失败").WithHTTP(http.StatusInternalServerError).WithGRPC(codes.Internal)
-	errWebhookSenderFailed = errors.New(70053, "notify.factory.webhook_sender_failed", "创建 webhook sender 失败").WithHTTP(http.StatusInternalServerError).WithGRPC(codes.Internal)
-	errUnsupportedSMS      = errors.New(70054, "notify.factory.unsupported_sms_provider", "不支持的 SMS provider").WithHTTP(http.StatusBadRequest).WithGRPC(codes.InvalidArgument)
-	errUnsupportedPush     = errors.New(70055, "notify.factory.unsupported_push_provider", "不支持的 push provider").WithHTTP(http.StatusBadRequest).WithGRPC(codes.InvalidArgument)
+	errNilConfig           = errors.NewWithKind(70051, "notify.factory.nil_config", "config 不能为空", errors.KindInvalidArgument)
+	errEmailSenderFailed   = errors.NewWithKind(70052, "notify.factory.email_sender_failed", "创建 email sender 失败", errors.KindInternal)
+	errWebhookSenderFailed = errors.NewWithKind(70053, "notify.factory.webhook_sender_failed", "创建 webhook sender 失败", errors.KindInternal)
+	errUnsupportedSMS      = errors.NewWithKind(70054, "notify.factory.unsupported_sms_provider", "不支持的 SMS provider", errors.KindInvalidArgument)
+	errUnsupportedPush     = errors.NewWithKind(70055, "notify.factory.unsupported_push_provider", "不支持的 push provider", errors.KindInvalidArgument)
 )
 
 // NewDispatcher 根据 Config 创建并配置好 *notify.Dispatcher.

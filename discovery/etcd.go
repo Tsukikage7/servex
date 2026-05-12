@@ -60,7 +60,7 @@ func newEtcdDiscovery(config *Config, log logger.Logger) (Discovery, error) {
 		DialTimeout: dialTimeout,
 	})
 	if err != nil {
-		log.With(logger.Err(err)).Error("[Discovery] 创建etcd客户端失败")
+		log.With(logger.Err(err)).Error("[Discovery] 创建 etcd 客户端失败")
 		return nil, ErrClientCreate
 	}
 
@@ -120,14 +120,14 @@ func (e *etcdDiscovery) RegisterWithHealthEndpoint(ctx context.Context, serviceN
 	// 申请 lease
 	lease, err := e.client.Grant(ctx, defaultEtcdLeaseTTL)
 	if err != nil {
-		e.logger.With(logger.Err(err)).Error("[Discovery] etcd申请lease失败")
+		e.logger.With(logger.Err(err)).Error("[Discovery] etcd 申请 lease 失败")
 		return "", ErrRegister
 	}
 
 	// 写入服务信息并绑定 lease
 	_, err = e.client.Put(ctx, key, string(value), clientv3.WithLease(lease.ID))
 	if err != nil {
-		e.logger.With(logger.Err(err)).Error("[Discovery] etcd写入服务信息失败")
+		e.logger.With(logger.Err(err)).Error("[Discovery] etcd 写入服务信息失败")
 		return "", ErrRegister
 	}
 
@@ -136,7 +136,7 @@ func (e *etcdDiscovery) RegisterWithHealthEndpoint(ctx context.Context, serviceN
 	keepAliveCh, err := e.client.KeepAlive(keepAliveCtx, lease.ID)
 	if err != nil {
 		keepAliveCancel()
-		e.logger.With(logger.Err(err)).Error("[Discovery] etcd续约失败")
+		e.logger.With(logger.Err(err)).Error("[Discovery] etcd 续约失败")
 		return "", ErrRegister
 	}
 
@@ -192,7 +192,7 @@ func (e *etcdDiscovery) Unregister(ctx context.Context, serviceID string) error 
 			e.logger.With(
 				logger.String("serviceID", serviceID),
 				logger.Err(err),
-			).Error("[Discovery] etcd撤销lease失败")
+			).Error("[Discovery] etcd 撤销 lease 失败")
 			return ErrUnregister
 		}
 	}
@@ -213,7 +213,7 @@ func (e *etcdDiscovery) Discover(ctx context.Context, serviceName string) ([]str
 		e.logger.With(
 			logger.String("serviceName", serviceName),
 			logger.Err(err),
-		).Error("[Discovery] etcd服务发现失败")
+		).Error("[Discovery] etcd 服务发现失败")
 		return nil, ErrDiscover
 	}
 
@@ -246,6 +246,6 @@ func (e *etcdDiscovery) Close() error {
 		delete(e.cancels, id)
 	}
 	e.mu.Unlock()
-	e.logger.Debug("[Discovery] etcd服务发现连接已关闭")
+	e.logger.Debug("[Discovery] etcd 服务发现连接已关闭")
 	return e.client.Close()
 }
