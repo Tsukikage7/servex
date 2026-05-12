@@ -19,20 +19,26 @@ func WriteSuccess[T any](w http.ResponseWriter, data T) error {
 
 // WriteFail 写入失败响应.
 func WriteFail(w http.ResponseWriter, code Code) error {
-	return WriteJSON(w, code.HTTPStatus, Fail[any](code))
+	return WriteJSON(w, code.HTTPStatus(), Fail[any](code))
 }
 
 // WriteFailWithMessage 写入带自定义消息的失败响应.
 func WriteFailWithMessage(w http.ResponseWriter, code Code, message string) error {
-	return WriteJSON(w, code.HTTPStatus, FailWithMessage[any](code, message))
+	return WriteJSON(w, code.HTTPStatus(), FailWithMessage[any](code, message))
 }
 
 // WriteError 写入错误响应.
 //
-// 自动从 error 提取错误码和消息.
-func WriteError(w http.ResponseWriter, err error) error {
+// 自动从 error 提取错误码，并通过 LocalizedMessage 生成响应消息。
+// langs 可直接传入 Accept-Language 请求头的值。
+func WriteError(w http.ResponseWriter, err error, langs ...string) error {
 	code := ExtractCode(err)
-	return WriteJSON(w, code.HTTPStatus, FailWithError[any](err))
+	return WriteJSON(w, code.HTTPStatus(), FailWithMessage[any](code, LocalizedMessage(err, langs...)))
+}
+
+// WriteLocalizedError 根据请求的 Accept-Language 写入本地化错误响应.
+func WriteLocalizedError(w http.ResponseWriter, r *http.Request, err error) error {
+	return WriteError(w, err, acceptLanguages(r)...)
 }
 
 // WritePaged 写入分页响应.

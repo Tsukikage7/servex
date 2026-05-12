@@ -14,23 +14,6 @@ import (
 	"github.com/Tsukikage7/servex/v2/validation"
 )
 
-// Validatable 可由请求对象实现以启用自动校验.
-//
-// Handle/HandleWith 在解码后自动调用 Validate()，无需额外配置.
-//
-// 示例：
-//
-//	type CreateUserReq struct {
-//	    Name string `json:"name" binding:"required"`
-//	}
-//
-//	func (r *CreateUserReq) Validate() error {
-//	    return validate.Struct(r)
-//	}
-//
-// Deprecated: 请直接使用 validation.Validatable.
-type Validatable = validation.Validatable
-
 // Handle 创建类型安全的 Gin HandlerFunc，自动处理 JSON 解码、校验与统一响应格式.
 //
 // 适用于请求体为 JSON 的场景（POST/PUT/PATCH）。
@@ -53,7 +36,7 @@ func Handle[Req any, Resp any](fn func(ctx context.Context, req Req) (Resp, erro
 			return
 		}
 
-		if v, ok := any(&req).(Validatable); ok {
+		if v, ok := any(&req).(validation.Validatable); ok {
 			if err := v.Validate(); err != nil {
 				writeError(c, err)
 				return
@@ -96,7 +79,7 @@ func HandleWith[Req any, Resp any](
 			return
 		}
 
-		if v, ok := any(&req).(Validatable); ok {
+		if v, ok := any(&req).(validation.Validatable); ok {
 			if err := v.Validate(); err != nil {
 				writeError(c, err)
 				return
@@ -121,7 +104,7 @@ func writeError(c *gin.Context, err error) {
 	lang := c.GetHeader("Accept-Language")
 	message := response.LocalizedMessage(err, lang)
 
-	c.JSON(code.HTTPStatus, response.Response[any]{
+	c.JSON(code.HTTPStatus(), response.Response[any]{
 		Code:    code.Num,
 		Message: message,
 	})

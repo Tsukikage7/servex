@@ -3,7 +3,6 @@ package errors
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,8 +14,7 @@ import (
 )
 
 func TestToGRPCStatus(t *testing.T) {
-	errTokenExpired := New(100401, "auth.token.expired", "令牌已过期").
-		WithHTTP(http.StatusUnauthorized).WithGRPC(codes.Unauthenticated)
+	errTokenExpired := NewWithKind(100401, "auth.token.expired", "令牌已过期", KindUnauthenticated)
 
 	t.Run("from *Error", func(t *testing.T) {
 		st := ToGRPCStatus(errTokenExpired)
@@ -36,6 +34,13 @@ func TestToGRPCStatus(t *testing.T) {
 		assert.Equal(t, "内部错误", st.Message())
 	})
 
+	t.Run("from plain grpc status", func(t *testing.T) {
+		st := ToGRPCStatus(grpcstatus.Error(codes.PermissionDenied, "禁止访问"))
+		assert.Equal(t, codes.PermissionDenied, st.Code())
+		assert.Equal(t, "禁止访问", st.Message())
+		assert.Nil(t, FromGRPCStatus(st))
+	})
+
 	t.Run("from nil", func(t *testing.T) {
 		st := ToGRPCStatus(nil)
 		assert.Equal(t, codes.OK, st.Code())
@@ -44,8 +49,7 @@ func TestToGRPCStatus(t *testing.T) {
 
 func TestToGRPCStatus_ErrorInfo(t *testing.T) {
 	err := New(100401, "auth.token.expired", "令牌已过期").
-		WithHTTP(http.StatusUnauthorized).
-		WithGRPC(codes.Unauthenticated).
+		WithKind(KindUnauthenticated).
 		WithMeta("user_id", "123")
 
 	st := ToGRPCStatus(err)
@@ -66,7 +70,7 @@ func TestToGRPCStatus_ErrorInfo(t *testing.T) {
 
 func TestToGRPCStatus_BadRequest(t *testing.T) {
 	err := New(100400, "validation.failed", "参数校验失败").
-		WithGRPC(codes.InvalidArgument).
+		WithKind(KindInvalidArgument).
 		WithMeta("field", "email").
 		WithMeta("field_violation", "邮箱格式无效")
 
@@ -87,7 +91,7 @@ func TestToGRPCStatus_BadRequest(t *testing.T) {
 
 func TestToGRPCStatus_RetryInfo(t *testing.T) {
 	err := New(100429, "rate.limited", "请求过于频繁").
-		WithGRPC(codes.ResourceExhausted).
+		WithKind(KindResourceExhausted).
 		WithMeta("retry_delay", "5s")
 
 	st := ToGRPCStatus(err)
@@ -107,7 +111,7 @@ func TestToGRPCStatus_RetryInfo(t *testing.T) {
 func TestToGRPCStatus_AllDetails(t *testing.T) {
 	// 同时包含 BadRequest 和 RetryInfo
 	err := New(100400, "validation.failed", "参数校验失败").
-		WithGRPC(codes.InvalidArgument).
+		WithKind(KindInvalidArgument).
 		WithMeta("field", "email").
 		WithMeta("field_violation", "邮箱格式无效").
 		WithMeta("retry_delay", "3s")
@@ -133,7 +137,7 @@ func TestToGRPCStatus_AllDetails(t *testing.T) {
 func TestFromGRPCStatus(t *testing.T) {
 	t.Run("round trip", func(t *testing.T) {
 		original := New(100401, "auth.token.expired", "令牌已过期").
-			WithHTTP(401).WithGRPC(codes.Unauthenticated)
+			WithKind(KindUnauthenticated)
 		st := ToGRPCStatus(original)
 
 		restored := FromGRPCStatus(st)
@@ -141,20 +145,18 @@ func TestFromGRPCStatus(t *testing.T) {
 		assert.Equal(t, 100401, restored.Code)
 		assert.Equal(t, "auth.token.expired", restored.Key)
 		assert.Equal(t, "令牌已过期", restored.Message)
+		assert.Equal(t, KindUnauthenticated, restored.Kind)
 	})
 
 	t.Run("from plain grpc status", func(t *testing.T) {
 		st := grpcstatus.New(codes.NotFound, "not found")
-		restored := FromGRPCStatus(st)
-		require.NotNil(t, restored)
-		assert.Equal(t, int(codes.NotFound), restored.Code)
-		assert.Equal(t, "not found", restored.Message)
+		assert.Nil(t, FromGRPCStatus(st))
 	})
 }
 
 func TestFromGRPCStatus_WithErrorInfo(t *testing.T) {
 	original := New(100401, "auth.token.expired", "令牌已过期").
-		WithGRPC(codes.Unauthenticated).
+		WithKind(KindUnauthenticated).
 		WithMeta("user_id", "456")
 
 	st := ToGRPCStatus(original)
@@ -168,7 +170,7 @@ func TestFromGRPCStatus_WithErrorInfo(t *testing.T) {
 
 func TestFromGRPCStatus_WithBadRequest(t *testing.T) {
 	original := New(100400, "validation.failed", "参数校验失败").
-		WithGRPC(codes.InvalidArgument).
+		WithKind(KindInvalidArgument).
 		WithMeta("field", "username").
 		WithMeta("field_violation", "用户名不能为空")
 
@@ -182,7 +184,7 @@ func TestFromGRPCStatus_WithBadRequest(t *testing.T) {
 
 func TestFromGRPCStatus_WithRetryInfo(t *testing.T) {
 	original := New(100429, "rate.limited", "请求过于频繁").
-		WithGRPC(codes.ResourceExhausted).
+		WithKind(KindResourceExhausted).
 		WithMeta("retry_delay", "10s")
 
 	st := ToGRPCStatus(original)
@@ -202,8 +204,7 @@ func TestFromGRPCStatus_OK(t *testing.T) {
 }
 
 func TestUnaryServerInterceptor(t *testing.T) {
-	errTokenExpired := New(100401, "auth.token.expired", "令牌已过期").
-		WithHTTP(http.StatusUnauthorized).WithGRPC(codes.Unauthenticated)
+	errTokenExpired := NewWithKind(100401, "auth.token.expired", "令牌已过期", KindUnauthenticated)
 	interceptor := UnaryServerInterceptor()
 
 	t.Run("handler returns *Error", func(t *testing.T) {

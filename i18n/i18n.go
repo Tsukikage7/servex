@@ -60,7 +60,7 @@ func (b *Bundle) LoadMessageFile(tag language.Tag, path string) error {
 			b.logger.With(
 				logger.String("file", path),
 				logger.Err(err),
-			).Warn("[I18n] load message file failed")
+			).Warn("[I18n] 消息文件加载失败")
 		}
 		return err
 	}
@@ -71,7 +71,7 @@ func (b *Bundle) LoadMessageFile(tag language.Tag, path string) error {
 			b.logger.With(
 				logger.String("file", path),
 				logger.Err(err),
-			).Warn("[I18n] parse message file failed")
+			).Warn("[I18n] 消息文件解析失败")
 		}
 		return err
 	}
@@ -86,7 +86,7 @@ func (b *Bundle) LoadMessageFile(tag language.Tag, path string) error {
 	b.matcher = language.NewMatcher(b.tags)
 
 	if b.logger != nil {
-		b.logger.With(logger.String("file", path)).Debug("[I18n] message file loaded")
+		b.logger.With(logger.String("file", path)).Debug("[I18n] 消息文件已加载")
 	}
 	return nil
 }
@@ -99,7 +99,11 @@ func (b *Bundle) LoadMessages(tag language.Tag, messages map[string]string) {
 	if _, exists := b.messages[tag]; !exists {
 		b.tags = append(b.tags, tag)
 	}
-	b.messages[tag] = messages
+	cp := make(map[string]string, len(messages))
+	for k, v := range messages {
+		cp[k] = v
+	}
+	b.messages[tag] = cp
 	b.matcher = language.NewMatcher(b.tags)
 }
 

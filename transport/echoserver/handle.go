@@ -14,13 +14,6 @@ import (
 	"github.com/Tsukikage7/servex/v2/validation"
 )
 
-// Validatable 可由请求对象实现以启用自动校验.
-//
-// Handle/HandleWith 在解码后自动调用 Validate()，无需额外配置.
-//
-// Deprecated: 请直接使用 validation.Validatable.
-type Validatable = validation.Validatable
-
 // Handle 创建类型安全的 Echo HandlerFunc，自动处理 JSON 解码、校验与统一响应格式.
 //
 // 适用于请求体为 JSON 的场景（POST/PUT/PATCH）。
@@ -42,7 +35,7 @@ func Handle[Req any, Resp any](fn func(ctx context.Context, req Req) (Resp, erro
 			return writeError(c, response.CodeInvalidParam.ToError())
 		}
 
-		if v, ok := any(&req).(Validatable); ok {
+		if v, ok := any(&req).(validation.Validatable); ok {
 			if err := v.Validate(); err != nil {
 				return writeError(c, err)
 			}
@@ -82,7 +75,7 @@ func HandleWith[Req any, Resp any](
 			return writeError(c, err)
 		}
 
-		if v, ok := any(&req).(Validatable); ok {
+		if v, ok := any(&req).(validation.Validatable); ok {
 			if err := v.Validate(); err != nil {
 				return writeError(c, err)
 			}
@@ -106,7 +99,7 @@ func writeError(c echo.Context, err error) error {
 	lang := c.Request().Header.Get("Accept-Language")
 	message := response.LocalizedMessage(err, lang)
 
-	return c.JSON(code.HTTPStatus, response.Response[any]{
+	return c.JSON(code.HTTPStatus(), response.Response[any]{
 		Code:    code.Num,
 		Message: message,
 	})

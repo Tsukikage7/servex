@@ -4,8 +4,6 @@ package errors
 import (
 	stderrors "errors"
 	"fmt"
-
-	"google.golang.org/grpc/codes"
 )
 
 // Error 统一业务错误.
@@ -13,8 +11,7 @@ type Error struct {
 	Code     int               `json:"code"`
 	Key      string            `json:"key"`
 	Message  string            `json:"message"`
-	HTTP     int               `json:"-"`
-	GRPC     codes.Code        `json:"-"`
+	Kind     Kind              `json:"-"`
 	Metadata map[string]string `json:"metadata,omitzero"`
 	cause    error
 }
@@ -26,6 +23,11 @@ func New(code int, key, message string) *Error {
 		Key:     key,
 		Message: message,
 	}
+}
+
+// NewWithKind 创建带业务语义映射的错误定义。
+func NewWithKind(code int, key, message string, kind Kind) *Error {
+	return New(code, key, message).WithKind(kind)
 }
 
 // Error 实现 error 接口.
@@ -50,17 +52,10 @@ func (e *Error) Is(target error) bool {
 	return e.Code == t.Code && e.Key == t.Key
 }
 
-// WithHTTP 绑定 HTTP 状态码，返回新实例.
-func (e *Error) WithHTTP(status int) *Error {
+// WithKind 绑定业务错误语义。
+func (e *Error) WithKind(kind Kind) *Error {
 	cp := e.clone()
-	cp.HTTP = status
-	return cp
-}
-
-// WithGRPC 绑定 gRPC Code，返回新实例.
-func (e *Error) WithGRPC(code codes.Code) *Error {
-	cp := e.clone()
-	cp.GRPC = code
+	cp.Kind = kind
 	return cp
 }
 

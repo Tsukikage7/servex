@@ -65,7 +65,8 @@ func TestResponse_CheckStatus_4xx(t *testing.T) {
 	e, ok := errors.AsType[*servexerrors.Error](err)
 	require.True(t, ok)
 	assert.Equal(t, 404, e.Code)
-	assert.Equal(t, 404, e.HTTP)
+	assert.Equal(t, servexerrors.KindNotFound, e.Kind)
+	assert.Equal(t, "404", e.Metadata["http_status"])
 }
 
 func TestResponse_CheckStatus_5xx(t *testing.T) {
@@ -76,7 +77,8 @@ func TestResponse_CheckStatus_5xx(t *testing.T) {
 	e, ok := errors.AsType[*servexerrors.Error](err)
 	require.True(t, ok)
 	assert.Equal(t, 500, e.Code)
-	assert.Equal(t, 500, e.HTTP)
+	assert.Equal(t, servexerrors.KindInternal, e.Kind)
+	assert.Equal(t, "500", e.Metadata["http_status"])
 }
 
 func TestResponse_CheckStatus_ErrorsAs(t *testing.T) {

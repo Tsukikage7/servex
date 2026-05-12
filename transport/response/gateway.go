@@ -38,7 +38,7 @@ func GatewayErrorHandler(
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(code.HTTPStatus)
+	w.WriteHeader(code.HTTPStatus())
 	_ = json.NewEncoder(w).Encode(resp)
 }
 

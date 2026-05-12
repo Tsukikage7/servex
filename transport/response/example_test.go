@@ -3,6 +3,7 @@ package response_test
 import (
 	"fmt"
 
+	servexerr "github.com/Tsukikage7/servex/v2/errors"
 	"github.com/Tsukikage7/servex/v2/transport/response"
 )
 
@@ -39,13 +40,18 @@ func ExampleCode_WithMessage() {
 	// message: email format invalid
 }
 
-func ExampleNewCode() {
-	custom := response.NewCode(90001, "custom error", 500, 13)
+func ExampleNewCodeWithKind() {
+	custom := response.NewCodeWithKind(
+		40010,
+		"error.user_banned",
+		"账号已封禁",
+		servexerr.KindPermissionDenied,
+	)
 	fmt.Println("num:", custom.Num)
-	fmt.Println("message:", custom.Message)
-	fmt.Println("http:", custom.HTTPStatus)
+	fmt.Println("key:", custom.Key)
+	fmt.Println("http:", custom.HTTPStatus())
 	// Output:
-	// num: 90001
-	// message: custom error
-	// http: 500
+	// num: 40010
+	// key: error.user_banned
+	// http: 403
 }

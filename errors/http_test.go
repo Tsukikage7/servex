@@ -9,14 +9,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc/codes"
 )
 
 var (
-	testErrTokenExpired = New(100401, "auth.token.expired", "令牌已过期").
-				WithHTTP(http.StatusUnauthorized).WithGRPC(codes.Unauthenticated)
-	testErrInternal = New(900500, "internal", "服务内部错误").
-			WithHTTP(http.StatusInternalServerError).WithGRPC(codes.Internal)
+	testErrTokenExpired = NewWithKind(100401, "auth.token.expired", "令牌已过期", KindUnauthenticated)
+	testErrInternal     = NewWithKind(900500, "internal", "服务内部错误", KindInternal)
 )
 
 func TestToHTTPStatus(t *testing.T) {
@@ -43,54 +40,27 @@ func TestToHTTPStatus(t *testing.T) {
 	})
 }
 
-func TestHTTPErrorHandler(t *testing.T) {
-	t.Run("handler returns *Error via context", func(t *testing.T) {
-		handler := HTTPErrorHandler()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			WriteError(w, testErrTokenExpired)
-		}))
+func TestWriteError_Nil(t *testing.T) {
+	rec := httptest.NewRecorder()
 
-		req := httptest.NewRequest(http.MethodGet, "/test", nil)
-		rec := httptest.NewRecorder()
-		handler.ServeHTTP(rec, req)
+	WriteError(rec, nil)
 
-		assert.Equal(t, http.StatusUnauthorized, rec.Code)
-		assert.Equal(t, "application/json; charset=utf-8", rec.Header().Get("Content-Type"))
+	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+	var body map[string]any
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+	assert.Equal(t, float64(900500), body["code"])
+	assert.Equal(t, "内部服务器错误", body["message"])
+}
 
-		var body map[string]any
-		require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
-		assert.Equal(t, float64(100401), body["code"])
-		assert.Equal(t, "auth.token.expired", body["key"])
-		assert.Equal(t, "令牌已过期", body["message"])
-	})
+func TestWriteError_InternalMasksDetail(t *testing.T) {
+	rec := httptest.NewRecorder()
+	err := NewWithKind(50001, "db.error", "password=secret", KindInternal)
 
-	t.Run("handler with metadata", func(t *testing.T) {
-		errWithMeta := testErrTokenExpired.WithMeta("user_id", "123")
-		handler := HTTPErrorHandler()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			WriteError(w, errWithMeta)
-		}))
+	WriteError(rec, err)
 
-		req := httptest.NewRequest(http.MethodGet, "/test", nil)
-		rec := httptest.NewRecorder()
-		handler.ServeHTTP(rec, req)
-
-		var body map[string]any
-		require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
-		meta, ok := body["metadata"].(map[string]any)
-		require.True(t, ok)
-		assert.Equal(t, "123", meta["user_id"])
-	})
-
-	t.Run("handler success passes through", func(t *testing.T) {
-		handler := HTTPErrorHandler()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"ok":true}`))
-		}))
-
-		req := httptest.NewRequest(http.MethodGet, "/test", nil)
-		rec := httptest.NewRecorder()
-		handler.ServeHTTP(rec, req)
-
-		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Equal(t, `{"ok":true}`, rec.Body.String())
-	})
+	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+	var body map[string]any
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+	assert.Equal(t, float64(50001), body["code"])
+	assert.Equal(t, "内部服务器错误", body["message"])
 }

@@ -78,6 +78,17 @@ func (s *I18nTestSuite) TestLoadMessages() {
 	s.Len(b.messages, 2)
 }
 
+func (s *I18nTestSuite) TestLoadMessages_CopiesInputMap() {
+	messages := map[string]string{"hello": "Hello"}
+	b := NewBundle(language.English)
+	b.LoadMessages(language.English, messages)
+
+	messages["hello"] = "Mutated"
+
+	loc := b.NewLocalizer("en")
+	s.Equal("Hello", loc.Translate("hello"))
+}
+
 func (s *I18nTestSuite) TestTranslate_MatchedLanguage() {
 	b := NewBundle(language.English)
 	b.LoadMessages(language.English, map[string]string{"hello": "Hello"})

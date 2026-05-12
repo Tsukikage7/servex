@@ -1,7 +1,6 @@
 package response
 
 import (
-	"errors"
 	"sync/atomic"
 
 	"golang.org/x/text/language"
@@ -36,7 +35,14 @@ func newBuiltinBundle() *i18n.Bundle {
 //	bundle.LoadMessages(language.Chinese, zhMessages)
 //	bundle.LoadMessages(language.English, enMessages)
 //	response.SetBundle(bundle)
-func SetBundle(b *i18n.Bundle) { globalBundle.Store(b) }
+//
+// 传入 nil 时恢复内置消息包，避免全局本地化被意外置空.
+func SetBundle(b *i18n.Bundle) {
+	if b == nil {
+		b = newBuiltinBundle()
+	}
+	globalBundle.Store(b)
+}
 
 // GetBundle 获取当前全局消息包.
 func GetBundle() *i18n.Bundle { return globalBundle.Load() }
@@ -46,28 +52,20 @@ func GetBundle() *i18n.Bundle { return globalBundle.Load() }
 // langs 为语言偏好列表，通常直接传入 Accept-Language 请求头的值。
 // 翻译规则（优先级从高到低）：
 //  1. 内部错误（5xxxx+）始终使用 Code 级别消息，不透传业务细节
-//  2. BusinessError/*errors.Error 含自定义消息时直接返回（已由业务层明确指定）
-//  3. 其余情况通过全局 Bundle 翻译 Code.Key，未命中时回退到 Code.Message
+//  2. 业务层显式传入的自定义消息直接返回
+//  3. 其余情况通过全局 Bundle 翻译错误 Key，未命中时回退到默认 Message
 func LocalizedMessage(err error, langs ...string) string {
 	if err == nil {
 		return localizeCode(CodeSuccess, langs...)
-	}
-
-	// BusinessError：内部错误（5xxxx+）掩码；否则自定义消息优先于 i18n
-	if bizErr, ok := errors.AsType[*BusinessError](err); ok {
-		if isInternalCode(bizErr.Code.Num) {
-			return localizeCode(bizErr.Code, langs...)
-		}
-		if bizErr.Message != "" {
-			return bizErr.Message
-		}
-		return localizeCode(bizErr.Code, langs...)
 	}
 
 	// servex/errors.Error：内部错误掩码；否则翻译 Key，回退到 Message
 	if srvErr, ok := servexerr.FromError(err); ok {
 		if isInternalCode(srvErr.Code) {
 			return localizeCode(CodeInternal, langs...)
+		}
+		if hasCustomMessage(srvErr.Code, srvErr.Key, srvErr.Message) {
+			return srvErr.Message
 		}
 		if srvErr.Key != "" {
 			if translated := localizeCode(Code{Key: srvErr.Key, Message: srvErr.Message}, langs...); translated != srvErr.Key {
@@ -78,7 +76,11 @@ func LocalizedMessage(err error, langs ...string) string {
 	}
 
 	// 其他场景走 Code 翻译
-	return localizeCode(ExtractCode(err), langs...)
+	code := ExtractCode(err)
+	if !isInternalCode(code.Num) && hasCustomMessage(code.Num, code.Key, code.Message) {
+		return code.Message
+	}
+	return localizeCode(code, langs...)
 }
 
 // localizeCode 翻译单个 Code 的消息键，回退到 Code.Message.
@@ -115,6 +117,46 @@ func parseAcceptLangs(langs []string) []string {
 		}
 	}
 	return result
+}
+
+func hasCustomMessage(num int, key, message string) bool {
+	if message == "" {
+		return false
+	}
+	defaultMessage, ok := defaultMessageFor(num, key)
+	return ok && message != defaultMessage
+}
+
+func defaultMessageFor(num int, key string) (string, bool) {
+	for _, code := range builtinCodes {
+		if code.Num == num && code.Key == key {
+			return code.Message, true
+		}
+	}
+	return "", false
+}
+
+var builtinCodes = []Code{
+	CodeSuccess,
+	CodeUnknown,
+	CodeCanceled,
+	CodeTimeout,
+	CodeUnauthorized,
+	CodeForbidden,
+	CodeTokenExpired,
+	CodeTokenInvalid,
+	CodeInvalidParam,
+	CodeMissingParam,
+	CodeValidationFailed,
+	CodeNotFound,
+	CodeAlreadyExists,
+	CodeConflict,
+	CodeResourceExhausted,
+	CodeInternal,
+	CodeNotImplemented,
+	CodeDatabaseError,
+	CodeServiceUnavailable,
+	CodeUpstreamError,
 }
 
 // builtinZH 内置中文错误消息.

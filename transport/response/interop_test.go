@@ -2,7 +2,9 @@ package response_test
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,17 +21,51 @@ import (
 // 互操作测试：验证 servex/errors.Error 可以正确地通过 response 包处理.
 
 func TestExtractCode_WithErrorsPackage(t *testing.T) {
-	err := servexerr.New(40001, "user.not_found", "用户不存在").
-		WithHTTP(http.StatusNotFound).
-		WithGRPC(codes.NotFound).
+	err := servexerr.NewWithKind(40001, "user.not_found", "用户不存在", servexerr.KindNotFound).
 		WithMeta("user_id", "u-123")
 
 	code := response.ExtractCode(err)
 	assert.Equal(t, 40001, code.Num)
 	assert.Equal(t, "user.not_found", code.Key)
 	assert.Equal(t, "用户不存在", code.Message)
-	assert.Equal(t, http.StatusNotFound, code.HTTPStatus)
-	assert.Equal(t, codes.NotFound, code.GRPCCode)
+	assert.Equal(t, http.StatusNotFound, code.HTTPStatus())
+	assert.Equal(t, codes.NotFound, code.GRPCCode())
+}
+
+func TestExtractCode_WithErrorsPackageMissingTransportMapping(t *testing.T) {
+	err := servexerr.New(response.CodeNotFound.Num, response.CodeNotFound.Key, response.CodeNotFound.Message)
+
+	code := response.ExtractCode(err)
+	assert.Equal(t, response.CodeNotFound.Num, code.Num)
+	assert.Equal(t, response.CodeNotFound.Key, code.Key)
+	assert.Equal(t, response.CodeNotFound.Message, code.Message)
+	assert.Equal(t, http.StatusNotFound, code.HTTPStatus())
+	assert.Equal(t, codes.NotFound, code.GRPCCode())
+}
+
+func TestWriteError_WithErrorsPackageMissingTransportMapping(t *testing.T) {
+	err := servexerr.New(response.CodeNotFound.Num, response.CodeNotFound.Key, response.CodeNotFound.Message)
+	rec := httptest.NewRecorder()
+
+	require.NoError(t, response.WriteError(rec, err, "en"))
+
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+	var body response.Response[any]
+	require.NoError(t, json.NewDecoder(rec.Body).Decode(&body))
+	assert.Equal(t, response.CodeNotFound.Num, body.Code)
+	assert.Equal(t, "Resource not found", body.Message)
+}
+
+func TestGRPCStatus_WithErrorsPackageMissingTransportMapping(t *testing.T) {
+	err := servexerr.New(response.CodeNotFound.Num, response.CodeNotFound.Key, response.CodeNotFound.Message)
+
+	st := response.GRPCStatus(err)
+
+	assert.Equal(t, codes.NotFound, st.Code())
+	code := response.FromGRPCStatus(st)
+	assert.Equal(t, response.CodeNotFound.Num, code.Num)
+	assert.Equal(t, http.StatusNotFound, code.HTTPStatus())
+	assert.Equal(t, codes.NotFound, code.GRPCCode())
 }
 
 func TestExtractMetadata_WithErrorsPackage(t *testing.T) {
@@ -61,9 +97,7 @@ func TestExtractMetadata_NonServexError(t *testing.T) {
 }
 
 func TestExtractMessage_WithErrorsPackage(t *testing.T) {
-	err := servexerr.New(40001, "user.not_found", "用户不存在").
-		WithHTTP(http.StatusNotFound).
-		WithGRPC(codes.NotFound)
+	err := servexerr.NewWithKind(40001, "user.not_found", "用户不存在", servexerr.KindNotFound)
 
 	msg := response.ExtractMessage(err)
 	assert.Equal(t, "用户不存在", msg)
@@ -71,9 +105,7 @@ func TestExtractMessage_WithErrorsPackage(t *testing.T) {
 
 func TestExtractMessage_InternalError_Masked(t *testing.T) {
 	// 内部错误 (>= 50000) 应该被掩码
-	err := servexerr.New(50001, "db.connection_failed", "数据库密码错误: xxx").
-		WithHTTP(http.StatusInternalServerError).
-		WithGRPC(codes.Internal)
+	err := servexerr.NewWithKind(50001, "db.connection_failed", "数据库密码错误: xxx", servexerr.KindInternal)
 
 	msg := response.ExtractMessage(err)
 	// 应返回通用消息，不暴露敏感信息
@@ -81,9 +113,7 @@ func TestExtractMessage_InternalError_Masked(t *testing.T) {
 }
 
 func TestGRPCStatus_WithErrorsPackage_AttachesDetails(t *testing.T) {
-	err := servexerr.New(40001, "user.not_found", "用户不存在").
-		WithHTTP(http.StatusNotFound).
-		WithGRPC(codes.NotFound).
+	err := servexerr.NewWithKind(40001, "user.not_found", "用户不存在", servexerr.KindNotFound).
 		WithMeta("user_id", "u-123").
 		WithMeta("field", "email").
 		WithMeta("field_violation", "格式无效").
@@ -119,9 +149,7 @@ func TestGRPCStatus_WithErrorsPackage_AttachesDetails(t *testing.T) {
 
 func TestFromGRPCStatus_ErrorsPackageFormat(t *testing.T) {
 	// errors.ToGRPCStatus 生成的 status，response.FromGRPCStatus 应能识别
-	original := servexerr.New(40001, "user.not_found", "用户不存在").
-		WithHTTP(http.StatusNotFound).
-		WithGRPC(codes.NotFound)
+	original := servexerr.NewWithKind(40001, "user.not_found", "用户不存在", servexerr.KindNotFound)
 
 	st := servexerr.ToGRPCStatus(original)
 	code := response.FromGRPCStatus(st)
@@ -136,9 +164,7 @@ func TestUnaryServerInterceptor_WithErrorsPackage(t *testing.T) {
 	interceptor := response.UnaryServerInterceptor()
 
 	handler := func(_ context.Context, _ any) (any, error) {
-		return nil, servexerr.New(40001, "user.not_found", "用户不存在").
-			WithHTTP(http.StatusNotFound).
-			WithGRPC(codes.NotFound)
+		return nil, servexerr.NewWithKind(40001, "user.not_found", "用户不存在", servexerr.KindNotFound)
 	}
 
 	_, err := interceptor(context.Background(), nil, &grpc.UnaryServerInfo{}, handler)
@@ -155,9 +181,7 @@ func TestUnaryServerInterceptor_WithErrorsPackage(t *testing.T) {
 
 func TestLocalizedMessage_WithErrorsPackage(t *testing.T) {
 	// servex/errors.Error 的 Key 应该能被 i18n 翻译
-	err := servexerr.New(40001, "error.not_found", "资源不存在").
-		WithHTTP(http.StatusNotFound).
-		WithGRPC(codes.NotFound)
+	err := servexerr.NewWithKind(40001, "error.not_found", "资源不存在", servexerr.KindNotFound)
 
 	// 使用内置英文翻译（Key 为 "error.not_found" 时翻译为 "Resource not found"）
 	msg := response.LocalizedMessage(err, "en")

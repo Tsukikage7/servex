@@ -17,31 +17,30 @@ type httpResponse struct {
 // ToHTTPStatus 从 error 中提取 HTTP 状态码，默认 500.
 func ToHTTPStatus(err error) int {
 	e, ok := FromError(err)
-	if !ok || e.HTTP == 0 {
+	if !ok {
 		return http.StatusInternalServerError
 	}
-	return e.HTTP
+	return e.Kind.HTTPStatus()
 }
 
 // WriteError 将 *Error 写入 HTTP 响应.
 func WriteError(w http.ResponseWriter, err *Error) {
-	status := err.HTTP
-	if status == 0 {
-		status = http.StatusInternalServerError
+	if err == nil {
+		err = internalHTTPError()
 	}
 
 	resp := httpResponse{
 		Code:     err.Code,
 		Key:      err.Key,
-		Message:  err.Message,
+		Message:  httpClientMessage(err),
 		Metadata: err.Metadata,
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(status)
+	w.WriteHeader(err.Kind.HTTPStatus())
 	if encErr := json.NewEncoder(w).Encode(resp); encErr != nil {
 		// JSON 编码失败时记录日志，响应头已发送无法回滚
-		slog.Error("WriteError: JSON 编码失败", "error", encErr)
+		slog.Error("[Errors] JSON 编码失败", "error", encErr)
 	}
 }
 
@@ -50,25 +49,19 @@ func WriteError(w http.ResponseWriter, err *Error) {
 func WriteErrorFrom(w http.ResponseWriter, err error) {
 	e, ok := FromError(err)
 	if !ok {
-		slog.Error("内部服务器错误", "error", err)
-		e = &Error{
-			Code:    900500,
-			Key:     "internal",
-			Message: "内部服务器错误",
-			HTTP:    http.StatusInternalServerError,
-		}
+		slog.Error("[Errors] 内部服务器错误", "error", err)
+		e = internalHTTPError()
 	}
 	WriteError(w, e)
 }
 
-// HTTPErrorHandler 返回 HTTP 错误处理中间件.
-//
-// Deprecated: 此中间件当前为空操作（直接透传），不执行任何错误处理逻辑.
-// 建议直接使用 WriteErrorFrom 在业务 handler 中处理错误.
-func HTTPErrorHandler() func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			next.ServeHTTP(w, r)
-		})
+func internalHTTPError() *Error {
+	return NewWithKind(900500, "internal", "内部服务器错误", KindInternal)
+}
+
+func httpClientMessage(err *Error) string {
+	if err.Code >= 50000 && err.Code < 70000 {
+		return "内部服务器错误"
 	}
+	return err.Message
 }

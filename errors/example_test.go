@@ -2,22 +2,17 @@ package errors_test
 
 import (
 	"fmt"
-	"net/http"
-
-	"google.golang.org/grpc/codes"
 
 	"github.com/Tsukikage7/servex/v2/errors"
 )
 
 func ExampleNew() {
-	err := errors.New(40001, "INVALID_PARAM", "参数无效").
-		WithHTTP(http.StatusBadRequest).
-		WithGRPC(codes.InvalidArgument)
+	err := errors.NewWithKind(40001, "INVALID_PARAM", "参数无效", errors.KindInvalidArgument)
 
 	fmt.Println(err.Error())
 	fmt.Println(err.Code)
-	fmt.Println(err.HTTP)
-	fmt.Println(err.GRPC)
+	fmt.Println(err.Kind.HTTPStatus())
+	fmt.Println(err.Kind.GRPCCode())
 	// Output:
 	// [40001] INVALID_PARAM: 参数无效
 	// 40001

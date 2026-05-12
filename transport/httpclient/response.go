@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/Tsukikage7/servex/v2/errors"
 )
@@ -45,5 +46,34 @@ func (r *Response) CheckStatus() error {
 		r.StatusCode,
 		fmt.Sprintf("http.%d", r.StatusCode),
 		fmt.Sprintf("HTTP %d: %s", r.StatusCode, http.StatusText(r.StatusCode)),
-	).WithHTTP(r.StatusCode)
+	).WithKind(kindFromHTTPStatus(r.StatusCode)).
+		WithMeta("http_status", strconv.Itoa(r.StatusCode))
+}
+
+func kindFromHTTPStatus(status int) errors.Kind {
+	switch status {
+	case http.StatusBadRequest:
+		return errors.KindInvalidArgument
+	case http.StatusUnauthorized:
+		return errors.KindUnauthenticated
+	case http.StatusForbidden:
+		return errors.KindPermissionDenied
+	case http.StatusNotFound:
+		return errors.KindNotFound
+	case http.StatusConflict:
+		return errors.KindConflict
+	case http.StatusPreconditionFailed:
+		return errors.KindFailedPrecondition
+	case http.StatusTooManyRequests:
+		return errors.KindResourceExhausted
+	case http.StatusNotImplemented:
+		return errors.KindNotImplemented
+	case http.StatusBadGateway, http.StatusServiceUnavailable, http.StatusGatewayTimeout:
+		return errors.KindUnavailable
+	default:
+		if status >= 400 && status < 500 {
+			return errors.KindInvalidArgument
+		}
+		return errors.KindInternal
+	}
 }

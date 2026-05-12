@@ -3,6 +3,7 @@ package errors
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,10 +16,48 @@ func TestNew(t *testing.T) {
 	assert.Equal(t, 100401, err.Code)
 	assert.Equal(t, "auth.token.expired", err.Key)
 	assert.Equal(t, "令牌已过期", err.Message)
-	assert.Equal(t, 0, err.HTTP)
-	assert.Equal(t, codes.OK, err.GRPC)
+	assert.Equal(t, KindInternal, err.Kind)
 	assert.Nil(t, err.Metadata)
 	assert.Nil(t, err.cause)
+}
+
+func TestNewWithKind(t *testing.T) {
+	err := NewWithKind(200404, "user.not_found", "用户不存在", KindNotFound)
+
+	assert.Equal(t, 200404, err.Code)
+	assert.Equal(t, "user.not_found", err.Key)
+	assert.Equal(t, "用户不存在", err.Message)
+	assert.Equal(t, KindNotFound, err.Kind)
+}
+
+func TestKindMappings(t *testing.T) {
+	cases := []struct {
+		name string
+		kind Kind
+		http int
+		grpc codes.Code
+	}{
+		{"internal", KindInternal, http.StatusInternalServerError, codes.Internal},
+		{"unknown", KindUnknown, http.StatusInternalServerError, codes.Unknown},
+		{"canceled", KindCanceled, http.StatusRequestTimeout, codes.Canceled},
+		{"not found", KindNotFound, http.StatusNotFound, codes.NotFound},
+		{"conflict", KindConflict, http.StatusConflict, codes.AlreadyExists},
+		{"invalid argument", KindInvalidArgument, http.StatusBadRequest, codes.InvalidArgument},
+		{"permission denied", KindPermissionDenied, http.StatusForbidden, codes.PermissionDenied},
+		{"unauthenticated", KindUnauthenticated, http.StatusUnauthorized, codes.Unauthenticated},
+		{"failed precondition", KindFailedPrecondition, http.StatusPreconditionFailed, codes.FailedPrecondition},
+		{"unavailable", KindUnavailable, http.StatusServiceUnavailable, codes.Unavailable},
+		{"deadline exceeded", KindDeadlineExceeded, http.StatusGatewayTimeout, codes.DeadlineExceeded},
+		{"resource exhausted", KindResourceExhausted, http.StatusTooManyRequests, codes.ResourceExhausted},
+		{"not implemented", KindNotImplemented, http.StatusNotImplemented, codes.Unimplemented},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.http, tt.kind.HTTPStatus())
+			assert.Equal(t, tt.grpc, tt.kind.GRPCCode())
+		})
+	}
 }
 
 func TestError_Error(t *testing.T) {
@@ -26,27 +65,23 @@ func TestError_Error(t *testing.T) {
 	assert.Equal(t, "[100401] auth.token.expired: 令牌已过期", err.Error())
 }
 
-func TestError_WithHTTP(t *testing.T) {
-	err := New(100401, "auth.token.expired", "令牌已过期").WithHTTP(401)
-	assert.Equal(t, 401, err.HTTP)
-}
+func TestError_WithKind(t *testing.T) {
+	original := New(300001, "project.slug_required", "Slug 不能为空")
+	err := original.WithKind(KindInvalidArgument)
 
-func TestError_WithGRPC(t *testing.T) {
-	err := New(100401, "auth.token.expired", "令牌已过期").WithGRPC(codes.Unauthenticated)
-	assert.Equal(t, codes.Unauthenticated, err.GRPC)
+	assert.Equal(t, KindInvalidArgument, err.Kind)
+	assert.Equal(t, KindInternal, original.Kind)
 }
 
 func TestError_ChainedBuilder(t *testing.T) {
 	err := New(100401, "auth.token.expired", "令牌已过期").
-		WithHTTP(401).
-		WithGRPC(codes.Unauthenticated)
+		WithKind(KindUnauthenticated)
 	assert.Equal(t, 100401, err.Code)
-	assert.Equal(t, 401, err.HTTP)
-	assert.Equal(t, codes.Unauthenticated, err.GRPC)
+	assert.Equal(t, KindUnauthenticated, err.Kind)
 }
 
 func TestError_WithCause(t *testing.T) {
-	original := New(100401, "auth.token.expired", "令牌已过期").WithHTTP(401)
+	original := NewWithKind(100401, "auth.token.expired", "令牌已过期", KindUnauthenticated)
 	cause := fmt.Errorf("token parse failed")
 	wrapped := original.WithCause(cause)
 
@@ -75,12 +110,12 @@ func TestError_WithMeta_Multiple(t *testing.T) {
 }
 
 func TestError_WithMessage(t *testing.T) {
-	original := New(100401, "auth.token.expired", "令牌已过期").WithHTTP(401)
+	original := NewWithKind(100401, "auth.token.expired", "令牌已过期", KindUnauthenticated)
 	replaced := original.WithMessage("Token expired")
 
 	assert.Equal(t, "Token expired", replaced.Message)
 	assert.Equal(t, "令牌已过期", original.Message)
-	assert.Equal(t, 401, replaced.HTTP)
+	assert.Equal(t, KindUnauthenticated, replaced.Kind)
 }
 
 func TestError_Is_StandardLibrary(t *testing.T) {
@@ -94,13 +129,13 @@ func TestError_Is_StandardLibrary(t *testing.T) {
 }
 
 func TestError_As(t *testing.T) {
-	ErrAuth := New(100401, "auth.token.expired", "令牌已过期").WithHTTP(401)
+	ErrAuth := NewWithKind(100401, "auth.token.expired", "令牌已过期", KindUnauthenticated)
 	wrapped := fmt.Errorf("outer: %w", ErrAuth)
 
 	var target *Error
 	require.True(t, errors.As(wrapped, &target))
 	assert.Equal(t, 100401, target.Code)
-	assert.Equal(t, 401, target.HTTP)
+	assert.Equal(t, KindUnauthenticated, target.Kind)
 }
 
 func TestFromError(t *testing.T) {

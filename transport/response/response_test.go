@@ -7,8 +7,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	servexerr "github.com/Tsukikage7/servex/v2/errors"
 	"github.com/Tsukikage7/servex/v2/transport/response"
 	"github.com/Tsukikage7/servex/v2/xutil/pagination"
+	"google.golang.org/grpc/codes"
+	grpcstatus "google.golang.org/grpc/status"
 )
 
 func TestOK(t *testing.T) {
@@ -52,7 +55,7 @@ func TestFailWithMessage(t *testing.T) {
 }
 
 func TestFailWithError(t *testing.T) {
-	err := response.NewErrorWithMessage(response.CodeNotFound, "user not found")
+	err := response.CodeNotFound.ToError().WithMessage("user not found")
 	resp := response.FailWithError[string](err)
 	if resp.Code != response.CodeNotFound.Num {
 		t.Errorf("expected code %d, got %d", response.CodeNotFound.Num, resp.Code)
@@ -104,59 +107,54 @@ func TestPagedFailWithMessage(t *testing.T) {
 	}
 }
 
-func TestBusinessError(t *testing.T) {
+func TestServexError(t *testing.T) {
 	t.Run("error message", func(t *testing.T) {
-		err := response.NewError(response.CodeNotFound)
-		if err.Error() != response.CodeNotFound.Message {
-			t.Errorf("expected %q, got %q", response.CodeNotFound.Message, err.Error())
+		err := response.CodeNotFound.ToError()
+		want := "[" + "40001" + "] error.not_found: 资源不存在"
+		if err.Error() != want {
+			t.Errorf("expected %q, got %q", want, err.Error())
 		}
 	})
 
 	t.Run("custom message", func(t *testing.T) {
-		err := response.NewErrorWithMessage(response.CodeNotFound, "custom msg")
-		if err.Error() != "custom msg" {
+		err := response.CodeNotFound.ToError().WithMessage("custom msg")
+		if err.Message != "custom msg" {
 			t.Errorf("expected 'custom msg', got %q", err.Error())
-		}
-		if err.GetMessage() != "custom msg" {
-			t.Errorf("GetMessage expected 'custom msg', got %q", err.GetMessage())
 		}
 	})
 
 	t.Run("with cause", func(t *testing.T) {
 		cause := errors.New("underlying error")
-		err := response.NewErrorWithCause(response.CodeInternal, cause)
+		err := response.CodeInternal.ToError().WithCause(cause)
 		if !errors.Is(err, cause) {
 			t.Error("should unwrap to cause")
-		}
-		if err.Unwrap() != cause {
-			t.Error("Unwrap should return cause")
 		}
 	})
 
 	t.Run("full", func(t *testing.T) {
 		cause := errors.New("db error")
-		err := response.NewErrorFull(response.CodeDatabaseError, "query failed", cause)
-		if err.GetCode() != response.CodeDatabaseError {
-			t.Error("GetCode mismatch")
+		err := response.CodeDatabaseError.ToError().WithMessage("query failed").WithCause(cause)
+		if err.Code != response.CodeDatabaseError.Num {
+			t.Error("Code mismatch")
 		}
-		if err.Error() != "query failed: db error" {
+		if err.Error() != "[50003] error.database: query failed: db error" {
 			t.Errorf("unexpected error: %q", err.Error())
 		}
 	})
 
 	t.Run("wrap", func(t *testing.T) {
 		cause := errors.New("timeout")
-		err := response.Wrap(response.CodeTimeout, cause)
-		if !response.IsBusinessError(err) {
-			t.Error("should be business error")
+		err := response.CodeTimeout.ToError().WithCause(cause)
+		if !errors.Is(err, cause) {
+			t.Error("should unwrap cause")
 		}
 	})
 
 	t.Run("WrapWithMessage", func(t *testing.T) {
 		cause := errors.New("timeout")
-		err := response.WrapWithMessage(response.CodeTimeout, "custom wrap", cause)
-		if err.GetMessage() != "custom wrap" {
-			t.Errorf("expected 'custom wrap', got %q", err.GetMessage())
+		err := response.CodeTimeout.ToError().WithMessage("custom wrap").WithCause(cause)
+		if err.Message != "custom wrap" {
+			t.Errorf("expected 'custom wrap', got %q", err.Message)
 		}
 	})
 }
@@ -169,8 +167,8 @@ func TestExtractCode(t *testing.T) {
 		}
 	})
 
-	t.Run("business error", func(t *testing.T) {
-		err := response.NewError(response.CodeNotFound)
+	t.Run("servex error", func(t *testing.T) {
+		err := response.CodeNotFound.ToError()
 		code := response.ExtractCode(err)
 		if code.Num != response.CodeNotFound.Num {
 			t.Errorf("expected %d, got %d", response.CodeNotFound.Num, code.Num)
@@ -194,7 +192,7 @@ func TestExtractMessage(t *testing.T) {
 	})
 
 	t.Run("internal error hides detail", func(t *testing.T) {
-		err := response.NewErrorWithMessage(response.CodeInternal, "sensitive info")
+		err := response.CodeInternal.ToError().WithMessage("sensitive info")
 		msg := response.ExtractMessage(err)
 		if msg != response.CodeInternal.Message {
 			t.Errorf("expected generic internal error message, got %q", msg)
@@ -202,7 +200,7 @@ func TestExtractMessage(t *testing.T) {
 	})
 
 	t.Run("business error shows detail", func(t *testing.T) {
-		err := response.NewErrorWithMessage(response.CodeInvalidParam, "name is required")
+		err := response.CodeInvalidParam.ToError().WithMessage("name is required")
 		msg := response.ExtractMessage(err)
 		if msg != "name is required" {
 			t.Errorf("expected 'name is required', got %q", msg)
@@ -219,9 +217,9 @@ func TestExtractMessageUnsafe(t *testing.T) {
 	})
 
 	t.Run("with cause", func(t *testing.T) {
-		err := response.NewErrorFull(response.CodeInternal, "oops", errors.New("db fail"))
+		err := response.CodeInternal.ToError().WithMessage("oops").WithCause(errors.New("db fail"))
 		msg := response.ExtractMessageUnsafe(err)
-		if msg != "oops: db fail" {
+		if msg != "[50001] error.internal: oops: db fail" {
 			t.Errorf("expected full message, got %q", msg)
 		}
 	})
@@ -252,6 +250,18 @@ func TestCode(t *testing.T) {
 		}
 	})
 
+	t.Run("WithHTTPStatus", func(t *testing.T) {
+		code := response.CodeInvalidParam.
+			WithHTTPStatus(http.StatusUnprocessableEntity)
+
+		if code.HTTPStatus() != http.StatusUnprocessableEntity {
+			t.Error("WithHTTPStatus should change HTTPStatus")
+		}
+		if response.CodeInvalidParam.HTTPStatus() == http.StatusUnprocessableEntity {
+			t.Error("should not modify original")
+		}
+	})
+
 	t.Run("Is", func(t *testing.T) {
 		if !errors.Is(response.CodeNotFound, response.CodeNotFound) {
 			t.Error("CodeNotFound should Is CodeNotFound")
@@ -261,12 +271,56 @@ func TestCode(t *testing.T) {
 		}
 	})
 
-	t.Run("NewCode", func(t *testing.T) {
-		custom := response.NewCode(99001, "custom error", 418, 0)
-		if custom.Num != 99001 {
+	t.Run("NewCodeWithKind", func(t *testing.T) {
+		custom := response.NewCodeWithKind(
+			40010,
+			"error.user_banned",
+			"账号已封禁",
+			servexerr.KindPermissionDenied,
+		)
+
+		if custom.Num != 40010 {
 			t.Error("custom code num mismatch")
 		}
+		if custom.Key != "error.user_banned" {
+			t.Error("custom code key mismatch")
+		}
+		if custom.HTTPStatus() != http.StatusForbidden {
+			t.Error("custom code HTTP status should be derived from kind")
+		}
+		if custom.GRPCCode() != codes.PermissionDenied {
+			t.Error("custom code gRPC code should be derived from kind")
+		}
+
+		err := custom.ToError()
+		if err.Kind != servexerr.KindPermissionDenied {
+			t.Error("ToError should preserve semantic kind")
+		}
 	})
+}
+
+func TestCodeToErrorSetsKindWithoutLosingExactMapping(t *testing.T) {
+	cases := []struct {
+		name string
+		code response.Code
+		kind servexerr.Kind
+	}{
+		{"not found", response.CodeNotFound, servexerr.KindNotFound},
+		{"timeout", response.CodeTimeout, servexerr.KindDeadlineExceeded},
+		{"resource exhausted", response.CodeResourceExhausted, servexerr.KindResourceExhausted},
+		{"not implemented", response.CodeNotImplemented, servexerr.KindNotImplemented},
+		{"upstream keeps 502", response.CodeUpstreamError, servexerr.KindUnavailable},
+		{"conflict", response.CodeConflict, servexerr.KindConflict},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.code.ToError()
+			if err.Kind != tt.kind {
+				t.Fatalf("Kind = %v, want %v", err.Kind, tt.kind)
+			}
+		})
+	}
 }
 
 func TestWriteJSON(t *testing.T) {
@@ -313,14 +367,51 @@ func TestWriteFail(t *testing.T) {
 }
 
 func TestWriteError(t *testing.T) {
+	t.Run("default message", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		bizErr := response.CodeForbidden.ToError()
+		err := response.WriteError(w, bizErr)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if w.Code != http.StatusForbidden {
+			t.Errorf("expected 403, got %d", w.Code)
+		}
+	})
+
+	t.Run("localized message", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		bizErr := response.CodeForbidden.ToError()
+		err := response.WriteError(w, bizErr, "en")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		var body response.Response[any]
+		if err := json.NewDecoder(w.Body).Decode(&body); err != nil {
+			t.Fatalf("decode error: %v", err)
+		}
+		if body.Message != "Forbidden" {
+			t.Errorf("expected localized message, got %q", body.Message)
+		}
+	})
+}
+
+func TestWriteLocalizedError(t *testing.T) {
 	w := httptest.NewRecorder()
-	bizErr := response.NewError(response.CodeForbidden)
-	err := response.WriteError(w, bizErr)
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Header.Set("Accept-Language", "en")
+
+	err := response.WriteLocalizedError(w, req, response.CodeNotFound.ToError())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if w.Code != http.StatusForbidden {
-		t.Errorf("expected 403, got %d", w.Code)
+
+	var body response.Response[any]
+	if err := json.NewDecoder(w.Body).Decode(&body); err != nil {
+		t.Fatalf("decode error: %v", err)
+	}
+	if body.Message != "Resource not found" {
+		t.Errorf("expected localized message, got %q", body.Message)
 	}
 }
 
@@ -339,25 +430,38 @@ func TestGRPCConversions(t *testing.T) {
 		}
 	})
 
-	t.Run("GRPCCodeToHTTP", func(t *testing.T) {
-		httpCode := response.GRPCCodeToHTTP(5) // NotFound
-		if httpCode != http.StatusNotFound {
-			t.Errorf("expected 404, got %d", httpCode)
+	t.Run("FromGRPCStatus nil", func(t *testing.T) {
+		code := response.FromGRPCStatus(nil)
+		if code != response.CodeSuccess {
+			t.Error("nil status should return CodeSuccess")
 		}
 	})
 
-	t.Run("HTTPToGRPCCode roundtrip", func(t *testing.T) {
-		tests := []struct {
-			http int
+	t.Run("plain grpc status maps to response codes", func(t *testing.T) {
+		cases := []struct {
+			grpc codes.Code
+			want response.Code
 		}{
-			{200}, {400}, {401}, {403}, {404}, {408}, {409}, {429}, {500}, {501}, {503},
+			{codes.Canceled, response.CodeCanceled},
+			{codes.Unknown, response.CodeUnknown},
+			{codes.DeadlineExceeded, response.CodeTimeout},
+			{codes.ResourceExhausted, response.CodeResourceExhausted},
+			{codes.Unimplemented, response.CodeNotImplemented},
+			{codes.Unavailable, response.CodeServiceUnavailable},
 		}
-		for _, tt := range tests {
-			code := response.HTTPToGRPCCode(tt.http)
-			if code == 0 && tt.http != 200 {
-				// OK is expected for 200
+
+		for _, tt := range cases {
+			st := grpcstatus.New(tt.grpc, tt.want.Message)
+			got := response.FromGRPCStatus(st)
+			if got.Num != tt.want.Num {
+				t.Errorf("%s: Num = %d, want %d", tt.grpc, got.Num, tt.want.Num)
 			}
-			_ = code // Just verify no panic
+			if got.HTTPStatus() != tt.want.HTTPStatus() {
+				t.Errorf("%s: HTTPStatus = %d, want %d", tt.grpc, got.HTTPStatus(), tt.want.HTTPStatus())
+			}
+			if got.GRPCCode() != tt.want.GRPCCode() {
+				t.Errorf("%s: GRPCCode = %v, want %v", tt.grpc, got.GRPCCode(), tt.want.GRPCCode())
+			}
 		}
 	})
 
@@ -365,50 +469,29 @@ func TestGRPCConversions(t *testing.T) {
 	// GRPCStatus → FromGRPCStatus 必须保留细粒度 Num，不能发生降级。
 	t.Run("fine-grained code preserved through gRPC roundtrip", func(t *testing.T) {
 		cases := []response.Code{
-			response.CodeInvalidParam,    // 30001
-			response.CodeMissingParam,    // 30002
-			response.CodeValidationFailed, // 30003
-			response.CodeUnauthorized,    // 20001
-			response.CodeTokenExpired,    // 20003
-			response.CodeTokenInvalid,    // 20004
-			response.CodeInternal,        // 50001
-			response.CodeDatabaseError,   // 50003
+			response.CodeInvalidParam,       // 30001
+			response.CodeMissingParam,       // 30002
+			response.CodeValidationFailed,   // 30003
+			response.CodeUnauthorized,       // 20001
+			response.CodeTokenExpired,       // 20003
+			response.CodeTokenInvalid,       // 20004
+			response.CodeInternal,           // 50001
+			response.CodeDatabaseError,      // 50003
 			response.CodeServiceUnavailable, // 60001
-			response.CodeUpstreamError,   // 60002
+			response.CodeUpstreamError,      // 60002
 		}
 		for _, want := range cases {
-			err := response.NewError(want)
+			err := want.ToError()
 			st := response.GRPCStatus(err)
 			got := response.FromGRPCStatus(st)
 			if got.Num != want.Num {
 				t.Errorf("code %d (%s): after gRPC roundtrip got Num=%d, want %d",
 					want.Num, want.Key, got.Num, want.Num)
 			}
-			if got.HTTPStatus != want.HTTPStatus {
+			if got.HTTPStatus() != want.HTTPStatus() {
 				t.Errorf("code %d: HTTP status got %d, want %d",
-					want.Num, got.HTTPStatus, want.HTTPStatus)
+					want.Num, got.HTTPStatus(), want.HTTPStatus())
 			}
 		}
 	})
-}
-
-func TestIsBusinessError(t *testing.T) {
-	if response.IsBusinessError(errors.New("plain")) {
-		t.Error("plain error should not be business error")
-	}
-	if !response.IsBusinessError(response.NewError(response.CodeNotFound)) {
-		t.Error("business error should be detected")
-	}
-}
-
-func TestAsBusinessError(t *testing.T) {
-	plain := errors.New("plain")
-	if response.AsBusinessError(plain) != nil {
-		t.Error("should return nil for plain error")
-	}
-	bizErr := response.NewError(response.CodeNotFound)
-	got := response.AsBusinessError(bizErr)
-	if got == nil {
-		t.Error("should return business error")
-	}
 }

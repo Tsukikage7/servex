@@ -2,159 +2,71 @@ package response
 
 import (
 	"errors"
-	"fmt"
 
 	servexerr "github.com/Tsukikage7/servex/v2/errors"
 )
 
-// BusinessError 业务错误.
-//
-// Deprecated: 请使用 Code.ToError() 或 errors.New() 创建错误.
-// 此类型保留用于向后兼容，新代码应使用 servex/errors.Error.
-type BusinessError struct {
-	Code    Code   // 错误码
-	Message string // 自定义错误消息（可选）
-	Cause   error  // 原始错误（可选）
-}
-
-// Error 实现 error 接口.
-func (e *BusinessError) Error() string {
-	msg := e.Message
-	if msg == "" {
-		msg = e.Code.Message
-	}
-	if e.Cause != nil {
-		return fmt.Sprintf("%s: %v", msg, e.Cause)
-	}
-	return msg
-}
-
-// Unwrap 返回原始错误.
-func (e *BusinessError) Unwrap() error {
-	return e.Cause
-}
-
-// GetCode 获取错误码.
-func (e *BusinessError) GetCode() Code {
-	return e.Code
-}
-
-// GetMessage 获取错误消息.
-func (e *BusinessError) GetMessage() string {
-	if e.Message != "" {
-		return e.Message
-	}
-	return e.Code.Message
-}
-
-// NewError 创建业务错误.
-//
-// Deprecated: 请使用 Code.ToError() 代替.
-func NewError(code Code) *BusinessError {
-	return &BusinessError{
-		Code: code,
-	}
-}
-
-// NewErrorWithMessage 创建带自定义消息的业务错误.
-//
-// Deprecated: 请使用 Code.ToError().WithMessage(msg) 代替.
-func NewErrorWithMessage(code Code, message string) *BusinessError {
-	return &BusinessError{
-		Code:    code,
-		Message: message,
-	}
-}
-
-// NewErrorWithCause 创建带原始错误的业务错误.
-//
-// Deprecated: 请使用 Code.ToError().WithCause(err) 代替.
-func NewErrorWithCause(code Code, cause error) *BusinessError {
-	return &BusinessError{
-		Code:  code,
-		Cause: cause,
-	}
-}
-
-// NewErrorFull 创建完整的业务错误.
-//
-// Deprecated: 请使用 Code.ToError().WithMessage(msg).WithCause(err) 代替.
-func NewErrorFull(code Code, message string, cause error) *BusinessError {
-	return &BusinessError{
-		Code:    code,
-		Message: message,
-		Cause:   cause,
-	}
-}
-
-// Wrap 包装错误为业务错误.
-//
-// Deprecated: 请使用 Code.ToError().WithCause(err) 代替.
-func Wrap(code Code, err error) *BusinessError {
-	return &BusinessError{
-		Code:  code,
-		Cause: err,
-	}
-}
-
-// WrapWithMessage 包装错误为带消息的业务错误.
-//
-// Deprecated: 请使用 Code.ToError().WithMessage(msg).WithCause(err) 代替.
-func WrapWithMessage(code Code, message string, err error) *BusinessError {
-	return &BusinessError{
-		Code:    code,
-		Message: message,
-		Cause:   err,
-	}
-}
-
-// IsBusinessError 判断是否为业务错误（含 *BusinessError 和 *errors.Error）.
-func IsBusinessError(err error) bool {
-	if _, ok := errors.AsType[*BusinessError](err); ok {
-		return true
-	}
-	_, ok := servexerr.FromError(err)
-	return ok
-}
-
-// AsBusinessError 将错误转换为业务错误.
-//
-// 如果不是业务错误，返回 nil.
-func AsBusinessError(err error) *BusinessError {
-	bizErr, _ := errors.AsType[*BusinessError](err)
-	return bizErr
-}
-
 // ExtractCode 从错误中提取错误码.
 //
-// 如果是业务错误，返回对应的错误码；
+// 如果是 servex/errors.Error，返回对应的错误码；
 // 否则返回 CodeInternal.
 func ExtractCode(err error) Code {
 	if err == nil {
 		return CodeSuccess
 	}
 
-	if bizErr, ok := errors.AsType[*BusinessError](err); ok {
-		return bizErr.Code
-	}
-
 	// 检查是否直接是 Code 类型
 	if code, ok := errors.AsType[Code](err); ok {
-		return code
+		return normalizeCode(code)
 	}
 
 	// 桥接 servex/errors.Error → response.Code
 	if srvErr, ok := servexerr.FromError(err); ok {
-		return Code{
-			Num:        srvErr.Code,
-			Message:    srvErr.Message,
-			HTTPStatus: srvErr.HTTP,
-			GRPCCode:   srvErr.GRPC,
-			Key:        srvErr.Key,
+		code := Code{
+			Num:     srvErr.Code,
+			Message: srvErr.Message,
+			Key:     srvErr.Key,
+			Kind:    srvErr.Kind,
 		}
+		return normalizeCode(code)
 	}
 
 	return CodeInternal
+}
+
+func normalizeCode(code Code) Code {
+	if builtin, ok := lookupBuiltinCode(code.Num, code.Key); ok {
+		if code.Key == "" {
+			code.Key = builtin.Key
+		}
+		if code.Message == "" {
+			code.Message = builtin.Message
+		}
+		if code.Kind == servexerr.KindInternal && code.Num != CodeInternal.Num {
+			code.Kind = builtin.Kind
+		}
+		if code.http == 0 {
+			code.http = builtin.http
+		}
+		return code
+	}
+
+	if code.Message == "" {
+		code.Message = CodeInternal.Message
+	}
+	return code
+}
+
+func lookupBuiltinCode(num int, key string) (Code, bool) {
+	for _, code := range builtinCodes {
+		if num != 0 && code.Num == num {
+			return code, true
+		}
+		if key != "" && code.Key == key {
+			return code, true
+		}
+	}
+	return Code{}, false
 }
 
 // ExtractMetadata 从错误中提取元数据（仅 servex/errors.Error 携带 metadata）.
@@ -178,13 +90,7 @@ func ExtractMessage(err error) string {
 		return CodeSuccess.Message
 	}
 
-	// 先检查 BusinessError/Code（业务明确声明的，可信）
-	if bizErr, ok := errors.AsType[*BusinessError](err); ok {
-		if isInternalCode(bizErr.Code.Num) {
-			return bizErr.Code.Message
-		}
-		return bizErr.GetMessage()
-	}
+	// Code 是业务明确声明的错误码，可信。
 	if code, ok := errors.AsType[Code](err); ok {
 		return code.Message
 	}
@@ -212,13 +118,6 @@ func isInternalCode(code int) bool {
 func ExtractMessageUnsafe(err error) string {
 	if err == nil {
 		return CodeSuccess.Message
-	}
-
-	if bizErr, ok := errors.AsType[*BusinessError](err); ok {
-		if bizErr.Cause != nil {
-			return fmt.Sprintf("%s: %v", bizErr.GetMessage(), bizErr.Cause)
-		}
-		return bizErr.GetMessage()
 	}
 
 	return err.Error()

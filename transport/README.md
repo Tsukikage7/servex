@@ -84,7 +84,6 @@ type HealthEndpoint struct {
 | `EnableReflection` | `bool`          | 是否启用反射     |
 | `KeepaliveTime`    | `time.Duration` | Keepalive 间隔   |
 | `KeepaliveTimeout` | `time.Duration` | Keepalive 超时   |
-| `PublicMethods`    | `[]string`      | 公开方法列表     |
 
 #### GatewayConfig
 
@@ -93,7 +92,6 @@ type HealthEndpoint struct {
 | `Name`          | `string`        | 服务器名称     |
 | `GRPCAddr`      | `string`        | gRPC 监听地址  |
 | `HTTPAddr`      | `string`        | HTTP 监听地址  |
-| `PublicMethods` | `[]string`      | 公开方法列表   |
 | `KeepaliveTime` | `time.Duration` | Keepalive 间隔 |
 
 ## 目录结构

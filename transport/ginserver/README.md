@@ -61,7 +61,7 @@ type CreateUserReq struct {
 
 func (r *CreateUserReq) Validate() error {
     if len(r.Name) > 50 {
-        return response.NewError(response.CodeInvalidParam)
+        return response.CodeInvalidParam.ToError()
     }
     return nil
 }

@@ -15,13 +15,6 @@ import (
 	"github.com/Tsukikage7/servex/v2/validation"
 )
 
-// Validatable 可由请求对象实现以启用自动校验.
-//
-// Handle/HandleWith 在解码后自动调用 Validate()，无需额外配置.
-//
-// Deprecated: 请直接使用 validation.Validatable.
-type Validatable = validation.Validatable
-
 // Handle 创建类型安全的 Hertz HandlerFunc，自动处理 JSON 解码、校验与统一响应格式.
 //
 // 适用于请求体为 JSON 的场景（POST/PUT/PATCH）。
@@ -44,7 +37,7 @@ func Handle[Req any, Resp any](fn func(ctx context.Context, req Req) (Resp, erro
 			return
 		}
 
-		if v, ok := any(&req).(Validatable); ok {
+		if v, ok := any(&req).(validation.Validatable); ok {
 			if err := v.Validate(); err != nil {
 				writeError(ctx, c, err)
 				return
@@ -87,7 +80,7 @@ func HandleWith[Req any, Resp any](
 			return
 		}
 
-		if v, ok := any(&req).(Validatable); ok {
+		if v, ok := any(&req).(validation.Validatable); ok {
 			if err := v.Validate(); err != nil {
 				writeError(ctx, c, err)
 				return
@@ -112,7 +105,7 @@ func writeError(_ context.Context, c *app.RequestContext, err error) {
 	lang := string(c.Request.Header.Get("Accept-Language"))
 	message := response.LocalizedMessage(err, lang)
 
-	c.JSON(code.HTTPStatus, response.Response[any]{
+	c.JSON(code.HTTPStatus(), response.Response[any]{
 		Code:    code.Num,
 		Message: message,
 	})

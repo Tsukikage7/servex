@@ -17,7 +17,7 @@ type grpcDetail struct {
 	Code     int               `json:"code"`
 	Key      string            `json:"key"`
 	Message  string            `json:"message"`
-	HTTP     int               `json:"http,omitempty"`
+	Kind     Kind              `json:"kind,omitempty"`
 	Metadata map[string]string `json:"metadata,omitzero"`
 }
 
@@ -33,13 +33,13 @@ func ToGRPCStatus(err error) *status.Status {
 
 	e, ok := FromError(err)
 	if !ok {
+		if st, ok := status.FromError(err); ok {
+			return st
+		}
 		return status.New(codes.Internal, "内部错误")
 	}
 
-	code := e.GRPC
-	if code == codes.OK {
-		code = codes.Internal
-	}
+	code := e.Kind.GRPCCode()
 
 	// 内部错误（5xxxx、6xxxx）不透传详细消息，避免暴露敏感信息.
 	// 业务码 1xxxxx+ 不受影响.
@@ -52,7 +52,7 @@ func ToGRPCStatus(err error) *status.Status {
 		Code:     e.Code,
 		Key:      e.Key,
 		Message:  message,
-		HTTP:     e.HTTP,
+		Kind:     e.Kind,
 		Metadata: e.Metadata,
 	}
 	detailJSON, jsonErr := json.Marshal(detail)
@@ -116,34 +116,29 @@ func ToGRPCStatus(err error) *status.Status {
 	return st
 }
 
-// FromGRPCStatus 从 gRPC Status 还原 *Error.
-// 优先从标准 errdetails（ErrorInfo）中提取结构化信息，
-// 再从 message JSON 中补全 Code 等自定义字段.
-// 同时解析 BadRequest 和 RetryInfo 并合并到 Metadata.
+// FromGRPCStatus 从 servex/errors 生成的 gRPC Status 还原 *Error.
+// 非 servex 格式的 status 返回 nil，由调用方决定是否按原生 gRPC code 处理.
+// 解析 ErrorInfo、BadRequest 和 RetryInfo 并合并到 Metadata.
 func FromGRPCStatus(st *status.Status) *Error {
 	if st == nil || st.Code() == codes.OK {
 		return nil
 	}
 
-	result := &Error{
-		GRPC: st.Code(),
-	}
+	result := &Error{}
 
-	// 尝试从 message JSON 中还原基本字段
+	// servex/errors.ToGRPCStatus 会在 message 中写入统一 JSON 详情。
 	var detail grpcDetail
 	jsonOK := json.Unmarshal([]byte(st.Message()), &detail) == nil && detail.Code != 0
 
-	if jsonOK {
-		result.Code = detail.Code
-		result.Key = detail.Key
-		result.Message = detail.Message
-		result.HTTP = detail.HTTP
-		result.Metadata = detail.Metadata
-	} else {
-		result.Code = int(st.Code())
-		result.Key = st.Code().String()
-		result.Message = st.Message()
+	if !jsonOK {
+		return nil
 	}
+
+	result.Code = detail.Code
+	result.Key = detail.Key
+	result.Message = detail.Message
+	result.Kind = detail.Kind
+	result.Metadata = detail.Metadata
 
 	// 确保 Metadata 已初始化
 	if result.Metadata == nil {
@@ -154,10 +149,6 @@ func FromGRPCStatus(st *status.Status) *Error {
 	for _, d := range st.Details() {
 		switch v := d.(type) {
 		case *errdetails.ErrorInfo:
-			// 如果 JSON 还原失败，则从 ErrorInfo 中补全 Key
-			if !jsonOK && v.Reason != "" {
-				result.Key = v.Reason
-			}
 			// 合并 ErrorInfo.Metadata（不覆盖已有的）
 			for mk, mv := range v.Metadata {
 				if _, exists := result.Metadata[mk]; !exists {

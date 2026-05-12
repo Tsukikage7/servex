@@ -48,27 +48,6 @@ type RequestFunc func(ctx context.Context, r *http.Request) context.Context
 // 在 endpoint 调用之后、写入响应之前执行.
 type ResponseFunc func(ctx context.Context, w http.ResponseWriter) context.Context
 
-// Validatable 可由请求对象实现以启用自动校验.
-//
-// Handle 和 HandleWith 会在解码后自动调用 Validate()，无需额外配置.
-// 可在 Validate() 内使用任意校验库（如 go-playground/validator）.
-//
-// 示例：
-//
-//	type CreateUserReq struct {
-//	    Name  string `json:"name"  validate:"required,min=2"`
-//	    Email string `json:"email" validate:"required,email"`
-//	}
-//
-//	var validate = validator.New()
-//
-//	func (r CreateUserReq) Validate() error {
-//	    return validate.Struct(r)
-//	}
-//
-// Deprecated: 请直接使用 validation.Validatable.
-type Validatable = validation.Validatable
-
 // EndpointHandler 将 Endpoint 包装为 http.Handler.
 //
 // 示例：
@@ -203,7 +182,7 @@ func WithValidate(validators ...func(any) error) EndpointOption {
 
 // checkValidatable 检查请求是否实现 Validatable 接口并调用之.
 func checkValidatable(req any) error {
-	if v, ok := req.(Validatable); ok {
+	if v, ok := req.(validation.Validatable); ok {
 		return v.Validate()
 	}
 	return nil
@@ -229,7 +208,7 @@ func WithResponse() EndpointOption {
 
 // defaultErrorEncoder 默认错误编码器.
 func defaultErrorEncoder(_ context.Context, err error, w http.ResponseWriter) {
-	slog.Error("HTTP 请求处理失败", slog.String("error", err.Error()))
+	slog.Error("[HTTP] 请求处理失败", slog.String("error", err.Error()))
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write([]byte("内部服务器错误"))
@@ -254,7 +233,7 @@ func responseErrorEncoder(ctx context.Context, err error, w http.ResponseWriter)
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(code.HTTPStatus)
+	w.WriteHeader(code.HTTPStatus())
 	_ = json.NewEncoder(w).Encode(resp)
 }
 

@@ -3,12 +3,12 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/errors"
+import "github.com/Tsukikage7/servex/v2/errors"
 ```
 
 ## 简介
 
-`errors` 包提供统一的业务错误类型 `Error`，包含业务码（Code）、键（Key）、消息（Message）以及可选的 HTTP 状态码和 gRPC Code 映射。支持错误链（`WithCause`）、元数据附加（`WithMeta`）和 `errors.Is` 按 Code 比较。内置 HTTP 响应写入和 gRPC Status 转换工具。
+`errors` 包提供统一的业务错误类型 `Error`，包含业务码（Code）、键（Key）、消息（Message）和业务语义（Kind）。HTTP 状态码与 gRPC Code 统一由 `Kind` 推导。支持错误链（`WithCause`）、元数据附加（`WithMeta`）和 `errors.Is` 按 Code 比较。内置 HTTP 响应写入和 gRPC Status 转换工具。
 
 ## 核心类型
 
@@ -16,8 +16,10 @@ import "github.com/Tsukikage7/servex/errors"
 |---|---|
 | `Error` | 统一业务错误类型 |
 | `New(code, key, message)` | 创建错误定义（通常作为包级变量） |
-| `WithHTTP(status)` | 绑定 HTTP 状态码 |
-| `WithGRPC(code)` | 绑定 gRPC Code |
+| `NewWithKind(code, key, message, kind)` | 创建带业务语义映射的错误定义 |
+| `WithKind(kind)` | 绑定业务语义，HTTP/gRPC 映射由 Kind 推导 |
+| `Kind.HTTPStatus()` | 获取 Kind 对应的 HTTP 状态码 |
+| `Kind.GRPCCode()` | 获取 Kind 对应的 gRPC Code |
 | `WithCause(err)` | 包装底层错误（返回新实例） |
 | `WithMeta(key, value)` | 附加元数据（返回新实例） |
 | `WithMessage(msg)` | 覆盖消息（返回新实例） |
@@ -34,21 +36,25 @@ package main
 
 import (
     "fmt"
-    "net/http"
 
-    "google.golang.org/grpc/codes"
-
-    "github.com/Tsukikage7/servex/errors"
+    "github.com/Tsukikage7/servex/v2/errors"
 )
 
 // 定义错误（通常在包级别）
 var (
-    ErrUserNotFound = errors.New(404001, "user_not_found", "用户不存在").
-        WithHTTP(http.StatusNotFound).
-        WithGRPC(codes.NotFound)
+    ErrUserNotFound = errors.NewWithKind(
+        404001,
+        "user_not_found",
+        "用户不存在",
+        errors.KindNotFound,
+    )
 
-    ErrUnauthorized = errors.New(401001, "unauthorized", "未授权").
-        WithHTTP(http.StatusUnauthorized)
+    ErrUnauthorized = errors.NewWithKind(
+        401001,
+        "unauthorized",
+        "未授权",
+        errors.KindUnauthenticated,
+    )
 )
 
 func main() {

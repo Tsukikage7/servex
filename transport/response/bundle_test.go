@@ -6,6 +6,7 @@ import (
 
 	"golang.org/x/text/language"
 
+	servexerr "github.com/Tsukikage7/servex/v2/errors"
 	"github.com/Tsukikage7/servex/v2/i18n"
 	"github.com/Tsukikage7/servex/v2/transport/response"
 )
@@ -18,7 +19,7 @@ func TestLocalizedMessage_Nil(t *testing.T) {
 }
 
 func TestLocalizedMessage_DefaultChinese(t *testing.T) {
-	err := response.NewError(response.CodeNotFound)
+	err := response.CodeNotFound.ToError()
 	got := response.LocalizedMessage(err)
 	if got != "资源不存在" {
 		t.Errorf("got %q, want %q", got, "资源不存在")
@@ -26,7 +27,7 @@ func TestLocalizedMessage_DefaultChinese(t *testing.T) {
 }
 
 func TestLocalizedMessage_English(t *testing.T) {
-	err := response.NewError(response.CodeNotFound)
+	err := response.CodeNotFound.ToError()
 	got := response.LocalizedMessage(err, "en")
 	if got != "Resource not found" {
 		t.Errorf("got %q, want %q", got, "Resource not found")
@@ -34,7 +35,7 @@ func TestLocalizedMessage_English(t *testing.T) {
 }
 
 func TestLocalizedMessage_CustomMessage(t *testing.T) {
-	err := response.NewErrorWithMessage(response.CodeInvalidParam, "用户名不能为空")
+	err := response.CodeInvalidParam.ToError().WithMessage("用户名不能为空")
 	// 业务层自定义消息优先于 i18n 翻译
 	got := response.LocalizedMessage(err, "en")
 	if got != "用户名不能为空" {
@@ -42,8 +43,24 @@ func TestLocalizedMessage_CustomMessage(t *testing.T) {
 	}
 }
 
+func TestLocalizedMessage_CodeWithCustomMessage(t *testing.T) {
+	err := response.CodeInvalidParam.WithMessage("用户名不能为空")
+	got := response.LocalizedMessage(err, "en")
+	if got != "用户名不能为空" {
+		t.Errorf("got %q, want %q", got, "用户名不能为空")
+	}
+}
+
+func TestLocalizedMessage_ErrorsPackageCustomMessage(t *testing.T) {
+	err := servexerr.New(response.CodeNotFound.Num, response.CodeNotFound.Key, "用户不存在")
+	got := response.LocalizedMessage(err, "en")
+	if got != "用户不存在" {
+		t.Errorf("got %q, want %q", got, "用户不存在")
+	}
+}
+
 func TestLocalizedMessage_InternalError_HidesDetail(t *testing.T) {
-	bizErr := response.NewErrorFull(response.CodeInternal, "敏感数据库信息", errors.New("sql: no rows"))
+	bizErr := response.CodeInternal.ToError().WithMessage("敏感数据库信息").WithCause(errors.New("sql: no rows"))
 	got := response.LocalizedMessage(bizErr)
 	// 5xxxx 错误隐藏细节，返回 Code.Key 的翻译
 	if got != "服务器内部错误" {
@@ -56,7 +73,7 @@ func TestLocalizedMessage_InternalError_HidesDetail(t *testing.T) {
 }
 
 func TestLocalizedMessage_AcceptLanguageHeader(t *testing.T) {
-	err := response.NewError(response.CodeUnauthorized)
+	err := response.CodeUnauthorized.ToError()
 	// 模拟 Accept-Language: en-US,en;q=0.9
 	got := response.LocalizedMessage(err, "en-US,en;q=0.9")
 	if got != "Unauthorized" {
@@ -66,12 +83,12 @@ func TestLocalizedMessage_AcceptLanguageHeader(t *testing.T) {
 
 func TestLocalizedMessage_FallbackToCode_WhenNoKey(t *testing.T) {
 	customCode := response.Code{
-		Num:        99001,
-		Message:    "自定义错误",
-		HTTPStatus: 400,
+		Num:     99001,
+		Message: "自定义错误",
+		Kind:    servexerr.KindInvalidArgument,
 		// 没有设置 Key
 	}
-	err := response.NewError(customCode)
+	err := customCode.ToError()
 	got := response.LocalizedMessage(err, "en")
 	// 无 Key 时直接返回 Message
 	if got != "自定义错误" {
@@ -92,11 +109,48 @@ func TestSetBundle_CustomBundle(t *testing.T) {
 	})
 	response.SetBundle(custom)
 
-	err := response.NewError(response.CodeNotFound)
+	err := response.CodeNotFound.ToError()
 	if got := response.LocalizedMessage(err, "zh"); got != "找不到该资源（自定义）" {
 		t.Errorf("zh: got %q", got)
 	}
 	if got := response.LocalizedMessage(err, "en"); got != "Custom: resource not found" {
 		t.Errorf("en: got %q", got)
+	}
+}
+
+func TestSetBundle_NilRestoresBuiltinBundle(t *testing.T) {
+	orig := response.GetBundle()
+	defer response.SetBundle(orig)
+
+	response.SetBundle(nil)
+
+	err := response.CodeNotFound.ToError()
+	if got := response.LocalizedMessage(err, "en"); got != "Resource not found" {
+		t.Errorf("got %q, want %q", got, "Resource not found")
+	}
+}
+
+func TestLocalizedMessage_CustomCodeUsesI18nKey(t *testing.T) {
+	orig := response.GetBundle()
+	defer response.SetBundle(orig)
+
+	custom := i18n.NewBundle(language.Chinese)
+	custom.LoadMessages(language.Chinese, map[string]string{
+		"error.user_banned": "账号已封禁",
+	})
+	custom.LoadMessages(language.English, map[string]string{
+		"error.user_banned": "User is banned",
+	})
+	response.SetBundle(custom)
+
+	err := response.Code{
+		Num:     40010,
+		Message: "账号已封禁",
+		Key:     "error.user_banned",
+		Kind:    servexerr.KindPermissionDenied,
+	}.ToError()
+
+	if got := response.LocalizedMessage(err, "en"); got != "User is banned" {
+		t.Errorf("got %q, want %q", got, "User is banned")
 	}
 }
