@@ -33,5 +33,5 @@ func WithPollInterval(d time.Duration) WorkerOption {
 
 // WithLogger 设置 Worker 的日志器.
 func WithLogger(log logger.Logger) WorkerOption {
-	return func(o *workerOptions) { o.logger = log }
+	return func(o *workerOptions) { o.logger = logger.WithComponent(log, "JobQueue") }
 }

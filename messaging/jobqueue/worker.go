@@ -156,7 +156,7 @@ func (w *worker) markDoneWithRetry(ctx context.Context, id string) {
 
 func (w *worker) logErrorf(format string, args ...any) {
 	if w.opts.logger != nil {
-		w.opts.logger.Errorf("[JobQueue] "+format, args...)
+		w.opts.logger.Errorf(format, args...)
 	}
 }
 
