@@ -42,9 +42,10 @@ for msg := range ch {
 import (
     "github.com/Tsukikage7/servex/v2/messaging/jobqueue"
     "github.com/Tsukikage7/servex/v2/messaging/jobqueue/factory"
+    _ "github.com/Tsukikage7/servex/v2/messaging/jobqueue/factory/redis"
 )
 
-// factory.StoreConfig 支持 "redis", "kafka", "rabbitmq", "database" 四种 Type
+// 使用哪个后端就 blank import 对应 factory/<driver> 注册包
 store, _ := factory.NewStore(&factory.StoreConfig{
     Type: "redis",
     Addr: "localhost:6379",

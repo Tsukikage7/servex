@@ -3,21 +3,31 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/messaging/jobqueue/factory"
+import "github.com/Tsukikage7/servex/v2/messaging/jobqueue/factory"
 ```
 
 ## 简介
 
-`messaging/jobqueue/factory` 提供配置驱动的任务队列存储工厂，通过 `StoreConfig` 结构体统一创建 `jobqueue.Store`，支持 Redis、Kafka、RabbitMQ 和数据库（MySQL/PostgreSQL/SQLite）四种后端。
+`messaging/jobqueue/factory` 提供配置驱动的任务队列存储工厂，通过 `StoreConfig` 结构体统一创建 `jobqueue.Store`。
+
+factory 核心包不直接导入 Redis、Kafka、RabbitMQ 或数据库后端，避免业务只使用 factory 时被动拉入未使用的间接依赖。使用哪个后端，就按需 blank import 对应注册包。
 
 ## 核心类型
 
 | 类型 / 函数 | 说明 |
 |---|---|
 | `StoreConfig` | 存储配置，`Type` 字段决定后端类型 |
-| `NewStore(cfg)` | 根据配置创建对应的 `jobqueue.Store` |
+| `NewStore(cfg)` | 根据已注册的后端类型创建 `jobqueue.Store` |
+| `RegisterStore(type, creator)` | 注册自定义后端 |
 
-`StoreConfig.Type` 支持的值：`"redis"`、`"kafka"`、`"rabbitmq"`、`"database"`
+内置注册包：
+
+| Type | 注册包 |
+|---|---|
+| `redis` | `messaging/jobqueue/factory/redis` |
+| `kafka` | `messaging/jobqueue/factory/kafka` |
+| `rabbitmq` | `messaging/jobqueue/factory/rabbitmq` |
+| `database` | `messaging/jobqueue/factory/database` |
 
 ## 示例
 
@@ -29,8 +39,9 @@ import (
     "fmt"
     "time"
 
-    "github.com/Tsukikage7/servex/messaging/jobqueue"
-    "github.com/Tsukikage7/servex/messaging/jobqueue/factory"
+    "github.com/Tsukikage7/servex/v2/messaging/jobqueue"
+    "github.com/Tsukikage7/servex/v2/messaging/jobqueue/factory"
+    _ "github.com/Tsukikage7/servex/v2/messaging/jobqueue/factory/redis"
 )
 
 func main() {
@@ -71,7 +82,7 @@ func main() {
     fmt.Printf("任务: %s (type=%s)\n", j.ID, j.Type)
     store.MarkDone(ctx, j.ID)
 
-    // 切换到数据库后端只需更改配置
+    // 切换到数据库后端时，改为 blank import factory/database 并更改配置
     _ = &factory.StoreConfig{
         Type:   "database",
         Driver: "postgres",

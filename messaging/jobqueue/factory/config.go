@@ -4,13 +4,21 @@ package factory
 import (
 	"errors"
 	"fmt"
+	"strings"
+	"sync"
 
 	"github.com/Tsukikage7/servex/v2/messaging/jobqueue"
-	"github.com/Tsukikage7/servex/v2/messaging/jobqueue/database"
-	"github.com/Tsukikage7/servex/v2/messaging/jobqueue/kafka"
-	"github.com/Tsukikage7/servex/v2/messaging/jobqueue/rabbitmq"
-	jqredis "github.com/Tsukikage7/servex/v2/messaging/jobqueue/redis"
 )
+
+// StoreCreator 根据 StoreConfig 创建 jobqueue.Store.
+type StoreCreator func(*StoreConfig) (jobqueue.Store, error)
+
+var registry = struct {
+	sync.RWMutex
+	creators map[string]StoreCreator
+}{
+	creators: make(map[string]StoreCreator),
+}
 
 // StoreConfig 配置任务存储后端.
 type StoreConfig struct {
@@ -45,18 +53,56 @@ func NewStore(cfg *StoreConfig) (jobqueue.Store, error) {
 	if cfg == nil {
 		return nil, errors.New("jobqueue/factory: StoreConfig 不能为空")
 	}
-	switch cfg.Type {
-	case "redis":
-		return jqredis.NewStoreFromConfig(cfg.Addr, cfg.Password, cfg.DB, cfg.Prefix)
-	case "kafka":
-		return kafka.NewStoreFromConfig(cfg.Brokers, cfg.Prefix)
-	case "rabbitmq":
-		return rabbitmq.NewStoreFromConfig(cfg.URL)
-	case "database":
-		return database.NewStoreFromConfig(cfg.Driver, cfg.DSN, cfg.Table)
-	default:
+	storeType := normalizeType(cfg.Type)
+	if storeType == "" {
+		return nil, errors.New("jobqueue/factory: 存储类型不能为空")
+	}
+	creator, ok := lookup(storeType)
+	if !ok {
 		return nil, fmt.Errorf("jobqueue/factory: 不支持的存储类型 %q", cfg.Type)
 	}
+	return creator(cfg)
+}
+
+// RegisterStore 注册 Store 创建器.
+//
+// factory 包本身不导入 Redis/Kafka/RabbitMQ/Database 后端，避免业务仅使用
+// factory 时被动拉入未使用的间接依赖。按需导入
+// messaging/jobqueue/factory/<driver> 注册包即可启用对应类型。
+func RegisterStore(storeType string, creator StoreCreator) error {
+	storeType = normalizeType(storeType)
+	if storeType == "" {
+		return errors.New("jobqueue/factory: 存储类型不能为空")
+	}
+	if creator == nil {
+		return errors.New("jobqueue/factory: StoreCreator 不能为空")
+	}
+
+	registry.Lock()
+	defer registry.Unlock()
+	if _, exists := registry.creators[storeType]; exists {
+		return fmt.Errorf("jobqueue/factory: 存储类型 %q 已注册", storeType)
+	}
+	registry.creators[storeType] = creator
+	return nil
+}
+
+// MustRegisterStore 注册 Store 创建器，失败时 panic.
+func MustRegisterStore(storeType string, creator StoreCreator) {
+	if err := RegisterStore(storeType, creator); err != nil {
+		panic(err)
+	}
+}
+
+func lookup(storeType string) (StoreCreator, bool) {
+	registry.RLock()
+	defer registry.RUnlock()
+	creator, ok := registry.creators[storeType]
+	return creator, ok
+}
+
+func normalizeType(storeType string) string {
+	return strings.ToLower(strings.TrimSpace(storeType))
 }
 
 // NewClient 根据 StoreConfig 创建 Client.

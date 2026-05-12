@@ -110,39 +110,21 @@ pending --Dequeue--> running --成功--> done（删除）
 
 ## 使用示例
 
-### Config 驱动（推荐）
+### Config 驱动（按需注册）
 
-通过 `jobqueue/factory` 包，只需一个 `StoreConfig` 即可创建 Store，无需直接依赖各后端包。
+`jobqueue/factory` 核心包只维护配置和注册表，不直接导入 Redis/Kafka/RabbitMQ/Database 后端，避免拉入当前不用的间接依赖。使用哪个后端，就 blank import 对应注册包。
 
 ```go
 import (
-    "github.com/Tsukikage7/servex/jobqueue"
-    "github.com/Tsukikage7/servex/jobqueue/factory"
+    "github.com/Tsukikage7/servex/v2/messaging/jobqueue"
+    "github.com/Tsukikage7/servex/v2/messaging/jobqueue/factory"
+    _ "github.com/Tsukikage7/servex/v2/messaging/jobqueue/factory/redis"
 )
 
 // Redis Store
 store, _ := factory.NewStore(&factory.StoreConfig{
     Type: "redis",
     Addr: "localhost:6379",
-})
-
-// Kafka Store
-store, _ := factory.NewStore(&factory.StoreConfig{
-    Type:    "kafka",
-    Brokers: []string{"localhost:9092"},
-})
-
-// RabbitMQ Store
-store, _ := factory.NewStore(&factory.StoreConfig{
-    Type: "rabbitmq",
-    URL:  "amqp://localhost",
-})
-
-// Database Store
-store, _ := factory.NewStore(&factory.StoreConfig{
-    Type:   "database",
-    Driver: "mysql",
-    DSN:    "user:pass@tcp(localhost:3306)/dbname",
 })
 
 // 投递端
@@ -188,6 +170,15 @@ w.Start(ctx)
 | `Driver` | `string` | Database | `"mysql"`, `"postgres"`, `"sqlite"` |
 | `DSN` | `string` | Database | 数据库连接字符串 |
 | `Table` | `string` | Database | 表名 |
+
+按需注册包：
+
+| Type | 注册包 |
+|------|--------|
+| `redis` | `messaging/jobqueue/factory/redis` |
+| `kafka` | `messaging/jobqueue/factory/kafka` |
+| `rabbitmq` | `messaging/jobqueue/factory/rabbitmq` |
+| `database` | `messaging/jobqueue/factory/database` |
 
 ### 高级用法（直接使用 driver）
 

@@ -272,7 +272,7 @@ myproject/
 | [messaging/pubsub/rabbitmq](./messaging/pubsub/rabbitmq/) | RabbitMQ driver | `NewPublisher` / `NewSubscriber` |
 | [messaging/pubsub/redis](./messaging/pubsub/redis/) | Redis Streams driver | `NewPublisher` / `NewSubscriber` |
 | [messaging/jobqueue](./messaging/jobqueue/) | 异步任务队列（延迟、优先级、重试、死信） | `NewClient` / `NewWorker` |
-| [messaging/jobqueue/factory](./messaging/jobqueue/factory/) | **Config 驱动工厂（推荐）** | `NewStore` |
+| [messaging/jobqueue/factory](./messaging/jobqueue/factory/) | Config 驱动工厂（后端按需注册） | `NewStore` |
 | [messaging/jobqueue/redis](./messaging/jobqueue/redis/) | Redis Store | `NewStore` |
 | [messaging/jobqueue/kafka](./messaging/jobqueue/kafka/) | Kafka Store | `NewStore` |
 | [messaging/jobqueue/rabbitmq](./messaging/jobqueue/rabbitmq/) | RabbitMQ Store | `NewStore` |
