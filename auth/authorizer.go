@@ -45,7 +45,7 @@ func (a *MethodAuthorizer) Authorize(ctx context.Context, principal *Principal, 
 	if a == nil {
 		return nil
 	}
-	rule, ok := a.rules[target.Resource]
+	rule, ok := a.rules[target.Method]
 	if !ok {
 		return nil
 	}

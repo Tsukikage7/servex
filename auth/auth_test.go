@@ -222,14 +222,42 @@ func TestMethodAuthorizer(t *testing.T) {
 		}),
 	})
 
-	if err := authorizer.Authorize(ctx, principal, Target{Resource: "/svc.Admin/Create"}); err != nil {
+	if err := authorizer.Authorize(ctx, principal, Target{Method: "/svc.Admin/Create"}); err != nil {
 		t.Fatalf("Authorize 失败: %v", err)
 	}
 	if gotAction != "create" || gotResource != "admin" {
 		t.Fatalf("授权目标 = %q/%q, want create/admin", gotAction, gotResource)
 	}
-	if err := authorizer.Authorize(ctx, principal, Target{Resource: "/svc.Admin/List"}); err != nil {
+	if err := authorizer.Authorize(ctx, principal, Target{Method: "/svc.Admin/List"}); err != nil {
 		t.Fatalf("未配置方法应放行: %v", err)
+	}
+}
+
+func TestMethodAuthorizerUsesTargetMethod(t *testing.T) {
+	ctx := t.Context()
+	principal := &Principal{ID: "user-1"}
+	called := false
+	authorizer := NewMethodAuthorizer(MethodRule{
+		Method:   "/svc.Admin/Create",
+		Action:   "create",
+		Resource: "admin",
+		Authorizer: AuthorizerFunc(func(_ context.Context, _ *Principal, target Target) error {
+			called = true
+			if target.Resource != "admin" || target.Action != "create" {
+				t.Fatalf("授权目标 = %q/%q, want admin/create", target.Resource, target.Action)
+			}
+			return nil
+		}),
+	})
+
+	if err := authorizer.Authorize(ctx, principal, Target{
+		Method:   "/svc.Admin/Create",
+		Resource: "proto-declared-resource",
+	}); err != nil {
+		t.Fatalf("Authorize 失败: %v", err)
+	}
+	if !called {
+		t.Fatal("应按 target.Method 命中方法规则")
 	}
 }
 
