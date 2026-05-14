@@ -2,6 +2,7 @@ package cache_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -23,6 +24,12 @@ func (m *mockEmbedding) EmbedTexts(_ context.Context, _ []string, _ ...llm.CallO
 	v := m.vectors[m.idx%len(m.vectors)]
 	m.idx++
 	return &llm.EmbedResponse{Embeddings: [][]float32{v}}, nil
+}
+
+type emptyEmbedding struct{}
+
+func (emptyEmbedding) EmbedTexts(context.Context, []string, ...llm.CallOption) (*llm.EmbedResponse, error) {
+	return &llm.EmbedResponse{}, nil
 }
 
 // mockChat 模拟聊天模型，每次调用返回固定响应并计数.
@@ -161,12 +168,15 @@ func TestNewCachedModel(t *testing.T) {
 	}
 	chat := &mockChat{response: chatResp}
 
-	model := cache.NewCachedModel(chat, &cache.Config{
+	model, err := cache.NewCachedModel(chat, &cache.Config{
 		EmbeddingModel: embed,
 		Store:          cache.NewMemoryStore(),
 		Threshold:      0.95,
 		TTL:            time.Minute,
 	})
+	if err != nil {
+		t.Fatalf("NewCachedModel 失败: %v", err)
+	}
 
 	ctx := t.Context()
 	msgs := []llm.Message{llm.UserMessage("你好")}
@@ -193,5 +203,53 @@ func TestNewCachedModel(t *testing.T) {
 	}
 	if chat.callCount != 1 {
 		t.Errorf("缓存命中后底层模型调用次数应仍为 1，实际 %d 次", chat.callCount)
+	}
+}
+
+func TestMiddlewareRejectsInvalidConfig(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name string
+		cfg  *cache.Config
+		want error
+	}{
+		{name: "nil config", cfg: nil, want: cache.ErrNilConfig},
+		{name: "nil embedding", cfg: &cache.Config{Store: cache.NewMemoryStore()}, want: cache.ErrNilEmbeddingModel},
+		{name: "nil store", cfg: &cache.Config{EmbeddingModel: &mockEmbedding{vectors: [][]float32{{1}}}}, want: cache.ErrNilStore},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := cache.Middleware(tc.cfg)
+			if !errors.Is(err, tc.want) {
+				t.Fatalf("期望 %v, 得到 %v", tc.want, err)
+			}
+		})
+	}
+}
+
+func TestMiddlewareBypassesCacheWhenEmbeddingResponseIsEmpty(t *testing.T) {
+	t.Parallel()
+
+	mw, err := cache.Middleware(&cache.Config{
+		EmbeddingModel: emptyEmbedding{},
+		Store:          cache.NewMemoryStore(),
+	})
+	if err != nil {
+		t.Fatalf("Middleware 失败: %v", err)
+	}
+	chat := &mockChat{response: &llm.ChatResponse{Message: llm.AssistantMessage("fallback")}}
+	model := mw(chat)
+
+	resp, err := model.Generate(t.Context(), []llm.Message{llm.UserMessage("你好")})
+	if err != nil {
+		t.Fatalf("Generate 失败: %v", err)
+	}
+	if resp.Message.Content != "fallback" {
+		t.Fatalf("响应不匹配: %+v", resp)
+	}
+	if chat.callCount != 1 {
+		t.Fatalf("空 embedding 应透传到底层模型, 调用次数 %d", chat.callCount)
 	}
 }

@@ -5,35 +5,35 @@ import (
 	"time"
 
 	"github.com/Tsukikage7/servex/v2/observability/logger"
-	miniox "github.com/Tsukikage7/servex/v2/storage/minio"
+	"github.com/Tsukikage7/servex/v2/storage/minio"
 	"github.com/Tsukikage7/servex/v2/testx"
 )
 
 func TestNewClient_NilConfig(t *testing.T) {
-	_, err := miniox.NewClient(nil)
-	if err != miniox.ErrNilConfig {
+	_, err := minio.NewClient(nil)
+	if err != minio.ErrNilConfig {
 		t.Errorf("期望 ErrNilConfig，得到 %v", err)
 	}
 }
 
 func TestNewClient_EmptyEndpoint(t *testing.T) {
-	cfg := &miniox.Config{Bucket: "test"}
-	_, err := miniox.NewClient(cfg)
-	if err != miniox.ErrEmptyEndpoint {
+	cfg := &minio.Config{Bucket: "test"}
+	_, err := minio.NewClient(cfg)
+	if err != minio.ErrEmptyEndpoint {
 		t.Errorf("期望 ErrEmptyEndpoint，得到 %v", err)
 	}
 }
 
 func TestNewClient_EmptyBucket(t *testing.T) {
-	cfg := &miniox.Config{Endpoint: "localhost:9000"}
-	_, err := miniox.NewClient(cfg)
-	if err != miniox.ErrEmptyBucket {
+	cfg := &minio.Config{Endpoint: "localhost:9000"}
+	_, err := minio.NewClient(cfg)
+	if err != minio.ErrEmptyBucket {
 		t.Errorf("期望 ErrEmptyBucket，得到 %v", err)
 	}
 }
 
 func TestDefaultConfig(t *testing.T) {
-	cfg := miniox.DefaultConfig()
+	cfg := minio.DefaultConfig()
 	if cfg.Region == "" {
 		t.Error("Region 不应为空")
 	}
@@ -45,22 +45,22 @@ func TestDefaultConfig(t *testing.T) {
 func TestConfigValidate(t *testing.T) {
 	tests := []struct {
 		name    string
-		cfg     *miniox.Config
+		cfg     *minio.Config
 		wantErr error
 	}{
 		{
 			name:    "空端点",
-			cfg:     &miniox.Config{Bucket: "test"},
-			wantErr: miniox.ErrEmptyEndpoint,
+			cfg:     &minio.Config{Bucket: "test"},
+			wantErr: minio.ErrEmptyEndpoint,
 		},
 		{
 			name:    "空桶名",
-			cfg:     &miniox.Config{Endpoint: "localhost:9000"},
-			wantErr: miniox.ErrEmptyBucket,
+			cfg:     &minio.Config{Endpoint: "localhost:9000"},
+			wantErr: minio.ErrEmptyBucket,
 		},
 		{
 			name:    "有效配置",
-			cfg:     &miniox.Config{Endpoint: "localhost:9000", Bucket: "test"},
+			cfg:     &minio.Config{Endpoint: "localhost:9000", Bucket: "test"},
 			wantErr: nil,
 		},
 	}
@@ -76,7 +76,7 @@ func TestConfigValidate(t *testing.T) {
 }
 
 func TestConfigApplyDefaults(t *testing.T) {
-	cfg := &miniox.Config{Endpoint: "localhost:9000", Bucket: "test"}
+	cfg := &minio.Config{Endpoint: "localhost:9000", Bucket: "test"}
 	cfg.ApplyDefaults()
 	if cfg.Region == "" {
 		t.Error("ApplyDefaults 后 Region 不应为空")
@@ -87,13 +87,13 @@ func TestConfigApplyDefaults(t *testing.T) {
 }
 
 func TestNewClient_Success(t *testing.T) {
-	cfg := &miniox.Config{
+	cfg := &minio.Config{
 		Endpoint:  "localhost:9000",
 		AccessKey: "minioadmin",
 		SecretKey: "minioadmin",
 		Bucket:    "test",
 	}
-	client, err := miniox.NewClient(cfg)
+	client, err := minio.NewClient(cfg)
 	if err != nil {
 		t.Fatalf("创建客户端失败: %v", err)
 	}
@@ -103,13 +103,13 @@ func TestNewClient_Success(t *testing.T) {
 }
 
 func TestNewClient_WithLogger(t *testing.T) {
-	cfg := &miniox.Config{
+	cfg := &minio.Config{
 		Endpoint:  "localhost:9000",
 		AccessKey: "minioadmin",
 		SecretKey: "minioadmin",
 		Bucket:    "test",
 	}
-	client, err := miniox.NewClient(cfg, miniox.WithLogger(nil))
+	client, err := minio.NewClient(cfg, minio.WithLogger(nil))
 	if err != nil {
 		t.Fatalf("创建客户端失败: %v", err)
 	}
@@ -119,174 +119,174 @@ func TestNewClient_WithLogger(t *testing.T) {
 }
 
 func TestPutObject_EmptyKey(t *testing.T) {
-	cfg := &miniox.Config{
+	cfg := &minio.Config{
 		Endpoint:  "localhost:9000",
 		AccessKey: "minioadmin",
 		SecretKey: "minioadmin",
 		Bucket:    "test",
 	}
-	client, err := miniox.NewClient(cfg)
+	client, err := minio.NewClient(cfg)
 	if err != nil {
 		t.Fatalf("创建客户端失败: %v", err)
 	}
 
 	_, err = client.PutObject(t.Context(), "", nil, 0, "")
-	if err != miniox.ErrEmptyKey {
+	if err != minio.ErrEmptyKey {
 		t.Errorf("期望 ErrEmptyKey，得到 %v", err)
 	}
 }
 
 func TestGetObject_EmptyKey(t *testing.T) {
-	cfg := &miniox.Config{
+	cfg := &minio.Config{
 		Endpoint:  "localhost:9000",
 		AccessKey: "minioadmin",
 		SecretKey: "minioadmin",
 		Bucket:    "test",
 	}
-	client, err := miniox.NewClient(cfg)
+	client, err := minio.NewClient(cfg)
 	if err != nil {
 		t.Fatalf("创建客户端失败: %v", err)
 	}
 
 	_, err = client.GetObject(t.Context(), "")
-	if err != miniox.ErrEmptyKey {
+	if err != minio.ErrEmptyKey {
 		t.Errorf("期望 ErrEmptyKey，得到 %v", err)
 	}
 }
 
 func TestDeleteObject_EmptyKey(t *testing.T) {
-	cfg := &miniox.Config{
+	cfg := &minio.Config{
 		Endpoint:  "localhost:9000",
 		AccessKey: "minioadmin",
 		SecretKey: "minioadmin",
 		Bucket:    "test",
 	}
-	client, err := miniox.NewClient(cfg)
+	client, err := minio.NewClient(cfg)
 	if err != nil {
 		t.Fatalf("创建客户端失败: %v", err)
 	}
 
 	err = client.DeleteObject(t.Context(), "")
-	if err != miniox.ErrEmptyKey {
+	if err != minio.ErrEmptyKey {
 		t.Errorf("期望 ErrEmptyKey，得到 %v", err)
 	}
 }
 
 func TestStatObject_EmptyKey(t *testing.T) {
-	cfg := &miniox.Config{
+	cfg := &minio.Config{
 		Endpoint:  "localhost:9000",
 		AccessKey: "minioadmin",
 		SecretKey: "minioadmin",
 		Bucket:    "test",
 	}
-	client, err := miniox.NewClient(cfg)
+	client, err := minio.NewClient(cfg)
 	if err != nil {
 		t.Fatalf("创建客户端失败: %v", err)
 	}
 
 	_, err = client.StatObject(t.Context(), "")
-	if err != miniox.ErrEmptyKey {
+	if err != minio.ErrEmptyKey {
 		t.Errorf("期望 ErrEmptyKey，得到 %v", err)
 	}
 }
 
 func TestPresignGetObject_EmptyKey(t *testing.T) {
-	cfg := &miniox.Config{
+	cfg := &minio.Config{
 		Endpoint:  "localhost:9000",
 		AccessKey: "minioadmin",
 		SecretKey: "minioadmin",
 		Bucket:    "test",
 	}
-	client, err := miniox.NewClient(cfg)
+	client, err := minio.NewClient(cfg)
 	if err != nil {
 		t.Fatalf("创建客户端失败: %v", err)
 	}
 
 	_, err = client.PresignGetObject(t.Context(), "", 0)
-	if err != miniox.ErrEmptyKey {
+	if err != minio.ErrEmptyKey {
 		t.Errorf("期望 ErrEmptyKey，得到 %v", err)
 	}
 }
 
 func TestPresignPutObject_EmptyKey(t *testing.T) {
-	cfg := &miniox.Config{
+	cfg := &minio.Config{
 		Endpoint:  "localhost:9000",
 		AccessKey: "minioadmin",
 		SecretKey: "minioadmin",
 		Bucket:    "test",
 	}
-	client, err := miniox.NewClient(cfg)
+	client, err := minio.NewClient(cfg)
 	if err != nil {
 		t.Fatalf("创建客户端失败: %v", err)
 	}
 
 	_, err = client.PresignPutObject(t.Context(), "", 0)
-	if err != miniox.ErrEmptyKey {
+	if err != minio.ErrEmptyKey {
 		t.Errorf("期望 ErrEmptyKey，得到 %v", err)
 	}
 }
 
 func TestCopyObject_EmptyKey(t *testing.T) {
-	cfg := &miniox.Config{
+	cfg := &minio.Config{
 		Endpoint:  "localhost:9000",
 		AccessKey: "minioadmin",
 		SecretKey: "minioadmin",
 		Bucket:    "test",
 	}
-	client, err := miniox.NewClient(cfg)
+	client, err := minio.NewClient(cfg)
 	if err != nil {
 		t.Fatalf("创建客户端失败: %v", err)
 	}
 
 	_, err = client.CopyObject(t.Context(), "", "dest")
-	if err != miniox.ErrEmptyKey {
+	if err != minio.ErrEmptyKey {
 		t.Errorf("期望 ErrEmptyKey，得到 %v", err)
 	}
 
 	_, err = client.CopyObject(t.Context(), "src", "")
-	if err != miniox.ErrEmptyKey {
+	if err != minio.ErrEmptyKey {
 		t.Errorf("期望 ErrEmptyKey，得到 %v", err)
 	}
 }
 
 func TestFGetObject_EmptyKey(t *testing.T) {
-	cfg := &miniox.Config{
+	cfg := &minio.Config{
 		Endpoint:  "localhost:9000",
 		AccessKey: "minioadmin",
 		SecretKey: "minioadmin",
 		Bucket:    "test",
 	}
-	client, err := miniox.NewClient(cfg)
+	client, err := minio.NewClient(cfg)
 	if err != nil {
 		t.Fatalf("创建客户端失败: %v", err)
 	}
 
 	err = client.FGetObject(t.Context(), "", "/tmp/test")
-	if err != miniox.ErrEmptyKey {
+	if err != minio.ErrEmptyKey {
 		t.Errorf("期望 ErrEmptyKey，得到 %v", err)
 	}
 }
 
 func TestFPutObject_EmptyKey(t *testing.T) {
-	cfg := &miniox.Config{
+	cfg := &minio.Config{
 		Endpoint:  "localhost:9000",
 		AccessKey: "minioadmin",
 		SecretKey: "minioadmin",
 		Bucket:    "test",
 	}
-	client, err := miniox.NewClient(cfg)
+	client, err := minio.NewClient(cfg)
 	if err != nil {
 		t.Fatalf("创建客户端失败: %v", err)
 	}
 
 	_, err = client.FPutObject(t.Context(), "", "/tmp/test", "")
-	if err != miniox.ErrEmptyKey {
+	if err != minio.ErrEmptyKey {
 		t.Errorf("期望 ErrEmptyKey，得到 %v", err)
 	}
 }
 
 func TestDefaultConfig_Values(t *testing.T) {
-	cfg := miniox.DefaultConfig()
+	cfg := minio.DefaultConfig()
 	if cfg.Region != "us-east-1" {
 		t.Errorf("期望 Region=us-east-1，得到 %s", cfg.Region)
 	}
@@ -299,7 +299,7 @@ func TestDefaultConfig_Values(t *testing.T) {
 }
 
 func TestConfigApplyDefaults_NoOverwrite(t *testing.T) {
-	cfg := &miniox.Config{
+	cfg := &minio.Config{
 		Endpoint:       "localhost:9000",
 		Bucket:         "test",
 		Region:         "eu-west-1",
@@ -316,13 +316,13 @@ func TestConfigApplyDefaults_NoOverwrite(t *testing.T) {
 
 func TestNewClient_WithRealLogger(t *testing.T) {
 	log := testx.NopLogger()
-	cfg := &miniox.Config{
+	cfg := &minio.Config{
 		Endpoint:  "localhost:9000",
 		AccessKey: "minioadmin",
 		SecretKey: "minioadmin",
 		Bucket:    "test",
 	}
-	client, err := miniox.NewClient(cfg, miniox.WithLogger(log))
+	client, err := minio.NewClient(cfg, minio.WithLogger(log))
 	if err != nil {
 		t.Fatalf("创建客户端失败: %v", err)
 	}
@@ -332,14 +332,14 @@ func TestNewClient_WithRealLogger(t *testing.T) {
 }
 
 func TestNewClient_WithSSL(t *testing.T) {
-	cfg := &miniox.Config{
+	cfg := &minio.Config{
 		Endpoint:  "localhost:9000",
 		AccessKey: "minioadmin",
 		SecretKey: "minioadmin",
 		Bucket:    "test",
 		UseSSL:    true,
 	}
-	client, err := miniox.NewClient(cfg)
+	client, err := minio.NewClient(cfg)
 	if err != nil {
 		t.Fatalf("创建客户端失败: %v", err)
 	}
@@ -349,14 +349,14 @@ func TestNewClient_WithSSL(t *testing.T) {
 }
 
 func TestNewClient_WithRegion(t *testing.T) {
-	cfg := &miniox.Config{
+	cfg := &minio.Config{
 		Endpoint:  "localhost:9000",
 		AccessKey: "minioadmin",
 		SecretKey: "minioadmin",
 		Bucket:    "test",
 		Region:    "ap-northeast-1",
 	}
-	client, err := miniox.NewClient(cfg)
+	client, err := minio.NewClient(cfg)
 	if err != nil {
 		t.Fatalf("创建客户端失败: %v", err)
 	}

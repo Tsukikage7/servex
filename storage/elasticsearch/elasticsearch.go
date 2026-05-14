@@ -23,7 +23,7 @@ import (
 	"errors"
 	"time"
 
-	es "github.com/elastic/go-elasticsearch/v8"
+	elasticsearch "github.com/elastic/go-elasticsearch/v8"
 
 	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
@@ -117,7 +117,7 @@ type Client interface {
 	// Close 关闭连接
 	Close() error
 	// Client 获取原生客户端
-	Client() *es.Client
+	Client() *elasticsearch.Client
 }
 
 // Index 索引操作接口.

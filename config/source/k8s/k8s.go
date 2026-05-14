@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 
-	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
@@ -285,9 +285,9 @@ func (w *k8sWatcher) extractData(obj any) ([]*config.KeyValue, error) {
 	var data map[string]string
 
 	switch o := obj.(type) {
-	case *corev1.ConfigMap:
+	case *v1.ConfigMap:
 		data = o.Data
-	case *corev1.Secret:
+	case *v1.Secret:
 		data = make(map[string]string, len(o.Data))
 		for k, v := range o.Data {
 			data[k] = string(v)

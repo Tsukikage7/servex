@@ -1,12 +1,12 @@
 package response_test
 
 import (
-	"errors"
+	stderrors "errors"
 	"testing"
 
 	"golang.org/x/text/language"
 
-	servexerr "github.com/Tsukikage7/servex/v2/errors"
+	servexerrors "github.com/Tsukikage7/servex/v2/errors"
 	"github.com/Tsukikage7/servex/v2/i18n"
 	"github.com/Tsukikage7/servex/v2/transport/response"
 )
@@ -52,7 +52,7 @@ func TestLocalizedMessage_CodeWithCustomMessage(t *testing.T) {
 }
 
 func TestLocalizedMessage_ErrorsPackageCustomMessage(t *testing.T) {
-	err := servexerr.New(response.CodeNotFound.Num, response.CodeNotFound.Key, "用户不存在")
+	err := servexerrors.New(response.CodeNotFound.Num, response.CodeNotFound.Key, "用户不存在")
 	got := response.LocalizedMessage(err, "en")
 	if got != "用户不存在" {
 		t.Errorf("got %q, want %q", got, "用户不存在")
@@ -60,7 +60,7 @@ func TestLocalizedMessage_ErrorsPackageCustomMessage(t *testing.T) {
 }
 
 func TestLocalizedMessage_InternalError_HidesDetail(t *testing.T) {
-	bizErr := response.CodeInternal.ToError().WithMessage("敏感数据库信息").WithCause(errors.New("sql: no rows"))
+	bizErr := response.CodeInternal.ToError().WithMessage("敏感数据库信息").WithCause(stderrors.New("sql: no rows"))
 	got := response.LocalizedMessage(bizErr)
 	// 5xxxx 错误隐藏细节，返回 Code.Key 的翻译
 	if got != "服务器内部错误" {
@@ -85,7 +85,7 @@ func TestLocalizedMessage_FallbackToCode_WhenNoKey(t *testing.T) {
 	customCode := response.Code{
 		Num:     99001,
 		Message: "自定义错误",
-		Kind:    servexerr.KindInvalidArgument,
+		Kind:    servexerrors.KindInvalidArgument,
 		// 没有设置 Key
 	}
 	err := customCode.ToError()
@@ -147,7 +147,7 @@ func TestLocalizedMessage_CustomCodeUsesI18nKey(t *testing.T) {
 		Num:     40010,
 		Message: "账号已封禁",
 		Key:     "error.user_banned",
-		Kind:    servexerr.KindPermissionDenied,
+		Kind:    servexerrors.KindPermissionDenied,
 	}.ToError()
 
 	if got := response.LocalizedMessage(err, "en"); got != "User is banned" {

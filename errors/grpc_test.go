@@ -10,7 +10,7 @@ import (
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	grpcstatus "google.golang.org/grpc/status"
+	"google.golang.org/grpc/status"
 )
 
 func TestToGRPCStatus(t *testing.T) {
@@ -35,7 +35,7 @@ func TestToGRPCStatus(t *testing.T) {
 	})
 
 	t.Run("from plain grpc status", func(t *testing.T) {
-		st := ToGRPCStatus(grpcstatus.Error(codes.PermissionDenied, "禁止访问"))
+		st := ToGRPCStatus(status.Error(codes.PermissionDenied, "禁止访问"))
 		assert.Equal(t, codes.PermissionDenied, st.Code())
 		assert.Equal(t, "禁止访问", st.Message())
 		assert.Nil(t, FromGRPCStatus(st))
@@ -149,7 +149,7 @@ func TestFromGRPCStatus(t *testing.T) {
 	})
 
 	t.Run("from plain grpc status", func(t *testing.T) {
-		st := grpcstatus.New(codes.NotFound, "not found")
+		st := status.New(codes.NotFound, "not found")
 		assert.Nil(t, FromGRPCStatus(st))
 	})
 }
@@ -199,7 +199,7 @@ func TestFromGRPCStatus_Nil(t *testing.T) {
 }
 
 func TestFromGRPCStatus_OK(t *testing.T) {
-	st := grpcstatus.New(codes.OK, "")
+	st := status.New(codes.OK, "")
 	assert.Nil(t, FromGRPCStatus(st))
 }
 
@@ -214,7 +214,7 @@ func TestUnaryServerInterceptor(t *testing.T) {
 		_, err := interceptor(t.Context(), nil, &grpc.UnaryServerInfo{}, handler)
 		require.Error(t, err)
 
-		st, ok := grpcstatus.FromError(err)
+		st, ok := status.FromError(err)
 		require.True(t, ok)
 		assert.Equal(t, codes.Unauthenticated, st.Code())
 	})
@@ -235,7 +235,7 @@ func TestUnaryServerInterceptor(t *testing.T) {
 		_, err := interceptor(t.Context(), nil, &grpc.UnaryServerInfo{}, handler)
 		require.Error(t, err)
 
-		st, ok := grpcstatus.FromError(err)
+		st, ok := status.FromError(err)
 		require.True(t, ok)
 		assert.Equal(t, codes.Internal, st.Code())
 	})

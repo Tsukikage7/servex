@@ -12,7 +12,7 @@
 ## 安装
 
 ```bash
-go get github.com/Tsukikage7/servex/llm
+go get github.com/Tsukikage7/servex/v2/llm
 ```
 
 ## API

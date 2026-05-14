@@ -121,7 +121,7 @@ func (p *Proxy) handleChatCompletion(w http.ResponseWriter, r *http.Request) {
 	// 3. 若设置了内容审核器，检查消息内容
 	if p.moderator != nil {
 		msgs := convertMessages(req.Messages)
-		result, err := p.moderator.ModerateMessages(r.Context(), msgs)
+		result, err := p.moderator.ModerateMessages(r, msgs)
 		if err != nil {
 			if p.log != nil {
 				p.log.With(logger.Err(err)).Error("代理内容审核失败")

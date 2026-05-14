@@ -8,7 +8,7 @@ import (
 	"io"
 	"net/http"
 
-	es "github.com/elastic/go-elasticsearch/v8"
+	elasticsearch "github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
@@ -17,7 +17,7 @@ import (
 
 // esClient Elasticsearch 客户端实现.
 type esClient struct {
-	client *es.Client
+	client *elasticsearch.Client
 	log    logger.Logger
 }
 
@@ -25,7 +25,7 @@ type esClient struct {
 func newESClient(config *Config, log logger.Logger) (*esClient, error) {
 	log = logger.WithComponent(log, "Elasticsearch")
 
-	cfg := es.Config{
+	cfg := elasticsearch.Config{
 		Addresses:  config.Addresses,
 		Username:   config.Username,
 		Password:   config.Password,
@@ -57,7 +57,7 @@ func newESClient(config *Config, log logger.Logger) (*esClient, error) {
 		cfg.Transport = tp
 	}
 
-	client, err := es.NewClient(cfg)
+	client, err := elasticsearch.NewClient(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("elasticsearch: create client: %w", err)
 	}
@@ -111,7 +111,7 @@ func (c *esClient) Close() error {
 	return nil
 }
 
-func (c *esClient) Client() *es.Client {
+func (c *esClient) Client() *elasticsearch.Client {
 	return c.client
 }
 

@@ -100,8 +100,19 @@ func FromError(err error) (*Error, bool) {
 	if err == nil {
 		return nil, false
 	}
-	e, ok := stderrors.AsType[*Error](err)
-	return e, ok
+	var target *Error
+	ok := stderrors.As(err, &target)
+	return target, ok
+}
+
+// AsType 尝试将 err 转为指定类型，支持 wrapped error.
+func AsType[T any](err error) (T, bool) {
+	var zero T
+	target := new(T)
+	if err == nil || !stderrors.As(err, target) {
+		return zero, false
+	}
+	return *target, true
 }
 
 // CodeIs 判断 err 是否包含与 target 相同 Code 的 *Error.

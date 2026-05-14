@@ -25,39 +25,39 @@ package rbac
 
 import (
 	"context"
-	stderrors "errors"
+	"errors"
 	"log/slog"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/Tsukikage7/servex/v2/auth"
-	"github.com/Tsukikage7/servex/v2/errors"
+	serrors "github.com/Tsukikage7/servex/v2/errors"
 )
 
 var (
 	// ErrRoleNotFound 角色未找到错误.
-	ErrRoleNotFound = errors.NewWithKind(
+	ErrRoleNotFound = serrors.NewWithKind(
 		20301,
 		"RBAC_ROLE_NOT_FOUND",
 		"角色未找到",
-		errors.KindNotFound,
+		serrors.KindNotFound,
 	)
 
 	// ErrRoleExists 角色已存在错误.
-	ErrRoleExists = errors.NewWithKind(
+	ErrRoleExists = serrors.NewWithKind(
 		20302,
 		"RBAC_ROLE_EXISTS",
 		"角色已存在",
-		errors.KindConflict,
+		serrors.KindConflict,
 	)
 
 	// ErrPermissionDenied 权限被拒绝错误.
-	ErrPermissionDenied = errors.NewWithKind(
+	ErrPermissionDenied = serrors.NewWithKind(
 		20303,
 		"RBAC_PERMISSION_DENIED",
 		"权限被拒绝",
-		errors.KindPermissionDenied,
+		serrors.KindPermissionDenied,
 	)
 )
 
@@ -159,7 +159,7 @@ func NewManager(store Store, opts ...Option) RBAC {
 func (m *manager) CreateRole(ctx context.Context, role *Role) error {
 	// 检查是否已存在
 	existing, err := m.store.GetRole(ctx, role.Name)
-	if err != nil && !stderrors.Is(err, ErrRoleNotFound) {
+	if err != nil && !errors.Is(err, ErrRoleNotFound) {
 		return err
 	}
 	if existing != nil {

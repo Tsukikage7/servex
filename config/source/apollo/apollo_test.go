@@ -10,7 +10,7 @@ import (
 	"github.com/apolloconfig/agollo/v4/agcache"
 	"github.com/apolloconfig/agollo/v4/storage"
 
-	svcConfig "github.com/Tsukikage7/servex/v2/config"
+	"github.com/Tsukikage7/servex/v2/config"
 )
 
 // --- mock agollo.Client ---
@@ -147,7 +147,7 @@ func TestLoad_EmptyCache(t *testing.T) {
 	}
 
 	_, err := s.Load()
-	if !errors.Is(err, svcConfig.ErrSourceLoad) {
+	if !errors.Is(err, config.ErrSourceLoad) {
 		t.Errorf("期望 ErrSourceLoad，得到 %v", err)
 	}
 }
@@ -162,7 +162,7 @@ func TestLoad_NilCache(t *testing.T) {
 	}
 
 	_, err := s.Load()
-	if !errors.Is(err, svcConfig.ErrSourceLoad) {
+	if !errors.Is(err, config.ErrSourceLoad) {
 		t.Errorf("期望 ErrSourceLoad，得到 %v", err)
 	}
 }
@@ -295,7 +295,7 @@ func TestWatch_Stop(t *testing.T) {
 
 	// Next 应返回 ErrSourceClosed
 	_, err = watcher.Next()
-	if !errors.Is(err, svcConfig.ErrSourceClosed) {
+	if !errors.Is(err, config.ErrSourceClosed) {
 		t.Errorf("期望 ErrSourceClosed，得到 %v", err)
 	}
 }
@@ -471,7 +471,7 @@ func TestLoad_NonStringContent(t *testing.T) {
 	}
 
 	_, err := s.Load()
-	if !errors.Is(err, svcConfig.ErrSourceLoad) {
+	if !errors.Is(err, config.ErrSourceLoad) {
 		t.Errorf("期望 ErrSourceLoad，得到 %v", err)
 	}
 }

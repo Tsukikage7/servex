@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/apolloconfig/agollo/v4"
-	agolloConfig "github.com/apolloconfig/agollo/v4/env/config"
+	agcfg "github.com/apolloconfig/agollo/v4/env/config"
 	"github.com/apolloconfig/agollo/v4/storage"
 
 	"github.com/Tsukikage7/servex/v2/config"
@@ -73,7 +73,7 @@ func New(cfg *Config, opts ...Option) (*Source, error) {
 		opt(s)
 	}
 
-	appCfg := &agolloConfig.AppConfig{
+	appCfg := &agcfg.AppConfig{
 		AppID:          s.appID,
 		Cluster:        s.cluster,
 		IP:             cfg.Addr,
@@ -82,7 +82,7 @@ func New(cfg *Config, opts ...Option) (*Source, error) {
 		Secret:         cfg.Secret,
 	}
 
-	client, err := agollo.StartWithConfig(func() (*agolloConfig.AppConfig, error) {
+	client, err := agollo.StartWithConfig(func() (*agcfg.AppConfig, error) {
 		return appCfg, nil
 	})
 	if err != nil {

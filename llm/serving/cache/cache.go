@@ -8,12 +8,12 @@ import (
 	"context"
 	"errors"
 	"io"
+	"math"
 	"sync"
 	"time"
 
 	"github.com/Tsukikage7/servex/v2/llm"
-	aimw "github.com/Tsukikage7/servex/v2/llm/middleware"
-	"github.com/Tsukikage7/servex/v2/llm/retrieval/embedding"
+	"github.com/Tsukikage7/servex/v2/llm/middleware"
 )
 
 // Config 语义缓存配置.
@@ -114,13 +114,31 @@ func (s *MemoryStore) Search(_ context.Context, query []float32, threshold float
 			// 跳过已过期条目.
 			continue
 		}
-		sim := embedding.CosineSimilarity(query, e.vector)
+		sim := cosineSimilarity(query, e.vector)
 		if sim >= threshold && sim > bestSim {
 			bestSim = sim
 			bestResp = e.response
 		}
 	}
 	return bestResp, nil
+}
+
+func cosineSimilarity(a, b []float32) float32 {
+	if len(a) == 0 || len(a) != len(b) {
+		return 0
+	}
+	var dot, normA, normB float64
+	for i := range a {
+		av := float64(a[i])
+		bv := float64(b[i])
+		dot += av * bv
+		normA += av * av
+		normB += bv * bv
+	}
+	if normA == 0 || normB == 0 {
+		return 0
+	}
+	return float32(dot / (math.Sqrt(normA) * math.Sqrt(normB)))
 }
 
 // Clear 清空内存中所有缓存条目.
@@ -133,6 +151,15 @@ func (s *MemoryStore) Clear(_ context.Context) error {
 
 // 编译期接口断言.
 var _ Store = (*MemoryStore)(nil)
+
+var (
+	// ErrNilConfig 表示缓存配置为空.
+	ErrNilConfig = errors.New("cache: config is nil")
+	// ErrNilEmbeddingModel 表示未配置嵌入模型.
+	ErrNilEmbeddingModel = errors.New("cache: embedding model is nil")
+	// ErrNilStore 表示未配置缓存存储.
+	ErrNilStore = errors.New("cache: store is nil")
+)
 
 // extractLastUserText 从消息列表中提取最后一条用户消息的文本内容.
 // 同时兼容 Content 字段和 Parts 中的文本片段.
@@ -186,11 +213,14 @@ func (r *cacheHitReader) Close() error { return nil }
 
 // Middleware 返回语义缓存中间件，对 Generate 和 Stream 均生效.
 // 命中缓存时直接返回已缓存响应，未命中时调用下游模型并将结果缓存.
-func Middleware(cfg *Config) aimw.Middleware {
-	cfg = cfg.withDefaults()
+func Middleware(cfg *Config) (middleware.Middleware, error) {
+	cfg, err := validateConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
 
 	return func(next llm.ChatModel) llm.ChatModel {
-		return aimw.Wrap(
+		return middleware.Wrap(
 			// Generate：先查缓存，未命中则调用模型并缓存结果.
 			func(ctx context.Context, messages []llm.Message, opts ...llm.CallOption) (*llm.ChatResponse, error) {
 				text := extractLastUserText(messages)
@@ -199,13 +229,10 @@ func Middleware(cfg *Config) aimw.Middleware {
 				}
 
 				// 嵌入查询文本.
-				embedResp, err := cfg.EmbeddingModel.EmbedTexts(ctx, []string{text})
-				if err != nil {
-					// 嵌入失败时透传到下游，不影响正常调用.
+				queryVec, ok := embedQuery(ctx, cfg.EmbeddingModel, text)
+				if !ok {
 					return next.Generate(ctx, messages, opts...)
 				}
-				queryVec := embedResp.Embeddings[0]
-
 				// 查找缓存.
 				cached, err := cfg.Store.Search(ctx, queryVec, cfg.Threshold)
 				if err == nil && cached != nil {
@@ -231,11 +258,10 @@ func Middleware(cfg *Config) aimw.Middleware {
 				}
 
 				// 嵌入查询文本.
-				embedResp, err := cfg.EmbeddingModel.EmbedTexts(ctx, []string{text})
-				if err != nil {
+				queryVec, ok := embedQuery(ctx, cfg.EmbeddingModel, text)
+				if !ok {
 					return next.Stream(ctx, messages, opts...)
 				}
-				queryVec := embedResp.Embeddings[0]
 
 				// 查找缓存.
 				cached, err := cfg.Store.Search(ctx, queryVec, cfg.Threshold)
@@ -259,7 +285,29 @@ func Middleware(cfg *Config) aimw.Middleware {
 				}, nil
 			},
 		)
+	}, nil
+}
+
+func validateConfig(cfg *Config) (*Config, error) {
+	if cfg == nil {
+		return nil, ErrNilConfig
 	}
+	cfg = cfg.withDefaults()
+	if cfg.EmbeddingModel == nil {
+		return nil, ErrNilEmbeddingModel
+	}
+	if cfg.Store == nil {
+		return nil, ErrNilStore
+	}
+	return cfg, nil
+}
+
+func embedQuery(ctx context.Context, model llm.EmbeddingModel, text string) ([]float32, bool) {
+	embedResp, err := model.EmbedTexts(ctx, []string{text})
+	if err != nil || embedResp == nil || len(embedResp.Embeddings) == 0 || len(embedResp.Embeddings[0]) == 0 {
+		return nil, false
+	}
+	return embedResp.Embeddings[0], true
 }
 
 // cachingStreamReader 包装 StreamReader，在流读取完毕后自动将响应存入缓存.
@@ -291,6 +339,10 @@ func (r *cachingStreamReader) Response() *llm.ChatResponse { return r.inner.Resp
 func (r *cachingStreamReader) Close() error { return r.inner.Close() }
 
 // NewCachedModel 将语义缓存中间件应用到 model，返回带缓存能力的 ChatModel.
-func NewCachedModel(model llm.ChatModel, cfg *Config) llm.ChatModel {
-	return Middleware(cfg)(model)
+func NewCachedModel(model llm.ChatModel, cfg *Config) (llm.ChatModel, error) {
+	mw, err := Middleware(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return mw(model), nil
 }

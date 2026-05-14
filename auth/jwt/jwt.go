@@ -26,7 +26,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	stderrors "errors"
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -545,7 +545,7 @@ func (j *JWT) validateCachedToken(ctx context.Context, tokenString string, claim
 	revokeKey := j.opts.cacheKeyPrefix + "revoked:" + subject
 	if val, revokeErr := j.opts.store.Get(ctx, revokeKey); revokeErr == nil && val != "" {
 		return ErrTokenRevoked
-	} else if revokeErr != nil && !stderrors.Is(revokeErr, cache.ErrNotFound) {
+	} else if revokeErr != nil && !errors.Is(revokeErr, cache.ErrNotFound) {
 		// 缓存访问错误（如 Redis 宕机）
 		j.opts.logger.With(
 			logger.String("name", j.opts.name),
@@ -560,7 +560,7 @@ func (j *JWT) validateCachedToken(ctx context.Context, tokenString string, claim
 	key := j.buildCacheKey(subject, iat.Unix(), exp.Unix(), tokenString)
 	storedToken, err := j.opts.store.Get(ctx, key)
 	if err != nil {
-		if stderrors.Is(err, cache.ErrNotFound) {
+		if errors.Is(err, cache.ErrNotFound) {
 			// 缓存中无此令牌，视为已撤销
 			return ErrTokenRevoked
 		}

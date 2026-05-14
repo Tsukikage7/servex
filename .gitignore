@@ -12,10 +12,6 @@
 *.out
 coverage.html
 
-# Go 工作区文件
-go.work
-go.work.sum
-
 # 依赖目录
 vendor/
 

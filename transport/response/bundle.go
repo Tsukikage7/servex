@@ -5,7 +5,7 @@ import (
 
 	"golang.org/x/text/language"
 
-	servexerr "github.com/Tsukikage7/servex/v2/errors"
+	"github.com/Tsukikage7/servex/v2/errors"
 	"github.com/Tsukikage7/servex/v2/i18n"
 )
 
@@ -60,7 +60,7 @@ func LocalizedMessage(err error, langs ...string) string {
 	}
 
 	// servex/errors.Error：内部错误掩码；否则翻译 Key，回退到 Message
-	if srvErr, ok := servexerr.FromError(err); ok {
+	if srvErr, ok := errors.FromError(err); ok {
 		if isInternalCode(srvErr.Code) {
 			return localizeCode(CodeInternal, langs...)
 		}

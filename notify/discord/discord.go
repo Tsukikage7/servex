@@ -3,7 +3,7 @@ package discord
 
 import (
 	"context"
-	stderrors "errors"
+	"errors"
 
 	"github.com/bwmarrin/discordgo"
 
@@ -64,7 +64,7 @@ func (s *Sender) Send(_ context.Context, msg *notify.Message) (*notify.Result, e
 		lastID = sent.ID
 	}
 	if len(errs) > 0 {
-		return &notify.Result{MessageID: lastID, Channel: ChannelDiscord, Error: stderrors.Join(errs...)}, stderrors.Join(errs...)
+		return &notify.Result{MessageID: lastID, Channel: ChannelDiscord, Error: errors.Join(errs...)}, errors.Join(errs...)
 	}
 	return &notify.Result{MessageID: lastID, Channel: ChannelDiscord}, nil
 }

@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	goredis "github.com/redis/go-redis/v9"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/Tsukikage7/servex/v2/messaging/pubsub"
 )
@@ -17,7 +17,7 @@ import (
 // Subscriber 通过 Redis Streams 订阅消息.
 // 支持消费者组（XREADGROUP）和简单读取（XREAD）两种模式.
 type Subscriber struct {
-	client  goredis.Cmdable
+	client  redis.Cmdable
 	closed  atomic.Bool
 	mu      sync.Mutex
 	cancels []context.CancelFunc // 所有订阅的 cancel 函数
@@ -26,7 +26,7 @@ type Subscriber struct {
 }
 
 // NewSubscriber 基于已有的 redis.Cmdable 创建 Subscriber.
-func NewSubscriber(client goredis.Cmdable, opts ...SubscriberOption) (*Subscriber, error) {
+func NewSubscriber(client redis.Cmdable, opts ...SubscriberOption) (*Subscriber, error) {
 	if client == nil {
 		return nil, errors.New("pubsub/redis: client 不能为空")
 	}
@@ -94,7 +94,7 @@ func (s *Subscriber) readGroup(ctx context.Context, stream string, out chan<- *p
 			blockDur = 2 * time.Second
 		}
 
-		streams, err := s.client.XReadGroup(ctx, &goredis.XReadGroupArgs{
+		streams, err := s.client.XReadGroup(ctx, &redis.XReadGroupArgs{
 			Group:    s.opts.groupID,
 			Consumer: consumer,
 			Streams:  []string{stream, lastID},
@@ -103,7 +103,7 @@ func (s *Subscriber) readGroup(ctx context.Context, stream string, out chan<- *p
 			NoAck:    false,
 		}).Result()
 		if err != nil {
-			if errors.Is(err, goredis.Nil) || ctx.Err() != nil {
+			if errors.Is(err, redis.Nil) || ctx.Err() != nil {
 				continue
 			}
 			if s.opts.logger != nil {
@@ -146,13 +146,13 @@ func (s *Subscriber) readStream(ctx context.Context, stream string, out chan<- *
 			blockDur = 2 * time.Second
 		}
 
-		streams, err := s.client.XRead(ctx, &goredis.XReadArgs{
+		streams, err := s.client.XRead(ctx, &redis.XReadArgs{
 			Streams: []string{stream, lastID},
 			Count:   10,
 			Block:   blockDur,
 		}).Result()
 		if err != nil {
-			if errors.Is(err, goredis.Nil) || ctx.Err() != nil {
+			if errors.Is(err, redis.Nil) || ctx.Err() != nil {
 				continue
 			}
 			if s.opts.logger != nil {
@@ -227,7 +227,7 @@ func (s *Subscriber) Close() error {
 }
 
 // convertXMessage 将 Redis XMessage 转换为 pubsub.Message.
-func convertXMessage(stream string, xmsg goredis.XMessage) *pubsub.Message {
+func convertXMessage(stream string, xmsg redis.XMessage) *pubsub.Message {
 	msg := &pubsub.Message{
 		Topic: stream,
 		Metadata: map[string]any{

@@ -1,7 +1,7 @@
 package response
 
 import (
-	servexerr "github.com/Tsukikage7/servex/v2/errors"
+	"github.com/Tsukikage7/servex/v2/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -28,7 +28,7 @@ func GRPCStatus(err error) *status.Status {
 		}
 	}
 
-	return servexerr.ToGRPCStatus(bridged)
+	return errors.ToGRPCStatus(bridged)
 }
 
 // GRPCError 将错误转换为 gRPC error.
@@ -41,7 +41,7 @@ func GRPCError(err error) error {
 // 优先使用 servex/errors.FromGRPCStatus 还原完整信息，
 // 最后回退到 gRPC code 映射.
 func FromGRPCStatus(s *status.Status) Code {
-	if restored := servexerr.FromGRPCStatus(s); restored != nil {
+	if restored := errors.FromGRPCStatus(s); restored != nil {
 		code := Code{
 			Num:     restored.Code,
 			Message: restored.Message,
@@ -74,14 +74,14 @@ func FromGRPCError(err error) Code {
 //
 // 统一委托给 servex/errors.UnaryServerInterceptor.
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
-	return servexerr.UnaryServerInterceptor()
+	return errors.UnaryServerInterceptor()
 }
 
 // StreamServerInterceptor 返回 gRPC 流服务器拦截器.
 //
 // 统一委托给 servex/errors.StreamServerInterceptor.
 func StreamServerInterceptor() grpc.StreamServerInterceptor {
-	return servexerr.StreamServerInterceptor()
+	return errors.StreamServerInterceptor()
 }
 
 // grpcCodeFallback 粗粒度 gRPC code → Code 映射.

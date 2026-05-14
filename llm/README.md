@@ -1,113 +1,96 @@
-# ai
+# llm
 
-`ai` 包提供 LLM/AI 服务的统一客户端抽象，支持多 Provider（OpenAI、Anthropic、Gemini 等），所有适配器仅依赖标准库。
+`llm` 提供 servex 的 LLM 集成门面。模块不再维护自研 Agent、Graph、RAG、工具调用循环或内容审核框架；复杂 AI 应用编排统一交给开源框架，servex 只提供稳定接口、Provider、Middleware、Serving 能力。Eino/ADK 封装以独立 Go module 形式放在 `llm/framework/*`，避免污染根 module 依赖面。
 
-## 功能特性
+## 当前边界
 
-- 统一 `ChatModel` / `EmbeddingModel` 接口，Provider 可随时替换
-- 流式与非流式生成，支持工具调用（Function Calling）
-- 多模态消息（文本 + 图片）
-- 统一错误类型与可重试判断
-- 子包覆盖：Provider 适配、中间件链、多轮会话、工具调用、提示词模板、嵌入向量、向量存储接口、多 Provider 路由
+- `llm` 根包：`ChatModel`、`EmbeddingModel`、消息、工具、流、调用选项、用量和错误类型。
+- `llm/framework/eino`：独立 module，CloudWeGo Eino 封装，负责 servex 消息、工具、ChatModel、EmbeddingModel 与 Eino 类型双向适配。
+- `llm/framework/adk`：独立 module，Google ADK 封装，负责 ADK Agent/LLMAgent/Runner 创建，并把 servex `ChatModel` 接入 ADK `model.LLM`。
+- `llm/provider/*`：OpenAI、Anthropic、Gemini、Ollama、DeepSeek、Bedrock 等模型后端适配。
+- `llm/middleware`：日志、重试、限流、用量追踪。
+- `llm/prompt`：轻量提示词模板与版本管理。
+- `llm/serving/*`：语义缓存、API Key、计费、OpenAI 兼容的最小 Chat Completions 代理。
 
-## 安装
-
-```bash
-go get github.com/Tsukikage7/servex/llm
-```
-
-## 子包总览
-
-| 子包 | 说明 |
-|---|---|
-| `ai/openai` | OpenAI 适配器（兼容 DeepSeek、通义千问等 OpenAI 格式 Provider） |
-| `ai/ollama` | Ollama 本地模型适配器（默认 http://localhost:11434/v1） |
-| `ai/deepseek` | DeepSeek API 适配器（https://api.deepseek.com/v1） |
-| `ai/anthropic` | Anthropic Claude 适配器 |
-| `ai/bedrock` | AWS Bedrock 适配器（Converse API，支持 Claude/Titan/Llama/Mistral 等） |
-| `ai/gemini` | Google Gemini 适配器 |
-| `ai/middleware` | 中间件链（日志、重试、限流、用量追踪） |
-| `ai/conversation` | 多轮对话会话管理（BufferMemory / WindowMemory） |
-| `ai/toolcall` | 工具注册与自动循环执行器（ReAct 模式） |
-| `ai/prompt` | 基于 `text/template` 的提示词模板引擎 |
-| `ai/embedding` | 批量嵌入 + 余弦相似度工具函数 |
-| `ai/vectorstore` | 向量存储统一接口抽象 |
-| `ai/router` | 多 Provider 路由器（按模型名路由） |
-| `ai/compose` | DAG 编排引擎（Graph、四范式节点、条件边、Runnable） |
-| `ai/vectorstore/memory` | 内存向量存储（测试用） |
-| `ai/vectorstore/pgvector` | pgvector 向量存储适配 |
-| `ai/vectorstore/redis` | Redis Search 向量存储适配 |
+以下自研运行时已删除：`llm/agent`、`llm/compose`、`llm/retrieval`、`llm/processing`、`llm/eval`、`llm/safety`。
 
 ## 核心接口
 
 ```go
-// 聊天模型
 type ChatModel interface {
     Generate(ctx context.Context, messages []Message, opts ...CallOption) (*ChatResponse, error)
     Stream(ctx context.Context, messages []Message, opts ...CallOption) (StreamReader, error)
 }
 
-// 嵌入模型
 type EmbeddingModel interface {
     EmbedTexts(ctx context.Context, texts []string, opts ...CallOption) (*EmbedResponse, error)
 }
 ```
 
-## 消息构造辅助函数
+## Eino 封装
+
+模块路径：`github.com/Tsukikage7/servex/v2/llm/framework/eino`。
 
 ```go
-llm.SystemMessage("你是一个专业助手")
-llm.UserMessage("帮我写一首诗")
-llm.AssistantMessage("好的，...")
-llm.ToolResultMessage(callID, `{"result": "ok"}`)
-```
+base := /* github.com/cloudwego/eino/components/model.BaseChatModel */
 
-## 调用选项
-
-```go
-llm.WithModel("gpt-4o")
-llm.WithTemperature(0.7)
-llm.WithMaxTokens(1024)
-llm.WithTopP(0.9)
-llm.WithStop("END")
-llm.WithTools(tool1, tool2)
-llm.WithToolChoice(llm.ToolChoiceAuto)
-llm.WithStreamCallback(fn)
-```
-
-## 错误处理
-
-```go
-// 哨兵错误
-llm.ErrRateLimited          // HTTP 429
-llm.ErrContextLength        // 上下文超长
-llm.ErrInvalidAuth          // 认证失败
-llm.ErrProviderUnavailable  // 服务不可用（5xx）
-llm.ErrContentFiltered      // 内容过滤
-
-// 可重试判断
-if llm.IsRetryable(err) { ... }
-
-// 获取详细错误信息
-var apiErr *llm.APIError
-if errors.As(err, &apiErr) {
-    fmt.Println(apiErr.StatusCode, apiErr.Provider, apiErr.Message)
+model, err := eino.NewChatModel(base)
+if err != nil {
+    return err
 }
-```
 
-## 快速示例
-
-```go
-client := openllm.New(os.Getenv("OPENAI_API_KEY"),
-    openllm.WithModel("gpt-4o"),
-)
-
-resp, err := client.Generate(ctx, []llm.Message{
+resp, err := model.Generate(ctx, []llm.Message{
     llm.UserMessage("你好"),
 })
-fmt.Println(resp.Message.Content)
+
+einoModel, err := eino.AsChatModel(servexModel)
+if err != nil {
+    return err
+}
+_ = einoModel
 ```
 
-## 许可证
+`llm/framework/eino` 还提供 `NewEmbeddingModel`、`AsEmbedder`、`ToEinoMessage`、`ToEinoMessages`、`FromEinoMessage`、`ToEinoTool` 和 `ToEinoTools`，用于边界层显式转换。工具 schema 或消息结构转换失败会直接返回错误，不会静默丢弃工具或降级成普通文本。
 
-详见项目根目录 LICENSE 文件。
+## ADK 封装
+
+模块路径：`github.com/Tsukikage7/servex/v2/llm/framework/adk`。
+
+```go
+agent, err := adk.NewLLMAgent(adk.LLMAgentConfig{
+    Name:        "assistant",
+    Description: "通用助手",
+    Instruction: "回答要简洁",
+    Model:       servexModel,
+})
+if err != nil {
+    return err
+}
+
+raw := agent.Agent()
+_ = raw
+```
+
+`llm/framework/adk` 同时提供 `NewAgent`、`WrapAgent`、`AsModel` 和 `NewRunner`。ADK 的 session、memory、artifact、tool runtime 仍由 Google ADK 自身负责；servex 只负责把 `llm.ChatModel`、基础配置和创建边界接进去。
+
+## 稳定性说明
+
+- `llm` 根包、provider、middleware、prompt 和 serving 基础能力按稳定 API 设计。
+- `llm/framework/eino` 和 `llm/framework/adk` 是独立 Go module 的开源框架适配层，当前覆盖文本、工具定义和基础工具调用桥接；多模态、框架私有事件和高级 runtime 语义应优先使用 Eino/ADK 原生 API。
+- `llm/serving/proxy` 是最小 OpenAI Chat Completions 代理，不承诺完整 OpenAI API 覆盖；工具流式增量、多模态、response_format 等高级字段需要按业务场景继续扩展。
+- 根 module 的 `go.mod` 不包含 Eino/ADK 依赖；只使用 provider/middleware/serving 的用户不会被迫拉取 framework 依赖。
+- 本仓库本地开发通过根目录 `go.work` 同时加载根 module、`llm/framework/eino` 和 `llm/framework/adk`。
+
+## 设计原则
+
+- 不在 servex 内复刻 Eino 或 ADK 的 Agent/Graph/RAG runtime。
+- Eino/ADK 的源码引用只存在于 `llm/framework/eino` 和 `llm/framework/adk` 独立 module。
+- 业务代码需要编排时显式选择 Eino 或 ADK；只使用 provider/middleware/serving 时不需要接触 framework 包。
+
+## 验证
+
+```bash
+go test ./llm/...
+(cd llm/framework/eino && go test ./...)
+(cd llm/framework/adk && go test ./...)
+```

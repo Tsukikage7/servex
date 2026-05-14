@@ -33,18 +33,18 @@ import (
 
 	"github.com/google/uuid"
 
-	servexerrs "github.com/Tsukikage7/servex/v2/errors"
+	"github.com/Tsukikage7/servex/v2/errors"
 )
 
 var (
 	// ErrClientNotFound 客户端不存在.
-	ErrClientNotFound = servexerrs.New(60601, "transport.sse.client_not_found", "客户端不存在")
+	ErrClientNotFound = errors.New(60601, "transport.sse.client_not_found", "客户端不存在")
 	// ErrServerClosed 服务器已关闭.
-	ErrServerClosed = servexerrs.New(60602, "transport.sse.server_closed", "服务器已关闭")
+	ErrServerClosed = errors.New(60602, "transport.sse.server_closed", "服务器已关闭")
 	// ErrConnectionClosed 连接已关闭.
-	ErrConnectionClosed = servexerrs.New(60603, "transport.sse.connection_closed", "连接已关闭")
+	ErrConnectionClosed = errors.New(60603, "transport.sse.connection_closed", "连接已关闭")
 	// ErrNotFlusher ResponseWriter 不支持 Flush.
-	ErrNotFlusher = servexerrs.New(60604, "transport.sse.not_flusher", "ResponseWriter 不支持 Flush")
+	ErrNotFlusher = errors.New(60604, "transport.sse.not_flusher", "ResponseWriter 不支持 Flush")
 )
 
 // Event SSE 事件.

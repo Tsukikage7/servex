@@ -27,7 +27,7 @@ import (
 	"sync"
 	"time"
 
-	storagelock "github.com/Tsukikage7/servex/v2/storage/lock"
+	"github.com/Tsukikage7/servex/v2/storage/lock"
 )
 
 var (
@@ -125,13 +125,13 @@ func WithRLock(ctx context.Context, rwlock RWLock, fn func(ctx context.Context) 
 
 // simpleLock 普通分布式锁，包装 storage/lock.Locker 并添加重试逻辑.
 type simpleLock struct {
-	locker storagelock.Locker
+	locker lock.Locker
 	key    string
 	opts   *options
 }
 
 // NewLock 创建普通分布式锁.
-func NewLock(locker storagelock.Locker, key string, opts ...Option) Lock {
+func NewLock(locker lock.Locker, key string, opts ...Option) Lock {
 	return &simpleLock{
 		locker: locker,
 		key:    key,
@@ -189,7 +189,7 @@ func lockTokenFromCtx(ctx context.Context) string {
 // reentrantLock 可重入锁，同一令牌持有者可多次获取.
 // 通过 WithLockToken(ctx, token) 注入令牌，持有相同令牌的调用可重入.
 type reentrantLock struct {
-	locker storagelock.Locker
+	locker lock.Locker
 	key    string
 	opts   *options
 
@@ -199,7 +199,7 @@ type reentrantLock struct {
 }
 
 // NewReentrantLock 创建可重入锁.
-func NewReentrantLock(locker storagelock.Locker, key string, opts ...Option) ReentrantLock {
+func NewReentrantLock(locker lock.Locker, key string, opts ...Option) ReentrantLock {
 	return &reentrantLock{
 		locker: locker,
 		key:    key,
@@ -282,7 +282,7 @@ func (l *reentrantLock) LockCount() int {
 // 注意: 分布式环境下无法用本地计数器实现真正的读写锁，
 // 因此 RLock/RUnlock 实际退化为写锁（互斥锁），保证正确性.
 type rwLock struct {
-	locker storagelock.Locker
+	locker lock.Locker
 	key    string
 	opts   *options
 }
@@ -290,7 +290,7 @@ type rwLock struct {
 // NewRWLock 创建分布式锁（实现 RWLock 接口）.
 // 注意: 分布式场景下 RLock 退化为互斥锁，不支持多读并发.
 // 如需真正的分布式读写锁，请使用支持读写语义的分布式锁服务.
-func NewRWLock(locker storagelock.Locker, key string, opts ...Option) RWLock {
+func NewRWLock(locker lock.Locker, key string, opts ...Option) RWLock {
 	return &rwLock{
 		locker: locker,
 		key:    key,

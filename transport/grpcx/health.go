@@ -9,16 +9,16 @@ import (
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/health/grpc_health_v1"
 
-	servexerrs "github.com/Tsukikage7/servex/v2/errors"
+	"github.com/Tsukikage7/servex/v2/errors"
 )
 
 var (
 	// ErrHealthCheckFailed 健康检查请求失败.
-	ErrHealthCheckFailed = servexerrs.New(60150, "transport.grpcx.health_check_failed", "健康检查失败")
-	// ErrServiceNotServing 服务状态异常.
-	ErrServiceNotServing = servexerrs.New(60151, "transport.grpcx.service_not_serving", "服务状态异常")
-	// ErrWaitForReadyTimeout 等待连接就绪超时.
-	ErrWaitForReadyTimeout = servexerrs.New(60152, "transport.grpcx.wait_for_ready_timeout", "等待连接就绪超时")
+	ErrHealthCheckFailed = errors.New(60150, "transport.grpcx.health_check_failed", "健康检查失败")
+// ErrServiceNotServing 服务状态异常.
+	ErrServiceNotServing = errors.New(60151, "transport.grpcx.service_not_serving", "服务状态异常")
+// ErrWaitForReadyTimeout 等待连接就绪超时.
+	ErrWaitForReadyTimeout = errors.New(60152, "transport.grpcx.wait_for_ready_timeout", "等待连接就绪超时")
 )
 
 // HealthCheck 创建 gRPC 健康检查客户端，检查目标服务是否可用.

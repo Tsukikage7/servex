@@ -12,16 +12,16 @@ import (
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	grpcstatus "google.golang.org/grpc/status"
+	"google.golang.org/grpc/status"
 
-	servexerr "github.com/Tsukikage7/servex/v2/errors"
+	"github.com/Tsukikage7/servex/v2/errors"
 	"github.com/Tsukikage7/servex/v2/transport/response"
 )
 
 // 互操作测试：验证 servex/errors.Error 可以正确地通过 response 包处理.
 
 func TestExtractCode_WithErrorsPackage(t *testing.T) {
-	err := servexerr.NewWithKind(40001, "user.not_found", "用户不存在", servexerr.KindNotFound).
+	err := errors.NewWithKind(40001, "user.not_found", "用户不存在", errors.KindNotFound).
 		WithMeta("user_id", "u-123")
 
 	code := response.ExtractCode(err)
@@ -33,7 +33,7 @@ func TestExtractCode_WithErrorsPackage(t *testing.T) {
 }
 
 func TestExtractCode_WithErrorsPackageMissingTransportMapping(t *testing.T) {
-	err := servexerr.New(response.CodeNotFound.Num, response.CodeNotFound.Key, response.CodeNotFound.Message)
+	err := errors.New(response.CodeNotFound.Num, response.CodeNotFound.Key, response.CodeNotFound.Message)
 
 	code := response.ExtractCode(err)
 	assert.Equal(t, response.CodeNotFound.Num, code.Num)
@@ -44,7 +44,7 @@ func TestExtractCode_WithErrorsPackageMissingTransportMapping(t *testing.T) {
 }
 
 func TestWriteError_WithErrorsPackageMissingTransportMapping(t *testing.T) {
-	err := servexerr.New(response.CodeNotFound.Num, response.CodeNotFound.Key, response.CodeNotFound.Message)
+	err := errors.New(response.CodeNotFound.Num, response.CodeNotFound.Key, response.CodeNotFound.Message)
 	rec := httptest.NewRecorder()
 
 	require.NoError(t, response.WriteError(rec, err, "en"))
@@ -57,7 +57,7 @@ func TestWriteError_WithErrorsPackageMissingTransportMapping(t *testing.T) {
 }
 
 func TestGRPCStatus_WithErrorsPackageMissingTransportMapping(t *testing.T) {
-	err := servexerr.New(response.CodeNotFound.Num, response.CodeNotFound.Key, response.CodeNotFound.Message)
+	err := errors.New(response.CodeNotFound.Num, response.CodeNotFound.Key, response.CodeNotFound.Message)
 
 	st := response.GRPCStatus(err)
 
@@ -69,7 +69,7 @@ func TestGRPCStatus_WithErrorsPackageMissingTransportMapping(t *testing.T) {
 }
 
 func TestExtractMetadata_WithErrorsPackage(t *testing.T) {
-	err := servexerr.New(40001, "user.not_found", "用户不存在").
+	err := errors.New(40001, "user.not_found", "用户不存在").
 		WithMeta("user_id", "u-123").
 		WithMeta("request_id", "req-456")
 
@@ -80,7 +80,7 @@ func TestExtractMetadata_WithErrorsPackage(t *testing.T) {
 }
 
 func TestExtractMetadata_NoMetadata(t *testing.T) {
-	err := servexerr.New(40001, "user.not_found", "用户不存在")
+	err := errors.New(40001, "user.not_found", "用户不存在")
 	metadata := response.ExtractMetadata(err)
 	assert.Nil(t, metadata)
 }
@@ -91,13 +91,13 @@ func TestExtractMetadata_NilError(t *testing.T) {
 
 func TestExtractMetadata_NonServexError(t *testing.T) {
 	// 普通 error 不应有 metadata
-	err := servexerr.New(40001, "", "")
+	err := errors.New(40001, "", "")
 	_ = err
 	assert.Nil(t, response.ExtractMetadata(http.ErrServerClosed))
 }
 
 func TestExtractMessage_WithErrorsPackage(t *testing.T) {
-	err := servexerr.NewWithKind(40001, "user.not_found", "用户不存在", servexerr.KindNotFound)
+	err := errors.NewWithKind(40001, "user.not_found", "用户不存在", errors.KindNotFound)
 
 	msg := response.ExtractMessage(err)
 	assert.Equal(t, "用户不存在", msg)
@@ -105,7 +105,7 @@ func TestExtractMessage_WithErrorsPackage(t *testing.T) {
 
 func TestExtractMessage_InternalError_Masked(t *testing.T) {
 	// 内部错误 (>= 50000) 应该被掩码
-	err := servexerr.NewWithKind(50001, "db.connection_failed", "数据库密码错误: xxx", servexerr.KindInternal)
+	err := errors.NewWithKind(50001, "db.connection_failed", "数据库密码错误: xxx", errors.KindInternal)
 
 	msg := response.ExtractMessage(err)
 	// 应返回通用消息，不暴露敏感信息
@@ -113,7 +113,7 @@ func TestExtractMessage_InternalError_Masked(t *testing.T) {
 }
 
 func TestGRPCStatus_WithErrorsPackage_AttachesDetails(t *testing.T) {
-	err := servexerr.NewWithKind(40001, "user.not_found", "用户不存在", servexerr.KindNotFound).
+	err := errors.NewWithKind(40001, "user.not_found", "用户不存在", errors.KindNotFound).
 		WithMeta("user_id", "u-123").
 		WithMeta("field", "email").
 		WithMeta("field_violation", "格式无效").
@@ -149,9 +149,9 @@ func TestGRPCStatus_WithErrorsPackage_AttachesDetails(t *testing.T) {
 
 func TestFromGRPCStatus_ErrorsPackageFormat(t *testing.T) {
 	// errors.ToGRPCStatus 生成的 status，response.FromGRPCStatus 应能识别
-	original := servexerr.NewWithKind(40001, "user.not_found", "用户不存在", servexerr.KindNotFound)
+	original := errors.NewWithKind(40001, "user.not_found", "用户不存在", errors.KindNotFound)
 
-	st := servexerr.ToGRPCStatus(original)
+	st := errors.ToGRPCStatus(original)
 	code := response.FromGRPCStatus(st)
 
 	assert.Equal(t, 40001, code.Num)
@@ -164,13 +164,13 @@ func TestUnaryServerInterceptor_WithErrorsPackage(t *testing.T) {
 	interceptor := response.UnaryServerInterceptor()
 
 	handler := func(_ context.Context, _ any) (any, error) {
-		return nil, servexerr.NewWithKind(40001, "user.not_found", "用户不存在", servexerr.KindNotFound)
+		return nil, errors.NewWithKind(40001, "user.not_found", "用户不存在", errors.KindNotFound)
 	}
 
 	_, err := interceptor(context.Background(), nil, &grpc.UnaryServerInfo{}, handler)
 	require.Error(t, err)
 
-	st, ok := grpcstatus.FromError(err)
+	st, ok := status.FromError(err)
 	require.True(t, ok)
 	assert.Equal(t, codes.NotFound, st.Code())
 
@@ -181,7 +181,7 @@ func TestUnaryServerInterceptor_WithErrorsPackage(t *testing.T) {
 
 func TestLocalizedMessage_WithErrorsPackage(t *testing.T) {
 	// servex/errors.Error 的 Key 应该能被 i18n 翻译
-	err := servexerr.NewWithKind(40001, "error.not_found", "资源不存在", servexerr.KindNotFound)
+	err := errors.NewWithKind(40001, "error.not_found", "资源不存在", errors.KindNotFound)
 
 	// 使用内置英文翻译（Key 为 "error.not_found" 时翻译为 "Resource not found"）
 	msg := response.LocalizedMessage(err, "en")
@@ -190,7 +190,7 @@ func TestLocalizedMessage_WithErrorsPackage(t *testing.T) {
 
 func TestLocalizedMessage_WithErrorsPackage_CustomKey(t *testing.T) {
 	// 未注册的 Key，应回退到 Message
-	err := servexerr.New(40001, "custom.key.not.in.bundle", "自定义消息")
+	err := errors.New(40001, "custom.key.not.in.bundle", "自定义消息")
 	msg := response.LocalizedMessage(err, "en")
 	// 翻译失败，应回退到 Message
 	assert.Equal(t, "自定义消息", msg)
@@ -198,7 +198,7 @@ func TestLocalizedMessage_WithErrorsPackage_CustomKey(t *testing.T) {
 
 func TestLocalizedMessage_InternalError_WithErrorsPackage(t *testing.T) {
 	// 内部错误不应暴露 Message
-	err := servexerr.New(50001, "db.error", "password=secret123 connection failed")
+	err := errors.New(50001, "db.error", "password=secret123 connection failed")
 	msg := response.LocalizedMessage(err, "zh-CN")
 	assert.NotContains(t, msg, "secret123")
 }

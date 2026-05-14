@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/extra/redisotel/v9"
-	goredis "github.com/redis/go-redis/v9"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
@@ -102,19 +102,19 @@ func (c *Config) ApplyDefaults() {
 }
 
 // Z 有序集合成员（封装 go-redis 的 Z 类型）.
-type Z = goredis.Z
+type Z = redis.Z
 
 // Pipeline Redis 管道接口.
 type Pipeline interface {
 	Exec(ctx context.Context) error
-	Set(ctx context.Context, key string, value any, expiration time.Duration) *goredis.StatusCmd
-	Get(ctx context.Context, key string) *goredis.StringCmd
-	Del(ctx context.Context, keys ...string) *goredis.IntCmd
+	Set(ctx context.Context, key string, value any, expiration time.Duration) *redis.StatusCmd
+	Get(ctx context.Context, key string) *redis.StringCmd
+	Del(ctx context.Context, keys ...string) *redis.IntCmd
 }
 
 // PubSub 发布订阅接口.
 type PubSub interface {
-	Channel(opts ...goredis.ChannelOption) <-chan *goredis.Message
+	Channel(opts ...redis.ChannelOption) <-chan *redis.Message
 	Close() error
 }
 
@@ -170,13 +170,13 @@ type Client interface {
 	ScriptLoad(ctx context.Context, script string) (string, error)
 
 	// Pipeline 管道.
-	PipelineExec(ctx context.Context, fn func(pipe goredis.Pipeliner) error) error
+		PipelineExec(ctx context.Context, fn func(pipe redis.Pipeliner) error) error
 
 	// Pub/Sub 发布订阅.
 	Subscribe(ctx context.Context, channels ...string) PubSub
 
 	// Underlying 底层 go-redis 客户端.
-	Underlying() *goredis.Client
+		Underlying() *redis.Client
 }
 
 // NewClient 创建 Redis 客户端.
@@ -196,7 +196,7 @@ func NewClient(config *Config, log logger.Logger) (Client, error) {
 		return nil, err
 	}
 
-	rdb := goredis.NewClient(&goredis.Options{
+	rdb := redis.NewClient(&redis.Options{
 		Addr:         config.Addr,
 		Password:     config.Password,
 		DB:           config.DB,

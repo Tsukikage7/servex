@@ -3,7 +3,7 @@ package httpserver
 import (
 	"context"
 	"encoding/json"
-	stdxml "encoding/xml"
+	"encoding/xml"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -71,7 +71,7 @@ func (s *CodecTestSuite) TestEncodeCodecResponse_XML() {
 	s.Contains(w.Header().Get("Content-Type"), "application/xml")
 
 	var got testResponse
-	s.NoError(stdxml.Unmarshal(w.Body.Bytes(), &got))
+	s.NoError(xml.Unmarshal(w.Body.Bytes(), &got))
 	s.Equal("xml-test", got.Name)
 }
 

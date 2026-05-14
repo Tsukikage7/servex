@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/Tsukikage7/servex/v2/llm"
-	aimw "github.com/Tsukikage7/servex/v2/llm/middleware"
+	"github.com/Tsukikage7/servex/v2/llm/middleware"
 )
 
 // ErrBudgetExceeded 超预算错误.调用方应将其视为业务级拒绝(不可重试).
@@ -76,9 +76,9 @@ func NewBudgetGuard(
 // Middleware 返回 ChatModel 中间件.
 // 在 Generate/Stream 前调用 check;超额返回 ErrBudgetExceeded,放行后透传原结果.
 // 核心依赖已在 NewBudgetGuard 构造时校验,此处无需再判 nil.
-func (g *BudgetGuard) Middleware() aimw.Middleware {
+func (g *BudgetGuard) Middleware() middleware.Middleware {
 	return func(next llm.ChatModel) llm.ChatModel {
-		return aimw.Wrap(
+		return middleware.Wrap(
 			func(ctx context.Context, messages []llm.Message, opts ...llm.CallOption) (*llm.ChatResponse, error) {
 				if err := g.check(ctx); err != nil {
 					return nil, err

@@ -10,22 +10,22 @@ import (
 	"log/slog"
 	"os"
 
-	servexerrs "github.com/Tsukikage7/servex/v2/errors"
+	"github.com/Tsukikage7/servex/v2/errors"
 )
 
 var (
 	// ErrNilConfig 配置为 nil.
-	ErrNilConfig = servexerrs.New(60701, "transport.tls.nil_config", "TLS 配置为空")
+	ErrNilConfig = errors.New(60701, "transport.tls.nil_config", "TLS 配置为空")
 	// ErrMissingCert 缺少证书文件.
-	ErrMissingCert = servexerrs.New(60702, "transport.tls.missing_cert", "缺少证书文件")
+	ErrMissingCert = errors.New(60702, "transport.tls.missing_cert", "缺少证书文件")
 	// ErrMissingKey 缺少密钥文件.
-	ErrMissingKey = servexerrs.New(60703, "transport.tls.missing_key", "缺少密钥文件")
+	ErrMissingKey = errors.New(60703, "transport.tls.missing_key", "缺少密钥文件")
 	// ErrLoadKeyPair 加载证书密钥对失败.
-	ErrLoadKeyPair = servexerrs.New(60704, "transport.tls.load_key_pair_failed", "加载证书密钥对失败")
+	ErrLoadKeyPair = errors.New(60704, "transport.tls.load_key_pair_failed", "加载证书密钥对失败")
 	// ErrReadCAFile 读取 CA 证书文件失败.
-	ErrReadCAFile = servexerrs.New(60705, "transport.tls.read_ca_file_failed", "读取 CA 证书文件失败")
+	ErrReadCAFile = errors.New(60705, "transport.tls.read_ca_file_failed", "读取 CA 证书文件失败")
 	// ErrParseCA 解析 CA 证书失败.
-	ErrParseCA = servexerrs.New(60706, "transport.tls.parse_ca_failed", "解析 CA 证书失败")
+	ErrParseCA = errors.New(60706, "transport.tls.parse_ca_failed", "解析 CA 证书失败")
 )
 
 // Config TLS 配置.

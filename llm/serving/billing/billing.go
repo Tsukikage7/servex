@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/Tsukikage7/servex/v2/llm"
-	aimw "github.com/Tsukikage7/servex/v2/llm/middleware"
+	"github.com/Tsukikage7/servex/v2/llm/middleware"
 )
 
 // 预定义错误.
@@ -136,7 +136,10 @@ type billingImpl struct {
 }
 
 // NewBilling 创建计费引擎实例.
-func NewBilling(store Store, opts ...Option) Billing {
+func NewBilling(store Store, opts ...Option) (Billing, error) {
+	if store == nil {
+		return nil, ErrNilStore
+	}
 	b := &billingImpl{
 		store:   store,
 		pricing: make(map[string]PriceModel),
@@ -144,7 +147,7 @@ func NewBilling(store Store, opts ...Option) Billing {
 	for _, opt := range opts {
 		opt(b)
 	}
-	return b
+	return b, nil
 }
 
 // CalculateCost 根据定价和 token 用量计算费用.
@@ -210,15 +213,16 @@ func (b *billingImpl) SetPricing(modelID string, pricing PriceModel) {
 
 // Middleware 返回计费中间件.
 // keyExtractor 从 context 中提取 API key ID（配合 ai/apikey 使用）.
-func Middleware(b Billing, keyExtractor func(ctx context.Context) string) aimw.Middleware {
+func Middleware(b Billing, keyExtractor func(ctx context.Context) string) middleware.Middleware {
 	return func(next llm.ChatModel) llm.ChatModel {
-		return aimw.Wrap(
+		return middleware.Wrap(
 			func(ctx context.Context, messages []llm.Message, opts ...llm.CallOption) (*llm.ChatResponse, error) {
 				resp, err := next.Generate(ctx, messages, opts...)
 				if err == nil && resp != nil {
 					keyID := keyExtractor(ctx)
-					// 异步记录不阻塞主流程，错误静默忽略
-					_ = b.Record(ctx, keyID, resp.ModelID, resp.Usage)
+					if recordErr := b.Record(ctx, keyID, resp.ModelID, resp.Usage); recordErr != nil {
+						return resp, recordErr
+					}
 				}
 				return resp, err
 			},
@@ -255,7 +259,9 @@ func (r *billingStreamReader) Recv() (llm.StreamChunk, error) {
 		r.done = true
 		if resp := r.reader.Response(); resp != nil {
 			keyID := r.keyExtractor(r.ctx)
-			_ = r.billing.Record(r.ctx, keyID, resp.ModelID, resp.Usage)
+			if recordErr := r.billing.Record(r.ctx, keyID, resp.ModelID, resp.Usage); recordErr != nil {
+				return chunk, recordErr
+			}
 		}
 	}
 	return chunk, err

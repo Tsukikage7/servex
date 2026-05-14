@@ -6,12 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	es "github.com/elastic/go-elasticsearch/v8"
+	elasticsearch "github.com/elastic/go-elasticsearch/v8"
 )
 
 // esDocument 文档操作实现.
 type esDocument struct {
-	client *es.Client
+	client *elasticsearch.Client
 	index  string
 }
 

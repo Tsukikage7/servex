@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/Tsukikage7/servex/v2/llm"
-	aimw "github.com/Tsukikage7/servex/v2/llm/middleware"
+	"github.com/Tsukikage7/servex/v2/llm/middleware"
 	"github.com/Tsukikage7/servex/v2/middleware/ratelimit"
 	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
@@ -59,9 +59,9 @@ func (r *mockReader) Close() error                { return nil }
 func TestChain(t *testing.T) {
 	var order []string
 
-	makeMiddleware := func(name string) aimw.Middleware {
+	makeMiddleware := func(name string) middleware.Middleware {
 		return func(next llm.ChatModel) llm.ChatModel {
-			return aimw.Wrap(
+			return middleware.Wrap(
 				func(ctx context.Context, messages []llm.Message, opts ...llm.CallOption) (*llm.ChatResponse, error) {
 					order = append(order, name+":before")
 					resp, err := next.Generate(ctx, messages, opts...)
@@ -76,7 +76,7 @@ func TestChain(t *testing.T) {
 	}
 
 	model := &mockModel{}
-	chain := aimw.Chain(makeMiddleware("A"), makeMiddleware("B"), makeMiddleware("C"))
+	chain := middleware.Chain(makeMiddleware("A"), makeMiddleware("B"), makeMiddleware("C"))
 	wrapped := chain(model)
 
 	_, err := wrapped.Generate(t.Context(), []llm.Message{llm.UserMessage("hi")})
@@ -108,7 +108,7 @@ func TestRetry_RetriesOnRetryableError(t *testing.T) {
 		},
 	}
 
-	wrapped := aimw.Retry(3, time.Millisecond)(model)
+	wrapped := middleware.Retry(3, time.Millisecond)(model)
 	resp, err := wrapped.Generate(t.Context(), []llm.Message{llm.UserMessage("hi")})
 	if err != nil {
 		t.Fatalf("期望成功，得到错误: %v", err)
@@ -130,7 +130,7 @@ func TestRetry_NoRetryOnNonRetryableError(t *testing.T) {
 		},
 	}
 
-	wrapped := aimw.Retry(3, time.Millisecond)(model)
+	wrapped := middleware.Retry(3, time.Millisecond)(model)
 	_, err := wrapped.Generate(t.Context(), []llm.Message{llm.UserMessage("hi")})
 	if err == nil {
 		t.Fatal("期望错误，得到 nil")
@@ -150,7 +150,7 @@ func TestUsageTracker(t *testing.T) {
 		},
 	}
 
-	tracker := &aimw.UsageTracker{}
+	tracker := &middleware.UsageTracker{}
 	wrapped := tracker.Middleware()(model)
 
 	for range 3 {
@@ -178,7 +178,7 @@ func TestRateLimit_Blocks(t *testing.T) {
 	limiter := ratelimit.NewTokenBucket(100, 1) // 每秒 100 个，容量 1
 	model := &mockModel{}
 
-	wrapped := aimw.RateLimit(limiter)(model)
+	wrapped := middleware.RateLimit(limiter)(model)
 
 	ctx, cancel := context.WithTimeout(t.Context(), 50*time.Millisecond)
 	defer cancel()
@@ -195,7 +195,7 @@ func TestRateLimit_Blocks(t *testing.T) {
 func TestChain_MultipleMiddlewares(t *testing.T) {
 	callCount := 0
 	countMW := func(next llm.ChatModel) llm.ChatModel {
-		return aimw.Wrap(
+		return middleware.Wrap(
 			func(ctx context.Context, messages []llm.Message, opts ...llm.CallOption) (*llm.ChatResponse, error) {
 				callCount++
 				return next.Generate(ctx, messages, opts...)
@@ -207,7 +207,7 @@ func TestChain_MultipleMiddlewares(t *testing.T) {
 	}
 
 	model := &mockModel{}
-	chain := aimw.Chain(countMW, countMW, countMW)
+	chain := middleware.Chain(countMW, countMW, countMW)
 	wrapped := chain(model)
 
 	_, err := wrapped.Generate(t.Context(), []llm.Message{llm.UserMessage("hi")})
@@ -228,7 +228,7 @@ func TestRetry_ExhaustsAttempts(t *testing.T) {
 		},
 	}
 
-	wrapped := aimw.Retry(3, time.Millisecond)(model)
+	wrapped := middleware.Retry(3, time.Millisecond)(model)
 	_, err := wrapped.Generate(t.Context(), []llm.Message{llm.UserMessage("hi")})
 	if err == nil {
 		t.Fatal("expected error after exhausting retries")
@@ -248,7 +248,7 @@ func TestRetry_MinAttempts(t *testing.T) {
 		},
 	}
 
-	wrapped := aimw.Retry(0, time.Millisecond)(model)
+	wrapped := middleware.Retry(0, time.Millisecond)(model)
 	_, err := wrapped.Generate(t.Context(), []llm.Message{llm.UserMessage("hi")})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -260,7 +260,7 @@ func TestRetry_MinAttempts(t *testing.T) {
 
 func TestUsageTracker_Stream(t *testing.T) {
 	model := &mockModel{}
-	tracker := &aimw.UsageTracker{}
+	tracker := &middleware.UsageTracker{}
 	wrapped := tracker.Middleware()(model)
 
 	reader, err := wrapped.Stream(t.Context(), []llm.Message{llm.UserMessage("hi")})
@@ -286,7 +286,7 @@ func TestRateLimit_Stream(t *testing.T) {
 	limiter := ratelimit.NewTokenBucket(1000, 10)
 	model := &mockModel{}
 
-	wrapped := aimw.RateLimit(limiter)(model)
+	wrapped := middleware.RateLimit(limiter)(model)
 	reader, err := wrapped.Stream(t.Context(), []llm.Message{llm.UserMessage("hi")})
 	if err != nil {
 		t.Fatalf("Stream failed: %v", err)
@@ -306,7 +306,7 @@ func TestLogging(t *testing.T) {
 	}
 
 	log := &nopTestLogger{}
-	wrapped := aimw.Logging(log)(model)
+	wrapped := middleware.Logging(log)(model)
 
 	_, err := wrapped.Generate(t.Context(), []llm.Message{llm.UserMessage("hi")})
 	if err != nil {

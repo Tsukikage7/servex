@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
-	brDoc "github.com/aws/aws-sdk-go-v2/service/bedrockruntime/document"
+	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime/document"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types"
 
 	"github.com/Tsukikage7/servex/v2/llm"
@@ -234,7 +234,7 @@ func TestConvertResponse_ToolUse(t *testing.T) {
 						Value: types.ToolUseBlock{
 							ToolUseId: &toolUseId,
 							Name:      &toolName,
-							Input:     brDoc.NewLazyDocument(argsDoc),
+							Input:     document.NewLazyDocument(argsDoc),
 						},
 					},
 				},

@@ -3,7 +3,7 @@
 package proto
 
 import (
-	stdjson "encoding/json"
+	"encoding/json"
 
 	"google.golang.org/protobuf/proto"
 
@@ -20,7 +20,7 @@ func (codec) Marshal(v any) ([]byte, error) {
 		return pbjson.Marshal(msg)
 	}
 	// 非 proto.Message 回退到标准 JSON
-	return stdjson.Marshal(v)
+	return json.Marshal(v)
 }
 
 func (codec) Unmarshal(data []byte, v any) error {
@@ -28,7 +28,7 @@ func (codec) Unmarshal(data []byte, v any) error {
 		return pbjson.Unmarshal(data, msg)
 	}
 	// 非 proto.Message 回退到标准 JSON
-	return stdjson.Unmarshal(data, v)
+	return json.Unmarshal(data, v)
 }
 
 func (codec) Name() string { return "proto" }

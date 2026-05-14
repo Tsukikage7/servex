@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	gormlogger "gorm.io/gorm/logger"
+	"gorm.io/gorm/logger"
 
 	"github.com/Tsukikage7/servex/v2/domain/outbox"
 	"github.com/Tsukikage7/servex/v2/messaging/pubsub"
@@ -60,7 +60,7 @@ func (p *mockPublisher) sentMessages() []*pubsub.Message {
 func setupTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
-		Logger: gormlogger.Default.LogMode(gormlogger.Silent),
+		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	require.NoError(t, err)
 

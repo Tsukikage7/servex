@@ -14,7 +14,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	otelTrace "go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
@@ -62,7 +62,7 @@ func generateID() string {
 // 优先级: OTel span > header > 新生成 UUID.
 func extractOrGenerateTraceID(ctx context.Context, headerValue string) (traceID, spanID string) {
 	// 优先从 OTel span 提取（observability/tracing 中间件已创建）
-	span := otelTrace.SpanFromContext(ctx)
+	span := trace.SpanFromContext(ctx)
 	if span.SpanContext().HasTraceID() {
 		traceID = span.SpanContext().TraceID().String()
 		if span.SpanContext().HasSpanID() {

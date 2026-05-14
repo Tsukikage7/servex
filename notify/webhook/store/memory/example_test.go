@@ -5,11 +5,11 @@ import (
 	"fmt"
 
 	"github.com/Tsukikage7/servex/v2/notify/webhook"
-	whstoremem "github.com/Tsukikage7/servex/v2/notify/webhook/store/memory"
+	"github.com/Tsukikage7/servex/v2/notify/webhook/store/memory"
 )
 
 func ExampleNewStore() {
-	store := whstoremem.NewStore()
+	store := memory.NewStore()
 	sub := &webhook.Subscription{
 		ID:     "sub-1",
 		URL:    "https://example.com/webhook",

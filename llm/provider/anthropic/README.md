@@ -13,7 +13,7 @@ Anthropic Claude API 适配器，实现 `llm.ChatModel` 接口。
 ## 安装
 
 ```bash
-go get github.com/Tsukikage7/servex/llm
+go get github.com/Tsukikage7/servex/v2/llm
 ```
 
 ## API

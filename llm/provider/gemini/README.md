@@ -13,7 +13,7 @@ Google Gemini REST API 适配器，实现 `llm.ChatModel` 和 `llm.EmbeddingMode
 ## 安装
 
 ```bash
-go get github.com/Tsukikage7/servex/llm
+go get github.com/Tsukikage7/servex/v2/llm
 ```
 
 ## API

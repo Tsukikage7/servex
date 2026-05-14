@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/Tsukikage7/servex/v2/llm"
-	openllm "github.com/Tsukikage7/servex/v2/llm/provider/openai"
+	"github.com/Tsukikage7/servex/v2/llm/provider/openai"
 )
 
 const defaultBaseURL = "http://localhost:11434/v1"
@@ -35,7 +35,7 @@ func WithEmbeddingModel(m string) Option { return func(o *options) { o.embedding
 func WithHTTPClient(hc *http.Client) Option { return func(o *options) { o.httpClient = hc } }
 
 // Client Ollama 客户端，底层复用 OpenAI 适配器.
-type Client = openllm.Client
+type Client = openai.Client
 
 // New 创建 Ollama 客户端.
 // apiKey 对 Ollama 通常为空字符串（本地服务不需要鉴权）.
@@ -49,16 +49,16 @@ func New(apiKey string, opts ...Option) *Client {
 		opt(o)
 	}
 
-	var openOpts []openllm.Option
-	openOpts = append(openOpts, openllm.WithBaseURL(o.baseURL))
-	openOpts = append(openOpts, openllm.WithModel(o.model))
+	var openOpts []openai.Option
+	openOpts = append(openOpts, openai.WithBaseURL(o.baseURL))
+	openOpts = append(openOpts, openai.WithModel(o.model))
 	if o.embeddingModel != "" {
-		openOpts = append(openOpts, openllm.WithEmbeddingModel(o.embeddingModel))
+		openOpts = append(openOpts, openai.WithEmbeddingModel(o.embeddingModel))
 	}
 	if o.httpClient != nil {
-		openOpts = append(openOpts, openllm.WithHTTPClient(o.httpClient))
+		openOpts = append(openOpts, openai.WithHTTPClient(o.httpClient))
 	}
-	return openllm.New(apiKey, openOpts...)
+	return openai.New(apiKey, openOpts...)
 }
 
 // 编译期接口断言.

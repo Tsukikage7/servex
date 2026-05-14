@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	goredis "github.com/redis/go-redis/v9"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/Tsukikage7/servex/v2/messaging/jobqueue"
 )
@@ -16,12 +16,12 @@ import (
 // Store 基于 Redis 的 jobqueue.Store 实现.
 // 使用 sorted set 实现延迟和优先级队列.
 type Store struct {
-	client *goredis.Client
+	client *redis.Client
 	opts   options
 }
 
 // NewStore 基于 go-redis Client 创建 Redis Store.
-func NewStore(client *goredis.Client, opts ...Option) (*Store, error) {
+func NewStore(client *redis.Client, opts ...Option) (*Store, error) {
 	if client == nil {
 		return nil, errors.New("jobqueue/redis: client 不能为空")
 	}
@@ -56,14 +56,14 @@ func (s *Store) Enqueue(ctx context.Context, job *jobqueue.Job) error {
 
 	// 加入 sorted set，score = 优先级反转 + 调度时间
 	score := float64(job.ScheduledAt.UnixMilli()) - float64(job.Priority)*1e12
-	return s.client.ZAdd(ctx, s.key("queue", job.Queue), goredis.Z{
+	return s.client.ZAdd(ctx, s.key("queue", job.Queue), redis.Z{
 		Score:  score,
 		Member: job.ID,
 	}).Err()
 }
 
 // dequeueScript 使用 Lua 脚本原子地查询并移除到期的 job，避免 TOCTOU 竞态.
-var dequeueScript = goredis.NewScript(`
+var dequeueScript = redis.NewScript(`
 local result = redis.call("ZRANGEBYSCORE", KEYS[1], "-inf", ARGV[1], "LIMIT", 0, 1)
 if #result == 0 then
 	return nil
@@ -80,7 +80,7 @@ func (s *Store) Dequeue(ctx context.Context, queue string) (*jobqueue.Job, error
 	now := fmt.Sprintf("%f", float64(time.Now().UnixMilli()))
 	result, err := dequeueScript.Run(ctx, s.client, []string{s.key("queue", queue)}, now).Result()
 	if err != nil {
-		if errors.Is(err, goredis.Nil) {
+		if errors.Is(err, redis.Nil) {
 			return nil, jobqueue.ErrDequeueTimeout
 		}
 		return nil, err
@@ -146,7 +146,7 @@ func (s *Store) Requeue(ctx context.Context, job *jobqueue.Job) error {
 		return err
 	}
 	score := float64(job.ScheduledAt.UnixMilli()) - float64(job.Priority)*1e12
-	return s.client.ZAdd(ctx, s.key("queue", job.Queue), goredis.Z{
+	return s.client.ZAdd(ctx, s.key("queue", job.Queue), redis.Z{
 		Score:  score,
 		Member: job.ID,
 	}).Err()

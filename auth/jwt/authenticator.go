@@ -2,16 +2,16 @@ package jwt
 
 import (
 	"context"
-	stderrors "errors"
+	"errors"
 	"reflect"
 
-	gojwt "github.com/golang-jwt/jwt/v5"
+	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/Tsukikage7/servex/v2/auth"
 )
 
 // ClaimsMapper Claims 到 Principal 的映射函数.
-type ClaimsMapper func(claims gojwt.Claims) (*auth.Principal, error)
+type ClaimsMapper func(claims jwt.Claims) (*auth.Principal, error)
 
 // Authenticator JWT 认证器，实现 auth.Authenticator 接口.
 type Authenticator struct {
@@ -92,7 +92,7 @@ func (a *Authenticator) Authenticate(ctx context.Context, creds auth.Credentials
 	// 验证 JWT
 	claims, err := a.jwt.ValidateWithClaims(ctx, creds.Token, claimsType)
 	if err != nil {
-		if stderrors.Is(err, ErrTokenInvalid) {
+		if errors.Is(err, ErrTokenInvalid) {
 			return nil, auth.ErrInvalidCredentials.WithCause(err)
 		}
 		return nil, err
@@ -113,7 +113,7 @@ func (a *Authenticator) Authenticate(ctx context.Context, creds auth.Credentials
 }
 
 // defaultClaimsMapper 默认的 Claims 映射函数.
-func defaultClaimsMapper(claims gojwt.Claims) (*auth.Principal, error) {
+func defaultClaimsMapper(claims jwt.Claims) (*auth.Principal, error) {
 	principal := &auth.Principal{
 		Type:     auth.PrincipalTypeUser,
 		Metadata: make(map[string]any),
@@ -130,7 +130,7 @@ func defaultClaimsMapper(claims gojwt.Claims) (*auth.Principal, error) {
 	}
 
 	// 尝试从 MapClaims 获取更多信息
-	if mapClaims, ok := claims.(gojwt.MapClaims); ok {
+	if mapClaims, ok := claims.(jwt.MapClaims); ok {
 		principal.Roles = append(principal.Roles, stringClaimSlice(mapClaims["roles"])...)
 		principal.Roles = append(principal.Roles, stringClaimSlice(mapClaims["role"])...)
 		principal.Permissions = append(principal.Permissions, stringClaimSlice(mapClaims["permissions"])...)
@@ -201,7 +201,7 @@ func stringClaimSlice(v any) []string {
 	}
 }
 
-func exportedStringSliceField(claims gojwt.Claims, names ...string) []string {
+func exportedStringSliceField(claims jwt.Claims, names ...string) []string {
 	v := reflect.Indirect(reflect.ValueOf(claims))
 	if !v.IsValid() || v.Kind() != reflect.Struct {
 		return nil
@@ -233,7 +233,7 @@ func exportedStringSliceField(claims gojwt.Claims, names ...string) []string {
 	return nil
 }
 
-func exportedStringField(claims gojwt.Claims, names ...string) string {
+func exportedStringField(claims jwt.Claims, names ...string) string {
 	v := reflect.Indirect(reflect.ValueOf(claims))
 	if !v.IsValid() || v.Kind() != reflect.Struct {
 		return ""

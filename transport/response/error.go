@@ -1,10 +1,6 @@
 package response
 
-import (
-	"errors"
-
-	servexerr "github.com/Tsukikage7/servex/v2/errors"
-)
+import "github.com/Tsukikage7/servex/v2/errors"
 
 // ExtractCode 从错误中提取错误码.
 //
@@ -21,7 +17,7 @@ func ExtractCode(err error) Code {
 	}
 
 	// 桥接 servex/errors.Error → response.Code
-	if srvErr, ok := servexerr.FromError(err); ok {
+	if srvErr, ok := errors.FromError(err); ok {
 		code := Code{
 			Num:     srvErr.Code,
 			Message: srvErr.Message,
@@ -42,7 +38,7 @@ func normalizeCode(code Code) Code {
 		if code.Message == "" {
 			code.Message = builtin.Message
 		}
-		if code.Kind == servexerr.KindInternal && code.Num != CodeInternal.Num {
+		if code.Kind == errors.KindInternal && code.Num != CodeInternal.Num {
 			code.Kind = builtin.Kind
 		}
 		if code.http == 0 {
@@ -76,7 +72,7 @@ func ExtractMetadata(err error) map[string]string {
 	if err == nil {
 		return nil
 	}
-	if srvErr, ok := servexerr.FromError(err); ok {
+	if srvErr, ok := errors.FromError(err); ok {
 		return srvErr.Metadata
 	}
 	return nil
@@ -96,7 +92,7 @@ func ExtractMessage(err error) string {
 	}
 
 	// 再检查 servex/errors.Error（可能携带 cause 等敏感信息）
-	if srvErr, ok := servexerr.FromError(err); ok {
+	if srvErr, ok := errors.FromError(err); ok {
 		if isInternalCode(srvErr.Code) {
 			return CodeInternal.Message
 		}

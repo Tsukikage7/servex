@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	goredis "github.com/redis/go-redis/v9"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
@@ -167,7 +167,7 @@ func TestStringOps(t *testing.T) {
 
 	// Get 不存在的 key
 	_, err = client.Get(ctx, key)
-	assert.ErrorIs(t, err, goredis.Nil)
+	assert.ErrorIs(t, err, redis.Nil)
 }
 
 func TestHashOps(t *testing.T) {
@@ -200,7 +200,7 @@ func TestHashOps(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = client.HGet(ctx, key, "age")
-	assert.ErrorIs(t, err, goredis.Nil)
+	assert.ErrorIs(t, err, redis.Nil)
 }
 
 func TestListOps(t *testing.T) {

@@ -24,7 +24,10 @@ func newFilledBilling(t *testing.T, keyID string, cost float64) billing.Billing 
 		InputPricePerM:  cost * 1_000_000, // 1 token 对应 cost 美元
 		OutputPricePerM: 0,
 	}}
-	b := billing.NewBilling(store, billing.WithDefaultPricing(pricing))
+	b, err := billing.NewBilling(store, billing.WithDefaultPricing(pricing))
+	if err != nil {
+		t.Fatalf("NewBilling: %v", err)
+	}
 	if err := b.Record(context.Background(), keyID, "budget-test", llm.Usage{PromptTokens: 1, TotalTokens: 1}); err != nil {
 		t.Fatalf("Record: %v", err)
 	}
@@ -138,7 +141,10 @@ func TestBudgetGuard_WithPeriod(t *testing.T) {
 
 // nil 核心依赖必须在构造阶段 fail-fast.
 func TestBudgetGuard_NewPanicsOnNilDeps(t *testing.T) {
-	b := billing.NewBilling(billing.NewMemoryStore())
+	b, err := billing.NewBilling(billing.NewMemoryStore())
+	if err != nil {
+		t.Fatalf("NewBilling: %v", err)
+	}
 	nonNilKey := func(context.Context) string { return "k" }
 	nonNilGet := func(context.Context, string) (float64, error) { return 1, nil }
 

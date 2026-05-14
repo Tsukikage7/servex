@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"github.com/Tsukikage7/servex/v2/llm"
-	"github.com/Tsukikage7/servex/v2/llm/safety/moderation"
 	"github.com/Tsukikage7/servex/v2/llm/serving/apikey"
 	"github.com/Tsukikage7/servex/v2/llm/serving/billing"
 	"github.com/Tsukikage7/servex/v2/observability/logger"
@@ -57,6 +56,17 @@ func WithPriority(p int) ProviderOption {
 // Option Proxy 构造选项.
 type Option func(*Proxy)
 
+// ModerationResult 表示内容审核结果.
+type ModerationResult struct {
+	Flagged bool
+	Reason  string
+}
+
+// Moderator 是 proxy 可选内容审核接口.
+type Moderator interface {
+	ModerateMessages(r *http.Request, messages []llm.Message) (*ModerationResult, error)
+}
+
 // WithAPIKeyManager 设置 API Key 管理器，用于请求鉴权.
 func WithAPIKeyManager(mgr apikey.Manager) Option {
 	return func(p *Proxy) { p.keyMgr = mgr }
@@ -73,7 +83,7 @@ func WithLogger(log logger.Logger) Option {
 }
 
 // WithModeration 设置内容审核器，用于过滤有害内容.
-func WithModeration(mod moderation.Moderator) Option {
+func WithModeration(mod Moderator) Option {
 	return func(p *Proxy) { p.moderator = mod }
 }
 
@@ -86,7 +96,7 @@ type Proxy struct {
 	keyMgr    apikey.Manager
 	billing   billing.Billing
 	log       logger.Logger
-	moderator moderation.Moderator
+	moderator Moderator
 }
 
 // New 创建 Proxy 实例，并将初始 providers map 中的每个 ChatModel 注册进去.

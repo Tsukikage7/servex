@@ -3,7 +3,7 @@ package telegram
 
 import (
 	"context"
-	stderrors "errors"
+	"errors"
 	"strconv"
 
 	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -67,7 +67,7 @@ func (s *Sender) Send(_ context.Context, msg *notify.Message) (*notify.Result, e
 		lastID = strconv.Itoa(sent.MessageID)
 	}
 	if len(errs) > 0 {
-		return &notify.Result{MessageID: lastID, Channel: ChannelTelegram, Error: stderrors.Join(errs...)}, stderrors.Join(errs...)
+		return &notify.Result{MessageID: lastID, Channel: ChannelTelegram, Error: errors.Join(errs...)}, errors.Join(errs...)
 	}
 	return &notify.Result{MessageID: lastID, Channel: ChannelTelegram}, nil
 }

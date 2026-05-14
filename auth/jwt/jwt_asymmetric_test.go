@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	gojwt "github.com/golang-jwt/jwt/v5"
+	gjwt "github.com/golang-jwt/jwt/v5"
 
 	"github.com/Tsukikage7/servex/v2/auth/jwt"
 	"github.com/Tsukikage7/servex/v2/observability/logger"
@@ -29,11 +29,11 @@ func newTestLogger(t *testing.T) logger.Logger {
 func newTestClaims() *jwt.StandardClaims {
 	now := time.Now()
 	return &jwt.StandardClaims{
-		RegisteredClaims: gojwt.RegisteredClaims{
+		RegisteredClaims: gjwt.RegisteredClaims{
 			Subject:   "user-123",
 			Issuer:    "test-service",
-			ExpiresAt: gojwt.NewNumericDate(now.Add(2 * time.Hour)),
-			IssuedAt:  gojwt.NewNumericDate(now),
+			ExpiresAt: gjwt.NewNumericDate(now.Add(2 * time.Hour)),
+			IssuedAt:  gjwt.NewNumericDate(now),
 		},
 	}
 }
@@ -297,11 +297,11 @@ func TestRSA_RefreshWithClaims(t *testing.T) {
 	// 创建一个即将过期的令牌
 	now := time.Now()
 	claims := &jwt.StandardClaims{
-		RegisteredClaims: gojwt.RegisteredClaims{
+		RegisteredClaims: gjwt.RegisteredClaims{
 			Subject:   "user-456",
 			Issuer:    "test-service",
-			ExpiresAt: gojwt.NewNumericDate(now.Add(1 * time.Minute)),
-			IssuedAt:  gojwt.NewNumericDate(now),
+			ExpiresAt: gjwt.NewNumericDate(now.Add(1 * time.Minute)),
+			IssuedAt:  gjwt.NewNumericDate(now),
 		},
 	}
 
@@ -312,11 +312,11 @@ func TestRSA_RefreshWithClaims(t *testing.T) {
 
 	// 刷新令牌
 	newClaims := &jwt.StandardClaims{
-		RegisteredClaims: gojwt.RegisteredClaims{
+		RegisteredClaims: gjwt.RegisteredClaims{
 			Subject:   "user-456",
 			Issuer:    "test-service",
-			ExpiresAt: gojwt.NewNumericDate(now.Add(2 * time.Hour)),
-			IssuedAt:  gojwt.NewNumericDate(now),
+			ExpiresAt: gjwt.NewNumericDate(now.Add(2 * time.Hour)),
+			IssuedAt:  gjwt.NewNumericDate(now),
 		},
 	}
 

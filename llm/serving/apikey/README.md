@@ -1,6 +1,6 @@
 # llm/serving/apikey
 
-`github.com/Tsukikage7/servex/llm/serving/apikey` — API Key 管理，支持密钥的创建、验证、撤销、配额管理及 HTTP 中间件鉴权。
+`github.com/Tsukikage7/servex/v2/llm/serving/apikey` — API Key 管理，支持密钥的创建、验证、撤销、配额管理及 HTTP 中间件鉴权。
 
 ## 核心类型
 
@@ -16,7 +16,7 @@
 ## 使用示例
 
 ```go
-import "github.com/Tsukikage7/servex/llm/serving/apikey"
+import "github.com/Tsukikage7/servex/v2/llm/serving/apikey"
 
 mgr, _ := apikey.NewManager(myStore,
     apikey.WithKeyPrefix("sk-"),

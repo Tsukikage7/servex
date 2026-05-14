@@ -4,14 +4,14 @@ import (
 	"context"
 	"time"
 
-	goredis "github.com/redis/go-redis/v9"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
 // redisClient 封装 go-redis 客户端.
 type redisClient struct {
-	client *goredis.Client
+	client *redis.Client
 	log    logger.Logger
 }
 
@@ -179,7 +179,7 @@ func (c *redisClient) ScriptLoad(ctx context.Context, script string) (string, er
 // Pipeline 操作
 // ============================================================================
 
-func (c *redisClient) PipelineExec(ctx context.Context, fn func(pipe goredis.Pipeliner) error) error {
+func (c *redisClient) PipelineExec(ctx context.Context, fn func(pipe redis.Pipeliner) error) error {
 	pipe := c.client.Pipeline()
 	if err := fn(pipe); err != nil {
 		return err
@@ -201,6 +201,6 @@ func (c *redisClient) Subscribe(ctx context.Context, channels ...string) PubSub 
 // ============================================================================
 
 // Underlying 返回底层 go-redis 客户端.
-func (c *redisClient) Underlying() *goredis.Client {
+func (c *redisClient) Underlying() *redis.Client {
 	return c.client
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	es "github.com/elastic/go-elasticsearch/v8"
+	elasticsearch "github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
 
 	"github.com/Tsukikage7/servex/v2/observability/logger"
@@ -12,7 +12,7 @@ import (
 
 // esIndex 索引操作实现.
 type esIndex struct {
-	client *es.Client
+	client *elasticsearch.Client
 	name   string
 	log    logger.Logger
 }

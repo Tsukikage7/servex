@@ -198,39 +198,23 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 | config/source/k8s | `config/source/k8s` | Kubernetes ConfigMap/Secret 配置源 | `New`, `NewWithClient`, `Config`, `WithFormat`, `WithNamespace`, `WithKey`, `WithResourceType` |
 | discovery | `discovery` | 服务注册与发现 | `NewDiscovery`, `NewServiceRegistry`, `Register`, `Discover` |
 
-### AI → 详见 `ai` skill
+### AI → 详见 `llm` skill
 
 | 模块 | 包路径 | 描述 | 核心类型/函数 |
 |------|--------|------|--------------|
-| llm/agent/toolcall | `llm/agent/toolcall` | AI 工具调用框架 | `NewRegistry`, `NewExecutor`, `WithOnStep` |
+| llm | `llm` | LLM facade | `ChatModel`, `EmbeddingModel`, `Message`, `Tool`, `CallOption` |
+| llm/framework/eino | `llm/framework/eino` | 独立 module，CloudWeGo Eino 双向适配 | `NewChatModel`, `AsChatModel`, `NewEmbeddingModel`, `AsEmbedder`, `ToEinoTools` |
+| llm/framework/adk | `llm/framework/adk` | 独立 module，Google ADK 适配 | `NewAgent`, `NewLLMAgent`, `AsModel`, `NewRunner`, `WrapAgent` |
 | llm/provider/router | `llm/provider/router` | 多 Provider 路由 | `New`, `Route` |
 | llm/provider/openai | `llm/provider/openai` | OpenAI 客户端（兼容 DeepSeek 等） | `New`, `WithBaseURL`, `WithModel`, `WithEmbeddingModel` |
 | llm/provider/anthropic | `llm/provider/anthropic` | Anthropic Claude 客户端 | `New`, `WithModel`, `WithDefaultMaxTokens` |
 | llm/provider/gemini | `llm/provider/gemini` | Google Gemini 客户端 | `New`, `WithModel`, `WithEmbeddingModel` |
-| llm/agent/conversation | `llm/agent/conversation` | 多轮对话会话管理 | `New`, `Chat`, `ChatStream`, `WithMemory`, `NewBufferMemory`, `NewWindowMemory` |
-| llm/retrieval/embedding | `llm/retrieval/embedding` | 嵌入向量工具 | `BatchEmbed`, `CosineSimilarity` |
 | llm/prompt | `llm/prompt` | 消息模板引擎 | `New`, `MustNew`, `Render`, `MustRender` |
 | llm/middleware | `llm/middleware` | AI 模型中间件链 | `Chain`, `Logging`, `Retry`, `RateLimit`, `UsageTracker` |
-| llm/retrieval/vectorstore | `llm/retrieval/vectorstore` | 向量存储接口 | `VectorStore`, `Document`, `SimilaritySearch`, `WithFilter` |
-| llm/retrieval/splitter | `llm/retrieval/splitter` | 文本分块器（字符/递归/Token） | `NewCharacterSplitter`, `NewRecursiveSplitter`, `NewTokenSplitter`, `WithChunkSize`, `WithChunkOverlap` |
-| llm/processing/structured | `llm/processing/structured` | 结构化输出提取（JSON Schema 约束） | `Extract`, `ExtractFromMessages`, `SchemaFrom`, `WithMaxRetries` |
 | llm/serving/cache | `llm/serving/cache` | 语义缓存（Embedding 相似度） | `NewMemoryStore`, `Middleware`, `NewCachedModel`, `Config` |
-| llm/safety/guardrail | `llm/safety/guardrail` | 输入输出护栏（关键词/PII/长度） | `Middleware`, `KeywordFilter`, `PIIDetector`, `MaxLength`, `WithInputGuards`, `WithOutputGuards` |
-| llm/retrieval/rag | `llm/retrieval/rag` | RAG 管线（检索增强生成） | `New`, `Ingest`, `Retrieve`, `Query`, `QueryStream` |
-| llm/agent/chain | `llm/agent/chain` | 多步 LLM 编排 | `New`, `AddStep`, `Run`, `WithModel`, `WithOnStep` |
-| llm/retrieval/document | `llm/retrieval/document` | 文档加载器（Text/CSV/JSON/Markdown/Directory） | `NewTextLoader`, `NewTextFileLoader`, `NewCSVLoader`, `NewJSONLoader`, `NewMarkdownLoader`, `NewDirectoryLoader` |
-| llm/agent/memory | `llm/agent/memory` | 持久化记忆（摘要/实体/Redis/内存） | `NewMemoryStore`, `NewRedisStore`, `NewPersistentMemory`, `NewSummaryMemory`, `NewEntityMemory` |
-| llm/retrieval/rerank | `llm/retrieval/rerank` | 重排序器（LLM/Embedding/CrossEncoder） | `NewLLMReranker`, `NewEmbeddingReranker`, `NewCrossEncoderReranker`, `WithTopN` |
-| llm/agent | `llm/agent` | 自主 Agent 框架（ReAct/PlanExecute/Supervisor/Pipeline） | `New`, `Run`, `RunStream`, `NewReActStrategy`, `NewPlanExecuteStrategy`, `NewSupervisor`, `NewPipeline` |
-| llm/eval | `llm/eval` | LLM 输出评估（相关性/忠实度/连贯性/正确性） | `RelevanceEvaluator`, `FaithfulnessEvaluator`, `CoherenceEvaluator`, `CorrectnessEvaluator`, `NewCompositeEvaluator` |
-| llm/processing/tokenizer | `llm/processing/tokenizer` | Token 计数与截断（估算/CL100K/消息列表） | `NewEstimateTokenizer`, `NewCL100KTokenizer`, `EstimateTokens`, `TruncateToFit`, `FitsContext` |
-| llm/safety/moderation | `llm/safety/moderation` | 内容审核（LLM/关键词/组合审核） | `NewLLMModerator`, `NewKeywordModerator`, `NewCompositeModerator`, `WithThreshold`, `WithCategories` |
 | llm/serving/apikey | `llm/serving/apikey` | API Key 管理（签发/验证/配额/限流） | `NewManager`, `NewGORMStore`, `NewMemoryStore`, `HTTPMiddleware`, `FromContext`, `WithQuotaLimit`, `WithRateLimit` |
 | llm/serving/billing | `llm/serving/billing` | 用量计费（按 token 计费/用量报表） | `NewBilling`, `NewGORMStore`, `NewMemoryStore`, `Middleware`, `WithDefaultPricing`, `SetPricing`, `GetSummary` |
 | llm/serving/proxy | `llm/serving/proxy` | AI API 代理网关（OpenAI 兼容/路由/鉴权/计费） | `New`, `RegisterProvider`, `Route`, `Handler`, `WithAPIKeyManager`, `WithBilling`, `WithModeration` |
-| llm/processing/classifier | `llm/processing/classifier` | 文本分类器（意图/情感/主题/语言/毒性/路由） | `NewIntentClassifier`, `NewSentimentClassifier`, `NewTopicClassifier`, `NewLanguageClassifier`, `NewToxicityClassifier`, `NewRouterClassifier`, `NewCustomClassifier`, `WithTopN` |
-| llm/processing/extractor | `llm/processing/extractor` | 信息提取（实体/关系/关键词/摘要） | `NewEntityExtractor`, `NewRelationExtractor`, `NewKeywordExtractor`, `NewSummarizer`, `WithMaxKeywords`, `WithMaxSentences`, `WithLanguage` |
-| llm/processing/translator | `llm/processing/translator` | 翻译器（多语言/术语表/批量翻译） | `NewTranslator`, `Translate`, `TranslateBatch`, `DetectLanguage`, `WithSourceLanguage`, `WithGlossary`, `WithTone`, `WithBatchSize` |
 
 ### 分布式模式 → 详见 `distributed` skill
 

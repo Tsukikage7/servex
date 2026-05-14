@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	gojwt "github.com/golang-jwt/jwt/v5"
+	gjwt "github.com/golang-jwt/jwt/v5"
 
 	"github.com/Tsukikage7/servex/v2/auth/jwt"
 	"github.com/Tsukikage7/servex/v2/observability/logger"
@@ -40,11 +40,11 @@ func ExampleJWT_Generate() {
 
 	// 生成令牌.
 	claims := &jwt.StandardClaims{
-		RegisteredClaims: gojwt.RegisteredClaims{
+		RegisteredClaims: gjwt.RegisteredClaims{
 			Subject:   "user-123",
 			Issuer:    "my-service",
-			ExpiresAt: gojwt.NewNumericDate(time.Now().Add(2 * time.Hour)),
-			IssuedAt:  gojwt.NewNumericDate(time.Now()),
+			ExpiresAt: gjwt.NewNumericDate(time.Now().Add(2 * time.Hour)),
+			IssuedAt:  gjwt.NewNumericDate(time.Now()),
 		},
 	}
 

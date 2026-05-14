@@ -7,20 +7,20 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	goredis "github.com/redis/go-redis/v9"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/Tsukikage7/servex/v2/messaging/pubsub"
 )
 
 // Publisher 通过 Redis Streams 发布消息.
 type Publisher struct {
-	client goredis.Cmdable
+	client redis.Cmdable
 	closed atomic.Bool
 	opts   publisherOptions
 }
 
 // NewPublisher 基于已有的 redis.Cmdable 创建 Publisher.
-func NewPublisher(client goredis.Cmdable, opts ...PublisherOption) (*Publisher, error) {
+func NewPublisher(client redis.Cmdable, opts ...PublisherOption) (*Publisher, error) {
 	if client == nil {
 		return nil, errors.New("pubsub/redis: client 不能为空")
 	}
@@ -65,7 +65,7 @@ func (p *Publisher) Publish(ctx context.Context, topic string, msgs ...*pubsub.M
 			values["header:"+k] = v
 		}
 
-		args := &goredis.XAddArgs{
+		args := &redis.XAddArgs{
 			Stream: topic,
 			ID:     "*",
 			Values: values,

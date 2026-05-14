@@ -97,10 +97,8 @@
 //
 //   - [llm] 统一 ChatModel / EmbeddingModel 接口
 //   - [llm/provider] OpenAI / Anthropic / Gemini 适配器
-//   - [llm/agent] 工具调用、对话管理、Agent 框架
-//   - [llm/retrieval] RAG / 向量存储 / 文档加载 / 重排序
-//   - [llm/processing] 结构化输出 / 分类 / 提取 / 翻译 / Token 计数
-//   - [llm/safety] 护栏 / 内容审核
+//   - [llm/framework/eino] 独立 module，CloudWeGo Eino 双向适配
+//   - [llm/framework/adk] 独立 module，Google ADK Agent / LLMAgent / Runner 适配
 //   - [llm/serving] 语义缓存 / API Key 管理 / 计费 / 代理网关
 //
 // # OAuth2

@@ -2,7 +2,7 @@ package jwt
 
 import (
 	"context"
-	stderrors "errors"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -792,7 +792,7 @@ func TestJWT_GenerateWithDurationContextUsesTokenStore(t *testing.T) {
 }
 
 func TestJWT_ValidateCachedTokenFailClose(t *testing.T) {
-	storeErr := stderrors.New("store unavailable")
+	storeErr := errors.New("store unavailable")
 	j := NewJWT(
 		WithSecretKey("test-secret-key-for-testing-32b!"),
 		WithLogger(testx.NopLogger()),

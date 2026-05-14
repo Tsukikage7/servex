@@ -1,6 +1,6 @@
 # llm/serving/proxy
 
-`github.com/Tsukikage7/servex/llm/serving/proxy` — OpenAI 兼容的 AI API 代理网关，支持多 Provider 注册、按模型名称路由、API Key 鉴权、内容审核和计费。
+`github.com/Tsukikage7/servex/v2/llm/serving/proxy` — OpenAI Chat Completions 兼容的最小代理网关，支持多 Provider 注册、按模型名称路由、API Key 鉴权、内容审核和计费。
 
 ## 核心类型
 
@@ -17,10 +17,12 @@
 - `WithModeration(mod)` — 设置内容审核器
 - `WithLogger(log)` — 设置日志记录器
 
+当前代理覆盖文本聊天的常用字段，不承诺完整 OpenAI API 兼容；工具流式增量、多模态、response_format 等高级字段需要按业务扩展。
+
 ## 使用示例
 
 ```go
-import "github.com/Tsukikage7/servex/llm/serving/proxy"
+import "github.com/Tsukikage7/servex/v2/llm/serving/proxy"
 
 p := proxy.New(nil,
     proxy.WithAPIKeyManager(keyMgr),

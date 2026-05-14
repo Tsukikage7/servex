@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
-	goredis "github.com/redis/go-redis/v9"
+	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Tsukikage7/servex/v2/storage/redis"
+	storeredis "github.com/Tsukikage7/servex/v2/storage/redis"
 	"github.com/Tsukikage7/servex/v2/testx"
 )
 
@@ -25,13 +25,13 @@ func redisAddr() string {
 	return addr
 }
 
-func newRedisClient(t *testing.T) redis.Client {
+func newRedisClient(t *testing.T) storeredis.Client {
 	t.Helper()
 
-	cfg := redis.DefaultConfig()
+	cfg := storeredis.DefaultConfig()
 	cfg.Addr = redisAddr()
 
-	client, err := redis.NewClient(cfg, testx.NopLogger())
+	client, err := storeredis.NewClient(cfg, testx.NopLogger())
 	if err != nil {
 		t.Skipf("Redis not available: %v", err)
 		return nil
@@ -112,7 +112,7 @@ func TestRedis_Integration(t *testing.T) {
 
 		// Get non-existent key
 		_, err = client.Get(ctx, key)
-		assert.ErrorIs(t, err, goredis.Nil)
+		assert.ErrorIs(t, err, redis.Nil)
 	})
 
 	t.Run("Hash", func(t *testing.T) {
@@ -139,7 +139,7 @@ func TestRedis_Integration(t *testing.T) {
 		require.NoError(t, err)
 
 		_, err = client.HGet(ctx, key, "age")
-		assert.ErrorIs(t, err, goredis.Nil)
+		assert.ErrorIs(t, err, redis.Nil)
 	})
 
 	t.Run("List", func(t *testing.T) {
@@ -254,7 +254,7 @@ func TestRedis_Integration(t *testing.T) {
 		key2 := testKey("pipe:2")
 		t.Cleanup(func() { client.Del(ctx, key1, key2) })
 
-		err := client.PipelineExec(ctx, func(pipe goredis.Pipeliner) error {
+		err := client.PipelineExec(ctx, func(pipe redis.Pipeliner) error {
 			pipe.Set(ctx, key1, "v1", time.Minute)
 			pipe.Set(ctx, key2, "v2", time.Minute)
 			return nil

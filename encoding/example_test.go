@@ -1,7 +1,7 @@
 package encoding_test
 
 import (
-	stdjson "encoding/json"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -12,8 +12,8 @@ import (
 // jsonCodec 用于 Example 的 JSON 编解码器.
 type jsonCodec struct{}
 
-func (jsonCodec) Marshal(v any) ([]byte, error)      { return stdjson.Marshal(v) }
-func (jsonCodec) Unmarshal(data []byte, v any) error { return stdjson.Unmarshal(data, v) }
+func (jsonCodec) Marshal(v any) ([]byte, error)      { return json.Marshal(v) }
+func (jsonCodec) Unmarshal(data []byte, v any) error { return json.Unmarshal(data, v) }
 func (jsonCodec) Name() string                       { return "json" }
 
 // xmlCodec 用于 Example 的 XML 编解码器桩.

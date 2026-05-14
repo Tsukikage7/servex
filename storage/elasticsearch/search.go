@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"time"
 
-	es "github.com/elastic/go-elasticsearch/v8"
+	elasticsearch "github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
 )
 
 // esSearch 搜索操作实现.
 type esSearch struct {
-	client *es.Client
+	client *elasticsearch.Client
 	index  string
 }
 

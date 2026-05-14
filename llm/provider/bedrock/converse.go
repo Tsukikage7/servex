@@ -3,8 +3,8 @@ package bedrock
 import (
 	"encoding/json"
 
-	brDoc "github.com/aws/aws-sdk-go-v2/service/bedrockruntime/document"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
+	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime/document"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types"
 
 	"github.com/Tsukikage7/servex/v2/llm"
@@ -72,7 +72,7 @@ func convertMessage(m llm.Message) types.Message {
 				Value: types.ToolUseBlock{
 					ToolUseId: &id,
 					Name:      &name,
-					Input:     brDoc.NewLazyDocument(inputVal),
+					Input:     document.NewLazyDocument(inputVal),
 				},
 			})
 		}
@@ -85,7 +85,7 @@ func convertMessage(m llm.Message) types.Message {
 			switch p.Type {
 			case llm.ContentTypeText:
 				content = append(content, &types.ContentBlockMemberText{Value: p.Text})
-			// image 暂不支持（需要 base64 解码），跳过
+				// image 暂不支持（需要 base64 解码），跳过
 			}
 		}
 	} else if m.Content != "" {
@@ -132,7 +132,7 @@ func convertToolConfig(tools []llm.Tool) *types.ToolConfiguration {
 			Name:        &name,
 			Description: &desc,
 			InputSchema: &types.ToolInputSchemaMemberJson{
-				Value: brDoc.NewLazyDocument(schemaVal),
+				Value: document.NewLazyDocument(schemaVal),
 			},
 		}
 		bedTools = append(bedTools, &types.ToolMemberToolSpec{Value: spec})

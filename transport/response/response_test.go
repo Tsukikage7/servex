@@ -2,16 +2,16 @@ package response_test
 
 import (
 	"encoding/json"
-	"errors"
+	stderrors "errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	servexerr "github.com/Tsukikage7/servex/v2/errors"
+	servexerrors "github.com/Tsukikage7/servex/v2/errors"
 	"github.com/Tsukikage7/servex/v2/transport/response"
 	"github.com/Tsukikage7/servex/v2/xutil/pagination"
 	"google.golang.org/grpc/codes"
-	grpcstatus "google.golang.org/grpc/status"
+	"google.golang.org/grpc/status"
 )
 
 func TestOK(t *testing.T) {
@@ -124,15 +124,15 @@ func TestServexError(t *testing.T) {
 	})
 
 	t.Run("with cause", func(t *testing.T) {
-		cause := errors.New("underlying error")
+		cause := stderrors.New("underlying error")
 		err := response.CodeInternal.ToError().WithCause(cause)
-		if !errors.Is(err, cause) {
+		if !stderrors.Is(err, cause) {
 			t.Error("should unwrap to cause")
 		}
 	})
 
 	t.Run("full", func(t *testing.T) {
-		cause := errors.New("db error")
+		cause := stderrors.New("db error")
 		err := response.CodeDatabaseError.ToError().WithMessage("query failed").WithCause(cause)
 		if err.Code != response.CodeDatabaseError.Num {
 			t.Error("Code mismatch")
@@ -143,15 +143,15 @@ func TestServexError(t *testing.T) {
 	})
 
 	t.Run("wrap", func(t *testing.T) {
-		cause := errors.New("timeout")
+		cause := stderrors.New("timeout")
 		err := response.CodeTimeout.ToError().WithCause(cause)
-		if !errors.Is(err, cause) {
+		if !stderrors.Is(err, cause) {
 			t.Error("should unwrap cause")
 		}
 	})
 
 	t.Run("WrapWithMessage", func(t *testing.T) {
-		cause := errors.New("timeout")
+		cause := stderrors.New("timeout")
 		err := response.CodeTimeout.ToError().WithMessage("custom wrap").WithCause(cause)
 		if err.Message != "custom wrap" {
 			t.Errorf("expected 'custom wrap', got %q", err.Message)
@@ -176,7 +176,7 @@ func TestExtractCode(t *testing.T) {
 	})
 
 	t.Run("plain error", func(t *testing.T) {
-		code := response.ExtractCode(errors.New("unknown"))
+		code := response.ExtractCode(stderrors.New("unknown"))
 		if code.Num != response.CodeInternal.Num {
 			t.Errorf("expected CodeInternal, got %d", code.Num)
 		}
@@ -217,7 +217,7 @@ func TestExtractMessageUnsafe(t *testing.T) {
 	})
 
 	t.Run("with cause", func(t *testing.T) {
-		err := response.CodeInternal.ToError().WithMessage("oops").WithCause(errors.New("db fail"))
+		err := response.CodeInternal.ToError().WithMessage("oops").WithCause(stderrors.New("db fail"))
 		msg := response.ExtractMessageUnsafe(err)
 		if msg != "[50001] error.internal: oops: db fail" {
 			t.Errorf("expected full message, got %q", msg)
@@ -225,7 +225,7 @@ func TestExtractMessageUnsafe(t *testing.T) {
 	})
 
 	t.Run("plain error", func(t *testing.T) {
-		msg := response.ExtractMessageUnsafe(errors.New("raw error"))
+		msg := response.ExtractMessageUnsafe(stderrors.New("raw error"))
 		if msg != "raw error" {
 			t.Errorf("expected 'raw error', got %q", msg)
 		}
@@ -263,10 +263,10 @@ func TestCode(t *testing.T) {
 	})
 
 	t.Run("Is", func(t *testing.T) {
-		if !errors.Is(response.CodeNotFound, response.CodeNotFound) {
+		if !stderrors.Is(response.CodeNotFound, response.CodeNotFound) {
 			t.Error("CodeNotFound should Is CodeNotFound")
 		}
-		if errors.Is(response.CodeNotFound, response.CodeInternal) {
+		if stderrors.Is(response.CodeNotFound, response.CodeInternal) {
 			t.Error("CodeNotFound should not Is CodeInternal")
 		}
 	})
@@ -276,7 +276,7 @@ func TestCode(t *testing.T) {
 			40010,
 			"error.user_banned",
 			"账号已封禁",
-			servexerr.KindPermissionDenied,
+			servexerrors.KindPermissionDenied,
 		)
 
 		if custom.Num != 40010 {
@@ -293,7 +293,7 @@ func TestCode(t *testing.T) {
 		}
 
 		err := custom.ToError()
-		if err.Kind != servexerr.KindPermissionDenied {
+		if err.Kind != servexerrors.KindPermissionDenied {
 			t.Error("ToError should preserve semantic kind")
 		}
 	})
@@ -303,14 +303,14 @@ func TestCodeToErrorSetsKindWithoutLosingExactMapping(t *testing.T) {
 	cases := []struct {
 		name string
 		code response.Code
-		kind servexerr.Kind
+		kind servexerrors.Kind
 	}{
-		{"not found", response.CodeNotFound, servexerr.KindNotFound},
-		{"timeout", response.CodeTimeout, servexerr.KindDeadlineExceeded},
-		{"resource exhausted", response.CodeResourceExhausted, servexerr.KindResourceExhausted},
-		{"not implemented", response.CodeNotImplemented, servexerr.KindNotImplemented},
-		{"upstream keeps 502", response.CodeUpstreamError, servexerr.KindUnavailable},
-		{"conflict", response.CodeConflict, servexerr.KindConflict},
+		{"not found", response.CodeNotFound, servexerrors.KindNotFound},
+		{"timeout", response.CodeTimeout, servexerrors.KindDeadlineExceeded},
+		{"resource exhausted", response.CodeResourceExhausted, servexerrors.KindResourceExhausted},
+		{"not implemented", response.CodeNotImplemented, servexerrors.KindNotImplemented},
+		{"upstream keeps 502", response.CodeUpstreamError, servexerrors.KindUnavailable},
+		{"conflict", response.CodeConflict, servexerrors.KindConflict},
 	}
 
 	for _, tt := range cases {
@@ -451,7 +451,7 @@ func TestGRPCConversions(t *testing.T) {
 		}
 
 		for _, tt := range cases {
-			st := grpcstatus.New(tt.grpc, tt.want.Message)
+			st := status.New(tt.grpc, tt.want.Message)
 			got := response.FromGRPCStatus(st)
 			if got.Num != tt.want.Num {
 				t.Errorf("%s: Num = %d, want %d", tt.grpc, got.Num, tt.want.Num)

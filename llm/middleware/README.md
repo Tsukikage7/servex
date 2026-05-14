@@ -13,7 +13,7 @@
 ## 安装
 
 ```bash
-go get github.com/Tsukikage7/servex/llm
+go get github.com/Tsukikage7/servex/v2/llm
 ```
 
 ## API
@@ -66,7 +66,7 @@ func (t *UsageTracker) Reset()
 
 ```go
 import (
-    aimw "github.com/Tsukikage7/servex/llm/middleware"
+    aimw "github.com/Tsukikage7/servex/v2/llm/middleware"
     "github.com/Tsukikage7/servex/middleware/ratelimit"
 )
 

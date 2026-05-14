@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	storagelock "github.com/Tsukikage7/servex/v2/storage/lock"
+	"github.com/Tsukikage7/servex/v2/storage/lock"
 
 	"github.com/Tsukikage7/servex/v2/bizx/locking"
 )
@@ -59,7 +59,7 @@ func (l *testLocker) Extend(_ context.Context, _ string, _ time.Duration) error 
 	return nil
 }
 
-var _ storagelock.Locker = (*testLocker)(nil)
+var _ lock.Locker = (*testLocker)(nil)
 
 func ExampleWithLock() {
 	locker := newTestLocker()

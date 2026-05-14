@@ -2,6 +2,7 @@ package billing_test
 
 import (
 	"context"
+	"errors"
 	"io"
 	"testing"
 	"time"
@@ -34,7 +35,11 @@ func testPricing() []billing.PriceModel {
 func newTestBilling(t *testing.T) billing.Billing {
 	t.Helper()
 	store := billing.NewMemoryStore()
-	return billing.NewBilling(store, billing.WithDefaultPricing(testPricing()))
+	b, err := billing.NewBilling(store, billing.WithDefaultPricing(testPricing()))
+	if err != nil {
+		t.Fatalf("NewBilling 失败: %v", err)
+	}
+	return b
 }
 
 // mockModel 用于测试的模拟 ChatModel.
@@ -80,6 +85,22 @@ func (r *mockReader) Recv() (llm.StreamChunk, error) {
 func (r *mockReader) Response() *llm.ChatResponse { return r.resp }
 func (r *mockReader) Close() error                { return nil }
 
+type failingBilling struct {
+	err error
+}
+
+func (b failingBilling) Record(context.Context, string, string, llm.Usage) error {
+	return b.err
+}
+
+func (b failingBilling) GetSummary(context.Context, string, time.Time, time.Time) (*billing.Summary, error) {
+	return nil, nil
+}
+
+func (b failingBilling) SetPricing(string, billing.PriceModel) {}
+
+func (b failingBilling) CalculateCost(string, llm.Usage) float64 { return 0 }
+
 // --- 测试用例 ---
 
 // TestCalculateCost 验证费用计算逻辑.
@@ -119,7 +140,10 @@ func TestCalculateCost_UnknownModel(t *testing.T) {
 // TestRecord 验证用量记录功能.
 func TestRecord(t *testing.T) {
 	store := billing.NewMemoryStore()
-	b := billing.NewBilling(store, billing.WithDefaultPricing(testPricing()))
+	b, err := billing.NewBilling(store, billing.WithDefaultPricing(testPricing()))
+	if err != nil {
+		t.Fatalf("NewBilling 失败: %v", err)
+	}
 
 	ctx := t.Context()
 	usage := llm.Usage{
@@ -159,7 +183,10 @@ func TestRecord(t *testing.T) {
 // TestGetSummary 验证多条记录的汇总聚合逻辑.
 func TestGetSummary(t *testing.T) {
 	store := billing.NewMemoryStore()
-	b := billing.NewBilling(store, billing.WithDefaultPricing(testPricing()))
+	b, err := billing.NewBilling(store, billing.WithDefaultPricing(testPricing()))
+	if err != nil {
+		t.Fatalf("NewBilling 失败: %v", err)
+	}
 
 	ctx := t.Context()
 	keyID := "key-agg"
@@ -269,7 +296,10 @@ func TestSetPricing(t *testing.T) {
 // TestMiddleware 验证计费中间件在 Generate 调用后自动记录用量.
 func TestMiddleware(t *testing.T) {
 	store := billing.NewMemoryStore()
-	b := billing.NewBilling(store, billing.WithDefaultPricing(testPricing()))
+	b, err := billing.NewBilling(store, billing.WithDefaultPricing(testPricing()))
+	if err != nil {
+		t.Fatalf("NewBilling 失败: %v", err)
+	}
 
 	// keyExtractor 返回固定的 key ID
 	const keyID = "key-mw-test"
@@ -291,7 +321,7 @@ func TestMiddleware(t *testing.T) {
 	wrapped := mw(model)
 
 	ctx := t.Context()
-	_, err := wrapped.Generate(ctx, []llm.Message{llm.UserMessage("hi")})
+	_, err = wrapped.Generate(ctx, []llm.Message{llm.UserMessage("hi")})
 	if err != nil {
 		t.Fatalf("Generate 失败: %v", err)
 	}
@@ -322,5 +352,34 @@ func TestMiddleware(t *testing.T) {
 	}
 	if summaryOther.TotalRequests != 0 {
 		t.Errorf("other-key 不应有记录, got %d", summaryOther.TotalRequests)
+	}
+}
+
+func TestNewBillingRejectsNilStore(t *testing.T) {
+	t.Parallel()
+
+	_, err := billing.NewBilling(nil)
+	if !errors.Is(err, billing.ErrNilStore) {
+		t.Fatalf("期望 ErrNilStore, 得到 %v", err)
+	}
+}
+
+func TestMiddlewareStreamReturnsRecordError(t *testing.T) {
+	t.Parallel()
+
+	targetErr := errors.New("record failed")
+	wrapped := billing.Middleware(failingBilling{err: targetErr}, func(context.Context) string { return "key" })(&mockModel{})
+	reader, err := wrapped.Stream(t.Context(), []llm.Message{llm.UserMessage("hi")})
+	if err != nil {
+		t.Fatalf("Stream 失败: %v", err)
+	}
+	defer reader.Close()
+
+	if _, err := reader.Recv(); err != nil {
+		t.Fatalf("第一次 Recv 失败: %v", err)
+	}
+	_, err = reader.Recv()
+	if !errors.Is(err, targetErr) {
+		t.Fatalf("期望记录错误, 得到 %v", err)
 	}
 }

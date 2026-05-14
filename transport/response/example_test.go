@@ -3,7 +3,7 @@ package response_test
 import (
 	"fmt"
 
-	servexerr "github.com/Tsukikage7/servex/v2/errors"
+	"github.com/Tsukikage7/servex/v2/errors"
 	"github.com/Tsukikage7/servex/v2/transport/response"
 )
 
@@ -45,7 +45,7 @@ func ExampleNewCodeWithKind() {
 		40010,
 		"error.user_banned",
 		"账号已封禁",
-		servexerr.KindPermissionDenied,
+		errors.KindPermissionDenied,
 	)
 	fmt.Println("num:", custom.Num)
 	fmt.Println("key:", custom.Key)
