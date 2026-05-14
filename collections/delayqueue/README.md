@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/collections/delayqueue"
+import "github.com/Tsukikage7/servex/v2/collections/delayqueue"
 ```
 
 ## 简介
@@ -30,7 +30,7 @@ import (
     "fmt"
     "time"
 
-    "github.com/Tsukikage7/servex/collections/delayqueue"
+    "github.com/Tsukikage7/servex/v2/collections/delayqueue"
 )
 
 // Task 实现 Delayable 接口

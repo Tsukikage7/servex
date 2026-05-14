@@ -56,8 +56,8 @@ if limiter.Allow(ctx) {
 
 ```go
 import (
-    "github.com/Tsukikage7/servex/ratelimit"
-    "github.com/Tsukikage7/servex/transport"
+    "github.com/Tsukikage7/servex/v2/ratelimit"
+    "github.com/Tsukikage7/servex/v2/transport"
 )
 
 // 创建限流器
@@ -85,7 +85,7 @@ endpoint = ratelimit.KeyedEndpointMiddleware(
 用于 HTTP 服务器限流。
 
 ```go
-import "github.com/Tsukikage7/servex/ratelimit"
+import "github.com/Tsukikage7/servex/v2/ratelimit"
 
 // 全局限流
 limiter := ratelimit.NewTokenBucket(1000, 100)
@@ -135,7 +135,7 @@ handler = ratelimit.KeyedHTTPMiddleware(
 
 ```go
 import (
-    "github.com/Tsukikage7/servex/ratelimit"
+    "github.com/Tsukikage7/servex/v2/ratelimit"
     "google.golang.org/grpc"
 )
 
@@ -183,8 +183,8 @@ server := grpc.NewServer(
 
 ```go
 import (
-    "github.com/Tsukikage7/servex/cache"
-    "github.com/Tsukikage7/servex/ratelimit"
+    "github.com/Tsukikage7/servex/v2/cache"
+    "github.com/Tsukikage7/servex/v2/ratelimit"
 )
 
 // 创建 Redis 缓存
@@ -290,7 +290,7 @@ import (
     "sync"
     "time"
 
-    "github.com/Tsukikage7/servex/ratelimit"
+    "github.com/Tsukikage7/servex/v2/ratelimit"
 )
 
 func main() {
@@ -332,7 +332,7 @@ package main
 import (
     "time"
 
-    "github.com/Tsukikage7/servex/ratelimit"
+    "github.com/Tsukikage7/servex/v2/ratelimit"
     "google.golang.org/grpc"
 )
 
@@ -373,8 +373,8 @@ import (
     "context"
     "time"
 
-    "github.com/Tsukikage7/servex/ratelimit"
-    "github.com/Tsukikage7/servex/transport"
+    "github.com/Tsukikage7/servex/v2/ratelimit"
+    "github.com/Tsukikage7/servex/v2/transport"
 )
 
 func main() {
@@ -398,7 +398,7 @@ func main() {
 ## 错误处理
 
 ```go
-import "github.com/Tsukikage7/servex/ratelimit"
+import "github.com/Tsukikage7/servex/v2/ratelimit"
 
 // 检查是否被限流
 if errors.Is(err, ratelimit.ErrRateLimited) {

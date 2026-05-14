@@ -1,6 +1,6 @@
 # jobqueue
 
-`github.com/Tsukikage7/servex/jobqueue` -- 异步任务队列。
+`github.com/Tsukikage7/servex/v2/messaging/jobqueue` -- 异步任务队列。
 
 ## 概述
 
@@ -184,12 +184,12 @@ w.Start(ctx)
 
 ```go
 import (
-    "github.com/Tsukikage7/servex/jobqueue"
-    "github.com/Tsukikage7/servex/jobqueue/redis"
+    "github.com/Tsukikage7/servex/v2/messaging/jobqueue"
+    jqredis "github.com/Tsukikage7/servex/v2/messaging/jobqueue/redis"
 )
 
 // 创建 Store（复用已有 *redis.Client）
-store, _ := redis.NewStore(redisClient, redis.WithPrefix("myapp"))
+store, _ := jqredis.NewStore(redisClient, jqredis.WithPrefix("myapp"))
 
 // --- 投递端 ---
 client := jobqueue.NewClient(store)

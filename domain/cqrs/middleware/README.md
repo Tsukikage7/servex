@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/domain/cqrs/middleware"
+import "github.com/Tsukikage7/servex/v2/domain/cqrs/middleware"
 ```
 
 ## 简介
@@ -30,8 +30,8 @@ import (
     "context"
     "fmt"
 
-    "github.com/Tsukikage7/servex/domain/cqrs"
-    "github.com/Tsukikage7/servex/domain/cqrs/middleware"
+    "github.com/Tsukikage7/servex/v2/domain/cqrs"
+    "github.com/Tsukikage7/servex/v2/domain/cqrs/middleware"
     "github.com/Tsukikage7/servex/v2/observability/logger"
 )
 

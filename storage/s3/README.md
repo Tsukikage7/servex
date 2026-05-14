@@ -1,6 +1,6 @@
 # s3
 
-`github.com/Tsukikage7/servex/storage/s3` -- S3 兼容对象存储客户端。
+`github.com/Tsukikage7/servex/v2/storage/s3` -- S3 兼容对象存储客户端。
 
 ## 概述
 

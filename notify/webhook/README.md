@@ -1,6 +1,6 @@
 # webhook
 
-`github.com/Tsukikage7/servex/webhook` -- Webhook 投递与接收。
+`github.com/Tsukikage7/servex/v2/webhook` -- Webhook 投递与接收。
 
 ## 概述
 
@@ -105,10 +105,10 @@ webhook 包提供 Webhook 事件的发送端（Dispatcher）和接收端（Recei
 ```go
 // --- 发送端 ---
 import (
-    "github.com/Tsukikage7/servex/webhook"
-    webhookgorm "github.com/Tsukikage7/servex/webhook/store/gorm"
-    memstore "github.com/Tsukikage7/servex/webhook/store/memory"
-    "github.com/Tsukikage7/servex/storage/rdbms"
+    "github.com/Tsukikage7/servex/v2/webhook"
+    webhookgorm "github.com/Tsukikage7/servex/v2/webhook/store/gorm"
+    memstore "github.com/Tsukikage7/servex/v2/webhook/store/memory"
+    "github.com/Tsukikage7/servex/v2/storage/rdbms"
 )
 
 // GORM Store（生产环境）：接受 database.Database

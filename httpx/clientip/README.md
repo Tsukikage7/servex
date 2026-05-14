@@ -1,6 +1,6 @@
 # clientip
 
-`github.com/Tsukikage7/servex/httpx/clientip`
+`github.com/Tsukikage7/servex/v2/httpx/clientip`
 
 客户端 IP 提取与解析，支持从 HTTP 请求和 gRPC 调用中获取真实客户端 IP 地址。
 

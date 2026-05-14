@@ -1,6 +1,6 @@
 # transport/grpcx
 
-`github.com/Tsukikage7/servex/transport/grpcx` — gRPC 工具包，提供跨包复用的 gRPC 辅助类型与函数。
+`github.com/Tsukikage7/servex/v2/transport/grpcx` — gRPC 工具包，提供跨包复用的 gRPC 辅助类型与函数。
 
 ## 功能概览
 
@@ -35,7 +35,7 @@
 ### Stream 包装
 
 ```go
-import "github.com/Tsukikage7/servex/transport/grpcx"
+import "github.com/Tsukikage7/servex/v2/transport/grpcx"
 
 func myStreamInterceptor(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
     ctx := context.WithValue(ss.Context(), myKey, myValue)

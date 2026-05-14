@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/notify/webhook/store/gorm"
+import "github.com/Tsukikage7/servex/v2/notify/webhook/store/gorm"
 ```
 
 ## 简介
@@ -29,8 +29,8 @@ import (
     "gorm.io/driver/postgres"
     "gorm.io/gorm"
 
-    "github.com/Tsukikage7/servex/notify/webhook"
-    gormstore "github.com/Tsukikage7/servex/notify/webhook/store/gorm"
+    "github.com/Tsukikage7/servex/v2/notify/webhook"
+    gormstore "github.com/Tsukikage7/servex/v2/notify/webhook/store/gorm"
 )
 
 func main() {

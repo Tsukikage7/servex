@@ -4,6 +4,23 @@
 
 ## [Unreleased]
 
+### Changed
+- **Breaking**：基础包按需依赖重构，重型 provider / transport adapter 从根包移入子包，减少使用者仅导入基础抽象时被动拉入的依赖。
+- `errors`：gRPC 状态转换和拦截器迁移到 `errors/grpcx`；根 `errors` 不再依赖 gRPC/protobuf。
+- `auth`：gRPC 认证拦截器和 proto auth discovery 迁移到 `auth/grpcx`；根 `auth` 不再依赖 gRPC/protobuf。
+- `auth/jwt`：JWT gRPC 拦截器和 gRPC metadata 白名单迁移到 `auth/jwt/grpcx`；根 `auth/jwt` 不再依赖 gRPC/protobuf。
+- `notify`：jobqueue 异步投递迁移到 `notify/jobqueuex`；根 `notify` 不再依赖 jobqueue。
+- `storage/cache`：Redis 缓存实现迁移到 `storage/cache/redis`；根 `storage/cache` 默认提供内存缓存和 provider 注册表。
+- `discovery`：Consul/etcd/Nacos provider 迁移到 `discovery/consul`、`discovery/etcd`、`discovery/nacos`，通过 blank import 按需注册。
+- `messaging/pubsub/factory`：Redis/Kafka/RabbitMQ provider 注册迁移到 `messaging/pubsub/factory/<provider>`。
+- `xutil/pagination` 同时承载 Page/Offset 和 Cursor/Keyset 分页；原 `bizx/pagination` 删除，GORM 游标适配迁移到 `xutil/pagination/gorm`。
+- `xutil/sorting`：GORM 适配迁移到 `xutil/sorting/gorm`。
+- `testx`：testcontainers 和 gRPC bufconn helper 分别迁移到 `testx/container`、`testx/grpcx`。
+- `cmd/servex`、`testx/container`、`llm/framework/eino` 作为独立 module 管理，避免主 module 用户被动继承 CLI / 测试容器 / Eino 依赖。
+
+### Added
+- 新增 `scripts/check-deps.sh` 与 `just deps-check`，在 CI/本地检查基础包不得回退引入 gRPC/protobuf、Redis、GORM、provider SDK、testcontainers 等重依赖。
+
 ## [v2.1.1] - 2026-04-17
 
 ### Added
@@ -217,7 +234,7 @@
   - `bizx/locking` 业务锁（可重入/读写锁/续期）
   - `bizx/ratelimit` 业务配额（按用户/租户限流）
   - `bizx/statemachine` 状态机（状态/事件/守卫/回调）
-  - `bizx/pagination` 游标分页
+  - `bizx/pagination` 游标分页（后续已迁移到 `xutil/pagination`）
   - `bizx/audit` 审计日志（操作记录/变更追踪）
   - `bizx/feature` 特性开关（灰度/百分比/白名单）
   - `bizx/retry` 异步重试（持久化/指数退避/死信）

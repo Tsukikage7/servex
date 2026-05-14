@@ -3,12 +3,14 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/messaging/pubsub/factory"
+import "github.com/Tsukikage7/servex/v2/messaging/pubsub/factory"
 ```
 
 ## 简介
 
-`messaging/pubsub/factory` 提供配置驱动的 Pub/Sub 工厂，通过 `Config` 结构体统一创建 `pubsub.Publisher` 和 `pubsub.Subscriber`，支持 Kafka、RabbitMQ 和 Redis Streams 三种后端。解决 pubsub 核心包与各 driver 子包之间的循环依赖问题。
+`messaging/pubsub/factory` 提供配置驱动的 Pub/Sub 工厂，通过 `Config` 结构体统一创建 `pubsub.Publisher` 和 `pubsub.Subscriber`。
+
+factory 核心包不直接导入 Kafka、RabbitMQ 或 Redis Streams 后端，避免业务只使用 factory 时被动拉入未使用的间接依赖。使用哪个后端，就按需 blank import 对应注册包。
 
 ## 核心类型
 
@@ -17,6 +19,16 @@ import "github.com/Tsukikage7/servex/messaging/pubsub/factory"
 | `Config` | 连接配置，`Type` 字段决定使用哪个后端 |
 | `NewPublisher(cfg, log)` | 根据配置创建 Publisher |
 | `NewSubscriber(cfg, group, log)` | 根据配置创建 Subscriber |
+| `RegisterPublisher(type, creator)` | 注册自定义 Publisher 后端 |
+| `RegisterSubscriber(type, creator)` | 注册自定义 Subscriber 后端 |
+
+内置注册包：
+
+| Type | 注册包 |
+|---|---|
+| `redis` | `messaging/pubsub/factory/redis` |
+| `kafka` | `messaging/pubsub/factory/kafka` |
+| `rabbitmq` | `messaging/pubsub/factory/rabbitmq` |
 
 ## 示例
 
@@ -27,8 +39,9 @@ import (
     "context"
     "fmt"
 
-    "github.com/Tsukikage7/servex/messaging/pubsub"
-    "github.com/Tsukikage7/servex/messaging/pubsub/factory"
+    "github.com/Tsukikage7/servex/v2/messaging/pubsub"
+    "github.com/Tsukikage7/servex/v2/messaging/pubsub/factory"
+    _ "github.com/Tsukikage7/servex/v2/messaging/pubsub/factory/redis"
     "github.com/Tsukikage7/servex/v2/observability/logger"
 )
 

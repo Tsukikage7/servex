@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/tenant/gorm"
+import "github.com/Tsukikage7/servex/v2/tenant/gorm"
 ```
 
 ## 简介
@@ -29,8 +29,8 @@ import (
     "gorm.io/driver/postgres"
     "gorm.io/gorm"
 
-    "github.com/Tsukikage7/servex/tenant"
-    tenantgorm "github.com/Tsukikage7/servex/tenant/gorm"
+    "github.com/Tsukikage7/servex/v2/tenant"
+    tenantgorm "github.com/Tsukikage7/servex/v2/tenant/gorm"
 )
 
 type Order struct {

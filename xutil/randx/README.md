@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/xutil/randx"
+import "github.com/Tsukikage7/servex/v2/xutil/randx"
 ```
 
 ## 简介
@@ -35,7 +35,7 @@ package main
 import (
     "fmt"
 
-    "github.com/Tsukikage7/servex/xutil/randx"
+    "github.com/Tsukikage7/servex/v2/xutil/randx"
 )
 
 func main() {

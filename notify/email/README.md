@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/notify/email"
+import "github.com/Tsukikage7/servex/v2/notify/email"
 ```
 
 ## 简介
@@ -32,8 +32,8 @@ import (
     "context"
     "fmt"
 
-    "github.com/Tsukikage7/servex/notify"
-    "github.com/Tsukikage7/servex/notify/email"
+    "github.com/Tsukikage7/servex/v2/notify"
+    "github.com/Tsukikage7/servex/v2/notify/email"
 )
 
 func main() {

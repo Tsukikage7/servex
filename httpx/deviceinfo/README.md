@@ -1,6 +1,6 @@
 # deviceinfo
 
-`github.com/Tsukikage7/servex/httpx/deviceinfo`
+`github.com/Tsukikage7/servex/v2/httpx/deviceinfo`
 
 设备信息检测，优先使用 Client Hints（Sec-CH-UA-*）获取设备信息，支持 User-Agent 回退。
 

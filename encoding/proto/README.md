@@ -12,7 +12,7 @@ Protobuf JSON 编解码器实现，对 `proto.Message` 使用 `protojson` 序列
 ## 安装
 
 ```bash
-go get github.com/Tsukikage7/servex/encoding
+go get github.com/Tsukikage7/servex/v2/encoding
 ```
 
 ## API 参考
@@ -36,7 +36,7 @@ go get github.com/Tsukikage7/servex/encoding
 
 ## 注意事项
 
-- 本包仅需通过空白导入（`_ "github.com/Tsukikage7/servex/encoding/proto"`）即可完成注册。
+- 本包仅需通过空白导入（`_ "github.com/Tsukikage7/servex/v2/encoding/proto"`）即可完成注册。
 - 序列化输出为 JSON 格式（protojson），而非 Protobuf 二进制格式。
 - 零值字段（如 `int32` 的 `0`、`bool` 的 `false`、`string` 的 `""`）会被保留在输出中，解决了标准 `encoding/json` 忽略零值的问题。
 - 非 `proto.Message` 类型的回退行为与标准库 `encoding/json` 一致。

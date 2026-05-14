@@ -13,7 +13,7 @@
 ## 安装
 
 ```bash
-go get github.com/Tsukikage7/servex/config
+go get github.com/Tsukikage7/servex/v2/config
 ```
 
 ## API 参考

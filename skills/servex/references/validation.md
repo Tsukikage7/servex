@@ -3,7 +3,7 @@
 ## validation — 参数校验框架
 
 ```go
-import "github.com/Tsukikage7/servex/validation"
+import "github.com/Tsukikage7/servex/v2/validation"
 
 // 创建校验器（默认中文消息）
 v := validation.New()

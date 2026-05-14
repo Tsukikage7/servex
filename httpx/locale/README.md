@@ -1,6 +1,6 @@
 # locale
 
-`github.com/Tsukikage7/servex/httpx/locale`
+`github.com/Tsukikage7/servex/v2/httpx/locale`
 
 语言区域设置解析，从 Accept-Language 请求头提取用户的语言偏好和地区信息。
 

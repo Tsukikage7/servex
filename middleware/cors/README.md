@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/middleware/cors"
+import "github.com/Tsukikage7/servex/v2/middleware/cors"
 ```
 
 ## 简介
@@ -30,7 +30,7 @@ package main
 import (
     "net/http"
 
-    "github.com/Tsukikage7/servex/middleware/cors"
+    "github.com/Tsukikage7/servex/v2/middleware/cors"
 )
 
 func main() {

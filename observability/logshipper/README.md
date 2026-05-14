@@ -39,7 +39,7 @@ s.Ship(logshipper.Entry{
 ## Elasticsearch Sink
 
 ```go
-import "github.com/Tsukikage7/servex/storage/elasticsearch"
+import "github.com/Tsukikage7/servex/v2/storage/elasticsearch"
 
 esClient, _ := elasticsearch.NewClient(esCfg, log)
 sink := logshipper.NewElasticsearchSink(esClient,
@@ -52,7 +52,7 @@ sink := logshipper.NewElasticsearchSink(esClient,
 ## Kafka Sink
 
 ```go
-import "github.com/Tsukikage7/servex/messaging/pubsub/kafka"
+import "github.com/Tsukikage7/servex/v2/messaging/pubsub/kafka"
 
 publisher, _ := kafka.NewPublisher(kafkaCfg)
 sink := logshipper.NewKafkaSink(publisher,

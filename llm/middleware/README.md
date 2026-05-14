@@ -67,7 +67,7 @@ func (t *UsageTracker) Reset()
 ```go
 import (
     aimw "github.com/Tsukikage7/servex/v2/llm/middleware"
-    "github.com/Tsukikage7/servex/middleware/ratelimit"
+    "github.com/Tsukikage7/servex/v2/middleware/ratelimit"
 )
 
 // 构建中间件链：限流 → 重试 → 日志

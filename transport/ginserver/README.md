@@ -7,7 +7,7 @@
 ## 安装
 
 ```bash
-go get github.com/Tsukikage7/servex/transport/ginserver
+go get github.com/Tsukikage7/servex/v2/transport/ginserver
 ```
 
 ## API
@@ -72,8 +72,8 @@ func (r *CreateUserReq) Validate() error {
 ```go
 import (
     "github.com/gin-gonic/gin"
-    "github.com/Tsukikage7/servex/transport/ginserver"
-    "github.com/Tsukikage7/servex/transport/response"
+    "github.com/Tsukikage7/servex/v2/transport/ginserver"
+    "github.com/Tsukikage7/servex/v2/transport/response"
 )
 
 func main() {

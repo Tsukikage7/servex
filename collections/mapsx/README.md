@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/collections/mapsx"
+import "github.com/Tsukikage7/servex/v2/collections/mapsx"
 ```
 
 ## 简介
@@ -36,7 +36,7 @@ import (
     "fmt"
     "strconv"
 
-    "github.com/Tsukikage7/servex/collections/mapsx"
+    "github.com/Tsukikage7/servex/v2/collections/mapsx"
 )
 
 func main() {

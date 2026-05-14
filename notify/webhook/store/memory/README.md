@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/notify/webhook/store/memory"
+import "github.com/Tsukikage7/servex/v2/notify/webhook/store/memory"
 ```
 
 ## 简介
@@ -26,8 +26,8 @@ import (
     "context"
     "fmt"
 
-    "github.com/Tsukikage7/servex/notify/webhook"
-    memstore "github.com/Tsukikage7/servex/notify/webhook/store/memory"
+    "github.com/Tsukikage7/servex/v2/notify/webhook"
+    memstore "github.com/Tsukikage7/servex/v2/notify/webhook/store/memory"
 )
 
 func main() {

@@ -1,6 +1,6 @@
 # middleware/ratelimit/redis
 
-`github.com/Tsukikage7/servex/middleware/ratelimit/redis` — 基于 Redis 的分布式**令牌桶**限流器。使用 Lua 原子脚本实现 refill + take，保证多实例并发下的正确性。
+`github.com/Tsukikage7/servex/v2/middleware/ratelimit/redis` — 基于 Redis 的分布式**令牌桶**限流器。使用 Lua 原子脚本实现 refill + take，保证多实例并发下的正确性。
 
 ## 为什么用令牌桶
 
@@ -39,7 +39,7 @@ return 1 表示允许,0 表示拒绝
 ```go
 import (
     "github.com/redis/go-redis/v9"
-    ratelimitredis "github.com/Tsukikage7/servex/middleware/ratelimit/redis"
+    ratelimitredis "github.com/Tsukikage7/servex/v2/middleware/ratelimit/redis"
 )
 
 rdb := redis.NewUniversalClient(&redis.UniversalOptions{Addrs: []string{"localhost:6379"}})

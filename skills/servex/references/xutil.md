@@ -239,9 +239,24 @@ result := pagination.NewResult(users, 100, p)
 result.TotalPages() // 5
 result.HasNext()     // true
 result.HasPrev()     // false
+
+// 游标分页，适合无限滚动、大数据量列表和实时数据流
+req := (&pagination.CursorRequest{
+    Cursor: r.URL.Query().Get("cursor"),
+    Limit:  20,
+}).Apply()
+nextCursor := pagination.EncodeCursor(lastID)
 ```
 
 **默认值：** Page=1, PageSize=20, MaxPageSize=100
+
+GORM 游标分页适配在 `xutil/pagination/gorm`，按需导入，避免基础分页包拉入 GORM：
+
+```go
+import paginationgorm "github.com/Tsukikage7/servex/v2/xutil/pagination/gorm"
+
+paginationgorm.Paginate(db, req, "id").Find(&posts)
+```
 
 ## version -- 版本信息
 
@@ -257,9 +272,9 @@ fmt.Println(info.String())  // "version=v1.0.0 commit=abc1234 built=2024-01-01 g
 
 **编译注入：**
 ```bash
-go build -ldflags "-X github.com/Tsukikage7/servex/xutil/version.Version=v1.0.0 \
-  -X github.com/Tsukikage7/servex/xutil/version.GitCommit=$(git rev-parse --short HEAD) \
-  -X github.com/Tsukikage7/servex/xutil/version.BuildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+go build -ldflags "-X github.com/Tsukikage7/servex/v2/xutil/version.Version=v1.0.0 \
+  -X github.com/Tsukikage7/servex/v2/xutil/version.GitCommit=$(git rev-parse --short HEAD) \
+  -X github.com/Tsukikage7/servex/v2/xutil/version.BuildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 ## crypto -- 密码与随机 ID

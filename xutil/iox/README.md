@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/xutil/iox"
+import "github.com/Tsukikage7/servex/v2/xutil/iox"
 ```
 
 ## 简介
@@ -33,7 +33,7 @@ import (
     "net/http"
     "strings"
 
-    "github.com/Tsukikage7/servex/xutil/iox"
+    "github.com/Tsukikage7/servex/v2/xutil/iox"
 )
 
 func main() {

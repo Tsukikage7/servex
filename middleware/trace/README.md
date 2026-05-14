@@ -1,6 +1,6 @@
 # middleware/trace
 
-`github.com/Tsukikage7/servex/middleware/trace` — 请求链路追踪增强中间件。
+`github.com/Tsukikage7/servex/v2/middleware/trace` — 请求链路追踪增强中间件。
 
 统一 trace-id 在日志、响应头、下游调用中的传播，构建于 `observability/logger` 之上。
 
@@ -39,7 +39,7 @@
 ### HTTP 服务端
 
 ```go
-import "github.com/Tsukikage7/servex/middleware/trace"
+import "github.com/Tsukikage7/servex/v2/middleware/trace"
 
 mux := http.NewServeMux()
 handler := trace.HTTPMiddleware(nil)(mux) // 使用默认配置

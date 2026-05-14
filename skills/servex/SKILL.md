@@ -44,7 +44,7 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 | 配置 | `skills/servex/references/config.md` | config/source/file/etcd/consul/env/nacos/apollo/k8s/discovery |
 | 消息 | `skills/servex/references/pubsub.md` | pubsub/jobqueue (kafka/rabbitmq/redis)/eventbus |
 | 领域驱动 | `skills/servex/references/distributed.md` | cqrs/saga/outbox/eventsourcing |
-| 业务组件 | `skills/servex/references/bizx.md` | counter/leaderboard/sequence/locking/ratelimit/statemachine/pagination/audit/feature/retry/event/captcha/workflow/abtesting |
+| 业务组件 | `skills/servex/references/bizx.md` | counter/leaderboard/sequence/locking/ratelimit/statemachine/audit/feature/retry/event/captcha/workflow/abtesting |
 | 通知 | `skills/servex/references/notify.md` | email/sms/push/webhook/telegram/discord |
 | OAuth2 | `skills/servex/references/oauth2.md` | github/google/wechat/state |
 | 其他 | `skills/servex/references/errors.md` `skills/servex/references/httpx.md` `skills/servex/references/i18n.md` `skills/servex/references/tenant.md` `skills/servex/references/validation.md` `skills/servex/references/xutil.md` `skills/servex/references/collections.md` `skills/servex/references/testx.md` `skills/servex/references/openapi.md` `skills/servex/references/webhook.md` | 对应模块 |
@@ -282,7 +282,8 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 
 | 模块 | 包路径 | 描述 | 核心类型/函数 |
 |------|--------|------|--------------|
-| errors | `errors` | 统一业务错误（Kind 推导 HTTP/gRPC 状态） | `NewWithKind`, `Error`, `Kind`, `WithKind`, `ToHTTPStatus`, `ToGRPCStatus`, `FromError` |
+| errors | `errors` | 统一业务错误（Kind 推导 HTTP 状态；gRPC 适配见 `errors/grpcx`） | `NewWithKind`, `Error`, `Kind`, `WithKind`, `ToHTTPStatus`, `FromError` |
+| errors/grpcx | `errors/grpcx` | 业务错误与 gRPC status 互转、服务端拦截器 | `ToGRPCStatus`, `FromGRPCStatus`, `UnaryServerInterceptor`, `StreamServerInterceptor` |
 
 ### 输入校验
 
@@ -306,7 +307,8 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 
 | 模块 | 包路径 | 描述 | 核心类型/函数 |
 |------|--------|------|--------------|
-| xutil/pagination | `xutil/pagination` | 分页工具 | `Params`, `Result`, `Paginate` |
+| xutil/pagination | `xutil/pagination` | Page/Offset 与 Cursor/Keyset 分页模型 | `Pagination`, `Result`, `CursorRequest`, `CursorResponse`, `EncodeCursor`, `DecodeCursor` |
+| xutil/pagination/gorm | `xutil/pagination/gorm` | GORM 游标分页适配 | `Paginate` |
 | xutil/crypto | `xutil/crypto` | 加密工具 | `HashPassword`, `ComparePassword` |
 | xutil/ptrx | `xutil/ptrx` | 指针工具 | `Of`, `Value`, `ValueOr` |
 | xutil/optionx | `xutil/optionx` | 选项模式工具 | `Option`, `Apply` |
@@ -331,7 +333,6 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 | bizx/locking | `bizx/locking` | 业务锁（可重入/读写锁/续期） | `NewLock`, `NewReentrantLock`, `NewRWLock`, `WithLock`, `WithRLock` |
 | bizx/ratelimit | `bizx/ratelimit` | 业务配额（按用户/租户限流） | `NewMemoryQuotaManager`, `NewRedisQuotaManager`, `Quota`, `Usage` |
 | bizx/statemachine | `bizx/statemachine` | 状态机（状态/事件/守卫/回调） | `New`, `Fire`, `Current`, `Can`, `OnEnter`, `OnLeave`, `OnTransition` |
-| bizx/pagination | `bizx/pagination` | 游标分页（Cursor-based） | `GORMPaginate`, `EncodeCursor`, `DecodeCursor`, `CursorRequest`, `CursorResponse` |
 | bizx/audit | `bizx/audit` | 审计日志（操作记录/变更追踪） | `NewLogger`, `NewGORMStore`, `HTTPMiddleware`, `Entry`, `Change` |
 | bizx/feature | `bizx/feature` | 特性开关（灰度/百分比/白名单） | `NewManager`, `NewMemoryStore`, `NewRedisStore`, `Flag`, `WithUser`, `WithGroup` |
 | bizx/retry | `bizx/retry` | 异步重试（持久化/指数退避/死信） | `NewScheduler`, `NewGORMStore`, `Register`, `Submit`, `WithMaxRetries` |
@@ -344,7 +345,7 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 
 | 模块 | 包路径 | 描述 | 核心类型/函数 |
 |------|--------|------|--------------|
-| testx | `testx` | 测试工具包（NopLogger/TestLogger/Container/HTTPTest/Fixture） | `NopLogger`, `TestLogger`, `NewRedis`, `NewPostgres`, `NewHTTPTestServer`, `NewGRPCTestServer`, `Golden`, `LoadJSON` |
+| testx | `testx` | 测试工具包（NopLogger/TestLogger/HTTPTest/Fixture） | `NopLogger`, `TestLogger`, `NewHTTPTestServer`, `Golden`, `LoadJSON` |
 
 ## 维护说明
 

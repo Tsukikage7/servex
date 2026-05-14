@@ -6,7 +6,7 @@
 
 ## bizx/counter — 分布式计数器
 
-**包路径：** `github.com/Tsukikage7/servex/bizx/counter`
+**包路径：** `github.com/Tsukikage7/servex/v2/bizx/counter`
 
 **何时使用：** 需要精确计数（登录次数、API 调用量）或滑动窗口统计时。
 
@@ -48,7 +48,7 @@ counts, _ := c.MGet(ctx, "login:user:1", "login:user:2")
 
 ## bizx/leaderboard — 排行榜
 
-**包路径：** `github.com/Tsukikage7/servex/bizx/leaderboard`
+**包路径：** `github.com/Tsukikage7/servex/v2/bizx/leaderboard`
 
 **何时使用：** 需要 Top N、分页排行、按分数排序的场景（游戏积分榜、销售排名、活跃度榜单）。
 
@@ -95,7 +95,7 @@ page, _ := lb.GetPage(ctx, 20, 20) // 第 2 页，每页 20 条
 
 ## bizx/sequence — 业务序号生成器
 
-**包路径：** `github.com/Tsukikage7/servex/bizx/sequence`
+**包路径：** `github.com/Tsukikage7/servex/v2/bizx/sequence`
 
 **何时使用：** 需要生成有意义的业务编号（订单号、单据号），如 `ORD-20260405-0001`。
 
@@ -148,7 +148,7 @@ id, _ = seq.Next(ctx)  // "ORD-20260405-0002"
 
 ## bizx/locking — 业务锁
 
-**包路径：** `github.com/Tsukikage7/servex/bizx/locking`
+**包路径：** `github.com/Tsukikage7/servex/v2/bizx/locking`
 
 **何时使用：** 需要可重入锁、读写锁或带续期的业务锁，区别于 `storage/lock` 的基础分布式锁。
 
@@ -193,7 +193,7 @@ locking.WithRLock(ctx, rwl, func(ctx context.Context) error {
 
 ## bizx/ratelimit — 业务配额管理
 
-**包路径：** `github.com/Tsukikage7/servex/bizx/ratelimit`
+**包路径：** `github.com/Tsukikage7/servex/v2/bizx/ratelimit`
 
 **何时使用：** 需要按用户/租户进行配额控制，并能查看已用量、剩余量、重置时间（区别于 `middleware/ratelimit` 的无状态限流）。
 
@@ -237,7 +237,7 @@ if errors.Is(err, ratelimit.ErrQuotaExceeded) {
 
 ## bizx/statemachine — 有限状态机
 
-**包路径：** `github.com/Tsukikage7/servex/bizx/statemachine`
+**包路径：** `github.com/Tsukikage7/servex/v2/bizx/statemachine`
 
 **何时使用：** 订单流程、工单流转、审批流等需要明确定义状态转换的场景。
 
@@ -282,50 +282,9 @@ sm.Can("ship")             // true
 
 ---
 
-## bizx/pagination — 游标分页
-
-**包路径：** `github.com/Tsukikage7/servex/bizx/pagination`
-
-**何时使用：** 大数据量列表、实时数据流，避免 OFFSET 分页的性能问题。
-
-### 核心函数
-
-- `EncodeCursor(values...)` — 编码游标（base64url+JSON）
-- `DecodeCursor(cursor)` — 解码游标
-- `GORMPaginate(db, req, orderField)` — GORM 集成辅助
-
-### 数据结构
-
-```go
-type CursorRequest struct { Cursor string; Limit int; Direction Direction }
-type CursorResponse[T any] struct { Items []T; NextCursor, PrevCursor string; HasMore bool }
-```
-
-### 示例
-
-```go
-req := (&pagination.CursorRequest{
-    Cursor: r.URL.Query().Get("cursor"),
-    Limit:  20,
-}).Apply()
-
-var posts []Post
-pagination.GORMPaginate(db, req, "id").Find(&posts)
-
-hasMore := len(posts) > req.Limit
-if hasMore { posts = posts[:req.Limit] }
-
-var nextCursor string
-if hasMore && len(posts) > 0 {
-    nextCursor = pagination.EncodeCursor(posts[len(posts)-1].ID)
-}
-```
-
----
-
 ## bizx/audit — 审计日志
 
-**包路径：** `github.com/Tsukikage7/servex/bizx/audit`
+**包路径：** `github.com/Tsukikage7/servex/v2/bizx/audit`
 
 **何时使用：** 需要记录操作历史（谁/对什么/做了什么/改了哪些字段）的场景。
 
@@ -378,7 +337,7 @@ entries, _ := auditLog.Query(ctx, &audit.Filter{Actor: userID, Limit: 50})
 
 ## bizx/feature — 特性开关
 
-**包路径：** `github.com/Tsukikage7/servex/bizx/feature`
+**包路径：** `github.com/Tsukikage7/servex/v2/bizx/feature`
 
 **何时使用：** 需要灰度发布、A/B 测试、白名单放量等功能。
 
@@ -433,7 +392,7 @@ if mgr.IsEnabled(ctx, "new_ui", feature.WithUser(userID)) {
 
 ## bizx/retry — 异步持久化重试
 
-**包路径：** `github.com/Tsukikage7/servex/bizx/retry`
+**包路径：** `github.com/Tsukikage7/servex/v2/bizx/retry`
 
 **何时使用：** 需要将失败操作持久化后异步重试（发送通知、调用第三方 API 等），防止数据丢失。
 
@@ -479,7 +438,7 @@ s.Submit(ctx, "send_sms", SMSRequest{Phone: "138xxxx", Text: "验证码：1234"}
 
 ## bizx/event — 进程内事件总线
 
-**包路径：** `github.com/Tsukikage7/servex/bizx/event`
+**包路径：** `github.com/Tsukikage7/servex/v2/bizx/event`
 
 **何时使用：** 模块间解耦，进程内事件驱动，不需要跨进程（跨进程请用 `messaging/pubsub`）。
 
@@ -527,7 +486,7 @@ bus.Publish(ctx, "order.paid", OrderPaidEvent{OrderID: "456"})
 
 ## bizx/captcha — 验证码管理
 
-**包路径：** `github.com/Tsukikage7/servex/bizx/captcha`
+**包路径：** `github.com/Tsukikage7/servex/v2/bizx/captcha`
 
 **何时使用：** 短信/邮件验证码场景，需要防暴力破解和防刷。
 
@@ -581,7 +540,7 @@ case errors.Is(err, captcha.ErrTooManyAttempts): return errors.New("尝试次数
 
 ## bizx/workflow — 工作流引擎
 
-**包路径：** `github.com/Tsukikage7/servex/bizx/workflow`
+**包路径：** `github.com/Tsukikage7/servex/v2/bizx/workflow`
 
 **何时使用：** 审批流、多步骤流程编排，需要任务节点、审批节点、条件分支、并行执行的场景。
 
@@ -692,7 +651,7 @@ engine.Cancel(ctx, inst.ID)
 
 ## bizx/abtesting — A/B 测试
 
-**包路径：** `github.com/Tsukikage7/servex/bizx/abtesting`
+**包路径：** `github.com/Tsukikage7/servex/v2/bizx/abtesting`
 
 **何时使用：** 需要流量分桶实验、多变体对比、确定性用户分组分配和曝光追踪的场景。区别于 `bizx/feature`（简单开关/百分比），abtesting 支持多变体权重分配和实验管理。
 
@@ -798,7 +757,7 @@ mgr.DisableExperiment(ctx, "button_color")
 | 防止并发修改同一资源 | `bizx/locking` |
 | 用户每天最多调用 API 1000 次 | `bizx/ratelimit` |
 | 订单/工单流程状态管理 | `bizx/statemachine` |
-| 无限滚动/大数据量分页 | `bizx/pagination` |
+| 无限滚动/大数据量分页 | `xutil/pagination` |
 | 记录谁改了什么字段 | `bizx/audit` |
 | 灰度发布/A/B 测试 | `bizx/feature` |
 | 第三方 API 调用失败后自动重试 | `bizx/retry` |

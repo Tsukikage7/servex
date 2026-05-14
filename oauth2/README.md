@@ -1,6 +1,6 @@
 # oauth2
 
-`github.com/Tsukikage7/servex/oauth2` -- OAuth2 第三方登录 Client 端。
+`github.com/Tsukikage7/servex/v2/oauth2` -- OAuth2 第三方登录 Client 端。
 
 ## 概述
 
@@ -126,10 +126,10 @@ oauth2 包提供统一的 OAuth2 第三方登录客户端抽象，内置 GitHub�
 
 ```go
 import (
-    "github.com/Tsukikage7/servex/oauth2"
-    "github.com/Tsukikage7/servex/oauth2/github"
-    "github.com/Tsukikage7/servex/oauth2/state"
-    "github.com/Tsukikage7/servex/storage/cache"
+    "github.com/Tsukikage7/servex/v2/oauth2"
+    "github.com/Tsukikage7/servex/v2/oauth2/github"
+    "github.com/Tsukikage7/servex/v2/oauth2/state"
+    "github.com/Tsukikage7/servex/v2/storage/cache"
 )
 
 // 初始化

@@ -47,7 +47,6 @@ import "github.com/Tsukikage7/servex/v2/notify"
 dispatcher := notify.NewDispatcher(
     notify.WithLogger(log),
     notify.WithTemplateEngine(tmplEngine),     // 可选：模板引擎
-    notify.WithJobQueue(jobClient),            // 可选：异步发送
     notify.WithDefaultChannel(notify.ChannelEmail),
 )
 
@@ -71,11 +70,21 @@ results := dispatcher.Broadcast(ctx,
     msg,
 )
 
-// 异步发送（需配置 JobQueue）
-err = dispatcher.SendAsync(ctx, msg)
-
 // 关闭（依次关闭所有 Sender）
 dispatcher.Close()
+```
+
+异步通知通过 `notify/jobqueuex` 显式接入 JobQueue，避免同步通知场景引入队列依赖：
+
+```go
+import "github.com/Tsukikage7/servex/v2/notify/jobqueuex"
+
+asyncDispatcher := jobqueuex.NewDispatcher(
+    jobClient,
+    jobqueuex.WithDefaultChannel(notify.ChannelEmail),
+)
+
+err = asyncDispatcher.SendAsync(ctx, msg)
 ```
 
 ## email -- 邮件发送

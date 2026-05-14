@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/messaging/pubsub/redis"
+import "github.com/Tsukikage7/servex/v2/messaging/pubsub/redis"
 ```
 
 ## 简介
@@ -33,8 +33,8 @@ import (
     "context"
     "fmt"
 
-    "github.com/Tsukikage7/servex/messaging/pubsub"
-    pubsubRedis "github.com/Tsukikage7/servex/messaging/pubsub/redis"
+    "github.com/Tsukikage7/servex/v2/messaging/pubsub"
+    pubsubRedis "github.com/Tsukikage7/servex/v2/messaging/pubsub/redis"
     "github.com/Tsukikage7/servex/v2/observability/logger"
 )
 

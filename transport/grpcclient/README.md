@@ -19,7 +19,7 @@
 ## 安装
 
 ```bash
-go get github.com/Tsukikage7/servex/transport/grpcclient
+go get github.com/Tsukikage7/servex/v2/transport/grpcclient
 ```
 
 ## 快速上手
@@ -157,7 +157,7 @@ type KeepaliveConfig struct {
 ## TLS / mTLS
 
 ```go
-import tlsx "github.com/Tsukikage7/servex/transport/tls"
+import tlsx "github.com/Tsukikage7/servex/v2/transport/tls"
 
 // 单向 TLS（验证服务端证书）
 tlsCfg, err := tlsx.NewClientTLSConfig(&tlsx.Config{

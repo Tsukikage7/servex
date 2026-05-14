@@ -1,10 +1,11 @@
 # Cache
 
-统一的缓存接口库，支持 Redis 和内存缓存两种实现，提供分布式锁、原子操作等功能。
+统一的缓存接口库。根包提供缓存抽象、内存实现和 provider 注册表；Redis 实现在 `storage/cache/redis` 子包中按需注册，避免只使用内存缓存或接口时拉入 Redis SDK。
 
 ## 特性
 
-- **统一接口**：Redis 和内存缓存使用相同的 API
+- **统一接口**：不同缓存后端使用相同的 API
+- **按需依赖**：Redis provider 独立在 `storage/cache/redis`
 - **分布式锁**：基于 Redis 的安全分布式锁实现
 - **原子操作**：SetNX、Increment、Decrement 等
 - **批量操作**：MGet、MSet 支持
@@ -14,7 +15,7 @@
 ## 安装
 
 ```bash
-go get github.com/Tsukikage7/servex/cache
+go get github.com/Tsukikage7/servex/v2/storage/cache
 ```
 
 ## 配置选项
@@ -24,7 +25,7 @@ go get github.com/Tsukikage7/servex/cache
 ```go
 config := &cache.Config{
     // 基础配置
-    Type:     cache.TypeRedis,   // redis 或 memory
+    Type:     cache.TypeMemory,  // memory；redis 需导入 storage/cache/redis 注册
     Addr:     "localhost:6379",  // Redis 地址
     Password: "",                // Redis 密码
     DB:       0,                 // Redis 数据库编号
@@ -40,6 +41,20 @@ config := &cache.Config{
     MaxSize:         10000,            // 最大缓存条目数
     CleanupInterval: time.Minute,      // 过期清理间隔
 }
+```
+
+### Redis provider
+
+```go
+import (
+    "github.com/Tsukikage7/servex/v2/storage/cache"
+    _ "github.com/Tsukikage7/servex/v2/storage/cache/redis"
+)
+
+c, err := cache.NewCache(&cache.Config{
+    Type: cache.TypeRedis,
+    Addr: "127.0.0.1:6379",
+}, log)
 ```
 
 ### 配置说明
@@ -174,7 +189,7 @@ cache 包**强制要求**提供 `logger.Logger` 实例，不提供会返回 `Err
 
 ```go
 import (
-    "github.com/Tsukikage7/servex/cache"
+    "github.com/Tsukikage7/servex/v2/cache"
     "github.com/Tsukikage7/servex/v2/observability/logger"
 )
 

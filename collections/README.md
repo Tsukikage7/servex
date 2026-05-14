@@ -5,7 +5,7 @@ Go 语言泛型集合工具包，提供常用数据结构和集合操作函数�
 ## 安装
 
 ```go
-import "github.com/Tsukikage7/servex/collections"
+import "github.com/Tsukikage7/servex/v2/collections"
 ```
 
 ## 数据结构
@@ -15,7 +15,7 @@ import "github.com/Tsukikage7/servex/collections"
 基于红黑树实现的有序映射，按键排序，所有操作时间复杂度 O(log n)。
 
 ```go
-import "github.com/Tsukikage7/servex/collections/treemap"
+import "github.com/Tsukikage7/servex/v2/collections/treemap"
 
 // 使用内置比较器（适用于 cmp.Ordered 类型）
 m := treemap.NewOrdered[string, int]()
@@ -42,7 +42,7 @@ m3 := treemap.New[int, string](treemap.ReverseCompare[int])
 基于 TreeMap 实现的有序集合。
 
 ```go
-import "github.com/Tsukikage7/servex/collections/treeset"
+import "github.com/Tsukikage7/servex/v2/collections/treeset"
 
 s := treeset.NewOrdered[int]()
 s.Add(3, 1, 2)
@@ -63,7 +63,7 @@ s.Difference(s2)   // {1}
 基于 map 实现的无序集合，O(1) 操作。
 
 ```go
-import "github.com/Tsukikage7/servex/collections/hashset"
+import "github.com/Tsukikage7/servex/v2/collections/hashset"
 
 s := hashset.New[string]("a", "b", "c")
 s.Add("d")
@@ -81,7 +81,7 @@ s.SymmetricDifference(s2) // {"a", "e"}
 基于二叉堆实现的优先队列。
 
 ```go
-import "github.com/Tsukikage7/servex/collections/priorityqueue"
+import "github.com/Tsukikage7/servex/v2/collections/priorityqueue"
 
 // 最小堆
 minPQ := priorityqueue.NewMin[int]()
@@ -111,7 +111,7 @@ pq := priorityqueue.New(func(a, b Task) bool {
 基于哈希表 + 双向链表实现的 LRU 缓存，线程安全。
 
 ```go
-import "github.com/Tsukikage7/servex/collections/lrucache"
+import "github.com/Tsukikage7/servex/v2/collections/lrucache"
 
 cache := lrucache.New[string, int](100) // 容量 100
 
@@ -135,7 +135,7 @@ cache.Resize(50) // 缩容会淘汰多余元素
 基于环形缓冲区实现的双端队列，支持两端 O(1) 操作。
 
 ```go
-import "github.com/Tsukikage7/servex/collections/deque"
+import "github.com/Tsukikage7/servex/v2/collections/deque"
 
 dq := deque.New[int]()
 dq.PushBack(1)
@@ -171,7 +171,7 @@ dq.Reverse()  // 反转
 函数式切片操作工具。
 
 ```go
-import "github.com/Tsukikage7/servex/collections/slicesx"
+import "github.com/Tsukikage7/servex/v2/collections/slicesx"
 
 // 过滤
 nums := []int{1, 2, 3, 4, 5}
@@ -231,7 +231,7 @@ m2 := slicesx.KeyBy(users, func(u User) int { return u.ID })
 Map 操作工具函数。
 
 ```go
-import "github.com/Tsukikage7/servex/collections/mapsx"
+import "github.com/Tsukikage7/servex/v2/collections/mapsx"
 
 m := map[string]int{"a": 1, "b": 2, "c": 3}
 

@@ -1,6 +1,6 @@
 # mongodb
 
-`github.com/Tsukikage7/servex/storage/mongodb` -- MongoDB 客户端封装。
+`github.com/Tsukikage7/servex/v2/storage/mongodb` -- MongoDB 客户端封装。
 
 ## 概述
 

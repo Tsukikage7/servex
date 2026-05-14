@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/collections/linkedmap"
+import "github.com/Tsukikage7/servex/v2/collections/linkedmap"
 ```
 
 ## 简介
@@ -31,7 +31,7 @@ package main
 import (
     "fmt"
 
-    "github.com/Tsukikage7/servex/collections/linkedmap"
+    "github.com/Tsukikage7/servex/v2/collections/linkedmap"
 )
 
 func main() {

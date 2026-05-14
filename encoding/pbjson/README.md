@@ -7,7 +7,7 @@ Protobuf JSON 序列化工具，解决零值忽略问题。
 ### JSON 序列化
 
 ```go
-import "github.com/Tsukikage7/servex/encoding/pbjson"
+import "github.com/Tsukikage7/servex/v2/encoding/pbjson"
 
 // 序列化（包含零值字段）
 data, err := pbjson.Marshal(protoMsg)
@@ -20,8 +20,8 @@ err := pbjson.Unmarshal(data, protoMsg)
 
 ```go
 import (
-    "github.com/Tsukikage7/servex/encoding/pbjson"
-    "github.com/Tsukikage7/servex/transport/httpserver"
+    "github.com/Tsukikage7/servex/v2/encoding/pbjson"
+    "github.com/Tsukikage7/servex/v2/transport/httpserver"
 )
 
 handler := httpserver.NewEndpointHandler(

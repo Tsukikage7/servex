@@ -225,7 +225,7 @@ w.Start(ctx) // 阻塞，ctx 取消后优雅退出
 
 ## eventbus — 进程内事件总线
 
-**包路径：** `github.com/Tsukikage7/servex/messaging/eventbus`
+**包路径：** `github.com/Tsukikage7/servex/v2/messaging/eventbus`
 
 **何时使用：** 进程内同步/异步事件分发，基于主题的发布订阅。区别于 `bizx/event`（通配符/优先级），eventbus 更轻量，基于 Event 接口的强类型事件。
 

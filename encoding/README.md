@@ -14,7 +14,7 @@
 ## 安装
 
 ```bash
-go get github.com/Tsukikage7/servex/encoding
+go get github.com/Tsukikage7/servex/v2/encoding
 ```
 
 ## API 参考
@@ -68,9 +68,9 @@ type Codec interface {
 
 ```go
 import (
-    _ "github.com/Tsukikage7/servex/encoding/json"
-    _ "github.com/Tsukikage7/servex/encoding/xml"
-    _ "github.com/Tsukikage7/servex/encoding/proto"
+    _ "github.com/Tsukikage7/servex/v2/encoding/json"
+    _ "github.com/Tsukikage7/servex/v2/encoding/xml"
+    _ "github.com/Tsukikage7/servex/v2/encoding/proto"
 )
 ```
 

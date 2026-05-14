@@ -11,7 +11,7 @@ XML 编解码器实现，基于标准库 `encoding/xml`。
 ## 安装
 
 ```bash
-go get github.com/Tsukikage7/servex/encoding
+go get github.com/Tsukikage7/servex/v2/encoding
 ```
 
 ## API 参考
@@ -26,6 +26,6 @@ go get github.com/Tsukikage7/servex/encoding
 
 ## 注意事项
 
-- 本包仅需通过空白导入（`_ "github.com/Tsukikage7/servex/encoding/xml"`）即可完成注册，不需要直接调用包内任何函数。
+- 本包仅需通过空白导入（`_ "github.com/Tsukikage7/servex/v2/encoding/xml"`）即可完成注册，不需要直接调用包内任何函数。
 - 编解码行为与标准库 `encoding/xml` 完全一致，包括结构体标签（`xml:"..."`）的处理。
 - HTTP 内容协商时，`Content-Type: application/xml` 和 `Content-Type: text/xml` 均会匹配到本编解码器。

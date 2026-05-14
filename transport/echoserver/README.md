@@ -7,7 +7,7 @@
 ## 安装
 
 ```bash
-go get github.com/Tsukikage7/servex/transport/echoserver
+go get github.com/Tsukikage7/servex/v2/transport/echoserver
 ```
 
 ## API
@@ -72,8 +72,8 @@ func (r *CreateUserReq) Validate() error {
 ```go
 import (
     "github.com/labstack/echo/v4"
-    "github.com/Tsukikage7/servex/transport/echoserver"
-    "github.com/Tsukikage7/servex/transport/response"
+    "github.com/Tsukikage7/servex/v2/transport/echoserver"
+    "github.com/Tsukikage7/servex/v2/transport/response"
 )
 
 func main() {

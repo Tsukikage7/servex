@@ -11,7 +11,7 @@ JSON 编解码器实现，基于标准库 `encoding/json`。
 ## 安装
 
 ```bash
-go get github.com/Tsukikage7/servex/encoding
+go get github.com/Tsukikage7/servex/v2/encoding
 ```
 
 ## API 参考
@@ -26,6 +26,6 @@ go get github.com/Tsukikage7/servex/encoding
 
 ## 注意事项
 
-- 本包仅需通过空白导入（`_ "github.com/Tsukikage7/servex/encoding/json"`）即可完成注册，不需要直接调用包内任何函数。
+- 本包仅需通过空白导入（`_ "github.com/Tsukikage7/servex/v2/encoding/json"`）即可完成注册，不需要直接调用包内任何函数。
 - 编解码行为与标准库 `encoding/json` 完全一致，包括结构体标签（`json:"..."`）的处理。
 - 如需在 Protobuf 消息中保留零值字段，请使用 `encoding/proto` 子包。

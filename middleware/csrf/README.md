@@ -9,7 +9,7 @@ CSRF（跨站请求伪造）防护中间件，采用 **Double Submit Cookie** �
 ## 快速开始
 
 ```go
-import "github.com/Tsukikage7/servex/middleware/csrf"
+import "github.com/Tsukikage7/servex/v2/middleware/csrf"
 
 // 使用默认配置
 mw := csrf.HTTPMiddleware(nil)

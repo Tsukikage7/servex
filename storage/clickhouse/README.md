@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/storage/clickhouse"
+import "github.com/Tsukikage7/servex/v2/storage/clickhouse"
 ```
 
 ## 简介
@@ -29,7 +29,7 @@ import (
     "fmt"
     "time"
 
-    "github.com/Tsukikage7/servex/storage/clickhouse"
+    "github.com/Tsukikage7/servex/v2/storage/clickhouse"
 )
 
 type AccessLog struct {

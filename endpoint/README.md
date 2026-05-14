@@ -1,6 +1,6 @@
 # endpoint
 
-`github.com/Tsukikage7/servex/endpoint`
+`github.com/Tsukikage7/servex/v2/endpoint`
 
 传输层端点抽象与中间件链组合，为 RPC 方法提供统一的函数签名和中间件编排能力。
 

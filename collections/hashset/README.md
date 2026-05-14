@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/collections/hashset"
+import "github.com/Tsukikage7/servex/v2/collections/hashset"
 ```
 
 ## 简介
@@ -33,7 +33,7 @@ package main
 import (
     "fmt"
 
-    "github.com/Tsukikage7/servex/collections/hashset"
+    "github.com/Tsukikage7/servex/v2/collections/hashset"
 )
 
 func main() {

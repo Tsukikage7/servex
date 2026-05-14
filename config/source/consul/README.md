@@ -13,7 +13,7 @@
 ## 安装
 
 ```bash
-go get github.com/Tsukikage7/servex/config
+go get github.com/Tsukikage7/servex/v2/config
 ```
 
 需要额外安装 Consul 客户端库：

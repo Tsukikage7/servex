@@ -1,6 +1,6 @@
 # activity
 
-`github.com/Tsukikage7/servex/httpx/activity` -- 用户活动追踪。
+`github.com/Tsukikage7/servex/v2/httpx/activity` -- 用户活动追踪。
 
 ## 概述
 

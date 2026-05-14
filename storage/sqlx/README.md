@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/storage/sqlx"
+import "github.com/Tsukikage7/servex/v2/storage/sqlx"
 ```
 
 ## 简介
@@ -30,7 +30,7 @@ import (
     "encoding/json"
     "fmt"
 
-    "github.com/Tsukikage7/servex/storage/sqlx"
+    "github.com/Tsukikage7/servex/v2/storage/sqlx"
 )
 
 type UpdateUserRequest struct {

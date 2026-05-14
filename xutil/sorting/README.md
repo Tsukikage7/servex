@@ -1,6 +1,6 @@
 # sorting
 
-`github.com/Tsukikage7/servex/xutil/sorting` -- 排序工具。
+`github.com/Tsukikage7/servex/v2/xutil/sorting` -- 排序工具。
 
 ## 概述
 

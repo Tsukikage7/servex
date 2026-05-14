@@ -1,6 +1,6 @@
 # openapi
 
-`github.com/Tsukikage7/servex/openapi` -- Code-first OpenAPI 3.0 文档生成。
+`github.com/Tsukikage7/servex/v2/openapi` -- Code-first OpenAPI 3.0 文档生成。
 
 ## 概述
 
@@ -90,7 +90,7 @@ openapi 包提供 Code-first 的 OpenAPI 3.0 文档生成能力。通过链式 B
 ## 使用示例
 
 ```go
-import "github.com/Tsukikage7/servex/openapi"
+import "github.com/Tsukikage7/servex/v2/openapi"
 
 // 定义请求/响应类型
 type CreateUserReq struct {

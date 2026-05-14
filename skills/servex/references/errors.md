@@ -90,7 +90,7 @@ errors.WriteErrorFrom(w, err)
 
 ## gRPC 错误映射
 
-`response` 包统一委托 `errors.ToGRPCStatus` 输出同一种 JSON 格式。
+`response` 包统一委托 `errors/grpcx.ToGRPCStatus` 输出同一种 JSON 格式。
 业务 API 推荐从 `response.Code.ToError()` 创建错误，再由 response/gateway/http server 适配层自动处理。
 更底层的包可以直接使用 `errors.NewWithKind(...)`，由 `Kind` 统一推导 HTTP/gRPC 映射。
 
@@ -116,17 +116,17 @@ grpcserver.New(
 **`errors` 包**（推荐用于 errors 体系）：
 
 ```go
-import "github.com/Tsukikage7/servex/v2/errors"
+import errorsgrpcx "github.com/Tsukikage7/servex/v2/errors/grpcx"
 
 // *Error → gRPC Status（Detail 为 JSON 序列化的错误信息）
-st := errors.ToGRPCStatus(err)
+st := errorsgrpcx.ToGRPCStatus(err)
 
 // gRPC Status → *Error
-e := errors.FromGRPCStatus(st)
+e := errorsgrpcx.FromGRPCStatus(st)
 
 // gRPC 一元拦截器
 grpcserver.New(
-    grpcserver.WithUnaryInterceptor(errors.UnaryServerInterceptor()),
+    grpcserver.WithUnaryInterceptor(errorsgrpcx.UnaryServerInterceptor()),
 )
 ```
 

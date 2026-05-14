@@ -1,6 +1,6 @@
 # app
 
-`github.com/Tsukikage7/servex/app`
+`github.com/Tsukikage7/servex/v2/app`
 
 应用生命周期钩子管理，提供启动和停止阶段的前置/后置钩子注册与执行能力。
 

@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/tenant"
+import "github.com/Tsukikage7/servex/v2/tenant"
 ```
 
 ## 简介
@@ -41,7 +41,7 @@ import (
     "fmt"
     "net/http"
 
-    "github.com/Tsukikage7/servex/tenant"
+    "github.com/Tsukikage7/servex/v2/tenant"
 )
 
 // SimpleTenant 简单租户实现

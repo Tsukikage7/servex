@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/config/source/etcd"
+import "github.com/Tsukikage7/servex/v2/config/source/etcd"
 ```
 
 ## 简介
@@ -31,8 +31,8 @@ import (
 
     clientv3 "go.etcd.io/etcd/client/v3"
 
-    "github.com/Tsukikage7/servex/config"
-    "github.com/Tsukikage7/servex/config/source/etcd"
+    "github.com/Tsukikage7/servex/v2/config"
+    "github.com/Tsukikage7/servex/v2/config/source/etcd"
 )
 
 type ServiceConfig struct {

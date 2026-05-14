@@ -22,7 +22,7 @@ HMAC-SHA256(secret, timestamp + "." + body)
 ## 服务端（中间件）
 
 ```go
-import "github.com/Tsukikage7/servex/middleware/signature"
+import "github.com/Tsukikage7/servex/v2/middleware/signature"
 
 // 使用默认配置（SHA256，MaxAge=5min）
 cfg := signature.DefaultConfig("my-secret-key")

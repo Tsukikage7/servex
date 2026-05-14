@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/collections/slicesx"
+import "github.com/Tsukikage7/servex/v2/collections/slicesx"
 ```
 
 ## 简介
@@ -38,7 +38,7 @@ package main
 import (
     "fmt"
 
-    "github.com/Tsukikage7/servex/collections/slicesx"
+    "github.com/Tsukikage7/servex/v2/collections/slicesx"
 )
 
 func main() {

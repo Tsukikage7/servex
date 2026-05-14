@@ -10,9 +10,9 @@ TLS 配置工具包，简化服务端/客户端 `*tls.Config` 的创建，支持
 
 ```go
 import (
-    "github.com/Tsukikage7/servex/transport/tls"
-    "github.com/Tsukikage7/servex/transport/httpserver"
-    "github.com/Tsukikage7/servex/transport/grpcserver"
+    "github.com/Tsukikage7/servex/v2/transport/tls"
+    "github.com/Tsukikage7/servex/v2/transport/httpserver"
+    "github.com/Tsukikage7/servex/v2/transport/grpcserver"
 )
 
 tlsCfg, err := tlsx.NewServerTLSConfig(&tlsx.Config{

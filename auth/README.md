@@ -67,7 +67,7 @@ endpoint = auth.Middleware(authenticator, auth.WithAuthorizer(authorizer))(endpo
 通过 `transport/gateway.WithAuth(...)` 启用 Gateway 认证时会自动读取 protobuf option。
 
 ```go
-interceptor := auth.UnaryServerInterceptor(authenticator,
+interceptor := authgrpcx.UnaryServerInterceptor(authenticator,
     auth.WithAuthorizer(authorizer),
     auth.WithPolicyProvider(auth.MethodPolicyMap{
         "/api.order.v1.OrderService/Create": {

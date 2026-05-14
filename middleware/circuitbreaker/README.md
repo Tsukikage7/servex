@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/middleware/circuitbreaker"
+import "github.com/Tsukikage7/servex/v2/middleware/circuitbreaker"
 ```
 
 ## 简介
@@ -37,7 +37,7 @@ import (
     "net/http"
     "time"
 
-    "github.com/Tsukikage7/servex/middleware/circuitbreaker"
+    "github.com/Tsukikage7/servex/v2/middleware/circuitbreaker"
 )
 
 func main() {

@@ -13,6 +13,33 @@ Go 微服务开发工具包，提供构建生产级微服务所需的核心组�
 go get github.com/Tsukikage7/servex/v2
 ```
 
+## 按需依赖
+
+servex 的基础包默认只暴露抽象和轻量实现，Redis、Consul、etcd、Nacos、Kafka、RabbitMQ、GORM、gRPC adapter、testcontainers 等重依赖放在子包中按需导入。常见拆分路径如下：
+
+| 能力 | 基础包 | 按需子包 |
+| --- | --- | --- |
+| 错误模型 | `errors` | `errors/grpcx` |
+| 认证抽象 | `auth` | `auth/grpcx` |
+| JWT | `auth/jwt` | `auth/jwt/grpcx` |
+| 通知 | `notify` | `notify/jobqueuex` |
+| 缓存 | `storage/cache` | `storage/cache/redis` |
+| 服务发现 | `discovery` | `discovery/consul`、`discovery/etcd`、`discovery/nacos` |
+| Pub/Sub 工厂 | `messaging/pubsub/factory` | `messaging/pubsub/factory/redis`、`kafka`、`rabbitmq` |
+| 分页/排序 | `xutil/pagination`、`xutil/sorting` | `xutil/pagination/gorm`、`xutil/sorting/gorm` |
+| 测试工具 | `testx` | `testx/grpcx`、`testx/container` |
+
+使用 Config 工厂时，provider 子包通过 blank import 注册：
+
+```go
+import (
+    "github.com/Tsukikage7/servex/v2/discovery"
+    _ "github.com/Tsukikage7/servex/v2/discovery/consul"
+)
+```
+
+本仓库用 `just deps-check` 固化这些边界，防止基础包重新引入未使用的重依赖。
+
 ## Claude Code Plugin
 
 servex 内置 [Claude Code Plugin](https://code.claude.com/docs/en/plugins.md)，为 AI 辅助开发提供模块使用指南、代码生成规范和最佳实践。
@@ -45,7 +72,7 @@ servex 提供基于 [cobra](https://github.com/spf13/cobra) 的脚手架 CLI，�
 ### 安装
 
 ```bash
-go install github.com/Tsukikage7/servex/cmd/servex@latest
+go install github.com/Tsukikage7/servex/v2/cmd/servex@latest
 ```
 
 ### 交互式向导
@@ -159,7 +186,7 @@ myproject/
 | --- | --- |
 | [app](./app/) | 应用生命周期管理 |
 | [endpoint](./endpoint/) | Endpoint / Middleware 核心抽象 |
-| [errors](./errors/) | 统一错误（HTTP/gRPC 状态码映射） |
+| [errors](./errors/) | 统一业务错误（HTTP 映射；gRPC 适配见 `errors/grpcx`） |
 | [encoding](./encoding/) | 编解码器接口与 HTTP 内容协商（json/proto/xml/pbjson） |
 
 ### 传输层 (transport/)
@@ -244,13 +271,13 @@ myproject/
 | [config/source/nacos](./config/source/nacos/) | Nacos 配置源（监听变更） |
 | [config/source/apollo](./config/source/apollo/) | Apollo 配置中心（变更监听） |
 | [config/source/k8s](./config/source/k8s/) | Kubernetes ConfigMap/Secret 配置源 |
-| [discovery](./discovery/) | 服务发现（Consul、etcd、Nacos） |
+| [discovery](./discovery/) | 服务发现抽象与工厂（Consul/etcd/Nacos 按需注册） |
 
 ### 存储 (storage/)
 
 | 包 | 说明 | 工厂函数 |
 | --- | --- | --- |
-| [storage/cache](./storage/cache/) | 缓存（内存、Redis） | `NewCache` / `MustNewCache` |
+| [storage/cache](./storage/cache/) | 缓存抽象与内存实现（Redis 按需注册） | `NewCache` / `MustNewCache` |
 | [storage/rdbms](./storage/rdbms/) | 关系数据库（GORM） | `NewDatabase` / `MustNewDatabase` |
 | [storage/mongodb](./storage/mongodb/) | MongoDB 客户端 | `NewClient` / `MustNewClient` |
 | [storage/elasticsearch](./storage/elasticsearch/) | Elasticsearch 客户端 | `NewClient` / `MustNewClient` |
@@ -268,7 +295,7 @@ myproject/
 | 包 | 说明 | 工厂函数 |
 | --- | --- | --- |
 | [messaging/pubsub](./messaging/pubsub/) | 统一 Pub/Sub 抽象 | - |
-| [messaging/pubsub/factory](./messaging/pubsub/factory/) | **Config 驱动工厂（推荐）** | `NewPublisher` / `NewSubscriber` |
+| [messaging/pubsub/factory](./messaging/pubsub/factory/) | Config 驱动工厂（后端按需注册） | `NewPublisher` / `NewSubscriber` |
 | [messaging/pubsub/kafka](./messaging/pubsub/kafka/) | Kafka driver | `NewPublisher` / `NewSubscriber` |
 | [messaging/pubsub/rabbitmq](./messaging/pubsub/rabbitmq/) | RabbitMQ driver | `NewPublisher` / `NewSubscriber` |
 | [messaging/pubsub/redis](./messaging/pubsub/redis/) | Redis Streams driver | `NewPublisher` / `NewSubscriber` |
@@ -300,6 +327,7 @@ myproject/
 | [notify/webhook](./notify/webhook/) | Webhook 投递与接收 |
 | [notify/nwebhook](./notify/nwebhook/) | Webhook 通知渠道 |
 | [notify/factory](./notify/factory/) | 通知渠道工厂 |
+| [notify/jobqueuex](./notify/jobqueuex/) | JobQueue 异步通知投递适配 |
 
 ### HTTP 请求分析 (httpx/)
 
@@ -357,7 +385,7 @@ myproject/
 | [xutil](./xutil/) | 工具包（ptrx/strx/randx/iox/copier/syncx/sorting/pagination/version/crypto/optionx/valuex/idgen） |
 | [xutil/templatex](./xutil/templatex/) | 模板引擎增强（14 个内置函数/多格式） |
 | [validation](./validation/) | 输入校验（go-playground/validator 封装，中英文错误消息） |
-| [testx](./testx/) | 测试工具包（NopLogger/TestLogger/Container/HTTPTest/Fixture） |
+| [testx](./testx/) | 轻量测试工具包（NopLogger/TestLogger/HTTPTest/Fixture；容器和 gRPC 见子包） |
 
 ### 业务组件 (bizx/)
 
@@ -369,7 +397,6 @@ myproject/
 | [bizx/locking](./bizx/locking/) | 业务锁（可重入/读写锁/续期） |
 | [bizx/ratelimit](./bizx/ratelimit/) | 业务配额（按用户/租户限流） |
 | [bizx/statemachine](./bizx/statemachine/) | 状态机（状态/事件/守卫/回调） |
-| [bizx/pagination](./bizx/pagination/) | 游标分页（Cursor-based） |
 | [bizx/audit](./bizx/audit/) | 审计日志（操作记录/变更追踪） |
 | [bizx/feature](./bizx/feature/) | 特性开关（灰度/百分比/白名单） |
 | [bizx/retry](./bizx/retry/) | 异步重试（持久化/指数退避/死信） |

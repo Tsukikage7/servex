@@ -7,7 +7,7 @@ HTTP 请求体大小限制中间件，防止客户端发送过大请求体导致
 ## 快速开始
 
 ```go
-import "github.com/Tsukikage7/servex/middleware/bodylimit"
+import "github.com/Tsukikage7/servex/v2/middleware/bodylimit"
 
 // 限制为 1 MB（字节数直接指定）
 mw := bodylimit.HTTPMiddleware(1 << 20)

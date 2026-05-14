@@ -1,6 +1,6 @@
 # crypto
 
-`github.com/Tsukikage7/servex/xutil/crypto` -- 加密与随机生成工具。
+`github.com/Tsukikage7/servex/v2/xutil/crypto` -- 加密与随机生成工具。
 
 ## 概述
 

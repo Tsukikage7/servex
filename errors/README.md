@@ -8,7 +8,7 @@ import "github.com/Tsukikage7/servex/v2/errors"
 
 ## 简介
 
-`errors` 包提供统一的业务错误类型 `Error`，包含业务码（Code）、键（Key）、消息（Message）和业务语义（Kind）。HTTP 状态码与 gRPC Code 统一由 `Kind` 推导。支持错误链（`WithCause`）、元数据附加（`WithMeta`）和 `errors.Is` 按 Code 比较。内置 HTTP 响应写入和 gRPC Status 转换工具。
+`errors` 包提供统一的业务错误类型 `Error`，包含业务码（Code）、键（Key）、消息（Message）和业务语义（Kind）。HTTP 状态码由 `Kind` 推导；gRPC Status 转换在 `errors/grpcx` 子包中提供，避免只使用业务错误时引入 gRPC 依赖。支持错误链（`WithCause`）、元数据附加（`WithMeta`）和 `errors.Is` 按 Code 比较。
 
 ## 核心类型
 
@@ -17,9 +17,8 @@ import "github.com/Tsukikage7/servex/v2/errors"
 | `Error` | 统一业务错误类型 |
 | `New(code, key, message)` | 创建错误定义（通常作为包级变量） |
 | `NewWithKind(code, key, message, kind)` | 创建带业务语义映射的错误定义 |
-| `WithKind(kind)` | 绑定业务语义，HTTP/gRPC 映射由 Kind 推导 |
+| `WithKind(kind)` | 绑定业务语义，HTTP 映射由 Kind 推导 |
 | `Kind.HTTPStatus()` | 获取 Kind 对应的 HTTP 状态码 |
-| `Kind.GRPCCode()` | 获取 Kind 对应的 gRPC Code |
 | `WithCause(err)` | 包装底层错误（返回新实例） |
 | `WithMeta(key, value)` | 附加元数据（返回新实例） |
 | `WithMessage(msg)` | 覆盖消息（返回新实例） |
@@ -27,7 +26,7 @@ import "github.com/Tsukikage7/servex/v2/errors"
 | `CodeIs(err, target)` | 按 Code 判断错误 |
 | `WriteError(w, err)` | 将 `*Error` 写入 HTTP 响应（JSON） |
 | `WriteErrorFrom(w, err)` | 将 error 写入 HTTP 响应 |
-| `ToGRPCStatus(err)` | 转为 gRPC Status |
+| `errors/grpcx.ToGRPCStatus(err)` | 转为 gRPC Status |
 
 ## 示例
 

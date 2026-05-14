@@ -1,6 +1,6 @@
 # lock
 
-`github.com/Tsukikage7/servex/storage/lock` -- 分布式锁。
+`github.com/Tsukikage7/servex/v2/storage/lock` -- 分布式锁。
 
 ## 概述
 

@@ -14,7 +14,7 @@
 ## 快速开始（便捷函数）
 
 ```go
-import "github.com/Tsukikage7/servex/xutil/idgen"
+import "github.com/Tsukikage7/servex/v2/xutil/idgen"
 
 id := idgen.Snowflake() // "1234567890123456789"（纯数字）
 id  = idgen.ULID()      // "01ARZ3NDEKTSV4RRFFQ69G5FAV"（26 字符）

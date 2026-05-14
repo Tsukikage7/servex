@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/notify/push"
+import "github.com/Tsukikage7/servex/v2/notify/push"
 ```
 
 ## 简介
@@ -30,8 +30,8 @@ import (
     "context"
     "fmt"
 
-    "github.com/Tsukikage7/servex/notify"
-    "github.com/Tsukikage7/servex/notify/push"
+    "github.com/Tsukikage7/servex/v2/notify"
+    "github.com/Tsukikage7/servex/v2/notify/push"
 )
 
 func main() {

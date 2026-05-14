@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/oauth2/wechat"
+import "github.com/Tsukikage7/servex/v2/oauth2/wechat"
 ```
 
 ## 简介
@@ -27,8 +27,8 @@ import (
     "fmt"
     "net/http"
 
-    "github.com/Tsukikage7/servex/oauth2/state"
-    "github.com/Tsukikage7/servex/oauth2/wechat"
+    "github.com/Tsukikage7/servex/v2/oauth2/state"
+    "github.com/Tsukikage7/servex/v2/oauth2/wechat"
 )
 
 func main() {

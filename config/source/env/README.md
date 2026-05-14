@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/config/source/env"
+import "github.com/Tsukikage7/servex/v2/config/source/env"
 ```
 
 ## 简介
@@ -29,8 +29,8 @@ import (
     "fmt"
     "os"
 
-    "github.com/Tsukikage7/servex/config"
-    "github.com/Tsukikage7/servex/config/source/env"
+    "github.com/Tsukikage7/servex/v2/config"
+    "github.com/Tsukikage7/servex/v2/config/source/env"
 )
 
 type AppConfig struct {

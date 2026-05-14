@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/transport/graphql"
+import "github.com/Tsukikage7/servex/v2/transport/graphql"
 ```
 
 ## 简介
@@ -35,7 +35,7 @@ import (
 
     gql "github.com/graphql-go/graphql"
 
-    "github.com/Tsukikage7/servex/transport/graphql"
+    "github.com/Tsukikage7/servex/v2/transport/graphql"
 )
 
 func main() {

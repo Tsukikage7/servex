@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/messaging/jobqueue/database"
+import "github.com/Tsukikage7/servex/v2/messaging/jobqueue/database"
 ```
 
 ## 简介
@@ -32,8 +32,8 @@ import (
     "gorm.io/driver/sqlite"
     "gorm.io/gorm"
 
-    "github.com/Tsukikage7/servex/messaging/jobqueue"
-    "github.com/Tsukikage7/servex/messaging/jobqueue/database"
+    "github.com/Tsukikage7/servex/v2/messaging/jobqueue"
+    "github.com/Tsukikage7/servex/v2/messaging/jobqueue/database"
 )
 
 func main() {

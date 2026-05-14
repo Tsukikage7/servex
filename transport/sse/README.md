@@ -1,6 +1,6 @@
 # sse
 
-`github.com/Tsukikage7/servex/transport/sse`
+`github.com/Tsukikage7/servex/v2/transport/sse`
 
 Server-Sent Events (SSE) 服务端实现，提供标准 SSE 协议支持，包含客户端管理、事件广播和连接生命周期回调。
 

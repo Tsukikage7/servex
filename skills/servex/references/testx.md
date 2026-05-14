@@ -125,7 +125,7 @@ func TestMyHandler(t *testing.T) {
 ```go
 func TestMyGRPCService(t *testing.T) {
     // 创建测试服务器（registerFn 注册 gRPC 服务，可选拦截器）
-    conn, cleanup := testx.NewGRPCTestServer(
+    conn, cleanup := testxgrpcx.NewGRPCTestServer(
         func(s *grpc.Server) {
             pb.RegisterMyServiceServer(s, &myServiceImpl{})
         },
@@ -143,7 +143,7 @@ func TestMyGRPCService(t *testing.T) {
 ```
 
 **关键函数：**
-- `testx.NewGRPCTestServer(registerFn, interceptors...) (*grpc.ClientConn, func())` — 创建基于内存连接的 gRPC 测试服务器
+- `testx/grpcx.NewGRPCTestServer(registerFn, interceptors...) (*grpc.ClientConn, func())` — 创建基于内存连接的 gRPC 测试服务器
   - `registerFn func(*grpc.Server)` — 注册 gRPC 服务的回调
   - `interceptors ...grpc.UnaryServerInterceptor` — 可选一元拦截器
   - 返回 `conn` 和 `cleanup` 函数，测试结束后必须调用 `cleanup()`

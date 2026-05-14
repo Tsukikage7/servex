@@ -1,11 +1,13 @@
 # Discovery 服务发现包
 
-提供微服务架构中的服务注册与发现功能，支持 Consul 作为服务注册中心。
+提供微服务架构中的服务注册与发现抽象、配置和工厂。Consul、etcd、Nacos provider 放在独立子包中，通过 blank import 按需注册，避免只使用抽象时拉入所有注册中心 SDK。
 
 ## 功能特性
 
 - 服务注册与注销
 - 服务发现
+- Config 驱动工厂
+- Provider 按需注册
 - 多协议支持（HTTP/gRPC）
 - 健康检查配置
 - 中文错误信息
@@ -13,7 +15,7 @@
 ## 安装
 
 ```bash
-go get github.com/Tsukikage7/servex/discovery
+go get github.com/Tsukikage7/servex/v2/discovery
 ```
 
 ## API 参考
@@ -22,13 +24,29 @@ go get github.com/Tsukikage7/servex/discovery
 
 ```go
 const (
-    TypeConsul = "consul"  // Consul 服务发现
+    TypeConsul = "consul"
+    TypeEtcd   = "etcd"
+    TypeNacos  = "nacos"
 )
 
 const (
     ProtocolHTTP = "http"  // HTTP 协议
     ProtocolGRPC = "grpc"  // gRPC 协议
 )
+```
+
+### 按需注册 provider
+
+```go
+import (
+    "github.com/Tsukikage7/servex/v2/discovery"
+    _ "github.com/Tsukikage7/servex/v2/discovery/consul"
+)
+
+d, err := discovery.NewDiscovery(&discovery.Config{
+    Type: discovery.TypeConsul,
+    Addr: "127.0.0.1:8500",
+}, log)
 ```
 
 ### 默认值
@@ -59,29 +77,25 @@ const (
 
 ```
 discovery/
-├── discovery.go      # 接口定义和错误常量
-├── config.go         # 配置结构体
-├── factory.go        # 工厂函数
-├── consul.go         # Consul 实现
-├── config_test.go    # 配置测试
-├── consul_test.go    # Consul 测试
-├── factory_test.go   # 工厂测试
-├── discovery_test.go # 接口测试
-└── README.md         # 文档
+├── discovery.go       # 接口定义
+├── config.go          # 配置结构体
+├── factory.go         # 工厂和 provider 注册表
+├── consul/            # Consul provider
+├── etcd/              # etcd provider
+├── nacos/             # Nacos provider
+└── README.md
 ```
 
 ## 测试
 
 ```bash
 # 运行测试
-go test -v ./discovery/...
+go test -v ./discovery ./discovery/consul ./discovery/etcd ./discovery/nacos
 
 # 运行测试并查看覆盖率
-go test -v ./discovery/... -cover
+go test -v ./discovery ./discovery/consul ./discovery/etcd ./discovery/nacos -cover
 
 # 生成覆盖率报告
-go test ./discovery/... -coverprofile=coverage.out
+go test ./discovery ./discovery/consul ./discovery/etcd ./discovery/nacos -coverprofile=coverage.out
 go tool cover -html=coverage.out
 ```
-
-当前测试覆盖率：**87.8%**

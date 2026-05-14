@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/collections/blockingqueue"
+import "github.com/Tsukikage7/servex/v2/collections/blockingqueue"
 ```
 
 ## 简介
@@ -28,7 +28,7 @@ import (
     "fmt"
     "sync"
 
-    "github.com/Tsukikage7/servex/collections/blockingqueue"
+    "github.com/Tsukikage7/servex/v2/collections/blockingqueue"
 )
 
 func main() {

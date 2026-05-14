@@ -5,7 +5,7 @@
 ## 安装
 
 ```go
-import "github.com/Tsukikage7/servex/metrics"
+import "github.com/Tsukikage7/servex/v2/metrics"
 ```
 
 ## API
@@ -202,7 +202,7 @@ import (
     "runtime"
     "time"
 
-    "github.com/Tsukikage7/servex/metrics"
+    "github.com/Tsukikage7/servex/v2/metrics"
 )
 
 func main() {
@@ -255,7 +255,7 @@ import (
     "log"
     "net"
 
-    "github.com/Tsukikage7/servex/metrics"
+    "github.com/Tsukikage7/servex/v2/metrics"
     "google.golang.org/grpc"
 )
 
@@ -290,7 +290,7 @@ func main() {
 package main
 
 import (
-    "github.com/Tsukikage7/servex/metrics"
+    "github.com/Tsukikage7/servex/v2/metrics"
     "google.golang.org/grpc"
     "google.golang.org/grpc/credentials/insecure"
 )

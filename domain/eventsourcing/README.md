@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/domain/eventsourcing"
+import "github.com/Tsukikage7/servex/v2/domain/eventsourcing"
 ```
 
 ## 简介
@@ -36,7 +36,7 @@ import (
     "context"
     "fmt"
 
-    "github.com/Tsukikage7/servex/domain/eventsourcing"
+    "github.com/Tsukikage7/servex/v2/domain/eventsourcing"
     "gorm.io/driver/sqlite"
     "gorm.io/gorm"
 )

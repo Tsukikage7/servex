@@ -15,7 +15,7 @@ HTTP 安全头中间件，自动为每个响应注入常见安全相关 header�
 ## 快速开始
 
 ```go
-import "github.com/Tsukikage7/servex/middleware/secure"
+import "github.com/Tsukikage7/servex/v2/middleware/secure"
 
 // 使用默认配置（推荐生产环境）
 mux.Handle("/", secure.HTTPMiddleware(nil)(myHandler))

@@ -14,7 +14,7 @@
 ## 安装
 
 ```bash
-go get github.com/Tsukikage7/servex/transport/httpserver
+go get github.com/Tsukikage7/servex/v2/transport/httpserver
 ```
 
 ## API

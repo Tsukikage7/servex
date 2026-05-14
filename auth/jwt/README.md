@@ -6,7 +6,8 @@ JWT 认证服务，提供令牌生成、验证、刷新和撤销功能。
 
 - 生成、验证、刷新令牌
 - 可选的缓存集成（用于令牌撤销）
-- Endpoint/HTTP/gRPC 中间件
+- Endpoint/HTTP 中间件
+- gRPC 适配（`auth/jwt/grpcx` 子包）
 - 白名单支持
 - 自定义 Claims
 - Functional Options 模式
@@ -128,8 +129,8 @@ Endpoint 中间件用于 `transport.Endpoint` 层，参考 [go-kit/kit/auth/jwt]
 
 ```go
 import (
-    "github.com/Tsukikage7/servex/transport"
-    "github.com/Tsukikage7/servex/auth/jwt"
+    "github.com/Tsukikage7/servex/v2/transport"
+    "github.com/Tsukikage7/servex/v2/auth/jwt"
 )
 
 // 创建签名中间件
@@ -229,22 +230,22 @@ http.ListenAndServe(":8080", handler)
 ```go
 // 一元拦截器
 srv := grpc.NewServer(
-    grpc.UnaryInterceptor(jwt.UnaryServerInterceptor(j)),
+    grpc.UnaryInterceptor(jwtgrpcx.UnaryServerInterceptor(j)),
 )
 
 // 流拦截器
 srv := grpc.NewServer(
-    grpc.StreamInterceptor(jwt.StreamServerInterceptor(j)),
+    grpc.StreamInterceptor(jwtgrpcx.StreamServerInterceptor(j)),
 )
 
 // 链式使用
 srv := grpc.NewServer(
     grpc.ChainUnaryInterceptor(
-        jwt.UnaryServerInterceptor(j),
+        jwtgrpcx.UnaryServerInterceptor(j),
         otherInterceptor,
     ),
     grpc.ChainStreamInterceptor(
-        jwt.StreamServerInterceptor(j),
+        jwtgrpcx.StreamServerInterceptor(j),
         otherStreamInterceptor,
     ),
 )
@@ -252,7 +253,7 @@ srv := grpc.NewServer(
 // 使用自定义 Claims 类型
 srv := grpc.NewServer(
     grpc.ChainUnaryInterceptor(
-        jwt.UnaryServerInterceptorWithClaims(j, func() jwt.Claims {
+        jwtgrpcx.UnaryServerInterceptorWithClaims(j, func() jwt.Claims {
             return &UserClaims{}
         }),
     ),
@@ -340,7 +341,7 @@ import (
     "time"
 
     jwtv5 "github.com/golang-jwt/jwt/v5"
-    "github.com/Tsukikage7/servex/auth/jwt"
+    "github.com/Tsukikage7/servex/v2/auth/jwt"
     "github.com/Tsukikage7/servex/v2/observability/logger"
 )
 

@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/storage/migration"
+import "github.com/Tsukikage7/servex/v2/storage/migration"
 ```
 
 ## 简介
@@ -38,7 +38,7 @@ import (
     "gorm.io/driver/postgres"
     "gorm.io/gorm"
 
-    "github.com/Tsukikage7/servex/storage/migration"
+    "github.com/Tsukikage7/servex/v2/storage/migration"
 )
 
 func main() {

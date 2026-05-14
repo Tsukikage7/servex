@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/messaging/jobqueue/kafka"
+import "github.com/Tsukikage7/servex/v2/messaging/jobqueue/kafka"
 ```
 
 ## 简介
@@ -29,8 +29,8 @@ import (
     "fmt"
     "time"
 
-    "github.com/Tsukikage7/servex/messaging/jobqueue"
-    "github.com/Tsukikage7/servex/messaging/jobqueue/kafka"
+    "github.com/Tsukikage7/servex/v2/messaging/jobqueue"
+    "github.com/Tsukikage7/servex/v2/messaging/jobqueue/kafka"
 )
 
 func main() {

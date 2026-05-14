@@ -147,7 +147,7 @@ import (
     "fmt"
     "time"
 
-    "github.com/Tsukikage7/servex/database"
+    "github.com/Tsukikage7/servex/v2/database"
     "github.com/Tsukikage7/servex/v2/observability/logger"
 )
 

@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/messaging/pubsub/rabbitmq"
+import "github.com/Tsukikage7/servex/v2/messaging/pubsub/rabbitmq"
 ```
 
 ## 简介
@@ -33,8 +33,8 @@ import (
     "context"
     "fmt"
 
-    "github.com/Tsukikage7/servex/messaging/pubsub"
-    "github.com/Tsukikage7/servex/messaging/pubsub/rabbitmq"
+    "github.com/Tsukikage7/servex/v2/messaging/pubsub"
+    "github.com/Tsukikage7/servex/v2/messaging/pubsub/rabbitmq"
     "github.com/Tsukikage7/servex/v2/observability/logger"
 )
 

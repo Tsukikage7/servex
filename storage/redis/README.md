@@ -16,7 +16,7 @@
 
 ```go
 import (
-    "github.com/Tsukikage7/servex/storage/redis"
+    "github.com/Tsukikage7/servex/v2/storage/redis"
     "github.com/Tsukikage7/servex/v2/observability/logger"
 )
 

@@ -1,6 +1,6 @@
 # referer
 
-`github.com/Tsukikage7/servex/httpx/referer` -- 来源页面与UTM参数解析。
+`github.com/Tsukikage7/servex/v2/httpx/referer` -- 来源页面与UTM参数解析。
 
 ## 概述
 

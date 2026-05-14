@@ -3,7 +3,7 @@
 ## 导入路径
 
 ```go
-import "github.com/Tsukikage7/servex/oauth2/state"
+import "github.com/Tsukikage7/servex/v2/oauth2/state"
 ```
 
 ## 简介
@@ -32,7 +32,7 @@ import (
 
     "github.com/redis/go-redis/v9"
 
-    "github.com/Tsukikage7/servex/oauth2/state"
+    "github.com/Tsukikage7/servex/v2/oauth2/state"
 )
 
 func main() {

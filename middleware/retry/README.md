@@ -75,8 +75,8 @@ import (
     "time"
 
     servexerr "github.com/Tsukikage7/servex/v2/errors"
-    "github.com/Tsukikage7/servex/retry"
-    "github.com/Tsukikage7/servex/transport"
+    "github.com/Tsukikage7/servex/v2/retry"
+    "github.com/Tsukikage7/servex/v2/transport"
 )
 
 func main() {
@@ -122,7 +122,7 @@ import (
     "net/http"
     "time"
 
-    "github.com/Tsukikage7/servex/retry"
+    "github.com/Tsukikage7/servex/v2/retry"
 )
 
 func main() {
@@ -166,7 +166,7 @@ package main
 import (
     "time"
 
-    "github.com/Tsukikage7/servex/retry"
+    "github.com/Tsukikage7/servex/v2/retry"
     "google.golang.org/grpc"
     "google.golang.org/grpc/codes"
     "google.golang.org/grpc/credentials/insecure"
@@ -212,7 +212,7 @@ import (
     "context"
     "time"
 
-    "github.com/Tsukikage7/servex/retry"
+    "github.com/Tsukikage7/servex/v2/retry"
 )
 
 func main() {
@@ -244,7 +244,7 @@ func main() {
 ## 错误处理
 
 ```go
-import "github.com/Tsukikage7/servex/retry"
+import "github.com/Tsukikage7/servex/v2/retry"
 
 // 检查是否达到最大重试次数
 if errors.Is(err, retry.ErrMaxAttempts) {

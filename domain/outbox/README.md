@@ -1,6 +1,6 @@
 # outbox
 
-`github.com/Tsukikage7/servex/outbox` -- Outbox 模式（事务性消息发送）。
+`github.com/Tsukikage7/servex/v2/outbox` -- Outbox 模式（事务性消息发送）。
 
 ## 概述
 

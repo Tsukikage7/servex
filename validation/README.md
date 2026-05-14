@@ -14,7 +14,7 @@
 ## 快速开始
 
 ```go
-import "github.com/Tsukikage7/servex/validation"
+import "github.com/Tsukikage7/servex/v2/validation"
 
 v := validation.New() // 默认中文消息
 

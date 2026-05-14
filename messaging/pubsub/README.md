@@ -1,6 +1,6 @@
 # pubsub
 
-`github.com/Tsukikage7/servex/pubsub` -- 统一 Pub/Sub 消息抽象层。
+`github.com/Tsukikage7/servex/v2/messaging/pubsub` -- 统一 Pub/Sub 消息抽象层。
 
 ## 概述
 
@@ -9,7 +9,7 @@ pubsub 包提供统一的发布/订阅接口，屏蔽底层消息中间件差异
 ## 功能特性
 
 - 统一抽象：Publisher/Subscriber/Message 三层抽象，接口简洁
-- 三种 driver：Kafka、RabbitMQ、Redis Streams，开箱即用
+- 三种 driver：Kafka、RabbitMQ、Redis Streams，按需导入
 - 手动确认：Ack/Nack 语义统一，各 driver 映射到原生机制
 - 消息元数据：Headers 和 Metadata 透传中间件特有信息
 - 幂等关闭：所有 driver 的 Close() 均可安全多次调用
@@ -113,14 +113,17 @@ pubsub 包提供统一的发布/订阅接口，屏蔽底层消息中间件差异
 
 ## 使用示例
 
-### Config 驱动（推荐）
+### Config 驱动（按需注册）
 
-通过 `pubsub/factory` 包，只需一个 `Config` 即可创建 Publisher/Subscriber，无需直接依赖各 driver 包。
+通过 `messaging/pubsub/factory` 包，只需一个 `Config` 即可创建 Publisher/Subscriber。factory 核心包只维护配置和注册表，不直接导入 Kafka、RabbitMQ 或 Redis Streams 后端，避免拉入当前不用的间接依赖。使用哪个后端，就 blank import 对应注册包。
 
 ```go
 import (
-    "github.com/Tsukikage7/servex/pubsub"
-    "github.com/Tsukikage7/servex/pubsub/factory"
+    "github.com/Tsukikage7/servex/v2/messaging/pubsub"
+    "github.com/Tsukikage7/servex/v2/messaging/pubsub/factory"
+    _ "github.com/Tsukikage7/servex/v2/messaging/pubsub/factory/kafka"
+    _ "github.com/Tsukikage7/servex/v2/messaging/pubsub/factory/rabbitmq"
+    _ "github.com/Tsukikage7/servex/v2/messaging/pubsub/factory/redis"
 )
 
 // Kafka
@@ -171,11 +174,19 @@ pub, _ := factory.NewPublisher(&factory.Config{
 | `Password` | `string` | Redis 密码 |
 | `DB` | `int` | Redis DB 编号 |
 
+按需注册包：
+
+| Type | 注册包 |
+|------|--------|
+| `kafka` | `messaging/pubsub/factory/kafka` |
+| `rabbitmq` | `messaging/pubsub/factory/rabbitmq` |
+| `redis` | `messaging/pubsub/factory/redis` |
+
 ### 高级用法（直接使用 driver）
 
 ```go
 // --- Kafka ---
-import "github.com/Tsukikage7/servex/pubsub/kafka"
+import "github.com/Tsukikage7/servex/v2/messaging/pubsub/kafka"
 
 pub, _ := kafka.NewPublisher(saramaClient)
 defer pub.Close()
@@ -195,7 +206,7 @@ for msg := range ch {
 }
 
 // --- RabbitMQ ---
-import "github.com/Tsukikage7/servex/pubsub/rabbitmq"
+import "github.com/Tsukikage7/servex/v2/messaging/pubsub/rabbitmq"
 
 pub, _ := rabbitmq.NewPublisher("amqp://localhost",
     rabbitmq.WithExchange("events", "topic"),
@@ -203,7 +214,7 @@ pub, _ := rabbitmq.NewPublisher("amqp://localhost",
 pub.Publish(ctx, "order.created", &pubsub.Message{Body: payload})
 
 // --- Redis Streams ---
-import "github.com/Tsukikage7/servex/pubsub/redis"
+import "github.com/Tsukikage7/servex/v2/messaging/pubsub/redis"
 
 pub, _ := redis.NewPublisher(redisClient, redis.WithMaxLen(10000, true))
 pub.Publish(ctx, "notifications", &pubsub.Message{Body: payload})

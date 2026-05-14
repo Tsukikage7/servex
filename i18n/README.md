@@ -1,6 +1,6 @@
 # i18n
 
-`github.com/Tsukikage7/servex/i18n` -- 国际化。
+`github.com/Tsukikage7/servex/v2/i18n` -- 国际化。
 
 ## 概述
 

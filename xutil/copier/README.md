@@ -1,6 +1,6 @@
 # copier
 
-`github.com/Tsukikage7/servex/xutil/copier` -- 结构体复制。
+`github.com/Tsukikage7/servex/v2/xutil/copier` -- 结构体复制。
 
 ## 概述
 

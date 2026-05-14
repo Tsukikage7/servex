@@ -7,7 +7,7 @@
 ## 安装
 
 ```bash
-go get github.com/Tsukikage7/servex/transport/hertzserver
+go get github.com/Tsukikage7/servex/v2/transport/hertzserver
 ```
 
 ## API
@@ -73,7 +73,7 @@ func (r *CreateUserReq) Validate() error {
 import (
     "github.com/cloudwego/hertz/pkg/app"
     "github.com/cloudwego/hertz/pkg/app/server"
-    "github.com/Tsukikage7/servex/transport/hertzserver"
+    "github.com/Tsukikage7/servex/v2/transport/hertzserver"
 )
 
 func main() {

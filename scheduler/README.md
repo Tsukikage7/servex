@@ -16,7 +16,7 @@
 ## 安装
 
 ```go
-import "github.com/Tsukikage7/servex/scheduler"
+import "github.com/Tsukikage7/servex/v2/scheduler"
 ```
 
 ## 幂等性保证
