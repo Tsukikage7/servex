@@ -11,6 +11,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/Tsukikage7/servex/v2/auth"
+	authgrpcx "github.com/Tsukikage7/servex/v2/auth/grpcx"
 	"github.com/Tsukikage7/servex/v2/httpx/clientip"
 	"github.com/Tsukikage7/servex/v2/middleware/cors"
 	"github.com/Tsukikage7/servex/v2/middleware/logging"
@@ -552,11 +553,11 @@ func applyAuthInterceptors(o *options) {
 	// 添加到拦截器链（在 recovery 之后）
 	o.unaryInterceptors = append(
 		o.unaryInterceptors,
-		auth.UnaryServerInterceptor(o.authenticator, authOpts...),
+		authgrpcx.UnaryServerInterceptor(o.authenticator, authOpts...),
 	)
 	o.streamInterceptors = append(
 		o.streamInterceptors,
-		auth.StreamServerInterceptor(o.authenticator, authOpts...),
+		authgrpcx.StreamServerInterceptor(o.authenticator, authOpts...),
 	)
 }
 

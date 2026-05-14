@@ -124,7 +124,6 @@
 //   - [bizx/locking] 业务锁
 //   - [bizx/ratelimit] 业务配额
 //   - [bizx/statemachine] 状态机
-//   - [bizx/pagination] 游标分页
 //   - [bizx/audit] 审计日志
 //   - [bizx/feature] 特性开关
 //   - [bizx/retry] 异步重试

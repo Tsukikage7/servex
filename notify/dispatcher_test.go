@@ -6,8 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-
-	"github.com/Tsukikage7/servex/v2/messaging/jobqueue"
 )
 
 type mockSender struct {
@@ -140,53 +138,5 @@ func TestDispatcher_Close(t *testing.T) {
 	_, err := d.Send(t.Context(), &Message{Channel: ChannelEmail, To: []string{"a@b.com"}, Body: "hi"})
 	if !errors.Is(err, ErrClosed) {
 		t.Errorf("got %v, want ErrClosed", err)
-	}
-}
-
-type mockJobClient struct {
-	jobs []*jobqueue.Job
-}
-
-func (m *mockJobClient) Enqueue(_ context.Context, job *jobqueue.Job) error {
-	m.jobs = append(m.jobs, job)
-	return nil
-}
-func (m *mockJobClient) Close() error { return nil }
-
-func TestDispatcher_SendAsync(t *testing.T) {
-	client := &mockJobClient{}
-	d := NewDispatcher(WithJobQueue(client))
-	d.Register(newMockSender(ChannelEmail))
-
-	msg := &Message{Channel: ChannelEmail, To: []string{"a@b.com"}, Subject: "Async", Body: "hello"}
-	if err := d.SendAsync(t.Context(), msg); err != nil {
-		t.Fatal(err)
-	}
-	if len(client.jobs) != 1 {
-		t.Fatalf("got %d jobs, want 1", len(client.jobs))
-	}
-	job := client.jobs[0]
-	if job.Queue != "notifications" {
-		t.Errorf("queue = %q", job.Queue)
-	}
-	if job.Type != "notification.email" {
-		t.Errorf("type = %q", job.Type)
-	}
-}
-
-func TestDispatcher_SendAsync_NoJobQueue(t *testing.T) {
-	d := NewDispatcher()
-	err := d.SendAsync(t.Context(), &Message{Channel: ChannelEmail, To: []string{"a@b.com"}, Body: "hi"})
-	if err == nil {
-		t.Error("expected error when no job queue")
-	}
-}
-
-func TestDispatcher_SendAsync_InvalidMessage(t *testing.T) {
-	client := &mockJobClient{}
-	d := NewDispatcher(WithJobQueue(client))
-	err := d.SendAsync(t.Context(), nil)
-	if !errors.Is(err, ErrNilMessage) {
-		t.Errorf("got %v, want ErrNilMessage", err)
 	}
 }

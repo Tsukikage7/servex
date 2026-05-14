@@ -27,7 +27,7 @@ require (
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
-	github.com/sirupsen/logrus v1.9.3 // indirect
+	github.com/sirupsen/logrus v1.9.4 // indirect
 	github.com/slongfield/pyfmt v0.0.0-20220222012616-ea85ff4c361f // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect

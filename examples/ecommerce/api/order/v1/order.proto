@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package api.order.v1;
 
-option go_package = "github.com/Tsukikage7/servex/examples/ecommerce/api/order/v1;orderv1";
+option go_package = "github.com/Tsukikage7/servex/v2/examples/ecommerce/api/order/v1;orderv1";
 
 // OrderService 订单服务.
 service OrderService {

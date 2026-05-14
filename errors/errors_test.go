@@ -8,7 +8,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc/codes"
 )
 
 func TestNew(t *testing.T) {
@@ -35,27 +34,25 @@ func TestKindMappings(t *testing.T) {
 		name string
 		kind Kind
 		http int
-		grpc codes.Code
 	}{
-		{"internal", KindInternal, http.StatusInternalServerError, codes.Internal},
-		{"unknown", KindUnknown, http.StatusInternalServerError, codes.Unknown},
-		{"canceled", KindCanceled, http.StatusRequestTimeout, codes.Canceled},
-		{"not found", KindNotFound, http.StatusNotFound, codes.NotFound},
-		{"conflict", KindConflict, http.StatusConflict, codes.AlreadyExists},
-		{"invalid argument", KindInvalidArgument, http.StatusBadRequest, codes.InvalidArgument},
-		{"permission denied", KindPermissionDenied, http.StatusForbidden, codes.PermissionDenied},
-		{"unauthenticated", KindUnauthenticated, http.StatusUnauthorized, codes.Unauthenticated},
-		{"failed precondition", KindFailedPrecondition, http.StatusPreconditionFailed, codes.FailedPrecondition},
-		{"unavailable", KindUnavailable, http.StatusServiceUnavailable, codes.Unavailable},
-		{"deadline exceeded", KindDeadlineExceeded, http.StatusGatewayTimeout, codes.DeadlineExceeded},
-		{"resource exhausted", KindResourceExhausted, http.StatusTooManyRequests, codes.ResourceExhausted},
-		{"not implemented", KindNotImplemented, http.StatusNotImplemented, codes.Unimplemented},
+		{"internal", KindInternal, http.StatusInternalServerError},
+		{"unknown", KindUnknown, http.StatusInternalServerError},
+		{"canceled", KindCanceled, http.StatusRequestTimeout},
+		{"not found", KindNotFound, http.StatusNotFound},
+		{"conflict", KindConflict, http.StatusConflict},
+		{"invalid argument", KindInvalidArgument, http.StatusBadRequest},
+		{"permission denied", KindPermissionDenied, http.StatusForbidden},
+		{"unauthenticated", KindUnauthenticated, http.StatusUnauthorized},
+		{"failed precondition", KindFailedPrecondition, http.StatusPreconditionFailed},
+		{"unavailable", KindUnavailable, http.StatusServiceUnavailable},
+		{"deadline exceeded", KindDeadlineExceeded, http.StatusGatewayTimeout},
+		{"resource exhausted", KindResourceExhausted, http.StatusTooManyRequests},
+		{"not implemented", KindNotImplemented, http.StatusNotImplemented},
 	}
 
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Equal(t, tt.http, tt.kind.HTTPStatus())
-			assert.Equal(t, tt.grpc, tt.kind.GRPCCode())
 		})
 	}
 }

@@ -5,9 +5,6 @@ import (
 	"crypto/subtle"
 	"net/http"
 	"strings"
-
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 )
 
 // Whitelist 白名单配置.
@@ -70,7 +67,7 @@ func (w *Whitelist) IsWhitelisted(ctx context.Context, req any) bool {
 	}
 
 	// 检查内部服务调用
-	if w.isInternalService(ctx) {
+	if w.isInternalService(req) {
 		return true
 	}
 
@@ -79,23 +76,11 @@ func (w *Whitelist) IsWhitelisted(ctx context.Context, req any) bool {
 		return w.isHTTPPathWhitelisted(httpReq.URL.Path)
 	}
 
-	// 检查 gRPC 方法
-	if method, ok := grpc.Method(ctx); ok {
-		return w.isGRPCMethodWhitelisted(method)
-	}
-
-	// 备用：从 metadata 获取路径
-	if md, ok := metadata.FromIncomingContext(ctx); ok {
-		if paths := md.Get(":path"); len(paths) > 0 {
-			return w.isGRPCMethodWhitelisted(paths[0])
-		}
-	}
-
 	return false
 }
 
 // isInternalService 检查是否为内部服务调用.
-func (w *Whitelist) isInternalService(ctx context.Context) bool {
+func (w *Whitelist) isInternalService(req any) bool {
 	if w.InternalServiceHeader == "" {
 		return false
 	}
@@ -105,18 +90,18 @@ func (w *Whitelist) isInternalService(ctx context.Context) bool {
 		return false
 	}
 
-	md, ok := metadata.FromIncomingContext(ctx)
+	httpReq, ok := req.(*http.Request)
 	if !ok {
 		return false
 	}
 
-	services := md.Get(w.InternalServiceHeader)
-	if len(services) == 0 {
+	service := httpReq.Header.Get(w.InternalServiceHeader)
+	if service == "" {
 		return false
 	}
 
 	// 使用常量时间比较防止时序攻击
-	return subtle.ConstantTimeCompare([]byte(services[0]), []byte(w.InternalServiceSecret)) == 1
+	return subtle.ConstantTimeCompare([]byte(service), []byte(w.InternalServiceSecret)) == 1
 }
 
 // isHTTPPathWhitelisted 检查 HTTP 路径是否在白名单.

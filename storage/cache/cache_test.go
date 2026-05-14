@@ -80,12 +80,9 @@ func (s *OptionsTestSuite) TestNew_NilLogger() {
 }
 
 func (s *OptionsTestSuite) TestNew_Unsupported() {
-	// 手动构造一个绕过 Validate 的情况
-	config := &Config{Type: ""}
-	config.ApplyDefaults()
-	// Type 被设置为 redis，但没有 addr
+	config := NewRedisConfig("localhost:6379")
 	_, err := NewCache(config, s.logger)
-	s.Error(err)
+	s.ErrorIs(err, ErrUnsupported)
 }
 
 func (s *OptionsTestSuite) TestMustNew_Success() {

@@ -16,6 +16,7 @@ type ComponentDef struct {
 	ConfigYAML   string   // 默认配置 YAML 片段[缩进好的]
 	CloseCode    string   // defer 关闭代码[可选]
 	ExtraImports []string // 额外 stdlib import[如 "context", "time", "net/http"]
+	BlankImports []string // 额外副作用 import[如 provider 注册包]
 	// Wire DI 字段
 	ProviderFunc string // Wire provider 函数名，如 "provideMySQL"
 	ProviderCode string // Wire provider 函数体
@@ -365,7 +366,10 @@ var componentRegistry = map[string]ComponentDef{
 		Key:         "consul",
 		DisplayName: "Consul 服务发现",
 		Import:      "github.com/Tsukikage7/servex/v2/discovery",
-		ConfigKey:   "discovery",
+		BlankImports: []string{
+			"github.com/Tsukikage7/servex/v2/discovery/consul",
+		},
+		ConfigKey: "discovery",
 		ConfigYAML: `discovery:
   type: "consul"
   addr: "127.0.0.1:8500"`,
@@ -383,7 +387,10 @@ var componentRegistry = map[string]ComponentDef{
 		Key:         "etcd",
 		DisplayName: "etcd 服务发现",
 		Import:      "github.com/Tsukikage7/servex/v2/discovery",
-		ConfigKey:   "discovery",
+		BlankImports: []string{
+			"github.com/Tsukikage7/servex/v2/discovery/etcd",
+		},
+		ConfigKey: "discovery",
 		ConfigYAML: `discovery:
   type: "etcd"
   etcd_endpoints:
@@ -402,7 +409,10 @@ var componentRegistry = map[string]ComponentDef{
 		Key:         "nacos",
 		DisplayName: "Nacos 服务发现",
 		Import:      "github.com/Tsukikage7/servex/v2/discovery",
-		ConfigKey:   "discovery",
+		BlankImports: []string{
+			"github.com/Tsukikage7/servex/v2/discovery/nacos",
+		},
+		ConfigKey: "discovery",
 		ConfigYAML: `discovery:
   type: "nacos"
   nacos_endpoints:

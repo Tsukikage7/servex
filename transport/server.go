@@ -4,8 +4,6 @@ package transport
 import (
 	"context"
 	"time"
-
-	"github.com/Tsukikage7/servex/v2/transport/health"
 )
 
 // Server 服务器接口.
@@ -38,7 +36,6 @@ type HealthEndpoint struct {
 // HealthCheckable 支持健康检查的服务器.
 type HealthCheckable interface {
 	Server
-	Health() *health.Health
 	HealthEndpoint() *HealthEndpoint
 }
 

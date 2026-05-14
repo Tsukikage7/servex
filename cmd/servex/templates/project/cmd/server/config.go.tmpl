@@ -7,6 +7,9 @@ import (
 {{- else}}
 	"{{.Import}}"
 {{- end}}{{end}}
+{{- range .AllComponents}}{{range .BlankImports}}
+	_ "{{.}}"
+{{- end}}{{end}}
 )
 
 // Config 服务配置.

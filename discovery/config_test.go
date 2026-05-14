@@ -24,11 +24,11 @@ func TestConfig_Validate(t *testing.T) {
 			wantErr: ErrEmptyType,
 		},
 		{
-			name: "unsupported type",
+			name: "custom provider type",
 			config: &Config{
 				Type: "unknown",
 			},
-			wantErr: ErrUnsupportedType,
+			wantErr: nil,
 		},
 		{
 			name: "valid consul config",

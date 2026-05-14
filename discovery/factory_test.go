@@ -1,6 +1,7 @@
 package discovery
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -9,7 +10,40 @@ import (
 
 	"github.com/Tsukikage7/servex/v2/observability/logger"
 	"github.com/Tsukikage7/servex/v2/testx"
+	"github.com/Tsukikage7/servex/v2/transport"
 )
+
+func init() {
+	MustRegister(TypeConsul, func(*Config, logger.Logger) (Discovery, error) {
+		return fakeDiscovery{}, nil
+	})
+}
+
+type fakeDiscovery struct{}
+
+func (fakeDiscovery) Register(context.Context, string, string) (string, error) {
+	return "test-service-id", nil
+}
+
+func (fakeDiscovery) RegisterWithProtocol(context.Context, string, string, string) (string, error) {
+	return "test-service-id", nil
+}
+
+func (fakeDiscovery) RegisterWithHealthEndpoint(context.Context, string, string, string, *transport.HealthEndpoint) (string, error) {
+	return "test-service-id", nil
+}
+
+func (fakeDiscovery) Unregister(context.Context, string) error {
+	return nil
+}
+
+func (fakeDiscovery) Discover(context.Context, string) ([]string, error) {
+	return nil, nil
+}
+
+func (fakeDiscovery) Close() error {
+	return nil
+}
 
 func TestNewDiscovery(t *testing.T) {
 	log := testx.NopLogger()

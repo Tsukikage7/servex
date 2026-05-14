@@ -65,7 +65,7 @@ func (s *ConfigTestSuite) TestApplyDefaults() {
 	config := &Config{}
 	config.ApplyDefaults()
 
-	s.Equal(TypeRedis, config.Type)
+	s.Equal(TypeMemory, config.Type)
 	s.Equal(DefaultPoolSize, config.PoolSize)
 	s.Equal(DefaultTimeout, config.Timeout)
 	s.Equal(DefaultReadTimeout, config.ReadTimeout)
@@ -94,7 +94,7 @@ func (s *ConfigTestSuite) TestDefaultConfig() {
 	config := DefaultConfig()
 
 	s.NotNil(config)
-	s.Equal(TypeRedis, config.Type)
+	s.Equal(TypeMemory, config.Type)
 	s.Equal(DefaultPoolSize, config.PoolSize)
 }
 

@@ -4,6 +4,8 @@ toolchain go1.26.3
 
 use (
 	.
+	./cmd/servex
 	./llm/framework/adk
 	./llm/framework/eino
+	./testx/container
 )

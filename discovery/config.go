@@ -66,9 +66,6 @@ func (c *Config) Validate() error {
 	if c.Type == "" {
 		return ErrEmptyType
 	}
-	if c.Type != TypeConsul && c.Type != TypeEtcd && c.Type != TypeNacos {
-		return ErrUnsupportedType
-	}
 	return nil
 }
 

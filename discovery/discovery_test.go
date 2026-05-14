@@ -38,8 +38,3 @@ func TestErrors(t *testing.T) {
 		})
 	}
 }
-
-func TestDiscoveryInterface(t *testing.T) {
-	// 验证 consulDiscovery 实现了 Discovery 接口
-	var _ Discovery = (*consulDiscovery)(nil)
-}

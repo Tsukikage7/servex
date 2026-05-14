@@ -3,8 +3,10 @@ package response
 import (
 	"net/http"
 
-	"github.com/Tsukikage7/servex/v2/errors"
 	"google.golang.org/grpc/codes"
+
+	"github.com/Tsukikage7/servex/v2/errors"
+	errorsgrpcx "github.com/Tsukikage7/servex/v2/errors/grpcx"
 )
 
 // Code 业务错误码.
@@ -52,7 +54,7 @@ func (c Code) GRPCCode() codes.Code {
 	if c.Num == CodeSuccess.Num {
 		return codes.OK
 	}
-	return c.Kind.GRPCCode()
+	return errorsgrpcx.CodeForKind(c.Kind)
 }
 
 // Is 判断是否为指定错误码，兼容 errors.Is.

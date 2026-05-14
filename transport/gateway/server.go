@@ -17,6 +17,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/Tsukikage7/servex/v2/auth"
+	authgrpcx "github.com/Tsukikage7/servex/v2/auth/grpcx"
 	"github.com/Tsukikage7/servex/v2/httpx/clientip"
 	"github.com/Tsukikage7/servex/v2/middleware/cors"
 	"github.com/Tsukikage7/servex/v2/middleware/logging"
@@ -278,7 +279,7 @@ func (s *Server) startGRPC() error {
 
 // discoverAuthPolicies 从注册的服务中发现 proto 认证策略.
 func (s *Server) discoverAuthPolicies() {
-	result := auth.DiscoverFromServer(s.grpcServer)
+	result := authgrpcx.DiscoverFromServer(s.grpcServer)
 
 	for method, info := range result.MethodAuthInfos {
 		s.opts.discoveredPolicies[method] = info

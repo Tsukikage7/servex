@@ -10,8 +10,8 @@ default: check
 
 # ── 检查 ──────────────────────────────────────────────
 
-# 完整检查（lint + test + build）
-check: lint test-unit build
+# 完整检查（lint + deps-check + test + build）
+check: lint deps-check test-unit build
 
 # ── 构建 ──────────────────────────────────────────────
 
@@ -114,6 +114,10 @@ lint:
 vet:
     go vet ./...
 
+# 检查基础包依赖边界
+deps-check:
+    ./scripts/check-deps.sh
+
 # 格式化（修改文件）
 fmt:
     gofmt -w -s .
@@ -159,7 +163,7 @@ proto:
 
 # 启动本地 godoc
 doc:
-    @echo "http://localhost:6060/pkg/github.com/Tsukikage7/servex/"
+    @echo "http://localhost:6060/pkg/github.com/Tsukikage7/servex/v2/"
     godoc -http=:6060
 
 # 统计项目规模

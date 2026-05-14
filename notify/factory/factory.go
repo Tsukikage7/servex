@@ -3,14 +3,11 @@ package factory
 
 import (
 	"fmt"
-	"time"
+	"strings"
+	"sync"
 
 	"github.com/Tsukikage7/servex/v2/errors"
 	"github.com/Tsukikage7/servex/v2/notify"
-	"github.com/Tsukikage7/servex/v2/notify/email"
-	"github.com/Tsukikage7/servex/v2/notify/nwebhook"
-	"github.com/Tsukikage7/servex/v2/notify/push"
-	"github.com/Tsukikage7/servex/v2/notify/sms"
 	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
@@ -78,6 +75,16 @@ var (
 	errUnsupportedPush     = errors.NewWithKind(70055, "notify.factory.unsupported_push_provider", "不支持的 push provider", errors.KindInvalidArgument)
 )
 
+// SenderBuilder 根据聚合配置创建通知发送器.
+type SenderBuilder func(*Config, logger.Logger) (notify.Sender, error)
+
+var registry = struct {
+	sync.RWMutex
+	builders map[string]SenderBuilder
+}{
+	builders: make(map[string]SenderBuilder),
+}
+
 // NewDispatcher 根据 Config 创建并配置好 *notify.Dispatcher.
 func NewDispatcher(cfg *Config, log logger.Logger) (*notify.Dispatcher, error) {
 	if cfg == nil {
@@ -100,17 +107,7 @@ func NewDispatcher(cfg *Config, log logger.Logger) (*notify.Dispatcher, error) {
 	d := notify.NewDispatcher(opts...)
 
 	if cfg.Email != nil {
-		eo := []email.Option{
-			email.WithSMTP(cfg.Email.Host, cfg.Email.Port),
-			email.WithFrom(cfg.Email.From, cfg.Email.Name),
-		}
-		if cfg.Email.Username != "" {
-			eo = append(eo, email.WithAuth(cfg.Email.Username, cfg.Email.Password))
-		}
-		if cfg.Email.TLS {
-			eo = append(eo, email.WithTLS(true))
-		}
-		s, err := email.NewSender(eo...)
+		s, err := buildSender("email", cfg, log)
 		if err != nil {
 			return nil, errEmailSenderFailed.WithCause(err)
 		}
@@ -118,7 +115,7 @@ func NewDispatcher(cfg *Config, log logger.Logger) (*notify.Dispatcher, error) {
 	}
 
 	if cfg.SMS != nil {
-		s, err := buildSMS(cfg.SMS, log)
+		s, err := buildSender("sms", cfg, log)
 		if err != nil {
 			return nil, err
 		}
@@ -126,14 +123,7 @@ func NewDispatcher(cfg *Config, log logger.Logger) (*notify.Dispatcher, error) {
 	}
 
 	if cfg.Webhook != nil {
-		wo := []nwebhook.Option{}
-		if cfg.Webhook.Timeout > 0 {
-			wo = append(wo, nwebhook.WithTimeout(time.Duration(cfg.Webhook.Timeout)*time.Second))
-		}
-		if cfg.Webhook.Retry > 0 {
-			wo = append(wo, nwebhook.WithRetry(cfg.Webhook.Retry))
-		}
-		s, err := nwebhook.NewSender(wo...)
+		s, err := buildSender("webhook", cfg, log)
 		if err != nil {
 			return nil, errWebhookSenderFailed.WithCause(err)
 		}
@@ -141,7 +131,7 @@ func NewDispatcher(cfg *Config, log logger.Logger) (*notify.Dispatcher, error) {
 	}
 
 	if cfg.Push != nil {
-		s, err := buildPush(cfg.Push, log)
+		s, err := buildSender("push", cfg, log)
 		if err != nil {
 			return nil, err
 		}
@@ -151,68 +141,52 @@ func NewDispatcher(cfg *Config, log logger.Logger) (*notify.Dispatcher, error) {
 	return d, nil
 }
 
-func buildSMS(cfg *SMSConfig, log logger.Logger) (notify.Sender, error) {
-	var p sms.Provider
-	switch cfg.Provider {
-	case "aliyun":
-		if cfg.Aliyun == nil {
-			cfg.Aliyun = &AliyunSMSConfig{}
-		}
-		p = sms.NewAliyunProvider(sms.AliyunConfig{
-			AccessKeyID:     cfg.Aliyun.AccessKeyID,
-			AccessKeySecret: cfg.Aliyun.AccessKeySecret,
-			SignName:        cfg.SignName,
-			Endpoint:        cfg.Aliyun.Endpoint,
-		})
-	case "tencent":
-		if cfg.Tencent == nil {
-			cfg.Tencent = &TencentSMSConfig{}
-		}
-		p = sms.NewTencentProvider(sms.TencentConfig{
-			SecretID:  cfg.Tencent.SecretID,
-			SecretKey: cfg.Tencent.SecretKey,
-			AppID:     cfg.Tencent.AppID,
-			SignName:  cfg.SignName,
-			Endpoint:  cfg.Tencent.Endpoint,
-		})
-	default:
-		return nil, errUnsupportedSMS.WithMessage(fmt.Sprintf("不支持的 SMS provider %q", cfg.Provider))
+// RegisterSender 注册通知发送器构造器.
+//
+// 具体渠道子包应在 init 中调用 RegisterSender。根 factory 包不直接导入
+// email/sms/webhook/push provider，避免业务仅使用部分渠道时被动拉入所有依赖.
+func RegisterSender(channel string, builder SenderBuilder) error {
+	channel = normalizeChannel(channel)
+	if channel == "" {
+		return fmt.Errorf("notify/factory: channel 不能为空")
 	}
-	sopts := []sms.Option{sms.WithSignName(cfg.SignName)}
-	if log != nil {
-		sopts = append(sopts, sms.WithLogger(log))
+	if builder == nil {
+		return fmt.Errorf("notify/factory: sender builder 不能为空")
 	}
-	return sms.NewSender(p, sopts...)
+
+	registry.Lock()
+	defer registry.Unlock()
+	if _, exists := registry.builders[channel]; exists {
+		return fmt.Errorf("notify/factory: channel %q 已注册", channel)
+	}
+	registry.builders[channel] = builder
+	return nil
 }
 
-func buildPush(cfg *PushConfig, log logger.Logger) (notify.Sender, error) {
-	var p push.Provider
-	switch cfg.Provider {
-	case "fcm":
-		if cfg.FCM == nil {
-			cfg.FCM = &FCMPushConfig{}
-		}
-		p = push.NewFCMProvider(push.FCMConfig{
-			ProjectID:       cfg.FCM.ProjectID,
-			CredentialsJSON: []byte(cfg.FCM.CredentialsJSON),
-		})
-	case "apns":
-		if cfg.APNs == nil {
-			cfg.APNs = &APNsPushConfig{}
-		}
-		p = push.NewAPNsProvider(push.APNsConfig{
-			BundleID:   cfg.APNs.BundleID,
-			TeamID:     cfg.APNs.TeamID,
-			KeyID:      cfg.APNs.KeyID,
-			KeyFile:    cfg.APNs.KeyFile,
-			Production: cfg.APNs.Production,
-		})
-	default:
-		return nil, errUnsupportedPush.WithMessage(fmt.Sprintf("不支持的 push provider %q", cfg.Provider))
+// MustRegisterSender 注册通知发送器构造器，失败时 panic.
+func MustRegisterSender(channel string, builder SenderBuilder) {
+	if err := RegisterSender(channel, builder); err != nil {
+		panic(err)
 	}
-	var popts []push.Option
-	if log != nil {
-		popts = append(popts, push.WithLogger(log))
+}
+
+func buildSender(channel string, cfg *Config, log logger.Logger) (notify.Sender, error) {
+	registry.RLock()
+	builder, ok := registry.builders[normalizeChannel(channel)]
+	registry.RUnlock()
+	if !ok {
+		switch channel {
+		case "sms":
+			return nil, errUnsupportedSMS.WithMessage("SMS sender 未注册")
+		case "push":
+			return nil, errUnsupportedPush.WithMessage("push sender 未注册")
+		default:
+			return nil, fmt.Errorf("notify/factory: sender channel %q 未注册", channel)
+		}
 	}
-	return push.NewSender(p, popts...)
+	return builder(cfg, log)
+}
+
+func normalizeChannel(channel string) string {
+	return strings.ToLower(strings.TrimSpace(channel))
 }

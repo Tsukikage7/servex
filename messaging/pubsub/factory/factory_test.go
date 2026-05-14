@@ -10,6 +10,7 @@ import (
 
 	"github.com/Tsukikage7/servex/v2/messaging/pubsub"
 	"github.com/Tsukikage7/servex/v2/messaging/pubsub/factory"
+	_ "github.com/Tsukikage7/servex/v2/messaging/pubsub/factory/redis"
 	"github.com/Tsukikage7/servex/v2/messaging/pubsub/kafka"
 )
 

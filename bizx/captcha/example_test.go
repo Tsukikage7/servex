@@ -23,7 +23,11 @@ func ExampleNewManager() {
 	fmt.Println("code length:", len(code.Code))
 
 	// 验证错误的验证码.
-	err = mgr.Verify(ctx, "user@example.com", "0000")
+	wrong := "0000"
+	if wrong == code.Code {
+		wrong = "1111"
+	}
+	err = mgr.Verify(ctx, "user@example.com", wrong)
 	fmt.Println("wrong code:", err)
 
 	// 验证正确的验证码.

@@ -17,26 +17,51 @@ func Middleware(authenticator Authenticator, opts ...Option) endpoint.Middleware
 		panic("auth: 认证器不能为空")
 	}
 
-	o := defaultOptions(authenticator)
-	for _, opt := range opts {
-		opt(o)
-	}
-
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request any) (any, error) {
-			// 检查是否跳过
-			if o.skipper != nil && o.skipper(ctx, request) {
+			authCtx, skipped, err := AuthenticateRequest(ctx, request, Target{}, authenticator, nil, opts...)
+			if skipped {
 				return next(ctx, request)
 			}
-
-			authCtx, _, err := authenticateAndAuthorize(ctx, request, o, Target{})
 			if err != nil {
-				return nil, handleError(ctx, err, o)
+				return nil, err
 			}
 
 			return next(authCtx, request)
 		}
 	}
+}
+
+// AuthenticateRequest 执行一次认证授权流程，供 transport 适配层复用.
+func AuthenticateRequest(
+	ctx context.Context,
+	request any,
+	target Target,
+	authenticator Authenticator,
+	defaultExtractor CredentialsExtractor,
+	opts ...Option,
+) (context.Context, bool, error) {
+	if authenticator == nil {
+		return ctx, false, ErrInvalidCredentials
+	}
+
+	o := defaultOptions(authenticator)
+	for _, opt := range opts {
+		opt(o)
+	}
+	if o.credentialsExtractor == nil {
+		o.credentialsExtractor = defaultExtractor
+	}
+
+	if o.skipper != nil && o.skipper(ctx, request) {
+		return ctx, true, nil
+	}
+
+	authCtx, _, err := authenticateAndAuthorize(ctx, request, o, target)
+	if err != nil {
+		return ctx, false, handleError(ctx, err, o)
+	}
+	return authCtx, false, nil
 }
 
 // extractCredentials 提取凭据.

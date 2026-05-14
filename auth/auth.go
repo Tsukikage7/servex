@@ -3,7 +3,8 @@
 // 特性:
 //   - 可扩展的认证器接口
 //   - 可插拔授权器接口
-//   - HTTP/gRPC/Endpoint 中间件
+//   - HTTP/Endpoint 中间件
+//   - gRPC 适配（auth/grpcx 子包）
 //   - 内置 JWT 支持（auth/jwt 子包）
 //
 // 基本用法:
@@ -17,7 +18,7 @@
 //
 //	// gRPC 拦截器
 //	srv := grpc.NewServer(
-//	    grpc.UnaryInterceptor(auth.UnaryServerInterceptor(jwtAuth)),
+//	    grpc.UnaryInterceptor(authgrpcx.UnaryServerInterceptor(jwtAuth)),
 //	)
 //
 // 在业务逻辑中使用:

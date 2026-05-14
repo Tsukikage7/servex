@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/Tsukikage7/servex/v2/errors"
+	errorsgrpcx "github.com/Tsukikage7/servex/v2/errors/grpcx"
 	"github.com/Tsukikage7/servex/v2/transport/response"
 )
 
@@ -148,10 +149,10 @@ func TestGRPCStatus_WithErrorsPackage_AttachesDetails(t *testing.T) {
 }
 
 func TestFromGRPCStatus_ErrorsPackageFormat(t *testing.T) {
-	// errors.ToGRPCStatus 生成的 status，response.FromGRPCStatus 应能识别
+	// errors/grpcx.ToGRPCStatus 生成的 status，response.FromGRPCStatus 应能识别
 	original := errors.NewWithKind(40001, "user.not_found", "用户不存在", errors.KindNotFound)
 
-	st := errors.ToGRPCStatus(original)
+	st := errorsgrpcx.ToGRPCStatus(original)
 	code := response.FromGRPCStatus(st)
 
 	assert.Equal(t, 40001, code.Num)

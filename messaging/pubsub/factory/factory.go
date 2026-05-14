@@ -8,13 +8,27 @@ package factory
 import (
 	"errors"
 	"fmt"
+	"strings"
+	"sync"
 
 	"github.com/Tsukikage7/servex/v2/messaging/pubsub"
-	"github.com/Tsukikage7/servex/v2/messaging/pubsub/kafka"
-	"github.com/Tsukikage7/servex/v2/messaging/pubsub/rabbitmq"
-	"github.com/Tsukikage7/servex/v2/messaging/pubsub/redis"
 	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
+
+// PublisherCreator 根据 Config 创建 Publisher.
+type PublisherCreator func(*Config, logger.Logger) (pubsub.Publisher, error)
+
+// SubscriberCreator 根据 Config 创建 Subscriber.
+type SubscriberCreator func(*Config, string, logger.Logger) (pubsub.Subscriber, error)
+
+var registry = struct {
+	sync.RWMutex
+	publishers  map[string]PublisherCreator
+	subscribers map[string]SubscriberCreator
+}{
+	publishers:  make(map[string]PublisherCreator),
+	subscribers: make(map[string]SubscriberCreator),
+}
 
 // Config 配置 Pub/Sub 连接.
 type Config struct {
@@ -46,20 +60,15 @@ func NewPublisher(cfg *Config, log logger.Logger) (pubsub.Publisher, error) {
 	if cfg == nil {
 		return nil, errNilConfig
 	}
-	var p pubsub.Publisher
-	var err error
-	switch cfg.Type {
-	case "":
+	pubType := normalizeType(cfg.Type)
+	if pubType == "" {
 		return nil, errEmptyType
-	case "kafka":
-		p, err = kafka.NewPublisherFromConfig(cfg.Brokers, log)
-	case "rabbitmq":
-		p, err = rabbitmq.NewPublisherFromConfig(cfg.URL, log)
-	case "redis":
-		p, err = redis.NewPublisherFromConfig(cfg.Addr, cfg.Password, cfg.DB, log)
-	default:
+	}
+	creator, ok := lookupPublisher(pubType)
+	if !ok {
 		return nil, fmt.Errorf("pubsub: 不支持的类型 %q", cfg.Type)
 	}
+	p, err := creator(cfg, log)
 	if err != nil {
 		return nil, err
 	}
@@ -74,16 +83,83 @@ func NewSubscriber(cfg *Config, group string, log logger.Logger) (pubsub.Subscri
 	if cfg == nil {
 		return nil, errNilConfig
 	}
-	switch cfg.Type {
-	case "":
+	pubType := normalizeType(cfg.Type)
+	if pubType == "" {
 		return nil, errEmptyType
-	case "kafka":
-		return kafka.NewSubscriberFromConfig(cfg.Brokers, group, log)
-	case "rabbitmq":
-		return rabbitmq.NewSubscriberFromConfig(cfg.URL, log)
-	case "redis":
-		return redis.NewSubscriberFromConfig(cfg.Addr, cfg.Password, cfg.DB, group, "", log)
-	default:
+	}
+	creator, ok := lookupSubscriber(pubType)
+	if !ok {
 		return nil, fmt.Errorf("pubsub: 不支持的类型 %q", cfg.Type)
 	}
+	return creator(cfg, group, log)
+}
+
+// RegisterPublisher 注册 Publisher 创建器.
+func RegisterPublisher(pubType string, creator PublisherCreator) error {
+	pubType = normalizeType(pubType)
+	if pubType == "" {
+		return errEmptyType
+	}
+	if creator == nil {
+		return errors.New("pubsub: publisher creator 不能为空")
+	}
+
+	registry.Lock()
+	defer registry.Unlock()
+	if _, exists := registry.publishers[pubType]; exists {
+		return fmt.Errorf("pubsub: publisher 类型 %q 已注册", pubType)
+	}
+	registry.publishers[pubType] = creator
+	return nil
+}
+
+// RegisterSubscriber 注册 Subscriber 创建器.
+func RegisterSubscriber(pubType string, creator SubscriberCreator) error {
+	pubType = normalizeType(pubType)
+	if pubType == "" {
+		return errEmptyType
+	}
+	if creator == nil {
+		return errors.New("pubsub: subscriber creator 不能为空")
+	}
+
+	registry.Lock()
+	defer registry.Unlock()
+	if _, exists := registry.subscribers[pubType]; exists {
+		return fmt.Errorf("pubsub: subscriber 类型 %q 已注册", pubType)
+	}
+	registry.subscribers[pubType] = creator
+	return nil
+}
+
+// MustRegisterPublisher 注册 Publisher 创建器，失败时 panic.
+func MustRegisterPublisher(pubType string, creator PublisherCreator) {
+	if err := RegisterPublisher(pubType, creator); err != nil {
+		panic(err)
+	}
+}
+
+// MustRegisterSubscriber 注册 Subscriber 创建器，失败时 panic.
+func MustRegisterSubscriber(pubType string, creator SubscriberCreator) {
+	if err := RegisterSubscriber(pubType, creator); err != nil {
+		panic(err)
+	}
+}
+
+func lookupPublisher(pubType string) (PublisherCreator, bool) {
+	registry.RLock()
+	defer registry.RUnlock()
+	creator, ok := registry.publishers[pubType]
+	return creator, ok
+}
+
+func lookupSubscriber(pubType string) (SubscriberCreator, bool) {
+	registry.RLock()
+	defer registry.RUnlock()
+	creator, ok := registry.subscribers[pubType]
+	return creator, ok
+}
+
+func normalizeType(pubType string) string {
+	return strings.ToLower(strings.TrimSpace(pubType))
 }

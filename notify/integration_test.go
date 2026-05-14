@@ -3,13 +3,10 @@ package notify
 
 import (
 	"context"
-	"encoding/json"
 	"os"
 	"path/filepath"
 	"sync"
 	"testing"
-
-	"github.com/Tsukikage7/servex/v2/messaging/jobqueue"
 )
 
 type recordingSender struct {
@@ -79,25 +76,6 @@ func TestIntegration_WithTemplate(t *testing.T) {
 	}
 }
 
-func TestIntegration_AsyncRoundTrip(t *testing.T) {
-	jc := &integrationJobClient{}
-	rec := newRecordingSender(ChannelEmail)
-	d := NewDispatcher(WithJobQueue(jc))
-	d.Register(rec)
-
-	msg := &Message{Channel: ChannelEmail, To: []string{"a@b.com"}, Body: "async"}
-	d.SendAsync(t.Context(), msg)
-
-	// Simulate consumer
-	var decoded Message
-	json.Unmarshal(jc.jobs[0].Payload, &decoded)
-	d.Send(t.Context(), &decoded)
-
-	if rec.count() != 1 {
-		t.Errorf("count = %d, want 1", rec.count())
-	}
-}
-
 func TestIntegration_CloseAll(t *testing.T) {
 	e := newRecordingSender(ChannelEmail)
 	s := newRecordingSender(ChannelSMS)
@@ -111,11 +89,3 @@ func TestIntegration_CloseAll(t *testing.T) {
 		t.Error("all senders should be closed")
 	}
 }
-
-type integrationJobClient struct{ jobs []*jobqueue.Job }
-
-func (c *integrationJobClient) Enqueue(_ context.Context, job *jobqueue.Job) error {
-	c.jobs = append(c.jobs, job)
-	return nil
-}
-func (c *integrationJobClient) Close() error { return nil }

@@ -1,15 +1,16 @@
 package response
 
 import (
-	"github.com/Tsukikage7/servex/v2/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	errorsgrpcx "github.com/Tsukikage7/servex/v2/errors/grpcx"
 )
 
 // GRPCStatus 将错误转换为 gRPC Status.
 //
-// 统一委托给 servex/errors.ToGRPCStatus，使用统一的 JSON 格式.
+// 统一委托给 servex/errors/grpcx.ToGRPCStatus，使用统一的 JSON 格式.
 // 支持 *errors.Error 和 Code（通过 ExtractCode 桥接）.
 func GRPCStatus(err error) *status.Status {
 	if err == nil {
@@ -28,7 +29,7 @@ func GRPCStatus(err error) *status.Status {
 		}
 	}
 
-	return errors.ToGRPCStatus(bridged)
+	return errorsgrpcx.ToGRPCStatus(bridged)
 }
 
 // GRPCError 将错误转换为 gRPC error.
@@ -38,10 +39,10 @@ func GRPCError(err error) error {
 
 // FromGRPCStatus 从 gRPC Status 提取 Code.
 //
-// 优先使用 servex/errors.FromGRPCStatus 还原完整信息，
+// 优先使用 servex/errors/grpcx.FromGRPCStatus 还原完整信息，
 // 最后回退到 gRPC code 映射.
 func FromGRPCStatus(s *status.Status) Code {
-	if restored := errors.FromGRPCStatus(s); restored != nil {
+	if restored := errorsgrpcx.FromGRPCStatus(s); restored != nil {
 		code := Code{
 			Num:     restored.Code,
 			Message: restored.Message,
@@ -72,16 +73,16 @@ func FromGRPCError(err error) Code {
 
 // UnaryServerInterceptor 返回 gRPC 一元服务器拦截器.
 //
-// 统一委托给 servex/errors.UnaryServerInterceptor.
+// 统一委托给 servex/errors/grpcx.UnaryServerInterceptor.
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
-	return errors.UnaryServerInterceptor()
+	return errorsgrpcx.UnaryServerInterceptor()
 }
 
 // StreamServerInterceptor 返回 gRPC 流服务器拦截器.
 //
 // 统一委托给 servex/errors.StreamServerInterceptor.
 func StreamServerInterceptor() grpc.StreamServerInterceptor {
-	return errors.StreamServerInterceptor()
+	return errorsgrpcx.StreamServerInterceptor()
 }
 
 // grpcCodeFallback 粗粒度 gRPC code → Code 映射.

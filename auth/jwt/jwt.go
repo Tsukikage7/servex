@@ -3,7 +3,8 @@
 // 特性：
 //   - 生成、验证、刷新令牌
 //   - 可选的缓存集成（用于令牌撤销）
-//   - HTTP/gRPC 中间件
+//   - HTTP/Endpoint 中间件
+//   - gRPC 适配（auth/jwt/grpcx 子包）
 //   - 白名单支持
 //   - Functional Options 模式
 //
@@ -376,6 +377,16 @@ func (j *JWT) IsWhitelisted(ctx context.Context, req any) bool {
 		return false
 	}
 	return j.opts.whitelist.IsWhitelisted(ctx, req)
+}
+
+// Whitelist 返回当前 JWT 服务的白名单配置.
+func (j *JWT) Whitelist() *Whitelist {
+	return j.opts.whitelist
+}
+
+// Logger 返回当前 JWT 服务使用的日志记录器.
+func (j *JWT) Logger() logger.Logger {
+	return j.opts.logger
 }
 
 // ExtractToken 从请求中提取令牌.

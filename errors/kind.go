@@ -1,10 +1,6 @@
 package errors
 
-import (
-	"net/http"
-
-	"google.golang.org/grpc/codes"
-)
+import "net/http"
 
 // Kind 描述业务错误语义，用于统一映射 HTTP 与 gRPC 状态。
 type Kind int
@@ -52,37 +48,5 @@ func (k Kind) HTTPStatus() int {
 		return http.StatusNotImplemented
 	default:
 		return http.StatusInternalServerError
-	}
-}
-
-// GRPCCode 返回 kind 对应的默认 gRPC 状态码。
-func (k Kind) GRPCCode() codes.Code {
-	switch k {
-	case KindCanceled:
-		return codes.Canceled
-	case KindNotFound:
-		return codes.NotFound
-	case KindConflict:
-		return codes.AlreadyExists
-	case KindInvalidArgument:
-		return codes.InvalidArgument
-	case KindPermissionDenied:
-		return codes.PermissionDenied
-	case KindUnauthenticated:
-		return codes.Unauthenticated
-	case KindFailedPrecondition:
-		return codes.FailedPrecondition
-	case KindUnavailable:
-		return codes.Unavailable
-	case KindDeadlineExceeded:
-		return codes.DeadlineExceeded
-	case KindResourceExhausted:
-		return codes.ResourceExhausted
-	case KindNotImplemented:
-		return codes.Unimplemented
-	case KindUnknown:
-		return codes.Unknown
-	default:
-		return codes.Internal
 	}
 }

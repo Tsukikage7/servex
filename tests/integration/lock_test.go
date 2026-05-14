@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/Tsukikage7/servex/v2/storage/cache"
+	cacheredis "github.com/Tsukikage7/servex/v2/storage/cache/redis"
 	"github.com/Tsukikage7/servex/v2/storage/lock"
 	"github.com/Tsukikage7/servex/v2/testx"
 )
@@ -27,7 +28,7 @@ func newLockCache(t *testing.T) cache.Cache {
 	}
 
 	cfg := cache.NewRedisConfig(addr)
-	c, err := cache.NewRedisCache(cfg, testx.NopLogger())
+	c, err := cacheredis.NewRedisCache(cfg, testx.NopLogger())
 	if err != nil {
 		t.Skipf("Redis not available for lock test: %v", err)
 		return nil

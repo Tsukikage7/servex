@@ -11,7 +11,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc/metadata"
 
 	"github.com/Tsukikage7/servex/v2/auth"
 	"github.com/Tsukikage7/servex/v2/storage/cache"
@@ -245,8 +244,7 @@ func TestNewParser(t *testing.T) {
 		wrapped := middleware(endpoint)
 
 		// 创建带 token 的 context
-		ctx := metadata.NewIncomingContext(t.Context(),
-			metadata.Pairs("authorization", token))
+		ctx := ContextWithToken(t.Context(), token)
 
 		resp, err := wrapped(ctx, nil)
 
@@ -277,8 +275,7 @@ func TestNewParser(t *testing.T) {
 		middleware := NewParser(j)
 		wrapped := middleware(endpoint)
 
-		ctx := metadata.NewIncomingContext(t.Context(),
-			metadata.Pairs("authorization", "Bearer invalid-token"))
+		ctx := ContextWithToken(t.Context(), "invalid-token")
 
 		resp, err := wrapped(ctx, nil)
 
@@ -305,8 +302,7 @@ func TestNewParser(t *testing.T) {
 		middleware := NewParser(j)
 		wrapped := middleware(endpoint)
 
-		ctx := metadata.NewIncomingContext(t.Context(),
-			metadata.Pairs("authorization", token))
+		ctx := ContextWithToken(t.Context(), token)
 
 		resp, err := wrapped(ctx, nil)
 
@@ -347,8 +343,7 @@ func TestNewParserWithClaims(t *testing.T) {
 		middleware := NewParserWithClaims(j, claimsFactory)
 		wrapped := middleware(endpoint)
 
-		ctx := metadata.NewIncomingContext(t.Context(),
-			metadata.Pairs("authorization", token))
+		ctx := ContextWithToken(t.Context(), token)
 
 		resp, err := wrapped(ctx, nil)
 
@@ -405,8 +400,7 @@ func TestNewParser_ContextPropagation(t *testing.T) {
 		middleware := NewParser(j)
 		wrapped := middleware(endpoint)
 
-		ctx := metadata.NewIncomingContext(t.Context(),
-			metadata.Pairs("authorization", token))
+		ctx := ContextWithToken(t.Context(), token)
 
 		resp, err := wrapped(ctx, nil)
 
@@ -432,8 +426,7 @@ func TestNewParser_ContextPropagation(t *testing.T) {
 		middleware := NewParser(j)
 		wrapped := middleware(endpoint)
 
-		ctx := metadata.NewIncomingContext(t.Context(),
-			metadata.Pairs("authorization", token))
+		ctx := ContextWithToken(t.Context(), token)
 
 		resp, err := wrapped(ctx, nil)
 
@@ -461,8 +454,7 @@ func TestNewParser_Concurrent(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		go func(id int) {
 			token := generateTestToken(j, "user-"+string(rune('a'+id%26)))
-			ctx := metadata.NewIncomingContext(t.Context(),
-				metadata.Pairs("authorization", token))
+			ctx := ContextWithToken(t.Context(), token)
 
 			resp, err := wrapped(ctx, nil)
 			assert.NoError(t, err)
@@ -580,16 +572,6 @@ func TestHTTPMiddleware_Whitelist(t *testing.T) {
 }
 
 func TestExtractToken(t *testing.T) {
-	t.Run("从 gRPC metadata 提取", func(t *testing.T) {
-		ctx := metadata.NewIncomingContext(t.Context(),
-			metadata.Pairs("authorization", "Bearer test-token"))
-
-		token, err := ExtractToken(ctx, nil)
-
-		assert.NoError(t, err)
-		assert.Equal(t, "test-token", token)
-	})
-
 	t.Run("从 HTTP 请求提取", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		req.Header.Set("Authorization", "Bearer http-token")
@@ -632,7 +614,7 @@ func TestExtractTokenFromHeader(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := extractTokenFromHeader(tc.header)
+			result := ExtractTokenFromHeader(tc.header)
 			assert.Equal(t, tc.expected, result)
 		})
 	}
@@ -840,18 +822,11 @@ func TestWhitelist(t *testing.T) {
 		assert.False(t, w.IsWhitelisted(t.Context(), req3))
 	})
 
-	t.Run("gRPC method via metadata", func(t *testing.T) {
-		w := NewWhitelist().AddGRPCMethods("/api.v1.Auth/")
-		ctx := metadata.NewIncomingContext(t.Context(),
-			metadata.Pairs(":path", "/api.v1.Auth/Login"))
-		assert.True(t, w.IsWhitelisted(ctx, nil))
-	})
-
 	t.Run("custom internal service header", func(t *testing.T) {
 		w := NewWhitelist().SetInternalServiceHeader("x-internal").SetInternalServiceSecret("service-a")
-		ctx := metadata.NewIncomingContext(t.Context(),
-			metadata.Pairs("x-internal", "service-a"))
-		assert.True(t, w.IsWhitelisted(ctx, nil))
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req.Header.Set("x-internal", "service-a")
+		assert.True(t, w.IsWhitelisted(t.Context(), req))
 	})
 }
 

@@ -49,7 +49,7 @@ func (c *Config) Validate() error {
 // ApplyDefaults 应用默认值.
 func (c *Config) ApplyDefaults() {
 	if c.Type == "" {
-		c.Type = TypeRedis
+		c.Type = TypeMemory
 	}
 
 	if c.PoolSize <= 0 {

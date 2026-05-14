@@ -2,13 +2,8 @@ package notify
 
 import (
 	"context"
-	"encoding/json"
 	"sync"
 	"sync/atomic"
-
-	"github.com/google/uuid"
-
-	"github.com/Tsukikage7/servex/v2/messaging/jobqueue"
 )
 
 // Dispatcher 多渠道消息分发器.
@@ -79,34 +74,6 @@ func (d *Dispatcher) Broadcast(ctx context.Context, channels []Channel, msg *Mes
 		}
 	}
 	return results
-}
-
-// SendAsync 将消息序列化后投入 jobqueue 异步发送.
-func (d *Dispatcher) SendAsync(ctx context.Context, msg *Message) error {
-	if d.closed.Load() {
-		return ErrClosed
-	}
-	if msg != nil && msg.Channel == "" && d.opts.defaultChannel != "" {
-		msg.Channel = d.opts.defaultChannel
-	}
-	if err := ValidateMessage(msg); err != nil {
-		return err
-	}
-	if d.opts.jobClient == nil {
-		return ErrJobQueueNotConfigured
-	}
-
-	payload, err := json.Marshal(msg)
-	if err != nil {
-		return ErrSerializeFailed.WithCause(err)
-	}
-
-	return d.opts.jobClient.Enqueue(ctx, &jobqueue.Job{
-		ID:      uuid.New().String(),
-		Queue:   "notifications",
-		Type:    "notification." + string(msg.Channel),
-		Payload: payload,
-	})
 }
 
 // Close 关闭分发器及所有已注册的发送器.

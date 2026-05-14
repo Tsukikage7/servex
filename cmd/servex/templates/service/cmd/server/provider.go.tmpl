@@ -10,6 +10,9 @@ import (
 {{- else}}
 	"{{.Import}}"
 {{- end}}{{end}}
+{{- range .AllComponents}}{{range .BlankImports}}
+	_ "{{.}}"
+{{- end}}{{end}}
 
 	"{{.Module}}/services/{{.Name}}-service/internal/port"
 	"github.com/Tsukikage7/servex/v2/app"
