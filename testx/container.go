@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/docker/go-connections/nat"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
@@ -46,7 +45,7 @@ func newContainer(ctx context.Context, c testcontainers.Container, exposedPort s
 	if err != nil {
 		return nil, fmt.Errorf("testx: 获取容器主机失败: %w", err)
 	}
-	mp, err := c.MappedPort(ctx, nat.Port(exposedPort+"/tcp"))
+	mp, err := c.MappedPort(ctx, exposedPort+"/tcp")
 	if err != nil {
 		return nil, fmt.Errorf("testx: 获取容器映射端口失败: %w", err)
 	}
