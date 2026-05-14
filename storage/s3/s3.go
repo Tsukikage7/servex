@@ -162,7 +162,7 @@ type Client interface {
 	// PresignGetObject 生成下载预签名 URL
 	PresignGetObject(ctx context.Context, key string, expires time.Duration) (string, error)
 	// PresignPutObject 生成上传预签名 URL
-	PresignPutObject(ctx context.Context, key string, expires time.Duration) (string, error)
+	PresignPutObject(ctx context.Context, key string, expires time.Duration, opts ...PutOption) (string, error)
 
 	// 工具方法
 	// Upload 智能上传（自动选择普通/分片上传）

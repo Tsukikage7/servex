@@ -442,11 +442,31 @@ func (c *s3Client) PresignGetObject(ctx context.Context, key string, expires tim
 	return result.URL, nil
 }
 
-func (c *s3Client) PresignPutObject(ctx context.Context, key string, expires time.Duration) (string, error) {
-	result, err := c.presigner.PresignPutObject(ctx, &s3.PutObjectInput{
+func (c *s3Client) PresignPutObject(ctx context.Context, key string, expires time.Duration, opts ...PutOption) (string, error) {
+	o := &putOptions{}
+	for _, opt := range opts {
+		opt(o)
+	}
+	input := &s3.PutObjectInput{
 		Bucket: aws.String(c.bucket),
 		Key:    aws.String(key),
-	}, s3.WithPresignExpires(expires))
+	}
+	if o.contentType != "" {
+		input.ContentType = aws.String(o.contentType)
+	}
+	if o.contentDisposition != "" {
+		input.ContentDisposition = aws.String(o.contentDisposition)
+	}
+	if o.cacheControl != "" {
+		input.CacheControl = aws.String(o.cacheControl)
+	}
+	if o.metadata != nil {
+		input.Metadata = o.metadata
+	}
+	if o.storageClass != "" {
+		input.StorageClass = types.StorageClass(o.storageClass)
+	}
+	result, err := c.presigner.PresignPutObject(ctx, input, s3.WithPresignExpires(expires))
 	if err != nil {
 		return "", err
 	}
