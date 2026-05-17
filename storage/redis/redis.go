@@ -170,13 +170,13 @@ type Client interface {
 	ScriptLoad(ctx context.Context, script string) (string, error)
 
 	// Pipeline 管道.
-		PipelineExec(ctx context.Context, fn func(pipe redis.Pipeliner) error) error
+	PipelineExec(ctx context.Context, fn func(pipe redis.Pipeliner) error) error
 
 	// Pub/Sub 发布订阅.
 	Subscribe(ctx context.Context, channels ...string) PubSub
 
 	// Underlying 底层 go-redis 客户端.
-		Underlying() *redis.Client
+	Underlying() *redis.Client
 }
 
 // NewClient 创建 Redis 客户端.
@@ -231,6 +231,15 @@ func NewClient(config *Config, log logger.Logger) (Client, error) {
 		client: rdb,
 		log:    log,
 	}, nil
+}
+
+// NewUniversalClientWithCleanup 创建 go-redis 兼容客户端，并返回生命周期清理函数.
+func NewUniversalClientWithCleanup(config *Config, log logger.Logger) (redis.UniversalClient, func(), error) {
+	client, err := NewClient(config, log)
+	if err != nil {
+		return nil, nil, err
+	}
+	return client.Underlying(), func() { _ = client.Close() }, nil
 }
 
 // MustNewClient 创建 Redis 客户端，失败时 panic.

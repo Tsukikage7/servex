@@ -11,18 +11,18 @@ import (
 // Options CORS 配置.
 type Options struct {
 	// AllowOrigins 允许的来源列表，["*"] 表示允许所有来源.
-	AllowOrigins []string
+	AllowOrigins []string `json:"allow_origins" yaml:"allow_origins" mapstructure:"allow_origins"`
 	// AllowMethods 允许的 HTTP 方法.
-	AllowMethods []string
+	AllowMethods []string `json:"allow_methods" yaml:"allow_methods" mapstructure:"allow_methods"`
 	// AllowHeaders 允许的请求头.
-	AllowHeaders []string
+	AllowHeaders []string `json:"allow_headers" yaml:"allow_headers" mapstructure:"allow_headers"`
 	// ExposeHeaders 允许客户端读取的响应头.
-	ExposeHeaders []string
+	ExposeHeaders []string `json:"expose_headers" yaml:"expose_headers" mapstructure:"expose_headers"`
 	// AllowCredentials 是否允许携带凭据（Cookie、Authorization 等）.
 	// AllowOrigins 为 "*" 时此字段不生效.
-	AllowCredentials bool
+	AllowCredentials bool `json:"allow_credentials" yaml:"allow_credentials" mapstructure:"allow_credentials"`
 	// MaxAge 预检结果缓存时间（秒），默认 86400（24 小时）.
-	MaxAge int
+	MaxAge int `json:"max_age" yaml:"max_age" mapstructure:"max_age"`
 }
 
 // Option 配置函数.
@@ -56,6 +56,30 @@ func WithAllowCredentials(allow bool) Option {
 // WithMaxAge 设置预检结果缓存时间（秒）.
 func WithMaxAge(seconds int) Option {
 	return func(o *Options) { o.MaxAge = seconds }
+}
+
+// MiddlewareOptions 将配置结构转换为 CORS 中间件选项。
+func MiddlewareOptions(config *Options, allowCredentials bool) []Option {
+	if config == nil {
+		return []Option{WithAllowCredentials(allowCredentials)}
+	}
+	opts := []Option{
+		WithAllowOrigins(config.AllowOrigins...),
+		WithAllowCredentials(allowCredentials || config.AllowCredentials),
+	}
+	if len(config.AllowMethods) > 0 {
+		opts = append(opts, WithAllowMethods(config.AllowMethods...))
+	}
+	if len(config.AllowHeaders) > 0 {
+		opts = append(opts, WithAllowHeaders(config.AllowHeaders...))
+	}
+	if len(config.ExposeHeaders) > 0 {
+		opts = append(opts, WithExposeHeaders(config.ExposeHeaders...))
+	}
+	if config.MaxAge > 0 {
+		opts = append(opts, WithMaxAge(config.MaxAge))
+	}
+	return opts
 }
 
 // defaultOptions 默认配置.

@@ -3,8 +3,10 @@ package rdbms
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
@@ -21,6 +23,27 @@ type BaseModel[T any] struct {
 	CreatedAt time.Time      `gorm:"column:created_at;autoCreateTime"`
 	UpdatedAt time.Time      `gorm:"column:updated_at;autoUpdateTime"`
 	DeletedAt gorm.DeletedAt `gorm:"column:deleted_at;index"`
+}
+
+// OnceMigrator 确保启动期迁移逻辑只执行一次。
+type OnceMigrator struct {
+	once sync.Once
+	err  error
+}
+
+// Do 执行一次迁移函数，并缓存首次执行结果。
+func (m *OnceMigrator) Do(fn func() error) error {
+	m.once.Do(func() {
+		m.err = fn()
+	})
+	return m.err
+}
+
+// AutoMigrate 对 Database.AutoMigrate 增加一次性执行保护。
+func (m *OnceMigrator) AutoMigrate(db Database, models ...any) error {
+	return m.Do(func() error {
+		return db.AutoMigrate(models...)
+	})
 }
 
 // gormDatabase GORM 数据库实现.
@@ -137,6 +160,20 @@ func AsGORM(db Database) *gorm.DB {
 	panic("database: 无法提取 *gorm.DB，请确保使用 GORM 类型的数据库")
 }
 
+// RequireGORM 将 Database 转换为 *gorm.DB，失败时返回错误。
+func RequireGORM(db Database) (*gorm.DB, error) {
+	if gdb, ok := db.(*gormDatabase); ok {
+		return gdb.db, nil
+	}
+	if extended, ok := db.(GORMDatabase); ok {
+		return extended.GORM(), nil
+	}
+	if db == nil {
+		return nil, ErrNilDatabase
+	}
+	return nil, ErrNotGORMDatabase
+}
+
 // DB 获取带 context 的 *gorm.DB（推荐）.
 //
 // 使用此方法可确保链路追踪正常工作:
@@ -144,6 +181,26 @@ func AsGORM(db Database) *gorm.DB {
 //	database.DB(ctx, db).Find(&users)
 func DB(ctx context.Context, db Database) *gorm.DB {
 	return AsGORM(db).WithContext(ctx)
+}
+
+// RequireRowsAffected 校验 GORM 写操作结果，零行影响时返回 notFound。
+func RequireRowsAffected(result *gorm.DB, notFound error) error {
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return notFound
+	}
+	return nil
+}
+
+// IsUniqueViolation 判断 PostgreSQL 唯一约束冲突。
+func IsUniqueViolation(err error, constraint string) bool {
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) {
+		return false
+	}
+	return pgErr.Code == "23505" && pgErr.ConstraintName == constraint
 }
 
 // gormLoggerAdapter GORM 日志适配器.

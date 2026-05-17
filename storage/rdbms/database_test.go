@@ -39,6 +39,8 @@ func (s *DatabaseTestSuite) TestErrors() {
 	s.Equal("database: 不支持的驱动类型", ErrUnsupportedDriver.Error())
 	s.Equal("database: 不支持的 ORM 类型", ErrUnsupportedType.Error())
 	s.Equal("database: 注册追踪插件失败", ErrRegisterTracingPlugin.Error())
+	s.Equal("database: 数据库为空", ErrNilDatabase.Error())
+	s.Equal("database: 无法提取 *gorm.DB，请确保使用 GORM 类型的数据库", ErrNotGORMDatabase.Error())
 }
 
 func (s *DatabaseTestSuite) TestConstants() {
@@ -174,6 +176,19 @@ func (s *DatabaseTestSuite) TestNewDatabase_SQLite() {
 	s.NotNil(db.DB())
 }
 
+func (s *DatabaseTestSuite) TestNewDatabaseWithCleanup_SQLite() {
+	cfg := &Config{
+		Driver: DriverSQLite,
+		DSN:    ":memory:",
+	}
+
+	db, cleanup, err := NewDatabaseWithCleanup(cfg, s.logger)
+	s.NoError(err)
+	s.NotNil(db)
+	s.NotNil(cleanup)
+	cleanup()
+}
+
 func (s *DatabaseTestSuite) TestMustNewDatabase_Success() {
 	cfg := &Config{
 		Driver: DriverSQLite,
@@ -205,6 +220,13 @@ func (s *DatabaseTestSuite) TestAsGORM() {
 
 	gormDB := AsGORM(db)
 	s.NotNil(gormDB)
+}
+
+func (s *DatabaseTestSuite) TestRequireGORM_NilDatabase() {
+	gormDB, err := RequireGORM(nil)
+
+	s.Nil(gormDB)
+	s.ErrorIs(err, ErrNilDatabase)
 }
 
 func (s *DatabaseTestSuite) TestDB() {
@@ -338,4 +360,22 @@ func (s *GORMTestSuite) TestCRUD() {
 	var deleted TestUser
 	err = db.First(&deleted, user.ID).Error
 	s.Error(err) // 应该找不到
+}
+
+func (s *GORMTestSuite) TestOnceMigratorDoRunsOnce() {
+	var migrator OnceMigrator
+	count := 0
+
+	err := migrator.Do(func() error {
+		count++
+		return nil
+	})
+	s.NoError(err)
+
+	err = migrator.Do(func() error {
+		count++
+		return nil
+	})
+	s.NoError(err)
+	s.Equal(1, count)
 }

@@ -44,6 +44,10 @@ var (
 	ErrUnsupportedType = errors.New("database: 不支持的 ORM 类型")
 	// ErrRegisterTracingPlugin 注册追踪插件失败.
 	ErrRegisterTracingPlugin = errors.New("database: 注册追踪插件失败")
+	// ErrNilDatabase 数据库为空.
+	ErrNilDatabase = errors.New("database: 数据库为空")
+	// ErrNotGORMDatabase 数据库不是 GORM 实现.
+	ErrNotGORMDatabase = errors.New("database: 无法提取 *gorm.DB，请确保使用 GORM 类型的数据库")
 )
 
 // Config 数据库配置.
@@ -183,6 +187,15 @@ func NewDatabase(config *Config, log logger.Logger) (Database, error) {
 	default:
 		return nil, ErrUnsupportedType
 	}
+}
+
+// NewDatabaseWithCleanup 创建数据库连接，并返回用于依赖注入生命周期的清理函数.
+func NewDatabaseWithCleanup(config *Config, log logger.Logger) (Database, func(), error) {
+	db, err := NewDatabase(config, log)
+	if err != nil {
+		return nil, nil, err
+	}
+	return db, func() { _ = db.Close() }, nil
 }
 
 // MustNewDatabase 创建数据库连接，失败时 panic.
