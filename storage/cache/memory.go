@@ -17,6 +17,7 @@ type memoryCache struct {
 	config  *Config
 	logger  logger.Logger
 	closeCh chan struct{}
+	close   sync.Once
 }
 
 // cacheItem 缓存项.
@@ -382,8 +383,10 @@ func (m *memoryCache) Ping(ctx context.Context) error {
 
 // Close 关闭缓存.
 func (m *memoryCache) Close() error {
-	close(m.closeCh)
-	m.logger.Debug("内存缓存已关闭")
+	m.close.Do(func() {
+		close(m.closeCh)
+		m.logger.Debug("内存缓存已关闭")
+	})
 	return nil
 }
 

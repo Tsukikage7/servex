@@ -70,13 +70,15 @@ servex no longer models deprecated API operations in its OpenAPI builder. If an 
 ### Observability
 
 - Removed `observability.Runtime`, `NewRuntime`, and `MustNewRuntime`.
-- Use explicit constructors instead:
+- Removed root-level setup helpers:
   - `observability.NewLogger`
   - `observability.NewResource`
   - `observability.NewPropagator`
   - `observability.NewTracerProvider`
   - `observability.NewMeterProvider`
   - `observability.InstallGlobal`
+- Use `observability/logger.NewLogger` for logging.
+- Use the official OpenTelemetry SDK or existing concrete component packages for tracer and meter providers.
 - Use `Config.TraceEnabled(name)` and `Config.MetricsEnabled(name)` for component-level enablement checks.
 
 ### Rate Limiting

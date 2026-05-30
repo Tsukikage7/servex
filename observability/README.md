@@ -1,8 +1,8 @@
 # observability
 
-`observability` 是 Servex 的服务级可观测性入口，用于创建 logger、OpenTelemetry tracer provider、meter provider 和 trace context propagator。
+`observability` 提供服务级可观测性配置结构，用于统一描述 logger、tracing、metrics 和组件埋点开关。
 
-它允许服务只启用日志，不强制接入 trace、metrics 或外部 collector；也允许同一服务同时配置多个 exporter。
+它允许服务只启用日志，不强制接入 trace、metrics 或外部 collector。日志由 `observability/logger` 创建；OpenTelemetry provider 建议直接使用官方 SDK 或具体组件包装。
 
 ## 配置示例
 
@@ -77,30 +77,21 @@ CLI 模板默认只创建日志，不强制接入 trace、metrics 或外部 coll
 ```go
 cfg.Observability.Service.Name = cfg.Name
 cfg.Observability.Service.Version = cfg.Version
+cfg.Observability.ApplyDefaults()
 
-log, err := observability.NewLogger(cfg.Observability)
+log, err := logger.NewLogger(&cfg.Observability.Logger)
 if err != nil {
 	return nil, err
 }
 ```
 
-需要启用 OpenTelemetry 时，按组件显式创建并安装全局 provider：
+需要启用 OpenTelemetry 时，使用官方 SDK 显式装配 provider，再按需设置全局 provider：
 
 ```go
-res, err := observability.NewResource(ctx, cfg.Observability.Service)
-if err != nil {
-	return err
-}
-propagator := observability.NewPropagator()
-tracerProvider, shutdownTrace, err := observability.NewTracerProvider(ctx, cfg.Observability.Tracing, res)
-if err != nil {
-	return err
-}
-meterProvider, shutdownMetrics, err := observability.NewMeterProvider(ctx, cfg.Observability.Metrics, res)
-if err != nil {
-	return err
-}
-observability.InstallGlobal(propagator, tracerProvider, meterProvider)
-defer shutdownTrace(ctx)
-defer shutdownMetrics(ctx)
+otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+	propagation.TraceContext{},
+	propagation.Baggage{},
+))
+otel.SetTracerProvider(tracerProvider)
+otel.SetMeterProvider(meterProvider)
 ```

@@ -56,6 +56,14 @@ func (s *MemoryCacheTestSuite) TestNewMemoryCache() {
 	defer cache.Close()
 }
 
+func (s *MemoryCacheTestSuite) TestClose_Idempotent() {
+	s.Require().NotPanics(func() {
+		s.Require().NoError(s.cache.Close())
+		s.Require().NoError(s.cache.Close())
+	})
+	s.cache = nil
+}
+
 func (s *MemoryCacheTestSuite) TestSetAndGet() {
 	err := s.cache.Set(s.ctx, "key1", "value1", time.Minute)
 	s.NoError(err)

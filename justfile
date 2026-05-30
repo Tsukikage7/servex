@@ -10,8 +10,8 @@ default: check
 
 # ── 检查 ──────────────────────────────────────────────
 
-# 完整检查lint + deps-check + test + build + vuln
-check: lint deps-check test-unit build vuln
+# 完整检查lint + deps-check + test + build + workspace + vuln
+check: lint deps-check test-unit build check-workspace vuln
 
 # 发布前工作区检查覆盖 go.work 中的所有 module
 check-workspace:

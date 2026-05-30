@@ -324,6 +324,29 @@ func TestHTTPTimeoutHandler(t *testing.T) {
 			t.Errorf("unexpected body: %s", rec.Body.String())
 		}
 	})
+
+	t.Run("late handler write is ignored after timeout", func(t *testing.T) {
+		handlerDone := make(chan struct{})
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			defer close(handlerDone)
+			<-r.Context().Done()
+			_, _ = w.Write([]byte("late body"))
+		})
+
+		wrapped := HTTPTimeoutHandler(handler, 10*time.Millisecond, "timeout")
+		req := httptest.NewRequest("GET", "/", nil)
+		rec := httptest.NewRecorder()
+
+		wrapped.ServeHTTP(rec, req)
+		<-handlerDone
+
+		if rec.Code != http.StatusServiceUnavailable {
+			t.Errorf("expected 503, got %d", rec.Code)
+		}
+		if rec.Body.String() != "timeout" {
+			t.Errorf("late handler write polluted response body: %q", rec.Body.String())
+		}
+	})
 }
 
 func TestUnaryServerInterceptor(t *testing.T) {

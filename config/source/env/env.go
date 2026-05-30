@@ -2,6 +2,7 @@
 package env
 
 import (
+	"bufio"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -88,9 +89,19 @@ func (s *Source) Watch() (config.Watcher, error) {
 	}, nil
 }
 
-// loadEnv 从 os.Environ() 读取环境变量，应用前缀过滤，序列化为 JSON.
+// loadEnv 从 .env 文件和 os.Environ() 读取环境变量，应用前缀过滤，序列化为 JSON.
 func (s *Source) loadEnv() ([]byte, error) {
 	data := make(map[string]string)
+
+	if s.envFile != "" {
+		fileData, err := s.loadEnvFile()
+		if err != nil {
+			return nil, err
+		}
+		for key, value := range fileData {
+			data[key] = value
+		}
+	}
 
 	for _, env := range os.Environ() {
 		parts := strings.SplitN(env, "=", 2)
@@ -98,22 +109,52 @@ func (s *Source) loadEnv() ([]byte, error) {
 			continue
 		}
 		key, value := parts[0], parts[1]
-
-		if s.prefix != "" {
-			if !strings.HasPrefix(key, s.prefix) {
-				continue
-			}
-			// 去除前缀
-			key = strings.TrimPrefix(key, s.prefix)
-		}
-
-		if key == "" {
-			continue
-		}
-		data[key] = value
+		s.addEnv(data, key, value)
 	}
 
 	return json.Marshal(data)
+}
+
+func (s *Source) loadEnvFile() (map[string]string, error) {
+	f, err := os.Open(s.envFile)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	data := make(map[string]string)
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		line = strings.TrimPrefix(line, "export ")
+		key, value, ok := strings.Cut(line, "=")
+		if !ok {
+			continue
+		}
+		key = strings.TrimSpace(key)
+		value = strings.TrimSpace(value)
+		value = strings.Trim(value, `"'`)
+		s.addEnv(data, key, value)
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func (s *Source) addEnv(data map[string]string, key, value string) {
+	if s.prefix != "" {
+		if !strings.HasPrefix(key, s.prefix) {
+			return
+		}
+		key = strings.TrimPrefix(key, s.prefix)
+	}
+	if key != "" {
+		data[key] = value
+	}
 }
 
 // envWatcher 基于 fsnotify 的环境变量文件监听器.

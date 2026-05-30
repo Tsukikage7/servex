@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -52,6 +53,30 @@ func TestSource_Load_WithPrefix(t *testing.T) {
 	assert.NotContains(t, data, "APP_HOST")
 }
 
+func TestSource_Load_WithEnvFile(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, ".env")
+	require.NoError(t, os.WriteFile(path, []byte(`
+# comment
+export SERVEX_ENV_FILE_TEST_HOST="file-localhost"
+SERVEX_ENV_FILE_TEST_PORT='8080'
+OTHER_VAR=ignored
+`), 0644))
+	t.Setenv("SERVEX_ENV_FILE_TEST_HOST", "env-localhost")
+
+	src := New(WithEnvFile(path), WithPrefix("SERVEX_ENV_FILE_TEST_"))
+	kvs, err := src.Load()
+	require.NoError(t, err)
+	require.Len(t, kvs, 1)
+
+	var data map[string]string
+	require.NoError(t, json.Unmarshal(kvs[0].Value, &data))
+
+	assert.Equal(t, "env-localhost", data["HOST"])
+	assert.Equal(t, "8080", data["PORT"])
+	assert.NotContains(t, data, "OTHER_VAR")
+}
+
 func TestSource_Load_Format(t *testing.T) {
 	src := New()
 	kvs, err := src.Load()
@@ -73,13 +98,10 @@ func TestSource_Watch_NoEnvFile(t *testing.T) {
 }
 
 func TestSource_Watch_WithEnvFile(t *testing.T) {
-	tmpFile, err := os.CreateTemp("", "test-*.env")
-	require.NoError(t, err)
-	defer os.Remove(tmpFile.Name())
-	tmpFile.WriteString("WATCH_HOST=localhost\n")
-	tmpFile.Close()
+	path := filepath.Join(t.TempDir(), ".env")
+	require.NoError(t, os.WriteFile(path, []byte("WATCH_HOST=localhost\n"), 0644))
 
-	src := New(WithEnvFile(tmpFile.Name()))
+	src := New(WithEnvFile(path))
 	watcher, err := src.Watch()
 	require.NoError(t, err)
 

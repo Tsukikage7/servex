@@ -73,4 +73,8 @@ __debug_bin*
 # AI 生成的中间文档（设计文档、实现计划等）
 /docs/superpowers/
 
+# 本地 CLI 构建产物
+/cmd/servex/servex
+/cmd/servex/templates/service/internal/servex
+
 /servex

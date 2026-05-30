@@ -148,11 +148,11 @@ func HTTPTimeoutHandler(h http.Handler, dt time.Duration, msg string, opts ...Op
 
 		select {
 		case <-done:
-			// 正常完成
 		case <-ctx.Done():
 			tw.mu.Lock()
 			defer tw.mu.Unlock()
 
+			tw.timedOut = true
 			if !tw.written {
 				if o.logger != nil {
 					logger.ForOr(ctx, o.logger, "Timeout").Warn(
@@ -166,6 +166,7 @@ func HTTPTimeoutHandler(h http.Handler, dt time.Duration, msg string, opts ...Op
 					o.onTimeout(r, dt)
 				}
 
+				tw.written = true
 				w.WriteHeader(http.StatusServiceUnavailable)
 				if msg != "" {
 					_, _ = w.Write([]byte(msg))

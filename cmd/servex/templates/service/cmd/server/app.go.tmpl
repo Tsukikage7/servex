@@ -16,7 +16,6 @@ import (
 	"{{.Module}}/services/{{.Name}}/internal/port"
 	"github.com/Tsukikage7/servex/v2/app"
 	"github.com/Tsukikage7/servex/v2/config"
-	"github.com/Tsukikage7/servex/v2/observability"
 	"github.com/Tsukikage7/servex/v2/observability/logger"
 	"github.com/Tsukikage7/servex/v2/transport"
 )
@@ -30,7 +29,8 @@ func newConfig() (*Config, error) {
 func newLogger(cfg *Config) (logger.Logger, func(), error) {
 	cfg.Observability.Service.Name = cfg.Name
 	cfg.Observability.Service.Version = cfg.Version
-	log, err := observability.NewLogger(cfg.Observability)
+	cfg.Observability.ApplyDefaults()
+	log, err := logger.NewLogger(&cfg.Observability.Logger)
 	if err != nil {
 		return nil, nil, err
 	}

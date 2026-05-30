@@ -1,4 +1,4 @@
-// Package observability 提供日志、链路追踪和指标的基础装配能力.
+// Package observability 提供服务级可观测性配置结构和组件埋点开关.
 package observability
 
 import (
