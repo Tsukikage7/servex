@@ -198,7 +198,7 @@ func TestGenerateProject(t *testing.T) {
 		"testproject/.gitignore",
 		"testproject/cmd/server/main.go",
 		"testproject/cmd/server/wire.go",
-		"testproject/cmd/server/provider.go",
+		"testproject/cmd/server/app.go",
 		"testproject/cmd/server/config.go",
 		"testproject/internal/server/http.go",
 		"testproject/internal/server/grpc.go",
@@ -821,20 +821,20 @@ func TestNewProjectWithWire(t *testing.T) {
 		t.Error("wire.go should contain wire.NewSet definition")
 	}
 	if contains(got, "server.NewGRPC") {
-		t.Error("wire.go should not contain transport server constructors; provideApp assembles servers from config")
+		t.Error("wire.go should not contain transport server constructors; newApp assembles servers from config")
 	}
 
-	// 验证 provider.go 存在
-	providerPath := filepath.Join(dir, "wireproject/cmd/server/provider.go")
-	if _, err := os.Stat(providerPath); os.IsNotExist(err) {
-		t.Fatal("provider.go should exist")
+	// 验证 app.go 存在
+	appPath := filepath.Join(dir, "wireproject/cmd/server/app.go")
+	if _, err := os.Stat(appPath); os.IsNotExist(err) {
+		t.Fatal("app.go should exist")
 	}
-	providerContent, err := os.ReadFile(providerPath)
+	appContent, err := os.ReadFile(appPath)
 	if err != nil {
-		t.Fatalf("read provider.go: %v", err)
+		t.Fatalf("read app.go: %v", err)
 	}
-	if !contains(string(providerContent), "server.NewGRPC(cfg.GRPC, log)") {
-		t.Error("provider.go should assemble gRPC server from config when WithGRPC is true")
+	if !contains(string(appContent), "server.NewGRPC(cfg.GRPC, log)") {
+		t.Error("app.go should assemble gRPC server from config when WithGRPC is true")
 	}
 
 	// 验证 config.go 存在
@@ -1082,7 +1082,7 @@ func TestNewStandalone(t *testing.T) {
 		"myservice/config.yaml",
 		"myservice/cmd/server/main.go",
 		"myservice/cmd/server/wire.go",
-		"myservice/cmd/server/provider.go",
+		"myservice/cmd/server/app.go",
 		"myservice/cmd/server/config.go",
 		"myservice/internal/server/http.go",
 		"myservice/internal/server/grpc.go",

@@ -46,6 +46,7 @@ servex v2 narrows the public API surface around stable microservice and AI appli
   - Use `servex add aggregate` for DDD aggregate generation.
 - Removed support for writing generated service code into historical `services/<name>-service` directories.
   - New generated code targets `services/<name>` only.
+- Generated application assembly now uses `cmd/server/app.go` and `newXxx` constructors instead of `cmd/server/provider.go` and `provideXxx` functions.
 
 ### OpenAPI
 
@@ -65,6 +66,18 @@ servex no longer models deprecated API operations in its OpenAPI builder. If an 
 
 - Removed `storage/redis.NewUniversalClientWithCleanup`.
   - Use `redis.NewClient`, call `Underlying()` when a third-party library needs `*redis.Client`, and close the servex client through `Close()`.
+
+### Observability
+
+- Removed `observability.Runtime`, `NewRuntime`, and `MustNewRuntime`.
+- Use explicit constructors instead:
+  - `observability.NewLogger`
+  - `observability.NewResource`
+  - `observability.NewPropagator`
+  - `observability.NewTracerProvider`
+  - `observability.NewMeterProvider`
+  - `observability.InstallGlobal`
+- Use `Config.TraceEnabled(name)` and `Config.MetricsEnabled(name)` for component-level enablement checks.
 
 ### Rate Limiting
 

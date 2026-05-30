@@ -1,4 +1,4 @@
-// Package observability 提供统一的可观测性运行时.
+// Package observability 提供日志、链路追踪和指标的基础装配能力.
 package observability
 
 import (
@@ -151,4 +151,20 @@ func (c InstrumentationConfig) Enabled(name string) bool {
 		}
 	}
 	return c.DefaultEnabled
+}
+
+// TraceEnabled 判断组件 trace 是否启用.
+func (c Config) TraceEnabled(name string) bool {
+	if !c.Tracing.Enabled {
+		return false
+	}
+	return c.Instrumentations.Enabled(name)
+}
+
+// MetricsEnabled 判断组件 metrics 是否启用.
+func (c Config) MetricsEnabled(name string) bool {
+	if !c.Metrics.Enabled {
+		return false
+	}
+	return c.Instrumentations.Enabled(name)
 }

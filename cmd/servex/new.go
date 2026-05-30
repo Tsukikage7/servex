@@ -47,7 +47,7 @@ var templateFiles = []struct {
 	{"templates/project/.gitignore.tmpl", ".gitignore"},
 	{"templates/project/cmd/server/main.go.tmpl", "cmd/server/main.go"},
 	{"templates/project/cmd/server/wire.go.tmpl", "cmd/server/wire.go"},
-	{"templates/project/cmd/server/provider.go.tmpl", "cmd/server/provider.go"},
+	{"templates/project/cmd/server/app.go.tmpl", "cmd/server/app.go"},
 	{"templates/project/cmd/server/config.go.tmpl", "cmd/server/config.go"},
 	{"templates/project/internal/server/http.go.tmpl", "internal/server/http.go"},
 	{"templates/project/internal/service/service.go.tmpl", "internal/service/service.go"},

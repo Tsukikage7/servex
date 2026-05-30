@@ -28,7 +28,7 @@ func TestAddService(t *testing.T) {
 	expectedFiles := []string{
 		"services/user/cmd/server/main.go",
 		"services/user/cmd/server/wire.go",
-		"services/user/cmd/server/provider.go",
+		"services/user/cmd/server/app.go",
 		"services/user/cmd/server/config.go",
 		"services/user/internal/service/service.go",
 		"services/user/internal/port/http.go",
@@ -92,28 +92,28 @@ func TestAddServiceWithGRPC(t *testing.T) {
 		t.Error("grpc.go should exist when --with-grpc is true")
 	}
 
-	// 验证 wire.go 包含 provider 引用
+	// 验证 wire.go 包含构造函数引用
 	wireContent, err := os.ReadFile(filepath.Join(dir, "services/order/cmd/server/wire.go"))
 	if err != nil {
 		t.Fatalf("read wire.go: %v", err)
 	}
 	wireStr := string(wireContent)
-	if !contains(wireStr, "provideMySQL") {
-		t.Error("wire.go should contain provideMySQL when --infra mysql is set")
+	if !contains(wireStr, "newMySQL") {
+		t.Error("wire.go should contain newMySQL when --infra mysql is set")
 	}
-	if !contains(wireStr, "provideRedis") {
-		t.Error("wire.go should contain provideRedis when --infra redis is set")
+	if !contains(wireStr, "newRedis") {
+		t.Error("wire.go should contain newRedis when --infra redis is set")
 	}
 	if contains(wireStr, "port.NewGRPC") {
-		t.Error("wire.go should not contain port.NewGRPC; provideApp assembles servers from config")
+		t.Error("wire.go should not contain port.NewGRPC; newApp assembles servers from config")
 	}
 
-	providerContent, err := os.ReadFile(filepath.Join(dir, "services/order/cmd/server/provider.go"))
+	appContent, err := os.ReadFile(filepath.Join(dir, "services/order/cmd/server/app.go"))
 	if err != nil {
-		t.Fatalf("read provider.go: %v", err)
+		t.Fatalf("read app.go: %v", err)
 	}
-	if !contains(string(providerContent), "port.NewGRPC(cfg.GRPC, log)") {
-		t.Error("provider.go should assemble gRPC server from config when --with-grpc is true")
+	if !contains(string(appContent), "port.NewGRPC(cfg.GRPC, log)") {
+		t.Error("app.go should assemble gRPC server from config when --with-grpc is true")
 	}
 
 	// 验证 config.dev.yaml 包含 grpc/db/redis 配置

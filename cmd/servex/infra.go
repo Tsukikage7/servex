@@ -15,12 +15,12 @@ type ComponentDef struct {
 	ConfigKey    string   // config.yaml 中的 key
 	ConfigYAML   string   // 默认配置 YAML 片段[缩进好的]
 	CloseCode    string   // defer 关闭代码[可选]
-	ExtraImports []string // 额外 stdlib import[如 "context", "time", "net/http"]
-	BlankImports []string // 额外副作用 import[如 provider 注册包]
+	ExtraImports []string // 额外 import[如 "context", "time", "gorm.io/gorm"]
+	BlankImports []string // 额外副作用 import[如驱动注册包]
 	// Wire DI 字段
-	ProviderFunc string // Wire provider 函数名，如 "provideMySQL"
-	ProviderCode string // Wire provider 函数体
-	ConfigField  string // Config 结构体字段，如 `Database rdbms.Config ...`
+	NewFunc     string // Wire 构造函数名，如 "newMySQL"
+	NewCode     string // Wire 构造函数体
+	ConfigField string // Config 结构体字段，如 `Database rdbms.Config ...`
 }
 
 // componentRegistry 可用基础设施组件注册表.
@@ -36,14 +36,13 @@ var componentRegistry = map[string]ComponentDef{
   max_open_conns: 20
   max_idle_conns: 10
   max_lifetime: 300s`,
-		ProviderFunc: "provideMySQL",
-		ProviderCode: `func provideMySQL(cfg *Config, log logger.Logger) (*gorm.DB, func(), error) {
+		NewFunc: "newMySQL",
+		NewCode: `func newMySQL(cfg *Config, log logger.Logger) (rdbms.Database, func(), error) {
 	db, err := rdbms.NewDatabase(&cfg.Database, log)
 	if err != nil {
 		return nil, nil, err
 	}
-	sqlDB, _ := db.DB()
-	return db, func() { sqlDB.Close() }, nil
+	return db, func() { _ = db.Close() }, nil
 }`,
 		ConfigField: "Database rdbms.Config `yaml:\"database\" mapstructure:\"database\"`",
 	},
@@ -58,14 +57,13 @@ var componentRegistry = map[string]ComponentDef{
   max_open_conns: 20
   max_idle_conns: 10
   max_lifetime: 300s`,
-		ProviderFunc: "providePostgres",
-		ProviderCode: `func providePostgres(cfg *Config, log logger.Logger) (*gorm.DB, func(), error) {
+		NewFunc: "newPostgres",
+		NewCode: `func newPostgres(cfg *Config, log logger.Logger) (rdbms.Database, func(), error) {
 	db, err := rdbms.NewDatabase(&cfg.Database, log)
 	if err != nil {
 		return nil, nil, err
 	}
-	sqlDB, _ := db.DB()
-	return db, func() { sqlDB.Close() }, nil
+	return db, func() { _ = db.Close() }, nil
 }`,
 		ConfigField: "Database rdbms.Config `yaml:\"database\" mapstructure:\"database\"`",
 	},
@@ -77,14 +75,13 @@ var componentRegistry = map[string]ComponentDef{
 		ConfigYAML: `database:
   driver: sqlite
   dsn: "./data.db"`,
-		ProviderFunc: "provideSQLite",
-		ProviderCode: `func provideSQLite(cfg *Config, log logger.Logger) (*gorm.DB, func(), error) {
+		NewFunc: "newSQLite",
+		NewCode: `func newSQLite(cfg *Config, log logger.Logger) (rdbms.Database, func(), error) {
 	db, err := rdbms.NewDatabase(&cfg.Database, log)
 	if err != nil {
 		return nil, nil, err
 	}
-	sqlDB, _ := db.DB()
-	return db, func() { sqlDB.Close() }, nil
+	return db, func() { _ = db.Close() }, nil
 }`,
 		ConfigField: "Database rdbms.Config `yaml:\"database\" mapstructure:\"database\"`",
 	},
@@ -98,8 +95,8 @@ var componentRegistry = map[string]ComponentDef{
   password: ""
   db: 0
   pool_size: 10`,
-		ProviderFunc: "provideRedis",
-		ProviderCode: `func provideRedis(cfg *Config, log logger.Logger) (redis.Client, func(), error) {
+		NewFunc: "newRedis",
+		NewCode: `func newRedis(cfg *Config, log logger.Logger) (redis.Client, func(), error) {
 	rdb, err := redis.NewClient(&cfg.Redis, log)
 	if err != nil {
 		return nil, nil, err
@@ -116,8 +113,8 @@ var componentRegistry = map[string]ComponentDef{
 		ConfigYAML: `mongodb:
   uri: "mongodb://localhost:27017"
   database: "mydb"`,
-		ProviderFunc: "provideMongo",
-		ProviderCode: `func provideMongo(cfg *Config, log logger.Logger) (*mongodb.Client, func(), error) {
+		NewFunc: "newMongo",
+		NewCode: `func newMongo(cfg *Config, log logger.Logger) (*mongodb.Client, func(), error) {
 	client, err := mongodb.NewClient(&cfg.MongoDB, log)
 	if err != nil {
 		return nil, nil, err
@@ -136,8 +133,8 @@ var componentRegistry = map[string]ComponentDef{
     - "http://localhost:9200"
   username: ""
   password: ""`,
-		ProviderFunc: "provideElasticsearch",
-		ProviderCode: `func provideElasticsearch(cfg *Config, log logger.Logger) (*elasticsearch.Client, func(), error) {
+		NewFunc: "newElasticsearch",
+		NewCode: `func newElasticsearch(cfg *Config, log logger.Logger) (*elasticsearch.Client, func(), error) {
 	client, err := elasticsearch.NewClient(&cfg.Elasticsearch, log)
 	if err != nil {
 		return nil, nil, err
@@ -158,8 +155,8 @@ var componentRegistry = map[string]ComponentDef{
   max_open_conns: 10
   max_idle_conns: 5
   compression: "lz4"`,
-		ProviderFunc: "provideClickHouse",
-		ProviderCode: `func provideClickHouse(cfg *Config, log logger.Logger) (*clickhouse.Client, func(), error) {
+		NewFunc: "newClickHouse",
+		NewCode: `func newClickHouse(cfg *Config, log logger.Logger) (*clickhouse.Client, func(), error) {
 	client, err := clickhouse.NewClient(&cfg.ClickHouse, log)
 	if err != nil {
 		return nil, nil, err
@@ -179,8 +176,8 @@ var componentRegistry = map[string]ComponentDef{
   access_key: "minioadmin"
   secret_key: "minioadmin"
   bucket: "my-bucket"`,
-		ProviderFunc: "provideS3",
-		ProviderCode: `func provideS3(cfg *Config, log logger.Logger) (*s3.Client, func(), error) {
+		NewFunc: "newS3",
+		NewCode: `func newS3(cfg *Config, log logger.Logger) (*s3.Client, func(), error) {
 	client, err := s3.NewClient(&cfg.S3, log)
 	if err != nil {
 		return nil, nil, err
@@ -200,8 +197,8 @@ var componentRegistry = map[string]ComponentDef{
   secret_key: "minioadmin"
   bucket: "my-bucket"
   use_ssl: false`,
-		ProviderFunc: "provideMinIO",
-		ProviderCode: `func provideMinIO(cfg *Config, log logger.Logger) (*minio.Client, func(), error) {
+		NewFunc: "newMinIO",
+		NewCode: `func newMinIO(cfg *Config, log logger.Logger) (*minio.Client, func(), error) {
 	client, err := minio.NewClient(&cfg.MinIO, log, minio.WithLogger(log))
 	if err != nil {
 		return nil, nil, err
@@ -220,8 +217,8 @@ var componentRegistry = map[string]ComponentDef{
   username: "neo4j"
   password: "neo4j"
   database: "neo4j"`,
-		ProviderFunc: "provideNeo4j",
-		ProviderCode: `func provideNeo4j(cfg *Config, log logger.Logger) (*neo4j.Client, func(), error) {
+		NewFunc: "newNeo4j",
+		NewCode: `func newNeo4j(cfg *Config, log logger.Logger) (*neo4j.Client, func(), error) {
 	client, err := neo4j.NewClient(&cfg.Neo4j, neo4j.WithLogger(log))
 	if err != nil {
 		return nil, nil, err
@@ -239,8 +236,8 @@ var componentRegistry = map[string]ComponentDef{
   brokers:
     - "localhost:9092"
   group: "my-group"`,
-		ProviderFunc: "provideKafka",
-		ProviderCode: `func provideKafka(cfg *Config, log logger.Logger) (*kafka.Publisher, func(), error) {
+		NewFunc: "newKafka",
+		NewCode: `func newKafka(cfg *Config, log logger.Logger) (*kafka.Publisher, func(), error) {
 	pub, err := kafka.NewPublisherFromConfig(cfg.Kafka.Brokers, log)
 	if err != nil {
 		return nil, nil, err
@@ -256,8 +253,8 @@ var componentRegistry = map[string]ComponentDef{
 		ConfigKey:   "rabbitmq",
 		ConfigYAML: `rabbitmq:
   url: "amqp://guest:guest@localhost:5672/"`,
-		ProviderFunc: "provideRabbitMQ",
-		ProviderCode: `func provideRabbitMQ(cfg *Config, log logger.Logger) (*rabbitmq.Publisher, func(), error) {
+		NewFunc: "newRabbitMQ",
+		NewCode: `func newRabbitMQ(cfg *Config, log logger.Logger) (*rabbitmq.Publisher, func(), error) {
 	pub, err := rabbitmq.NewPublisherFromConfig(cfg.RabbitMQ.URL, log)
 	if err != nil {
 		return nil, nil, err
@@ -278,8 +275,8 @@ var componentRegistry = map[string]ComponentDef{
   namespace: "app"
   path: "/metrics"`,
 		ExtraImports: []string{"net/http"},
-		ProviderFunc: "provideMetrics",
-		ProviderCode: `func provideMetrics(cfg *Config, log logger.Logger) (*metrics.Prometheus, func(), error) {
+		NewFunc:      "newMetrics",
+		NewCode: `func newMetrics(cfg *Config, log logger.Logger) (*metrics.Prometheus, func(), error) {
 	collector, err := metrics.NewPrometheus(&cfg.Metrics)
 	if err != nil {
 		return nil, nil, err
@@ -299,8 +296,8 @@ var componentRegistry = map[string]ComponentDef{
   otlp:
     endpoint: "localhost:4318"`,
 		ExtraImports: []string{"context"},
-		ProviderFunc: "provideTracing",
-		ProviderCode: `func provideTracing(cfg *Config, log logger.Logger) (*tracing.Tracer, func(), error) {
+		NewFunc:      "newTracing",
+		NewCode: `func newTracing(cfg *Config, log logger.Logger) (*tracing.Tracer, func(), error) {
 	tp, err := tracing.NewTracer(&cfg.Tracing)
 	if err != nil {
 		return nil, nil, err
@@ -321,8 +318,8 @@ var componentRegistry = map[string]ComponentDef{
     - cpu
     - heap`,
 		ExtraImports: []string{"context", "time"},
-		ProviderFunc: "provideProfiling",
-		ProviderCode: `func provideProfiling(cfg *Config, log logger.Logger) (*profiling.Profiler, func(), error) {
+		NewFunc:      "newProfiling",
+		NewCode: `func newProfiling(cfg *Config, log logger.Logger) (*profiling.Profiler, func(), error) {
 	profiler, err := profiling.New(&cfg.Profiling)
 	if err != nil {
 		return nil, nil, err
@@ -347,8 +344,8 @@ var componentRegistry = map[string]ComponentDef{
   secret: "change-me"
   access_duration: 2h
   refresh_duration: 168h`,
-		ProviderFunc: "provideJWT",
-		ProviderCode: `func provideJWT(cfg *Config, log logger.Logger) (*jwt.JWT, func(), error) {
+		NewFunc: "newJWT",
+		NewCode: `func newJWT(cfg *Config, log logger.Logger) (*jwt.JWT, func(), error) {
 	jwtSvc := jwt.MustNew(
 		jwt.WithSecretKey(cfg.JWT.Secret),
 		jwt.WithLogger(log),
@@ -370,8 +367,8 @@ var componentRegistry = map[string]ComponentDef{
 		ConfigYAML: `discovery:
   type: "consul"
   addr: "127.0.0.1:8500"`,
-		ProviderFunc: "provideConsul",
-		ProviderCode: `func provideConsul(cfg *Config, log logger.Logger) (*discovery.Discovery, func(), error) {
+		NewFunc: "newConsul",
+		NewCode: `func newConsul(cfg *Config, log logger.Logger) (*discovery.Discovery, func(), error) {
 	disc, err := discovery.NewDiscovery(&cfg.Discovery, log)
 	if err != nil {
 		return nil, nil, err
@@ -392,8 +389,8 @@ var componentRegistry = map[string]ComponentDef{
   type: "etcd"
   etcd_endpoints:
     - "127.0.0.1:2379"`,
-		ProviderFunc: "provideEtcd",
-		ProviderCode: `func provideEtcd(cfg *Config, log logger.Logger) (*discovery.Discovery, func(), error) {
+		NewFunc: "newEtcd",
+		NewCode: `func newEtcd(cfg *Config, log logger.Logger) (*discovery.Discovery, func(), error) {
 	disc, err := discovery.NewDiscovery(&cfg.Discovery, log)
 	if err != nil {
 		return nil, nil, err
@@ -414,8 +411,8 @@ var componentRegistry = map[string]ComponentDef{
   type: "nacos"
   nacos_endpoints:
     - "127.0.0.1:8848"`,
-		ProviderFunc: "provideNacos",
-		ProviderCode: `func provideNacos(cfg *Config, log logger.Logger) (*discovery.Discovery, func(), error) {
+		NewFunc: "newNacos",
+		NewCode: `func newNacos(cfg *Config, log logger.Logger) (*discovery.Discovery, func(), error) {
 	disc, err := discovery.NewDiscovery(&cfg.Discovery, log)
 	if err != nil {
 		return nil, nil, err
@@ -428,13 +425,13 @@ var componentRegistry = map[string]ComponentDef{
 	// ── Other ────────────────────────────────────────────────────────────
 
 	"scheduler": {
-		Key:          "scheduler",
-		DisplayName:  "定时任务",
-		Import:       "github.com/Tsukikage7/servex/v2/scheduler",
-		ConfigKey:    "scheduler",
-		ConfigYAML:   `# scheduler: 任务规则通常在代码中定义`,
-		ProviderFunc: "provideScheduler",
-		ProviderCode: `func provideScheduler(log logger.Logger) (*scheduler.Scheduler, func(), error) {
+		Key:         "scheduler",
+		DisplayName: "定时任务",
+		Import:      "github.com/Tsukikage7/servex/v2/scheduler",
+		ConfigKey:   "scheduler",
+		ConfigYAML:  `# scheduler: 任务规则通常在代码中定义`,
+		NewFunc:     "newScheduler",
+		NewCode: `func newScheduler(log logger.Logger) (*scheduler.Scheduler, func(), error) {
 	sched, err := scheduler.NewScheduler()
 	if err != nil {
 		return nil, nil, err
@@ -453,21 +450,21 @@ var componentRegistry = map[string]ComponentDef{
   supported_langs:
     - "zh"
     - "en"`,
-		ProviderFunc: "provideI18n",
-		ProviderCode: `func provideI18n(cfg *Config, log logger.Logger) (*i18n.Bundle, func(), error) {
+		NewFunc: "newI18n",
+		NewCode: `func newI18n(cfg *Config, log logger.Logger) (*i18n.Bundle, func(), error) {
 	bundle := i18n.NewBundle(cfg.I18n.DefaultLang)
 	return bundle, func() {}, nil
 }`,
 		ConfigField: "I18n i18n.Config `yaml:\"i18n\" mapstructure:\"i18n\"`",
 	},
 	"tenant": {
-		Key:          "tenant",
-		DisplayName:  "多租户",
-		Import:       "github.com/Tsukikage7/servex/v2/tenant",
-		ConfigKey:    "tenant",
-		ConfigYAML:   `# tenant: 租户解析通常在代码中配置`,
-		ProviderFunc: "provideTenant",
-		ProviderCode: `func provideTenant(log logger.Logger) (*tenant.Manager, func(), error) {
+		Key:         "tenant",
+		DisplayName: "多租户",
+		Import:      "github.com/Tsukikage7/servex/v2/tenant",
+		ConfigKey:   "tenant",
+		ConfigYAML:  `# tenant: 租户解析通常在代码中配置`,
+		NewFunc:     "newTenant",
+		NewCode: `func newTenant(log logger.Logger) (*tenant.Manager, func(), error) {
 	mgr := tenant.NewManager()
 	return mgr, func() {}, nil
 }`,

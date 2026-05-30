@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 {{- range $imp := extraImports .AllComponents}}
 	"{{$imp}}"
 {{- end}}
@@ -22,33 +21,28 @@ import (
 	"github.com/Tsukikage7/servex/v2/transport"
 )
 
-// provideConfig 加载配置.
-func provideConfig() (*Config, error) {
+// newConfig 加载配置.
+func newConfig() (*Config, error) {
 	return config.LoadWithSearch[Config]("config.dev", []string{"configs", "."})
 }
 
-// provideObservability 创建可观测性运行时.
-func provideObservability(cfg *Config) (*observability.Runtime, func(), error) {
+// newLogger 创建日志.
+func newLogger(cfg *Config) (logger.Logger, func(), error) {
 	cfg.Observability.Service.Name = cfg.Name
 	cfg.Observability.Service.Version = cfg.Version
-	rt, err := observability.NewRuntime(context.Background(), cfg.Observability)
+	log, err := observability.NewLogger(cfg.Observability)
 	if err != nil {
 		return nil, nil, err
 	}
-	return rt, func() { _ = rt.Shutdown(context.Background()) }, nil
-}
-
-// provideLogger 从可观测性运行时取得日志.
-func provideLogger(rt *observability.Runtime) logger.Logger {
-	return rt.Logger()
+	return log, func() { _ = log.Close() }, nil
 }
 
 {{range .AllComponents}}
-{{.ProviderCode}}
+{{.NewCode}}
 {{end}}
 
-// provideApp 创建应用.
-func provideApp(cfg *Config, log logger.Logger) (*app.Application, error) {
+// newApp 创建应用.
+func newApp(cfg *Config, log logger.Logger) (*app.Application, error) {
 	application := app.New(
 		app.WithLogger(log),
 		app.WithName(cfg.Name),

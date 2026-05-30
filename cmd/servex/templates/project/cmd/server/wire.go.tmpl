@@ -9,15 +9,14 @@ import (
 )
 
 func initApp() (*app.Application, func(), error) {
-	panic(wire.Build(providerSet))
+	panic(wire.Build(appSet))
 }
 
-var providerSet = wire.NewSet(
-	provideConfig,
-	provideObservability,
-	provideLogger,
+var appSet = wire.NewSet(
+	newConfig,
+	newLogger,
 {{- range .AllComponents}}
-	{{.ProviderFunc}},
+	{{.NewFunc}},
 {{- end}}
-	provideApp,
+	newApp,
 )

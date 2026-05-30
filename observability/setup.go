@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -26,167 +27,24 @@ import (
 	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
-// Runtime 持有服务的可观测性运行时依赖.
-type Runtime struct {
-	config         Config
-	logger         logger.Logger
-	propagator     propagation.TextMapPropagator
-	tracerProvider trace.TracerProvider
-	meterProvider  metric.MeterProvider
-	traceSDK       *sdktrace.TracerProvider
-	metricSDK      *sdkmetric.MeterProvider
-}
+// ShutdownFunc 关闭一个可观测性组件持有的资源.
+type ShutdownFunc func(context.Context) error
 
-// NewRuntime 根据配置创建可观测性运行时.
-func NewRuntime(ctx context.Context, cfg Config) (*Runtime, error) {
-	if ctx == nil {
-		ctx = context.Background()
-	}
+// NewLogger 根据可观测性配置创建日志.
+func NewLogger(cfg Config) (logger.Logger, error) {
 	cfg.ApplyDefaults()
-
 	log, err := logger.NewLogger(&cfg.Logger)
 	if err != nil {
 		return nil, fmt.Errorf("observability: 创建日志失败: %w", err)
 	}
-
-	res, err := newResource(ctx, cfg.Service)
-	if err != nil {
-		_ = log.Close()
-		return nil, err
-	}
-
-	propagator := propagation.NewCompositeTextMapPropagator(
-		propagation.TraceContext{},
-		propagation.Baggage{},
-	)
-
-	traceProvider, traceSDK, err := newTracerProvider(ctx, cfg.Tracing, res)
-	if err != nil {
-		_ = log.Close()
-		return nil, err
-	}
-
-	meterProvider, metricSDK, err := newMeterProvider(ctx, cfg.Metrics, res)
-	if err != nil {
-		if traceSDK != nil {
-			_ = traceSDK.Shutdown(ctx)
-		}
-		_ = log.Close()
-		return nil, err
-	}
-
-	otel.SetTextMapPropagator(propagator)
-	otel.SetTracerProvider(traceProvider)
-	otel.SetMeterProvider(meterProvider)
-
-	return &Runtime{
-		config:         cfg,
-		logger:         log,
-		propagator:     propagator,
-		tracerProvider: traceProvider,
-		meterProvider:  meterProvider,
-		traceSDK:       traceSDK,
-		metricSDK:      metricSDK,
-	}, nil
+	return log, nil
 }
 
-// MustNewRuntime 创建 Runtime，失败时 panic.
-func MustNewRuntime(ctx context.Context, cfg Config) *Runtime {
-	rt, err := NewRuntime(ctx, cfg)
-	if err != nil {
-		panic(err)
-	}
-	return rt
-}
-
-// Logger 返回结构化日志.
-func (r *Runtime) Logger() logger.Logger {
-	if r == nil || r.logger == nil {
-		return logger.Nop()
-	}
-	return r.logger
-}
-
-// TracerProvider 返回 trace provider.
-func (r *Runtime) TracerProvider() trace.TracerProvider {
-	if r == nil || r.tracerProvider == nil {
-		return tracenoop.NewTracerProvider()
-	}
-	return r.tracerProvider
-}
-
-// MeterProvider 返回 meter provider.
-func (r *Runtime) MeterProvider() metric.MeterProvider {
-	if r == nil || r.meterProvider == nil {
-		return metricnoop.NewMeterProvider()
-	}
-	return r.meterProvider
-}
-
-// Propagator 返回文本传播器.
-func (r *Runtime) Propagator() propagation.TextMapPropagator {
-	if r == nil || r.propagator == nil {
-		return propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{})
-	}
-	return r.propagator
-}
-
-// Tracer 返回指定 instrumentation scope 的 tracer.
-func (r *Runtime) Tracer(name string, opts ...trace.TracerOption) trace.Tracer {
-	return r.TracerProvider().Tracer(name, opts...)
-}
-
-// Meter 返回指定 instrumentation scope 的 meter.
-func (r *Runtime) Meter(name string, opts ...metric.MeterOption) metric.Meter {
-	return r.MeterProvider().Meter(name, opts...)
-}
-
-// InstrumentationEnabled 判断组件埋点是否启用.
-func (r *Runtime) InstrumentationEnabled(name string) bool {
-	if r == nil {
-		return false
-	}
-	return r.config.Instrumentations.Enabled(name)
-}
-
-// TraceEnabled 判断组件 trace 是否启用.
-func (r *Runtime) TraceEnabled(name string) bool {
-	if r == nil || !r.config.Tracing.Enabled {
-		return false
-	}
-	return r.InstrumentationEnabled(name)
-}
-
-// MetricsEnabled 判断组件 metrics 是否启用.
-func (r *Runtime) MetricsEnabled(name string) bool {
-	if r == nil || !r.config.Metrics.Enabled {
-		return false
-	}
-	return r.InstrumentationEnabled(name)
-}
-
-// Shutdown 关闭 Runtime 持有的可观测性资源.
-func (r *Runtime) Shutdown(ctx context.Context) error {
-	if r == nil {
-		return nil
-	}
+// NewResource 根据服务身份创建 OpenTelemetry resource.
+func NewResource(ctx context.Context, cfg ServiceConfig) (*resource.Resource, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	var err error
-	if r.traceSDK != nil {
-		err = joinError(err, r.traceSDK.Shutdown(ctx))
-	}
-	if r.metricSDK != nil {
-		err = joinError(err, r.metricSDK.Shutdown(ctx))
-	}
-	if r.logger != nil {
-		err = joinError(err, r.logger.Close())
-	}
-	return err
-}
-
-func newResource(ctx context.Context, cfg ServiceConfig) (*resource.Resource, error) {
 	attrs := []attribute.KeyValue{
 		semconv.ServiceName(cfg.Name),
 		semconv.ServiceVersion(cfg.Version),
@@ -204,9 +62,63 @@ func newResource(ctx context.Context, cfg ServiceConfig) (*resource.Resource, er
 	return res, nil
 }
 
+// NewPropagator 创建默认文本传播器.
+func NewPropagator() propagation.TextMapPropagator {
+	return propagation.NewCompositeTextMapPropagator(
+		propagation.TraceContext{},
+		propagation.Baggage{},
+	)
+}
+
+// NewTracerProvider 根据配置创建 trace provider.
+func NewTracerProvider(ctx context.Context, cfg TracingConfig, res *resource.Resource) (trace.TracerProvider, ShutdownFunc, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	tp, sdk, err := newTracerProvider(ctx, cfg, res)
+	if err != nil {
+		return nil, nil, err
+	}
+	return tp, shutdownTracerProvider(sdk), nil
+}
+
+// NewMeterProvider 根据配置创建 meter provider.
+func NewMeterProvider(ctx context.Context, cfg MetricsConfig, res *resource.Resource) (metric.MeterProvider, ShutdownFunc, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	mp, sdk, err := newMeterProvider(ctx, cfg, res)
+	if err != nil {
+		return nil, nil, err
+	}
+	return mp, shutdownMeterProvider(sdk), nil
+}
+
+// InstallGlobal 设置 OpenTelemetry 全局 provider.
+func InstallGlobal(propagator propagation.TextMapPropagator, tracerProvider trace.TracerProvider, meterProvider metric.MeterProvider) {
+	if propagator == nil {
+		propagator = NewPropagator()
+	}
+	if tracerProvider == nil {
+		tracerProvider = tracenoop.NewTracerProvider()
+	}
+	if meterProvider == nil {
+		meterProvider = metricnoop.NewMeterProvider()
+	}
+	otel.SetTextMapPropagator(propagator)
+	otel.SetTracerProvider(tracerProvider)
+	otel.SetMeterProvider(meterProvider)
+}
+
 func newTracerProvider(ctx context.Context, cfg TracingConfig, res *resource.Resource) (trace.TracerProvider, *sdktrace.TracerProvider, error) {
 	if !cfg.Enabled {
 		return tracenoop.NewTracerProvider(), nil, nil
+	}
+	if cfg.SamplingRate <= 0 || cfg.SamplingRate > 1 {
+		cfg.SamplingRate = 1
+	}
+	if res == nil {
+		res = resource.Default()
 	}
 
 	options := []sdktrace.TracerProviderOption{
@@ -228,6 +140,12 @@ func newTracerProvider(ctx context.Context, cfg TracingConfig, res *resource.Res
 func newMeterProvider(ctx context.Context, cfg MetricsConfig, res *resource.Resource) (metric.MeterProvider, *sdkmetric.MeterProvider, error) {
 	if !cfg.Enabled {
 		return metricnoop.NewMeterProvider(), nil, nil
+	}
+	if cfg.Interval <= 0 {
+		cfg.Interval = time.Minute
+	}
+	if res == nil {
+		res = resource.Default()
 	}
 
 	options := []sdkmetric.Option{sdkmetric.WithResource(res)}
@@ -332,12 +250,26 @@ func stripEndpointScheme(endpoint string) string {
 	return strings.TrimPrefix(endpoint, "https://")
 }
 
-func joinError(current, next error) error {
-	if current == nil {
-		return next
+func shutdownTracerProvider(tp *sdktrace.TracerProvider) ShutdownFunc {
+	return func(ctx context.Context) error {
+		if tp == nil {
+			return nil
+		}
+		if ctx == nil {
+			ctx = context.Background()
+		}
+		return tp.Shutdown(ctx)
 	}
-	if next == nil {
-		return current
+}
+
+func shutdownMeterProvider(mp *sdkmetric.MeterProvider) ShutdownFunc {
+	return func(ctx context.Context) error {
+		if mp == nil {
+			return nil
+		}
+		if ctx == nil {
+			ctx = context.Background()
+		}
+		return mp.Shutdown(ctx)
 	}
-	return fmt.Errorf("%w; %w", current, next)
 }

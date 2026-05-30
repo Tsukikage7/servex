@@ -33,7 +33,7 @@ var serviceTemplateFiles = []struct {
 }{
 	{"templates/service/cmd/server/main.go.tmpl", "cmd/server/main.go"},
 	{"templates/service/cmd/server/wire.go.tmpl", "cmd/server/wire.go"},
-	{"templates/service/cmd/server/provider.go.tmpl", "cmd/server/provider.go"},
+	{"templates/service/cmd/server/app.go.tmpl", "cmd/server/app.go"},
 	{"templates/service/cmd/server/config.go.tmpl", "cmd/server/config.go"},
 	{"templates/service/internal/service/service.go.tmpl", "internal/service/service.go"},
 	{"templates/service/internal/port/http.go.tmpl", "internal/port/http.go"},
