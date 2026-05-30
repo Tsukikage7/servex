@@ -54,6 +54,49 @@ type Registrar interface {
 
 ### 配置选项
 
+推荐优先使用配置驱动入口，YAML 中描述可序列化的服务行为，Wire 注入 logger、认证器、限流器等运行时对象：
+
+```go
+srv, err := gateway.NewFromConfig(&cfg.Gateway, log,
+    gateway.WithSecurity(gateway.SecurityConfig{
+        Authenticator: authenticator,
+        AuthOptions:   []auth.Option{auth.WithAuthorizer(authorizer)},
+        RateLimiter:   limiter,
+        Tenant:        resolver,
+    }),
+)
+```
+
+`WithObservability` 只表达日志、指标、链路追踪；`WithRuntime` 表达恢复和统一响应。不要把外部可观测性系统做成隐式默认依赖。
+
+```yaml
+gateway:
+  name: api-gateway
+  grpc:
+    addr: ":9090"
+    enable_reflection: true
+  http:
+    addr: ":8080"
+    read_timeout: 10s
+    write_timeout: 10s
+    idle_timeout: 120s
+  runtime:
+    recovery: true
+    response: true
+  logging:
+    enabled: true
+    skip_paths:
+      - /healthz
+      - /metrics
+  tracing:
+    enabled: false
+  metrics:
+    enabled: false
+    path: /metrics
+  cors:
+    enabled: false
+```
+
 | 选项                    | 默认值           | 说明                           |
 | ----------------------- | ---------------- | ------------------------------ |
 | `WithLogger`            | -                | 日志记录器（必需）             |
@@ -71,17 +114,13 @@ type Registrar interface {
 | `WithServeMuxOptions`   | -                | ServeMux 自定义选项            |
 | `WithMarshalOptions`    | -                | protojson 序列化选项           |
 | `WithHealthTimeout`     | `5s`             | 健康检查超时                   |
-| `WithTrace`             | -                | 启用链路追踪（gRPC + HTTP）    |
-| `WithResponse`          | -                | 启用统一响应格式（含细粒度错误码保留） |
-| `WithRecovery`          | -                | 启用 panic 恢复（gRPC + HTTP） |
-| `WithAuth`              | -                | 启用认证                       |
-| `WithCORS`              | -                | 启用 CORS（仅 HTTP 端）        |
-| `WithRateLimit`         | -                | 启用限流（gRPC + HTTP）        |
-| `WithMetrics`           | -                | 启用指标采集（gRPC + HTTP）    |
-| `WithLogging`           | -                | 启用请求日志（gRPC + HTTP）    |
-| `WithClientIP`          | -                | 启用客户端 IP 提取（gRPC + HTTP）|
-| `WithTenant`            | -                | 启用多租户解析（gRPC + HTTP）  |
+| `WithHealthOptions`     | -                | 健康检查扩展选项               |
+| `WithObservability`     | -                | 观测能力：追踪、指标、日志     |
+| `WithRuntime`           | -                | 运行时行为：panic 恢复、统一响应 |
+| `WithSecurity`          | -                | 安全能力：认证、CORS、限流、客户端 IP、多租户 |
 | `WithHTTPTLS`           | -                | 启用 HTTP 端 TLS               |
+| `WithGRPCTLS`           | -                | 启用 Gateway 回连 gRPC TLS     |
+| `WithHTTPMiddleware`    | -                | 自定义 HTTP 中间件             |
 
 ### 认证与声明式策略
 
@@ -89,11 +128,14 @@ type Registrar interface {
 
 ```go
 srv := gateway.New(
-    gateway.WithAuth(authenticator, auth.WithAuthorizer(authorizer)),
+    gateway.WithSecurity(gateway.SecurityConfig{
+        Authenticator: authenticator,
+        AuthOptions:   []auth.Option{auth.WithAuthorizer(authorizer)},
+    }),
 )
 ```
 
-启用 `WithAuth` 后，Gateway 会自动读取 `auth/proto` 中声明的 `public`、`permissions` 和 `all_permissions`：
+配置 `WithSecurity(gateway.SecurityConfig{Authenticator: ...})` 后，Gateway 会自动读取 `auth/proto` 中声明的 `public`、`permissions` 和 `all_permissions`：
 
 - `public: true`：跳过认证，适合登录、注册、健康检查等公共接口。
 - `permissions`：认证通过后交给 `auth.Authorizer` 校验。默认是 OR 语义，满足任一权限即可。
@@ -102,7 +144,7 @@ srv := gateway.New(
 
 权限字符串默认按 `resource:action` 解析，例如 `orders:create` 会传给授权器
 `auth.Target{Resource: "orders", Action: "create"}`。如果方法声明了 `permissions`
-但 `WithAuth` 没有显式传入 `auth.WithAuthorizer(...)`，框架会拒绝访问，避免策略声明失效。
+但 `AuthOptions` 没有显式传入 `auth.WithAuthorizer(...)`，框架会拒绝访问，避免策略声明失效。
 
 ### 中间件执行顺序
 
@@ -127,31 +169,41 @@ srv := gateway.New(
     gateway.WithName("api-gateway"),
     gateway.WithGRPCAddr(":9090"),
     gateway.WithHTTPAddr(":8080"),
-    gateway.WithRecovery(),
-    gateway.WithLogging("/grpc.health.v1.Health/Check"),
-    gateway.WithTrace("api-gateway"),
-    gateway.WithMetrics(collector),
-    gateway.WithCORS(cors.WithAllowOrigins("https://example.com")),
-    gateway.WithRateLimit(limiter),
-    gateway.WithClientIP(),
-    gateway.WithTenant(resolver),
-    gateway.WithAuth(authenticator, auth.WithAuthorizer(authorizer)),
-    gateway.WithResponse(),
+    gateway.WithObservability(gateway.ObservabilityConfig{
+        TracingService:   "api-gateway",
+        TracingSkipPaths: []string{"/metrics", "/healthz"},
+        Metrics:          collector,
+        Logging:          true,
+        LoggingSkipPaths: []string{"/grpc.health.v1.Health/Check"},
+    }),
+    gateway.WithRuntime(gateway.RuntimeConfig{
+        Recovery: true,
+        Response: true,
+    }),
+    gateway.WithSecurity(gateway.SecurityConfig{
+        Authenticator: authenticator,
+        AuthOptions:   []auth.Option{auth.WithAuthorizer(authorizer)},
+        CORS:          true,
+        CORSOptions:   []cors.Option{cors.WithAllowOrigins("https://example.com")},
+        RateLimiter:   limiter,
+        ClientIP:      true,
+        Tenant:        resolver,
+    }),
 )
 ```
 
 ## 统一响应与错误处理
 
-`WithResponse()` 会自动注册 `response.GatewayErrorHandler`，将 gRPC 错误统一转换为 JSON 格式，并支持 i18n。
+`WithRuntime(gateway.RuntimeConfig{Response: true})` 会自动注册 `response.GatewayErrorHandler`，将 gRPC 错误统一转换为 JSON 格式，并支持 i18n。
 
 **细粒度业务 Code 保留：** gRPC-gateway 层的错误码转换是无损的。同一 gRPC code（如 `InvalidArgument`）
 可对应多个业务 Code（30001 参数无效 / 30002 缺少参数 / 30003 校验失败）。`response.GRPCStatus` 将
 完整 Code 信息以 JSON 嵌入 gRPC status message，`GatewayErrorHandler` 从中精确还原，不会发生降级。
 
 ```go
-// 推荐方式：使用 WithResponse()，自动处理一切
+// 推荐方式：通过 WithRuntime 启用统一响应
 srv := gateway.New(
-    gateway.WithResponse(),
+    gateway.WithRuntime(gateway.RuntimeConfig{Response: true}),
     // ...
 )
 

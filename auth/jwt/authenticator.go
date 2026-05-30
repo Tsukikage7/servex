@@ -47,7 +47,7 @@ func WithClaimsFactory(factory ClaimsFactory) AuthenticatorOption {
 //
 // 示例:
 //
-//	jwtSrv := jwt.NewJWT(jwt.WithSecretKey("secret"), jwt.WithLogger(log))
+//	jwtSrv := jwt.MustNew(jwt.WithSecretKey("your-secret-key-at-least-32-bytes"), jwt.WithLogger(log))
 //	authenticator := jwt.NewAuthenticator(jwtSrv)
 //
 //	// 使用自定义 claims 映射

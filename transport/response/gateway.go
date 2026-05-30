@@ -12,12 +12,12 @@ import (
 
 // GatewayErrorHandler 统一 gateway 错误处理器。
 //
-// 将 gRPC 错误转换为统一的 JSON 响应格式，支持 i18n（读取 Accept-Language 头）。
+// 将 gRPC 错误转换为统一的 JSON 响应格式，支持 i18n读取 Accept-Language 头。
 // 与 httpserver 的 responseErrorEncoder 行为一致。
 //
 // 细粒度 Code 保留：GRPCStatus 将业务 Code 以 JSON 嵌入 gRPC status message，
-// 此处理器通过 FromGRPCStatus 从中还原完整 Code（如 30002），
-// 不会因粗粒度 gRPC code 反向映射被降级（如被错误还原为 30001）。
+// 此处理器通过 FromGRPCStatus 从中还原完整 Code如 30002，
+// 不会因粗粒度 gRPC code 反向映射被降级如被错误还原为 30001。
 func GatewayErrorHandler(
 	_ context.Context,
 	_ *runtime.ServeMux,
@@ -48,7 +48,7 @@ func GatewayServeMuxOption() runtime.ServeMuxOption {
 }
 
 // GatewaySuccessResponseMiddleware 返回一个 HTTP middleware，
-// 将 gRPC-Gateway 成功响应（HTTP 200）包裹为统一格式：
+// 将 gRPC-Gateway 成功响应HTTP 200包裹为统一格式：
 //
 //	{"code": 0, "message": "成功", "data": <原始 proto JSON>}
 //
@@ -56,7 +56,7 @@ func GatewayServeMuxOption() runtime.ServeMuxOption {
 // 实现成功与错误响应格式的完全统一。
 func GatewaySuccessResponseMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		rw := &captureResponseWriter{ResponseWriter: w}
+		rw := &captureResponseWriter{ResponseWriter: w, request: r}
 		next.ServeHTTP(rw, r)
 		rw.flush()
 	})
@@ -65,8 +65,9 @@ func GatewaySuccessResponseMiddleware(next http.Handler) http.Handler {
 // captureResponseWriter 捕获 gRPC-Gateway 的写入，成功时包裹统一响应体。
 type captureResponseWriter struct {
 	http.ResponseWriter
-	buf    bytes.Buffer
-	status int
+	request *http.Request
+	buf     bytes.Buffer
+	status  int
 }
 
 func (c *captureResponseWriter) WriteHeader(code int) {
@@ -93,10 +94,14 @@ func (c *captureResponseWriter) flush() {
 	body := c.buf.Bytes()
 
 	if statusCode == http.StatusOK && json.Valid(body) {
-		wrapped, err := json.Marshal(map[string]json.RawMessage{
-			"code":    json.RawMessage(`0`),
-			"message": json.RawMessage(`"` + CodeSuccess.Message + `"`),
-			"data":    json.RawMessage(body),
+		wrapped, err := json.Marshal(struct {
+			Code    int             `json:"code"`
+			Message string          `json:"message"`
+			Data    json.RawMessage `json:"data"`
+		}{
+			Code:    CodeSuccess.Num,
+			Message: LocalizedMessage(nil, acceptLanguages(c.request)...),
+			Data:    json.RawMessage(body),
 		})
 		if err == nil {
 			c.ResponseWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -106,7 +111,7 @@ func (c *captureResponseWriter) flush() {
 		}
 	}
 
-	// 非 200 或序列化失败直接透传（错误已由 GatewayErrorHandler 格式化）
+	// 非 200 或序列化失败直接透传错误已由 GatewayErrorHandler 格式化
 	c.ResponseWriter.WriteHeader(statusCode)
 	c.ResponseWriter.Write(body) //nolint:errcheck
 }

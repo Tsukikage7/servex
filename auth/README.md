@@ -30,7 +30,7 @@ auth.HTTPMiddleware(authenticator,
     // 设置授权器（由 rbac/casbin 或业务侧实现）
     auth.WithAuthorizer(myAuthorizer),
 
-    // 设置方法级策略提供者（gateway.WithAuth 会自动注入 proto 策略）
+    // 设置方法级策略提供者（gateway.WithSecurity 会自动注入 proto 策略）
     auth.WithPolicyProvider(policyProvider),
 
     // 跳过某些路径
@@ -64,7 +64,7 @@ endpoint = auth.Middleware(authenticator, auth.WithAuthorizer(authorizer))(endpo
 ## 声明式权限策略
 
 `WithPolicyProvider` 用于把 transport 方法映射到认证授权策略。业务侧一般不需要手写；
-通过 `transport/gateway.WithAuth(...)` 启用 Gateway 认证时会自动读取 protobuf option。
+通过 `transport/gateway.WithSecurity(...)` 启用 Gateway 认证时会自动读取 protobuf option。
 
 ```go
 interceptor := authgrpcx.UnaryServerInterceptor(authenticator,
@@ -117,6 +117,6 @@ JWT 子包可以独立使用，详见 [jwt/README.md](jwt/README.md)。
 
 ```go
 // 直接使用 JWT（不通过 auth 包）
-j := jwt.NewJWT(jwt.WithSecretKey("secret"), jwt.WithLogger(log))
+j := jwt.MustNew(jwt.WithSecretKey("your-secret-key-at-least-32-bytes"), jwt.WithLogger(log))
 handler = jwt.HTTPMiddleware(j)(handler)
 ```

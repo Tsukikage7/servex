@@ -3,8 +3,9 @@ package pbjson_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/v2/encoding/pbjson"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/Tsukikage7/servex/v2/encoding/pbjson"
 )
 
 func ExampleMarshal() {

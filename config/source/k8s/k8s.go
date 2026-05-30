@@ -60,7 +60,7 @@ func WithKey(key string) Option {
 	}
 }
 
-// WithResourceType 指定资源类型（ConfigMap 或 Secret），默认为 ConfigMap.
+// WithResourceType 指定资源类型ConfigMap 或 Secret，默认为 ConfigMap.
 func WithResourceType(rt ResourceType) Option {
 	return func(s *Source) {
 		s.resourceType = rt
@@ -75,7 +75,7 @@ type Config struct {
 	Namespace string
 	// Name ConfigMap 或 Secret 的名称.
 	Name string
-	// ResourceType 资源类型（ConfigMap 或 Secret），默认为 ConfigMap.
+	// ResourceType 资源类型ConfigMap 或 Secret，默认为 ConfigMap.
 	ResourceType ResourceType
 	// Key ConfigMap/Secret data 中的具体键名，为空则返回所有键值对.
 	Key string
@@ -133,7 +133,7 @@ func New(cfg *Config, opts ...Option) (*Source, error) {
 	return s, nil
 }
 
-// NewWithClient 使用已有的 kubernetes.Interface 创建配置源（便于测试）.
+// NewWithClient 使用已有的 kubernetes.Interface 创建配置源便于测试.
 func NewWithClient(clientset kubernetes.Interface, name string, opts ...Option) *Source {
 	s := &Source{
 		clientset:    clientset,
@@ -229,7 +229,7 @@ type k8sWatcher struct {
 
 // Next 阻塞直到 Kubernetes 资源发生变更.
 func (w *k8sWatcher) Next() ([]*config.KeyValue, error) {
-	// 懒初始化或重建 watch 连接（仅在首次或连接断开时创建）
+	// 懒初始化或重建 watch 连接仅在首次或连接断开时创建
 	if w.watcher == nil {
 		watcher, err := w.startWatch()
 		if err != nil {

@@ -74,7 +74,7 @@ func (r *streamReader) Recv() (llm.StreamChunk, error) {
 			continue
 		}
 
-		// event: 行（跳过，仅处理 data:）
+		// event: 行跳过，仅处理 data:
 		if strings.HasPrefix(line, "event: ") {
 			continue
 		}

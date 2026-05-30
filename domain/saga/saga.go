@@ -64,7 +64,7 @@ func New(name string) *Builder {
 // Step 添加步骤.
 // name: 步骤名称
 // action: 正向操作
-// compensate: 补偿操作（可选，传 nil 表示不需要补偿）
+// compensate: 补偿操作可选，传 nil 表示不需要补偿
 func (b *Builder) Step(name string, action StepFunc, compensate CompensateFunc) *Builder {
 	b.steps = append(b.steps, Step{
 		Name:       name,
@@ -94,7 +94,7 @@ func (b *Builder) Build() (*Saga, error) {
 	}, nil
 }
 
-// defaultIDGenerator 默认 ID 生成器（UUID 避免碰撞）.
+// defaultIDGenerator 默认 ID 生成器UUID 避免碰撞.
 func defaultIDGenerator() string {
 	return uuid.New().String()
 }
@@ -107,7 +107,7 @@ func (s *Saga) Execute(ctx context.Context) error {
 
 // ExecuteWithData 使用指定的共享数据执行 Saga.
 func (s *Saga) ExecuteWithData(ctx context.Context, data *Data) error {
-	// 创建状态（每次执行独立的状态实例，无需全局互斥）
+	// 创建状态每次执行独立的状态实例，无需全局互斥
 	state := NewState(s.idGen(), s.name, len(s.steps))
 	for i, step := range s.steps {
 		state.StepResults[i].StepName = step.Name
@@ -155,7 +155,7 @@ func (s *Saga) ExecuteWithData(ctx context.Context, data *Data) error {
 		// 记录开始时间
 		startTime := time.Now()
 
-		// 执行步骤（带重试）
+		// 执行步骤带重试
 		err := s.executeStepWithRetry(ctx, step, data)
 
 		// 记录执行时间

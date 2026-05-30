@@ -13,7 +13,7 @@ type ListUsersQuery struct {
 	Limit  int `json:"limit"`
 }
 
-// UserView 用户视图对象（返回给外部调用方）.
+// UserView 用户视图对象返回给外部调用方.
 type UserView struct {
 	ID        uint64    `json:"id"`
 	Username  string    `json:"username"`

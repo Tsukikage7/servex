@@ -57,7 +57,7 @@ type Aggregate interface {
 	AggregateType() string
 	// Version 返回当前版本号.
 	Version() int64
-	// SetVersion 设置版本号（从快照恢复时使用）.
+	// SetVersion 设置版本号从快照恢复时使用.
 	SetVersion(v int64)
 	// ApplyEvent 应用事件到聚合状态.
 	ApplyEvent(event Event) error

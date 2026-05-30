@@ -2,7 +2,7 @@ package llm
 
 import "context"
 
-// StreamReader 流式读取器（迭代器模式）.
+// StreamReader 流式读取器迭代器模式.
 // 使用方式：循环调用 Recv() 直到返回 io.EOF，最后调用 Close().
 type StreamReader interface {
 	// Recv 读取下一个响应片段.
@@ -19,9 +19,9 @@ type StreamReader interface {
 type StreamChunk struct {
 	// Delta 本次增量文本内容.
 	Delta string
-	// ToolCalls 工具调用片段（流式工具调用时使用）.
+	// ToolCalls 工具调用片段流式工具调用时使用.
 	ToolCalls []ToolCall
-	// FinishReason 停止原因（最后一个 chunk 时非空）.
+	// FinishReason 停止原因最后一个 chunk 时非空.
 	FinishReason string
 }
 

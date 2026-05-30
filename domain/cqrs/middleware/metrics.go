@@ -29,7 +29,7 @@ func CommandMetrics[C, R any](commandName string, registerer prometheus.Register
 		Buckets:     prometheus.DefBuckets,
 	}, []string{"result"})
 
-	// 忽略重复注册错误（测试环境多次调用）
+	// 忽略重复注册错误测试环境多次调用
 	_ = registerer.Register(total)
 	_ = registerer.Register(duration)
 

@@ -146,7 +146,7 @@ func (d *esDocument) Bulk(ctx context.Context, actions []BulkAction) (*BulkResul
 			return nil, fmt.Errorf("elasticsearch: encode bulk action: %w", err)
 		}
 
-		// 文档内容行（delete 操作不需要）
+		// 文档内容行delete 操作不需要
 		if action.Type != "delete" && action.Body != nil {
 			var bodyToEncode any
 			if action.Type == "update" {

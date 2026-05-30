@@ -31,7 +31,7 @@ func NewAsyncEventBus(publisher pubsub.Publisher, converter EventConverter) *Asy
 	}
 }
 
-// Subscribe 订阅同步内存处理器（与同步 EventBus 行为一致）.
+// Subscribe 订阅同步内存处理器与同步 EventBus 行为一致.
 func (b *AsyncEventBus) Subscribe(eventName string, handler EventHandler) {
 	b.sync.Subscribe(eventName, handler)
 }
@@ -46,7 +46,7 @@ func (b *AsyncEventBus) SubscribeAll(handler EventHandler) {
 //  1. 同步调用内存处理器
 //  2. 异步投递到消息队列
 func (b *AsyncEventBus) Publish(ctx context.Context, event DomainEvent) error {
-	// 1. 同步处理（内存处理器）
+	// 1. 同步处理内存处理器
 	if err := b.sync.Publish(ctx, event); err != nil {
 		return err
 	}

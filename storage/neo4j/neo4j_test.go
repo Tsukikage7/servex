@@ -11,7 +11,7 @@ import (
 	"github.com/Tsukikage7/servex/v2/testx"
 )
 
-// ---- 单元测试（不需要服务）----
+// ---- 单元测试不需要服务----
 
 func TestNewClient_NilConfig(t *testing.T) {
 	_, err := neo4jpkg.NewClient(nil)
@@ -188,7 +188,7 @@ func TestClose_NotConnected(t *testing.T) {
 }
 
 func TestRecord_Get_KeysMoreThanValues(t *testing.T) {
-	// 测试 Keys 比 Values 多的情况（index < len(Values) 分支为 false）
+	// 测试 Keys 比 Values 多的情况index < len(Values) 分支为 false
 	r := &neo4jpkg.Record{
 		Keys:   []string{"name", "age", "extra"},
 		Values: []any{"Alice", 30},
@@ -341,7 +341,7 @@ func TestConfig_ApplyDefaults_PartialCustom(t *testing.T) {
 	}
 }
 
-// 确保导入不报错（编译检查）.
+// 确保导入不报错编译检查.
 var (
 	_ neodriver.AccessMode
 	_ logger.Logger

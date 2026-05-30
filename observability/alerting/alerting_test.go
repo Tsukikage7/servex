@@ -322,7 +322,7 @@ func TestThresholdAlertWithPendingDuration(t *testing.T) {
 		t.Errorf("期望 Pending 状态, 实际 %s", alerts[0].State)
 	}
 
-	// 第二次评估（未超过 For 时间）：仍然 Pending.
+	// 第二次评估未超过 For 时间：仍然 Pending.
 	alerts, _ = e.Evaluate(ctx)
 	if len(alerts) == 0 || alerts[0].State != StatePending {
 		t.Error("For 时间内应保持 Pending")
@@ -417,7 +417,7 @@ func TestAbsenceAlert(t *testing.T) {
 	if alerts[0].State != StatePending {
 		t.Errorf("首次评估期望 Pending, 实际 %s", alerts[0].State)
 	}
-	// 第二次 Pending（For=0，handleAbsence 需检查 For=0）.
+	// 第二次 PendingFor=0，handleAbsence 需检查 For=0.
 	alerts, _ = e.Evaluate(ctx)
 	if len(alerts) == 0 {
 		t.Fatal("第二次评估指标仍缺失应产生告警")

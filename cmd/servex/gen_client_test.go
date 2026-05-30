@@ -40,10 +40,10 @@ func TestGenClient(t *testing.T) {
 	}
 
 	// 验证 external client 生成
-	clientPath := filepath.Join(dir, "services", "order-service",
+	clientPath := filepath.Join(dir, "services", "order",
 		"internal", "adapter", "external", "user_client.go")
 	if _, err := os.Stat(clientPath); os.IsNotExist(err) {
-		t.Fatal("services/order-service/internal/adapter/external/user_client.go does not exist")
+		t.Fatal("services/order/internal/adapter/external/user_client.go does not exist")
 	}
 
 	content, err = os.ReadFile(clientPath)

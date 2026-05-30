@@ -106,7 +106,7 @@ func (r *Relay) pollLoop(ctx context.Context) {
 
 // poll 单次轮询：拉取 → 投递 → 标记.
 // DB 操作使用独立的 context.Background()，确保一旦开始的轮询能原子完成，
-// 不受 relay 生命周期 context 取消的影响（生命周期 context 仅控制循环退出）.
+// 不受 relay 生命周期 context 取消的影响生命周期 context 仅控制循环退出.
 func (r *Relay) poll(ctx context.Context) {
 	dbCtx := context.Background()
 
@@ -148,7 +148,7 @@ func (r *Relay) send(ctx context.Context, msg *OutboxMessage) error {
 }
 
 // resetStaleLoop 定期重置超时的 Processing/Failed 消息.
-// 仅重置超过 staleTimeout（默认 5 分钟）的消息，避免干扰正在处理的消息.
+// 仅重置超过 staleTimeout默认 5 分钟的消息，避免干扰正在处理的消息.
 func (r *Relay) resetStaleLoop(ctx context.Context) {
 	// 重置间隔为 staleTimeout，确保不会过于频繁
 	ticker := time.NewTicker(r.opts.staleTimeout)

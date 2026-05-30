@@ -30,7 +30,7 @@ type Handler func(ctx context.Context, evt *Event) error
 type Bus interface {
 	// Publish 发布事件.
 	Publish(ctx context.Context, name string, payload any) error
-	// Subscribe 订阅事件（支持通配符：user.* 匹配 user.created, user.deleted）.
+	// Subscribe 订阅事件支持通配符：user.* 匹配 user.created, user.deleted.
 	Subscribe(pattern string, handler Handler, opts ...SubOption)
 	// Unsubscribe 取消订阅.
 	Unsubscribe(pattern string)

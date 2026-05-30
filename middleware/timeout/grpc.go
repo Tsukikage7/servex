@@ -15,8 +15,8 @@ import (
 // UnaryServerInterceptor 返回 gRPC 一元服务器超时拦截器.
 // 当请求超时时，拦截器会：
 //  1. 取消请求 context
-//  2. 记录超时日志（如果设置了 logger）
-//  3. 调用超时回调（如果设置了 onTimeout）
+//  2. 记录超时日志如果设置了 logger
+//  3. 调用超时回调如果设置了 onTimeout
 //  4. 返回 codes.DeadlineExceeded 错误
 //
 // 示例:
@@ -133,7 +133,7 @@ func StreamServerInterceptor(timeout time.Duration, opts ...Option) grpc.StreamS
 }
 
 // UnaryClientInterceptor 返回 gRPC 一元客户端超时拦截器.
-// 为所有出站请求设置默认超时（如果未设置）.
+// 为所有出站请求设置默认超时如果未设置.
 // 示例:
 //
 //	conn, _ := grpc.Dial(target,
@@ -179,7 +179,7 @@ func UnaryClientInterceptor(timeout time.Duration, opts ...Option) grpc.UnaryCli
 }
 
 // StreamClientInterceptor 返回 gRPC 流客户端超时拦截器.
-// 为流的建立设置超时（不影响流的整体生命周期）.
+// 为流的建立设置超时不影响流的整体生命周期.
 func StreamClientInterceptor(timeout time.Duration, opts ...Option) grpc.StreamClientInterceptor {
 	if timeout <= 0 {
 		panic("timeout: 超时时间必须为正数")

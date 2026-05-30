@@ -525,8 +525,8 @@ func TestProtoServerMonorepo(t *testing.T) {
 		t.Fatalf("runProtoServer --service 失败: %v", err)
 	}
 
-	// 验证输出到 services/order-service/internal/service/order.go
-	outPath := filepath.Join("services", "order-service", "internal", "service", "order.go")
+	// 验证输出到 services/order/internal/service/order.go
+	outPath := filepath.Join("services", "order", "internal", "service", "order.go")
 	if _, err := os.Stat(outPath); os.IsNotExist(err) {
 		t.Errorf("monorepo 模式下期望桩代码在 %q", outPath)
 	}

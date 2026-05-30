@@ -136,7 +136,7 @@ func NewContext(ctx context.Context, l Logger) context.Context {
 }
 
 // FromContext 从 context 中取出 Logger.
-// 如果 context 中没有 Logger（中间件未注入），返回空日志实现.
+// 如果 context 中没有 Logger中间件未注入，返回空日志实现.
 // 业务代码推荐用法:
 //
 //	logger.FromContext(ctx).Info("处理请求")

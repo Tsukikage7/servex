@@ -29,7 +29,7 @@ func NewOutboxPublisher(store Store, converter domain.EventConverter) *OutboxPub
 }
 
 // Publish 将领域事件转换为 Outbox 消息并保存.
-// 若 ctx 中注入了事务（通过 outbox.InjectTx），则在该事务中保存，
+// 若 ctx 中注入了事务通过 outbox.InjectTx，则在该事务中保存，
 // 保证与业务操作的原子性.
 func (p *OutboxPublisher) Publish(ctx context.Context, events ...domain.DomainEvent) error {
 	if len(events) == 0 {
@@ -51,7 +51,7 @@ func (p *OutboxPublisher) Publish(ctx context.Context, events ...domain.DomainEv
 // 编译期断言 domain.EventConverter 接口已由 domain 包实现.
 var _ domain.EventConverter = (*domain.JSONEventConverter)(nil)
 
-// domainConverterAdapter 将 domain.EventConverter 转为 pubsub.Message 的适配器（内部用）.
+// domainConverterAdapter 将 domain.EventConverter 转为 pubsub.Message 的适配器内部用.
 type domainConverterAdapter struct {
 	converter domain.EventConverter
 }

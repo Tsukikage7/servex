@@ -137,7 +137,7 @@ func toModel(j *jobqueue.Job) *jobModel {
 	}
 	return &jobModel{
 		ID: j.ID, Queue: j.Queue, Type: j.Type, Payload: j.Payload,
-		Headers: headers,
+		Headers:  headers,
 		Priority: j.Priority, MaxRetries: j.MaxRetries, Retried: j.Retried,
 		Status: string(j.Status), LastError: j.LastError,
 		CreatedAt: j.CreatedAt, ScheduledAt: j.ScheduledAt, Deadline: j.Deadline,
@@ -151,7 +151,7 @@ func fromModel(m *jobModel) *jobqueue.Job {
 	}
 	return &jobqueue.Job{
 		ID: m.ID, Queue: m.Queue, Type: m.Type, Payload: m.Payload,
-		Headers: headers,
+		Headers:  headers,
 		Priority: m.Priority, MaxRetries: m.MaxRetries, Retried: m.Retried,
 		Status: jobqueue.Status(m.Status), LastError: m.LastError,
 		CreatedAt: m.CreatedAt, ScheduledAt: m.ScheduledAt, Deadline: m.Deadline,

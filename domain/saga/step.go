@@ -23,7 +23,7 @@ type Step struct {
 	// Action 正向操作
 	Action StepFunc
 
-	// Compensate 补偿操作（可选）
+	// Compensate 补偿操作可选
 	// 如果为 nil，表示该步骤不需要补偿
 	Compensate CompensateFunc
 }
@@ -36,7 +36,7 @@ type StepResult struct {
 	// Status 执行状态
 	Status StepStatus
 
-	// Error 错误信息（如果有）
+	// Error 错误信息如果有
 	Error error
 
 	// Duration 执行耗时

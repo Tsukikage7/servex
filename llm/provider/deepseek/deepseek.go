@@ -22,16 +22,16 @@ type options struct {
 	httpClient     *http.Client
 }
 
-// WithBaseURL 设置 DeepSeek API 基础 URL（默认 https://api.deepseek.com/v1）.
+// WithBaseURL 设置 DeepSeek API 基础 URL默认 https://api.deepseek.com/v1.
 func WithBaseURL(url string) Option { return func(o *options) { o.baseURL = url } }
 
-// WithModel 设置默认聊天模型（默认 deepseek-chat）.
+// WithModel 设置默认聊天模型默认 deepseek-chat.
 func WithModel(model string) Option { return func(o *options) { o.model = model } }
 
 // WithEmbeddingModel 设置默认嵌入模型.
 func WithEmbeddingModel(m string) Option { return func(o *options) { o.embeddingModel = m } }
 
-// WithHTTPClient 设置自定义 HTTP 客户端（用于配置代理、超时等）.
+// WithHTTPClient 设置自定义 HTTP 客户端用于配置代理、超时等.
 func WithHTTPClient(hc *http.Client) Option { return func(o *options) { o.httpClient = hc } }
 
 // Client DeepSeek 客户端，底层复用 OpenAI 适配器.

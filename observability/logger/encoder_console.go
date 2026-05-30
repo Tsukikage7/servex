@@ -263,14 +263,14 @@ func (c *consoleEncoder) OpenNamespace(key string) {
 	c.fieldsNum++ // 保持分隔符逻辑
 }
 
-// AddArray 添加数组字段（不会被调用，Any 类型走 AddReflected）.
+// AddArray 添加数组字段不会被调用，Any 类型走 AddReflected.
 func (c *consoleEncoder) AddArray(key string, arr zapcore.ArrayMarshaler) error {
 	c.addSeparator()
 	formatField(c.fields, key, "<array>")
 	return nil
 }
 
-// AddObject 添加对象字段（不会被调用，Any 类型走 AddReflected）.
+// AddObject 添加对象字段不会被调用，Any 类型走 AddReflected.
 func (c *consoleEncoder) AddObject(key string, obj zapcore.ObjectMarshaler) error {
 	c.addSeparator()
 	formatField(c.fields, key, "<object>")

@@ -49,7 +49,7 @@ func (s *Service) Create(ctx context.Context, cmd domainUser.CreateUserCommand) 
 		return nil, ErrHashPassword.WithCause(err)
 	}
 
-	// 使用时间戳作为简易 ID 生成（生产环境应使用分布式 ID）
+	// 使用时间戳作为简易 ID 生成生产环境应使用分布式 ID
 	id := uint64(time.Now().UnixNano())
 
 	user := domainUser.NewUser(id, cmd.Username, cmd.Email, string(hash))
@@ -141,7 +141,7 @@ func (s *Service) Login(ctx context.Context, req LoginRequest) (*LoginResponse, 
 			Subject:   strconv.FormatUint(user.ID(), 10),
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(now.Add(24 * time.Hour)),
-			Issuer:    "ecommerce-user-service",
+			Issuer:    "ecommerce-user",
 		},
 	}
 

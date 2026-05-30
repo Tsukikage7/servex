@@ -120,7 +120,7 @@ func (a *ACL) IsAllowed(ipStr string) bool {
 		return false
 	}
 
-	// 检查黑名单（优先级最高）
+	// 检查黑名单优先级最高
 	for _, cidr := range a.denyList {
 		if cidr.Contains(ip) {
 			return false
@@ -260,7 +260,7 @@ func WithCountryACLMode(mode ACLMode) CountryACLOption {
 
 // WithAllowCountries 添加允许的国家代码.
 //
-// 使用 ISO 3166-1 alpha-2 国家代码（如 "CN", "US", "JP"）.
+// 使用 ISO 3166-1 alpha-2 国家代码如 "CN", "US", "JP".
 func WithAllowCountries(countries ...string) CountryACLOption {
 	return func(a *CountryACL) {
 		for _, c := range countries {

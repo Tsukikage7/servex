@@ -37,7 +37,7 @@ func TestNew(t *testing.T) {
 		if srv.Addr() != ":8080" {
 			t.Errorf("expected addr ':8080', got '%s'", srv.Addr())
 		}
-		// Handler() 返回包装后的 handler（包含健康检查中间件）
+		// Handler() 返回包装后的 handler包含健康检查中间件
 		if srv.Handler() == nil {
 			t.Error("handler should not be nil")
 		}

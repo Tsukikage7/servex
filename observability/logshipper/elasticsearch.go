@@ -26,7 +26,7 @@ func WithIndexPrefix(prefix string) ESOption {
 	}
 }
 
-// WithDateSuffix 设置日期后缀格式（Go time 格式），默认 "2006.01.02"（按日分索引）.
+// WithDateSuffix 设置日期后缀格式Go time 格式，默认 "2006.01.02"按日分索引.
 func WithDateSuffix(format string) ESOption {
 	return func(s *ElasticsearchSink) {
 		s.dateSuffix = format

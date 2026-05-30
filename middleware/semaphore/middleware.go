@@ -17,7 +17,7 @@ type MiddlewareOption func(*middlewareOptions)
 
 type middlewareOptions struct {
 	logger logger.Logger
-	block  bool // 是否阻塞等待，默认 false（直接拒绝）
+	block  bool // 是否阻塞等待，默认 false直接拒绝
 }
 
 func defaultMiddlewareOptions() *middlewareOptions {
@@ -35,7 +35,7 @@ func WithMiddlewareLogger(log logger.Logger) MiddlewareOption {
 
 // WithBlock 设置是否阻塞等待.
 // 如果为 true，当没有可用许可时会阻塞等待.
-// 如果为 false（默认），会立即返回错误.
+// 如果为 false默认，会立即返回错误.
 func WithBlock(block bool) MiddlewareOption {
 	return func(o *middlewareOptions) {
 		o.block = block

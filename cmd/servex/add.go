@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 )
 
@@ -34,9 +35,11 @@ var serviceTemplateFiles = []struct {
 	{"templates/service/cmd/server/wire.go.tmpl", "cmd/server/wire.go"},
 	{"templates/service/cmd/server/provider.go.tmpl", "cmd/server/provider.go"},
 	{"templates/service/cmd/server/config.go.tmpl", "cmd/server/config.go"},
+	{"templates/service/internal/service/service.go.tmpl", "internal/service/service.go"},
 	{"templates/service/internal/port/http.go.tmpl", "internal/port/http.go"},
 	{"templates/service/internal/adapter/persistence/persistence.go.tmpl", "internal/adapter/persistence/persistence.go"},
-	{"templates/service/configs/config.yaml.tmpl", "configs/config.yaml"},
+	{"templates/service/configs/config.yaml.tmpl", "configs/config.dev.yaml"},
+	{"templates/service/configs/config.yaml.tmpl", "configs/config.prod.yaml"},
 }
 
 // serviceGRPCTemplateFile gRPC 可选服务模板.
@@ -53,6 +56,14 @@ var serviceGatewayTemplateFile = struct {
 	out  string
 }{
 	"templates/service/internal/port/gateway.go.tmpl", "internal/port/gateway.go",
+}
+
+// serviceContextDirs 是新增服务时同步创建的根级业务上下文目录。
+var serviceContextDirs = []string{
+	"api/{{name}}/v1",
+	"domain/{{name}}",
+	"application/{{name}}/command",
+	"application/{{name}}/query",
 }
 
 // isMonorepo 检查当前目录是否为 monorepo 项目.
@@ -84,11 +95,11 @@ func runAddService(args []string) error {
 		return fmt.Errorf("读取 go.mod 失败: %w", err)
 	}
 
-	serviceDir := filepath.Join("services", name+"-service")
+	serviceDir := serviceDir(name)
 
 	// 检查服务目录是否已存在
-	if _, err := os.Stat(serviceDir); err == nil {
-		return fmt.Errorf("服务 %q 已存在: %s", name, serviceDir)
+	if existing, ok := serviceDirExists(name); ok {
+		return fmt.Errorf("服务 %q 已存在: %s", name, existing)
 	}
 
 	infra := parseInfra(addInfra)
@@ -132,6 +143,10 @@ func runAddService(args []string) error {
 		}
 	}
 
+	if err := createServiceContextDirs(name); err != nil {
+		return err
+	}
+
 	// 生成 gRPC 模板[可选]
 	if data.WithGRPC {
 		tf := serviceGRPCTemplateFile
@@ -152,7 +167,29 @@ func runAddService(args []string) error {
 
 	fmt.Printf("服务 %q 已创建: %s\n", name, serviceDir)
 	fmt.Println("下一步:")
-	fmt.Printf("  cd %s\n", serviceDir)
+	fmt.Printf("  servex add aggregate %s --fields \"id:uint64,name:string\" --service %s\n", name, name)
+	fmt.Printf("  servex proto add %s\n", name)
 	fmt.Println("  go mod tidy")
 	return nil
+}
+
+func createServiceContextDirs(name string) error {
+	for _, pattern := range serviceContextDirs {
+		dir := filepath.Clean(replaceServiceName(pattern, name))
+		gitkeepPath := filepath.Join(dir, ".gitkeep")
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return fmt.Errorf("创建目录 %s: %w", dir, err)
+		}
+		if _, err := os.Stat(gitkeepPath); err == nil {
+			continue
+		}
+		if err := os.WriteFile(gitkeepPath, nil, 0o644); err != nil {
+			return fmt.Errorf("创建 .gitkeep: %s: %w", dir, err)
+		}
+	}
+	return nil
+}
+
+func replaceServiceName(pattern, name string) string {
+	return filepath.FromSlash(strings.ReplaceAll(pattern, "{{name}}", name))
 }

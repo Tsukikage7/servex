@@ -59,7 +59,7 @@ func (p *Provider) Exchange(ctx context.Context, code string) (*oauth2.Token, er
 	if code == "" {
 		return nil, oauth2.ErrInvalidCode
 	}
-	// 微信 API 要求在 URL 中传递 appSecret（而非 Header），这是微信官方接口规范要求。
+	// 微信 API 要求在 URL 中传递 appSecret而非 Header，这是微信官方接口规范要求。
 	// 参考: https://developers.weixin.qq.com/doc/oplatform/Website_App/WeChat_Login/Wechat_Login.html
 	u := fmt.Sprintf("%s?appid=%s&secret=%s&code=%s&grant_type=authorization_code",
 		p.tokenURL, p.opts.appID, p.opts.appSecret, code)

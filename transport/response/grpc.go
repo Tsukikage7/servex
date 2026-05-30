@@ -11,7 +11,7 @@ import (
 // GRPCStatus 将错误转换为 gRPC Status.
 //
 // 统一委托给 servex/errors/grpcx.ToGRPCStatus，使用统一的 JSON 格式.
-// 支持 *errors.Error 和 Code（通过 ExtractCode 桥接）.
+// 支持 *errors.Error 和 Code通过 ExtractCode 桥接.
 func GRPCStatus(err error) *status.Status {
 	if err == nil {
 		return status.New(codes.OK, "")

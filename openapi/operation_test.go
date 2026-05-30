@@ -54,13 +54,6 @@ func TestBuilder_POST(t *testing.T) {
 	}
 }
 
-func TestBuilder_Deprecated(t *testing.T) {
-	op := DELETE("/old").Deprecated(true).Build()
-	if !op.IsDeprecated {
-		t.Error("should be deprecated")
-	}
-}
-
 func TestBuilder_MultipleTags(t *testing.T) {
 	op := GET("/x").Tags("a", "b", "c").Build()
 	if len(op.Tags) != 3 {

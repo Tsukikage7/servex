@@ -31,8 +31,7 @@ func (c *Container) Port() string {
 }
 
 // Close 终止并移除容器.
-// 注意：ctx 参数当前未使用（testcontainers.TerminateContainer 不接受 context），保留签名以备未来兼容.
-func (c *Container) Close(_ context.Context) error {
+func (c *Container) Close() error {
 	if c.container == nil {
 		return nil
 	}
@@ -212,7 +211,7 @@ func NewMongoDB(ctx context.Context) (*Container, error) {
 	return newContainer(ctx, c, "27017")
 }
 
-// NewKafka 启动一个 Kafka 测试容器（使用 KRaft 模式）.
+// NewKafka 启动一个 Kafka 测试容器使用 KRaft 模式.
 func NewKafka(ctx context.Context) (*Container, error) {
 	req := testcontainers.ContainerRequest{
 		Image:        "confluentinc/cp-kafka:7.6.0",

@@ -15,9 +15,9 @@ import (
 var (
 	// ErrHealthCheckFailed 健康检查请求失败.
 	ErrHealthCheckFailed = errors.New(60150, "transport.grpcx.health_check_failed", "健康检查失败")
-// ErrServiceNotServing 服务状态异常.
+	// ErrServiceNotServing 服务状态异常.
 	ErrServiceNotServing = errors.New(60151, "transport.grpcx.service_not_serving", "服务状态异常")
-// ErrWaitForReadyTimeout 等待连接就绪超时.
+	// ErrWaitForReadyTimeout 等待连接就绪超时.
 	ErrWaitForReadyTimeout = errors.New(60152, "transport.grpcx.wait_for_ready_timeout", "等待连接就绪超时")
 )
 

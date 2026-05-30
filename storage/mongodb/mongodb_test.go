@@ -21,7 +21,7 @@ func TestMain(m *testing.M) {
 		mongoURI = uri
 	}
 
-	// 统一探测 MongoDB 连通性（一次即可）
+	// 统一探测 MongoDB 连通性一次即可
 	mongoAvailable = probeMongoDB()
 
 	os.Exit(m.Run())
@@ -67,7 +67,7 @@ func newTestClient(t *testing.T) mongodb.Client {
 	return client
 }
 
-// ---- 单元测试（不需要服务）----
+// ---- 单元测试不需要服务----
 
 func TestNewClient_NilConfig(t *testing.T) {
 	_, err := mongodb.NewClient(nil, testx.NopLogger())

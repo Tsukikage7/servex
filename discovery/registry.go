@@ -32,7 +32,7 @@ type ServiceRegistry struct {
 type RegistryOption func(*ServiceRegistry)
 
 // WithAdvertiseAddr 设置服务注册的通告地址.
-// 当服务地址仅包含端口（如 ":8080"）时，会自动拼接此地址作为 host.
+// 当服务地址仅包含端口如 ":8080"时，会自动拼接此地址作为 host.
 func WithAdvertiseAddr(addr string) RegistryOption {
 	return func(r *ServiceRegistry) {
 		r.advertiseAddr = addr
@@ -216,7 +216,7 @@ func (r *ServiceRegistry) BeforeStopHook() func(ctx context.Context) error {
 	return r.UnregisterAll
 }
 
-// resolveAddr 解析服务地址，如果地址仅包含端口（以 ":" 开头），则拼接 advertiseAddr.
+// resolveAddr 解析服务地址，如果地址仅包含端口以 ":" 开头，则拼接 advertiseAddr.
 func (r *ServiceRegistry) resolveAddr(addr string) string {
 	if r.advertiseAddr != "" && strings.HasPrefix(addr, ":") {
 		return r.advertiseAddr + addr

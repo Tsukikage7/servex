@@ -38,7 +38,7 @@ func TestMain(m *testing.M) {
 		s3Bucket = bk
 	}
 
-	// 统一探测 S3/MinIO 连通性（一次即可）
+	// 统一探测 S3/MinIO 连通性一次即可
 	s3Available = probeS3()
 
 	os.Exit(m.Run())
@@ -98,7 +98,7 @@ func newTestClient(t *testing.T) s3.Client {
 	return client
 }
 
-// ---- 单元测试（不需要服务）----
+// ---- 单元测试不需要服务----
 
 func TestNewClient_NilConfig(t *testing.T) {
 	_, err := s3.NewClient(nil, testx.NopLogger())

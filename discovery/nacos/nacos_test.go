@@ -171,7 +171,7 @@ func TestNacosDiscovery_UnregisterNotFound(t *testing.T) {
 	mock := &mockNamingClient{}
 	d := newMockNacosDiscovery(mock)
 
-	// 注销不存在的 serviceID 应成功（幂等）
+	// 注销不存在的 serviceID 应成功幂等
 	err := d.Unregister(t.Context(), "nonexistent-id")
 	if err != nil {
 		t.Errorf("期望 nil，得到 %v", err)

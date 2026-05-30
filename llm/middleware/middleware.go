@@ -11,7 +11,7 @@ import (
 type Middleware func(llm.ChatModel) llm.ChatModel
 
 // Chain 将多个中间件链接在一起.
-// 第一个参数是最外层中间件，最后一个参数是最内层中间件（最先执行）.
+// 第一个参数是最外层中间件，最后一个参数是最内层中间件最先执行.
 func Chain(outer Middleware, others ...Middleware) Middleware {
 	return func(next llm.ChatModel) llm.ChatModel {
 		for i := len(others) - 1; i >= 0; i-- {

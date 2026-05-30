@@ -45,7 +45,7 @@ func New(token string, opts ...Option) (*TelegramBot, error) {
 		opt(b)
 	}
 
-	// 将错误处理器同步给 router（router 内部默认有自己的，通过 SetErrorHandler 覆盖）
+	// 将错误处理器同步给 routerrouter 内部默认有自己的，通过 SetErrorHandler 覆盖
 	b.router.SetErrorHandler(b.errHandler)
 
 	return b, nil
@@ -66,7 +66,7 @@ func (b *TelegramBot) Use(middlewares ...botserver.Middleware) {
 	b.router.Use(middlewares...)
 }
 
-// Start 设置 Webhook（若配置了 webhookURL），注册 HTTP 路由（若配置了 httpRouter）。
+// Start 设置 Webhook若配置了 webhookURL，注册 HTTP 路由若配置了 httpRouter。
 // Webhook 模式下为非阻塞，消息驱动由 httpserver 处理。
 func (b *TelegramBot) Start(_ context.Context) error {
 	// 1. 若配置了 webhookURL，调用 SetWebhook
@@ -105,7 +105,7 @@ func (b *TelegramBot) handleUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Message 为 nil 时（如 CallbackQuery）跳过，避免 panic
+	// Message 为 nil 时如 CallbackQuery跳过，避免 panic
 	if update.Message == nil {
 		w.WriteHeader(http.StatusOK)
 		return

@@ -1,7 +1,7 @@
-// Package csrf 提供 CSRF（跨站请求伪造）防护中间件.
+// Package csrf 提供 CSRF跨站请求伪造防护中间件.
 // 通过 Double Submit Cookie 模式防御 CSRF 攻击：
-//   - 安全方法（GET/HEAD/OPTIONS/TRACE）生成 token 并通过 cookie 下发
-//   - 非安全方法（POST/PUT/DELETE/PATCH）验证请求中的 token 与 cookie 一致
+//   - 安全方法GET/HEAD/OPTIONS/TRACE生成 token 并通过 cookie 下发
+//   - 非安全方法POST/PUT/DELETE/PATCH验证请求中的 token 与 cookie 一致
 //   - 使用 crypto/rand 生成 token，crypto/subtle.ConstantTimeCompare 进行比对
 package csrf
 
@@ -24,7 +24,7 @@ var (
 
 // Config CSRF 配置.
 type Config struct {
-	// TokenLength token 长度（字节），默认 32
+	// TokenLength token 长度字节，默认 32
 	TokenLength int
 	// CookieName cookie 名，默认 "_csrf"
 	CookieName string
@@ -88,7 +88,7 @@ func HTTPMiddleware(cfg *Config) func(http.Handler) http.Handler {
 			}
 
 			if isSafeMethod(r.Method) {
-				// 安全方法：检查是否已有有效 token，避免每次请求都重新生成（支持多标签页）
+				// 安全方法：检查是否已有有效 token，避免每次请求都重新生成支持多标签页
 				token := ""
 				if cookie, err := r.Cookie(cfg.CookieName); err == nil && cookie.Value != "" {
 					// cookie 中已有 token，检查长度和 hex 格式是否正确

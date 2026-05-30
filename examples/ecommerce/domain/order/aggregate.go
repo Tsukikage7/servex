@@ -62,7 +62,7 @@ type Order struct {
 	updatedAt   time.Time
 }
 
-// Place 创建（下单）订单.
+// Place 创建下单订单.
 func Place(id, userID uint64, items []*OrderItem) (*Order, error) {
 	if len(items) == 0 {
 		return nil, ErrEmptyItems
@@ -86,7 +86,7 @@ func Place(id, userID uint64, items []*OrderItem) (*Order, error) {
 	return o, nil
 }
 
-// ReconstructOrder 从持久化数据重建订单聚合（不触发事件）.
+// ReconstructOrder 从持久化数据重建订单聚合不触发事件.
 func ReconstructOrder(id, userID uint64, status OrderStatus, items []*OrderItem, totalAmount float64, createdAt, updatedAt time.Time) *Order {
 	return &Order{
 		AggregateRoot: domain.NewAggregateRoot(id),

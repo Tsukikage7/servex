@@ -13,7 +13,7 @@ import (
 //
 // 示例:
 //
-//	// 默认配置（信任所有代理）
+//	// 默认配置信任所有代理
 //	handler = clientip.HTTPMiddleware()(handler)
 //
 //	// 只信任私有网络代理

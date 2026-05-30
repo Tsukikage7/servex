@@ -51,7 +51,7 @@ func Reduce[T, R any](slice []T, initial R, fn func(R, T) R) R {
 	return result
 }
 
-// Unique 返回去重后的切片（保持原顺序）.
+// Unique 返回去重后的切片保持原顺序.
 // 示例:
 //
 //	nums := []int{1, 2, 2, 3, 1}
@@ -69,7 +69,7 @@ func Unique[T comparable](slice []T) []T {
 	return result
 }
 
-// UniqueBy 根据键函数去重（保持原顺序）.
+// UniqueBy 根据键函数去重保持原顺序.
 // 示例:
 //
 //	users := []User{{ID: 1, Name: "a"}, {ID: 1, Name: "b"}}
@@ -441,7 +441,7 @@ func ContainsAny[T comparable](src, target []T) bool {
 	return false
 }
 
-// IntersectSet 返回两个切片的交集（去重，保持 src 中的顺序）.
+// IntersectSet 返回两个切片的交集去重，保持 src 中的顺序.
 // 示例:
 //
 //	IntersectSet([]int{1, 2, 3}, []int{2, 3, 4}) // [2, 3]
@@ -463,7 +463,7 @@ func IntersectSet[T comparable](src, dst []T) []T {
 	return result
 }
 
-// IntersectSetFunc 使用自定义相等函数返回两个切片的交集（O(n*m)）.
+// IntersectSetFunc 使用自定义相等函数返回两个切片的交集O(n*m).
 func IntersectSetFunc[T any](src, dst []T, equal func(T, T) bool) []T {
 	result := make([]T, 0)
 outer:
@@ -485,7 +485,7 @@ outer:
 	return result
 }
 
-// UnionSet 返回两个切片的并集（去重，保持顺序：先 src 后 dst 的新增部分）.
+// UnionSet 返回两个切片的并集去重，保持顺序：先 src 后 dst 的新增部分.
 // 示例:
 //
 //	UnionSet([]int{1, 2}, []int{2, 3}) // [1, 2, 3]
@@ -523,7 +523,7 @@ outer:
 	return result
 }
 
-// DiffSet 返回在 src 中存在但 dst 中不存在的元素（差集，去重）.
+// DiffSet 返回在 src 中存在但 dst 中不存在的元素差集，去重.
 // 示例:
 //
 //	DiffSet([]int{1, 2, 3}, []int{2, 3}) // [1]
@@ -567,7 +567,7 @@ outer:
 	return result
 }
 
-// SymmetricDiffSet 返回两个切片的对称差集（只在其中一个集合中出现的元素，去重）.
+// SymmetricDiffSet 返回两个切片的对称差集只在其中一个集合中出现的元素，去重.
 // 示例:
 //
 //	SymmetricDiffSet([]int{1, 2, 3}, []int{2, 3, 4}) // [1, 4]

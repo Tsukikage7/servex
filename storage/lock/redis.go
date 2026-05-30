@@ -22,10 +22,10 @@ type Redis struct {
 	retryWait  time.Duration
 	maxRetries int
 
-	// 存储当前持有的锁（key -> true）
+	// 存储当前持有的锁key -> 持有次数
 	// 用于 Unlock 和 Extend 时验证所有权
 	heldMu sync.RWMutex
-	held   map[string]bool
+	held   map[string]int
 }
 
 // RedisOption Redis 锁配置选项.
@@ -62,7 +62,7 @@ func WithRetryWait(wait time.Duration) RedisOption {
 
 // WithMaxRetries 设置最大重试次数.
 //
-// Lock 方法的最大重试次数，0 表示无限重试（直到 context 取消）.
+// Lock 方法的最大重试次数，0 表示无限重试直到 context 取消.
 // 默认 0.
 func WithMaxRetries(n int) RedisOption {
 	return func(r *Redis) {
@@ -82,7 +82,7 @@ func NewRedis(c cache.Cache, opts ...RedisOption) *Redis {
 		ownerID:    uuid.New().String(),
 		retryWait:  100 * time.Millisecond,
 		maxRetries: 0,
-		held:       make(map[string]bool),
+		held:       make(map[string]int),
 	}
 
 	for _, opt := range opts {
@@ -103,14 +103,14 @@ func (r *Redis) TryLock(ctx context.Context, key string, ttl time.Duration) (boo
 
 	if acquired {
 		r.heldMu.Lock()
-		r.held[key] = true
+		r.held[key]++
 		r.heldMu.Unlock()
 	}
 
 	return acquired, nil
 }
 
-// Lock 获取锁（阻塞）.
+// Lock 获取锁阻塞.
 func (r *Redis) Lock(ctx context.Context, key string, ttl time.Duration) error {
 	retries := 0
 
@@ -144,7 +144,7 @@ func (r *Redis) Lock(ctx context.Context, key string, ttl time.Duration) error {
 func (r *Redis) Unlock(ctx context.Context, key string) error {
 	// 检查是否持有该锁
 	r.heldMu.RLock()
-	held := r.held[key]
+	held := r.held[key] > 0
 	r.heldMu.RUnlock()
 	if !held {
 		return ErrLockNotHeld
@@ -157,7 +157,10 @@ func (r *Redis) Unlock(ctx context.Context, key string) error {
 		// 如果是锁不存在或不是持有者，可能已过期
 		if errors.Is(err, cache.ErrLockNotHeld) {
 			r.heldMu.Lock()
-			delete(r.held, key)
+			r.held[key]--
+			if r.held[key] <= 0 {
+				delete(r.held, key)
+			}
 			r.heldMu.Unlock()
 			return ErrLockNotHeld
 		}
@@ -165,7 +168,10 @@ func (r *Redis) Unlock(ctx context.Context, key string) error {
 	}
 
 	r.heldMu.Lock()
-	delete(r.held, key)
+	r.held[key]--
+	if r.held[key] <= 0 {
+		delete(r.held, key)
+	}
 	r.heldMu.Unlock()
 	return nil
 }
@@ -174,7 +180,7 @@ func (r *Redis) Unlock(ctx context.Context, key string) error {
 func (r *Redis) Extend(ctx context.Context, key string, ttl time.Duration) error {
 	// 检查是否持有该锁
 	r.heldMu.RLock()
-	held := r.held[key]
+	held := r.held[key] > 0
 	r.heldMu.RUnlock()
 	if !held {
 		return ErrLockNotHeld
@@ -206,5 +212,5 @@ func (r *Redis) OwnerID() string {
 func (r *Redis) IsHeld(key string) bool {
 	r.heldMu.RLock()
 	defer r.heldMu.RUnlock()
-	return r.held[key]
+	return r.held[key] > 0
 }

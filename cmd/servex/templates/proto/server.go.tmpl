@@ -25,17 +25,17 @@ func New{{.PascalName}}Service() *{{.PascalName}}Service {
 	return &{{.PascalName}}Service{}
 }
 
-// RegisterGRPC 注册 gRPC 服务（实现 grpcserver.Registrar 接口）.
+// RegisterGRPC 注册 gRPC 服务实现 grpcserver.Registrar 接口.
 func (s *{{.PascalName}}Service) RegisterGRPC(server *grpc.Server) {
 	pb.Register{{.PascalName}}ServiceServer(server, s)
 }
 
-// RegisterGateway 注册 gRPC-Gateway 处理器（实现 gateway.Registrar 接口）.
+// RegisterGateway 注册 gRPC-Gateway 处理器实现 gateway.Registrar 接口.
 func (s *{{.PascalName}}Service) RegisterGateway(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
 	return pb.Register{{.PascalName}}ServiceHandlerClient(ctx, mux, pb.New{{.PascalName}}ServiceClient(conn))
 }
 
-{{if .WithConnect}}// RegisterConnect 注册 Connect 处理器（实现 connectserver.Registrar 接口）.
+{{if .WithConnect}}// RegisterConnect 注册 Connect 处理器实现 connectserver.Registrar 接口.
 func (s *{{.PascalName}}Service) RegisterConnect(mux *http.ServeMux, opts ...connect.HandlerOption) {
 	path, handler := connectpb.New{{.PascalName}}ServiceHandler(s, opts...)
 	mux.Handle(path, handler)

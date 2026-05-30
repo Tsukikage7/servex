@@ -14,7 +14,7 @@ func WithExtraScopes(scopes ...string) AuthURLOption {
 	return func(o *AuthURLOptions) { o.Scopes = append(o.Scopes, scopes...) }
 }
 
-// WithPrompt 设置 prompt 参数（如 "consent"、"login"）.
+// WithPrompt 设置 prompt 参数如 "consent"、"login".
 func WithPrompt(prompt string) AuthURLOption {
 	return func(o *AuthURLOptions) { o.Prompt = prompt }
 }

@@ -29,7 +29,7 @@ func TestMemoryStore_GenerateAndValidate(t *testing.T) {
 		t.Error("valid state should return true")
 	}
 
-	// 第二次验证应该失败（一次性使用）
+	// 第二次验证应该失败一次性使用
 	ok, _ = s.Validate(ctx, state)
 	if ok {
 		t.Error("state should be consumed after first validation")

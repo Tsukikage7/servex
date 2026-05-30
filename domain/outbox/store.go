@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// txContextKey 事务 context key 类型（避免与其他包冲突）.
+// txContextKey 事务 context key 类型避免与其他包冲突.
 type txContextKey struct{}
 
 // InjectTx 将 GORM 事务注入 context，供 Save 读取.

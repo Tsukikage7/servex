@@ -19,7 +19,7 @@ func init() {
 	globalBundle.Store(b)
 }
 
-// newBuiltinBundle 构建内置消息包（中文为默认语言）.
+// newBuiltinBundle 构建内置消息包中文为默认语言.
 func newBuiltinBundle() *i18n.Bundle {
 	b := i18n.NewBundle(language.Chinese)
 	b.LoadMessages(language.Chinese, builtinZH)
@@ -29,7 +29,7 @@ func newBuiltinBundle() *i18n.Bundle {
 
 // SetBundle 替换全局消息包.
 //
-// 用于应用启动时注册自定义翻译（追加或覆盖内置语言）：
+// 用于应用启动时注册自定义翻译追加或覆盖内置语言：
 //
 //	bundle := i18n.NewBundle(language.Chinese)
 //	bundle.LoadMessages(language.Chinese, zhMessages)
@@ -50,8 +50,8 @@ func GetBundle() *i18n.Bundle { return globalBundle.Load() }
 // LocalizedMessage 获取本地化后的错误消息.
 //
 // langs 为语言偏好列表，通常直接传入 Accept-Language 请求头的值。
-// 翻译规则（优先级从高到低）：
-//  1. 内部错误（5xxxx+）始终使用 Code 级别消息，不透传业务细节
+// 翻译规则优先级从高到低：
+//  1. 内部错误5xxxx+始终使用 Code 级别消息，不透传业务细节
 //  2. 业务层显式传入的自定义消息直接返回
 //  3. 其余情况通过全局 Bundle 翻译错误 Key，未命中时回退到默认 Message
 func LocalizedMessage(err error, langs ...string) string {
@@ -85,14 +85,14 @@ func LocalizedMessage(err error, langs ...string) string {
 
 // localizeCode 翻译单个 Code 的消息键，回退到 Code.Message.
 //
-// langs 可直接传入 Accept-Language 头的原始值（如 "en-US,en;q=0.9"），
+// langs 可直接传入 Accept-Language 头的原始值如 "en-US,en;q=0.9"，
 // 内部使用 language.ParseAcceptLanguage 解析，保留 q 值优先级顺序.
 func localizeCode(code Code, langs ...string) string {
 	b := globalBundle.Load()
 	if b == nil || code.Key == "" {
 		return code.Message
 	}
-	// 解析 Accept-Language 头中的语言标签（保持优先级顺序）
+	// 解析 Accept-Language 头中的语言标签保持优先级顺序
 	parsed := parseAcceptLangs(langs)
 	loc := b.NewLocalizer(parsed...)
 	return loc.MustTranslate(code.Key, code.Message)
@@ -100,12 +100,12 @@ func localizeCode(code Code, langs ...string) string {
 
 // parseAcceptLangs 将 Accept-Language 头字符串列表解析为语言标签字符串列表.
 //
-// 输入可以是标准 Accept-Language 头值（"zh-CN,zh;q=0.9,en;q=0.8"）
-// 或单个语言标签（"en"），二者均可正确处理.
+// 输入可以是标准 Accept-Language 头值"zh-CN,zh;q=0.9,en;q=0.8"
+// 或单个语言标签"en"，二者均可正确处理.
 func parseAcceptLangs(langs []string) []string {
 	result := make([]string, 0, len(langs)*2)
 	for _, l := range langs {
-		// 尝试解析完整 Accept-Language 头（含 q 值）
+		// 尝试解析完整 Accept-Language 头含 q 值
 		tags, _, err := language.ParseAcceptLanguage(l)
 		if err == nil && len(tags) > 0 {
 			for _, t := range tags {

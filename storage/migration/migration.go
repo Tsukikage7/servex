@@ -25,7 +25,7 @@ type Migration struct {
 	Down func(tx *gorm.DB) error
 }
 
-// Registry 迁移注册表（并发安全）.
+// Registry 迁移注册表并发安全.
 type Registry struct {
 	mu         sync.Mutex
 	migrations []Migration
@@ -72,11 +72,11 @@ type MigrationStatus struct {
 type Runner interface {
 	// Up 执行所有未应用的迁移.
 	Up(ctx context.Context) error
-	// UpTo 执行迁移到指定版本（含）.
+	// UpTo 执行迁移到指定版本含.
 	UpTo(ctx context.Context, version int64) error
 	// Down 回滚最后一次迁移.
 	Down(ctx context.Context) error
-	// DownTo 回滚到指定版本（不含）.
+	// DownTo 回滚到指定版本不含.
 	DownTo(ctx context.Context, version int64) error
 	// Status 获取所有迁移状态.
 	Status(ctx context.Context) ([]MigrationStatus, error)

@@ -172,7 +172,7 @@ func TestGenerateServiceID(t *testing.T) {
 			// ID 不应该为空
 			assert.NotEmpty(t, id)
 
-			// 生成的 ID 应该是唯一的（多次调用不同）
+			// 生成的 ID 应该是唯一的多次调用不同
 			id2 := GenerateServiceID(tt.serviceName)
 			// 由于使用时间戳，在快速调用中可能相同，但格式应该一致
 			assert.True(t, strings.HasPrefix(id2, tt.wantPrefix))

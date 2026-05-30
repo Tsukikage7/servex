@@ -38,10 +38,10 @@ const (
 
 // IP 客户端 IP 信息.
 type IP struct {
-	// Address 纯 IP 地址（不含端口）
+	// Address 纯 IP 地址不含端口
 	Address string
 
-	// Port 端口（可选）
+	// Port 端口可选
 	Port string
 
 	// Raw 原始值
@@ -131,7 +131,7 @@ func ParseIP(addr string) *IP {
 // ParseXForwardedFor 解析 X-Forwarded-For 头.
 //
 // X-Forwarded-For 格式: "client, proxy1, proxy2"
-// 返回第一个 IP（最原始的客户端）.
+// 返回第一个 IP最原始的客户端.
 func ParseXForwardedFor(xff string) string {
 	if xff == "" {
 		return ""

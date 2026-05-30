@@ -147,7 +147,7 @@ func (b *Bus) Subscribe(topic string, handler Handler) (unsubscribe func()) {
 	}
 }
 
-// SubscribeAll 订阅所有主题的事件（通配符），返回取消订阅函数.
+// SubscribeAll 订阅所有主题的事件通配符，返回取消订阅函数.
 func (b *Bus) SubscribeAll(handler Handler) (unsubscribe func()) {
 	b.mu.Lock()
 	defer b.mu.Unlock()

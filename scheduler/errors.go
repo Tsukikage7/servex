@@ -30,6 +30,6 @@ var (
 	// ErrLockAcquireFailed 获取锁失败.
 	ErrLockAcquireFailed = errors.New("scheduler: 获取锁失败")
 
-	// ErrJobSkipped 任务被跳过（上一次执行未完成）.
+	// ErrJobSkipped 任务被跳过上一次执行未完成.
 	ErrJobSkipped = errors.New("scheduler: 任务被跳过，上一次执行未完成")
 )

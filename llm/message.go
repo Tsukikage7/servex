@@ -20,7 +20,7 @@ type ContentType string
 const (
 	// ContentTypeText 纯文本内容.
 	ContentTypeText ContentType = "text"
-	// ContentTypeImage 图片内容（URL 或 base64 data URI）.
+	// ContentTypeImage 图片内容URL 或 base64 data URI.
 	ContentTypeImage ContentType = "image"
 )
 
@@ -28,11 +28,11 @@ const (
 type Message struct {
 	// Role 消息角色.
 	Role Role
-	// Content 纯文本内容（简单场景）.
+	// Content 纯文本内容简单场景.
 	Content string
-	// Parts 多模态内容（与 Content 互斥，Parts 不为空时优先使用）.
+	// Parts 多模态内容与 Content 互斥，Parts 不为空时优先使用.
 	Parts []ContentPart
-	// ToolCalls 助手请求的工具调用列表（Role=assistant 时）.
+	// ToolCalls 助手请求的工具调用列表Role=assistant 时.
 	ToolCalls []ToolCall
 	// ToolCallID Role=tool 时，对应的工具调用 ID.
 	ToolCallID string
@@ -44,9 +44,9 @@ type Message struct {
 type ContentPart struct {
 	// Type 内容类型.
 	Type ContentType
-	// Text 文本内容（Type=text 时）.
+	// Text 文本内容Type=text 时.
 	Text string
-	// MediaURL 媒体 URL 或 base64 data URI（Type=image 时）.
+	// MediaURL 媒体 URL 或 base64 data URIType=image 时.
 	MediaURL string
 	// MIMEType 媒体 MIME 类型.
 	MIMEType string

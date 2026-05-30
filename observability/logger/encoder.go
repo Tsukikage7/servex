@@ -139,8 +139,3 @@ func parseLevel(level string) zapcore.Level {
 		return zapcore.InfoLevel
 	}
 }
-
-// buildEncoder 构建编码器（兼容旧接口）.
-func buildEncoder(config *Config) zapcore.Encoder {
-	return NewEncoderBuilder(config).Build()
-}

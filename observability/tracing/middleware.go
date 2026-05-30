@@ -8,7 +8,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/semconv/v1.21.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/Tsukikage7/servex/v2/endpoint"
@@ -20,8 +20,8 @@ const TraceIDHeader = "X-Trace-Id"
 
 // HTTPMiddleware 返回 HTTP 链路追踪中间件.
 // 中间件会自动从请求头提取或生成 traceId，并通过响应头 X-Trace-Id 返回.
-// traceId 同时作为请求的唯一标识（requestId），可通过 TraceID(ctx) 获取.
-// skipPaths 指定不产生 trace span 的路径（如 /metrics、/healthz）.
+// traceId 同时作为请求的唯一标识requestId，可通过 TraceID(ctx) 获取.
+// skipPaths 指定不产生 trace span 的路径如 /metrics、/healthz.
 // 使用示例:
 //
 //	mux := http.NewServeMux()
@@ -64,7 +64,7 @@ func HTTPMiddleware(serviceName string, skipPaths ...string) func(http.Handler) 
 			)
 			defer span.End()
 
-			// 注入 trace 信息到 context（供 middleware/trace 读取）
+			// 注入 trace 信息到 context供 middleware/trace 读取
 			spanCtx := span.SpanContext()
 			if spanCtx.HasTraceID() {
 				ctx = logger.ContextWithTraceID(ctx, spanCtx.TraceID().String())

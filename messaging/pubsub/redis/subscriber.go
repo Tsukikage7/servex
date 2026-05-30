@@ -15,7 +15,7 @@ import (
 )
 
 // Subscriber 通过 Redis Streams 订阅消息.
-// 支持消费者组（XREADGROUP）和简单读取（XREAD）两种模式.
+// 支持消费者组XREADGROUP和简单读取XREAD两种模式.
 type Subscriber struct {
 	client  redis.Cmdable
 	closed  atomic.Bool
@@ -41,7 +41,7 @@ func NewSubscriber(client redis.Cmdable, opts ...SubscriberOption) (*Subscriber,
 	return &Subscriber{client: client, opts: o}, nil
 }
 
-// Subscribe 订阅指定 stream（topic），返回消息 channel.
+// Subscribe 订阅指定 streamtopic，返回消息 channel.
 // 若配置了 ConsumerGroup，使用 XREADGROUP；否则使用 XREAD.
 func (s *Subscriber) Subscribe(ctx context.Context, topic string) (<-chan *pubsub.Message, error) {
 	if s.closed.Load() {
@@ -59,7 +59,7 @@ func (s *Subscriber) Subscribe(ctx context.Context, topic string) (<-chan *pubsu
 	msgCh := make(chan *pubsub.Message)
 
 	if s.opts.groupID != "" {
-		// 确保消费者组存在（从最新消息开始）
+		// 确保消费者组存在从最新消息开始
 		_ = s.client.XGroupCreateMkStream(subCtx, topic, s.opts.groupID, "$").Err()
 
 		s.wg.Go(func() {
@@ -133,7 +133,7 @@ func (s *Subscriber) readGroup(ctx context.Context, stream string, out chan<- *p
 	}
 }
 
-// readStream 通过 XREAD 消费消息（无消费者组）.
+// readStream 通过 XREAD 消费消息无消费者组.
 func (s *Subscriber) readStream(ctx context.Context, stream string, out chan<- *pubsub.Message) {
 	lastID := "$"
 	for {
@@ -185,7 +185,7 @@ func (s *Subscriber) readStream(ctx context.Context, stream string, out chan<- *
 	}
 }
 
-// Ack 确认消息已处理（XACK）. 仅在消费者组模式下有效.
+// Ack 确认消息已处理XACK. 仅在消费者组模式下有效.
 func (s *Subscriber) Ack(ctx context.Context, msg *pubsub.Message) error {
 	if msg == nil {
 		return pubsub.ErrNilMessage
@@ -203,7 +203,7 @@ func (s *Subscriber) Ack(ctx context.Context, msg *pubsub.Message) error {
 	return nil
 }
 
-// Nack 拒绝消息（Redis Streams 没有原生 Nack，此处为空操作）.
+// Nack 拒绝消息Redis Streams 没有原生 Nack，此处为空操作.
 func (s *Subscriber) Nack(_ context.Context, msg *pubsub.Message) error {
 	if msg == nil {
 		return pubsub.ErrNilMessage

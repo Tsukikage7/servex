@@ -35,7 +35,7 @@ type ToolCall struct {
 type ToolChoice struct {
 	// Type 选择类型："auto", "none", "required", "function".
 	Type string
-	// Function 指定必须调用的函数（Type="function" 时）.
+	// Function 指定必须调用的函数Type="function" 时.
 	Function *struct{ Name string }
 }
 

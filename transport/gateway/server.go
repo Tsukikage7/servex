@@ -70,21 +70,21 @@ func New(opts ...Option) *Server {
 	}
 	o.logger = logger.WithComponent(o.logger, "Gateway")
 
-	// 按照优先级顺序应用 gRPC 拦截器（由外到内）:
+	// 按照优先级顺序应用 gRPC 拦截器由外到内:
 	// 1. Recovery
 	// 2. Logging
-	// 3. Tracing（已在 WithTrace 中添加）
+	// 3. Tracing已在 WithObservability 或 WithConfig 中添加
 	// 4. Metrics
 	// 5. RateLimit
 	// 6. ClientIP
 	// 7. Tenant
-	// 8. Auth（在 applyAuthInterceptors 中添加）
+	// 8. Auth在 applyAuthInterceptors 中添加
 	applyNewInterceptors(o)
 
-	// 应用 recovery 拦截器（必须在所有 option 处理之后，放在拦截器链最前面）
+	// 应用 recovery 拦截器必须在所有 option 处理之后，放在拦截器链最前面
 	applyRecoveryInterceptors(o)
 
-	// 应用 auth 拦截器（放在拦截器链末尾）
+	// 应用 auth 拦截器放在拦截器链末尾
 	applyAuthInterceptors(o)
 
 	muxOpts := []runtime.ServeMuxOption{
@@ -199,7 +199,7 @@ func (s *Server) Health() *health.Health {
 
 // HealthEndpoint 返回健康检查端点信息.
 //
-// Gateway 使用 HTTP 健康检查（通过 HTTP 端口）.
+// Gateway 使用 HTTP 健康检查通过 HTTP 端口.
 func (s *Server) HealthEndpoint() *transport.HealthEndpoint {
 	return &transport.HealthEndpoint{
 		Type: transport.HealthCheckTypeHTTP,
@@ -230,7 +230,7 @@ func (s *Server) startGRPC() error {
 			Timeout: s.opts.keepaliveTimeout,
 		}),
 	}
-	// logger 注入拦截器（最前面，保证所有拦截器和业务代码都能用 logger.FromContext）
+	// logger 注入拦截器最前面，保证所有拦截器和业务代码都能用 logger.FromContext
 	allUnary := []grpc.UnaryServerInterceptor{loggerUnaryInterceptor(s.opts.logger)}
 	allUnary = append(allUnary, s.opts.unaryInterceptors...)
 	serverOpts = append(serverOpts, grpc.ChainUnaryInterceptor(allUnary...))
@@ -334,7 +334,7 @@ func (s *Server) connectGateway() error {
 		dialOpts = append(dialOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
-	// 启用 tracing 时，注入 client interceptor 传播 trace context（HTTP span → gRPC metadata）
+	// 启用 tracing 时，注入 client interceptor 传播 trace contextHTTP span → gRPC metadata
 	if s.opts.tracerName != "" {
 		dialOpts = append(dialOpts, grpc.WithUnaryInterceptor(tracing.UnaryClientInterceptor(s.opts.tracerName)))
 	}
@@ -357,19 +357,19 @@ func (s *Server) connectGateway() error {
 }
 
 func (s *Server) startHTTP(ctx context.Context) error {
-	// 构建 HTTP 中间件链（由内到外包装）
+	// 构建 HTTP 中间件链由内到外包装
 	//
 	// 最终请求执行顺序:
 	// Recovery → Logging → Tracing → Metrics → CORS →
 	// RateLimit → ClientIP → Tenant → Auth(via gRPC) → Health → handler
 	var handler http.Handler = health.Middleware(s.health)(s.mux)
 
-	// 统一成功响应格式（紧贴 mux，捕获 gRPC-Gateway 输出后包裹为 {code,message,data}）
+	// 统一成功响应格式紧贴 mux，捕获 gRPC-Gateway 输出后包裹为 {code,message,data}
 	if s.opts.enableResponse {
 		handler = response.GatewaySuccessResponseMiddleware(handler)
 	}
 
-	// 9. Tenant（HTTP 端）
+	// 9. TenantHTTP 端
 	if s.opts.tenantResolver != nil {
 		tenantOpts := s.opts.tenantOpts
 		if s.opts.logger != nil {
@@ -378,22 +378,22 @@ func (s *Server) startHTTP(ctx context.Context) error {
 		handler = tenant.HTTPMiddleware(s.opts.tenantResolver, tenantOpts...)(handler)
 	}
 
-	// 8. ClientIP（HTTP 端）
+	// 8. ClientIPHTTP 端
 	if s.opts.enableClientIP {
 		handler = clientip.HTTPMiddleware(s.opts.clientIPOpts...)(handler)
 	}
 
-	// 7. RateLimit（HTTP 端）
+	// 7. RateLimitHTTP 端
 	if s.opts.rateLimiter != nil {
 		handler = ratelimit.HTTPMiddleware(s.opts.rateLimiter)(handler)
 	}
 
-	// 6. CORS（仅 HTTP 端）
+	// 6. CORS仅 HTTP 端
 	if s.opts.enableCORS {
 		handler = cors.HTTPMiddleware(s.opts.corsOpts...)(handler)
 	}
 
-	// 5. Metrics（HTTP 端）
+	// 5. MetricsHTTP 端
 	if s.opts.metricsCollector != nil {
 		handler = metrics.HTTPMiddleware(s.opts.metricsCollector)(handler)
 		// 注册 /metrics 端点
@@ -402,12 +402,12 @@ func (s *Server) startHTTP(ctx context.Context) error {
 		})
 	}
 
-	// 4. Tracing（HTTP 端）
+	// 4. TracingHTTP 端
 	if s.opts.tracerName != "" {
 		handler = tracing.HTTPMiddleware(s.opts.tracerName, s.opts.tracingSkipPaths...)(handler)
 	}
 
-	// 3. Logging（HTTP 端）
+	// 3. LoggingHTTP 端
 	if s.opts.enableLogging && s.opts.logger != nil {
 		handler = logging.HTTPMiddleware(
 			logging.WithLogger(s.opts.logger),
@@ -415,7 +415,7 @@ func (s *Server) startHTTP(ctx context.Context) error {
 		)(handler)
 	}
 
-	// 1. Recovery（HTTP 端，最外层）
+	// 1. RecoveryHTTP 端，最外层
 	if s.opts.enableRecovery {
 		handler = recovery.HTTPMiddleware(recovery.WithLogger(s.opts.logger))(handler)
 	}
@@ -425,7 +425,7 @@ func (s *Server) startHTTP(ctx context.Context) error {
 		handler = s.opts.httpMiddlewares[i](handler)
 	}
 
-	// logger 注入（最外层，保证所有中间件和业务代码都能用 logger.FromContext(ctx)）
+	// logger 注入最外层，保证所有中间件和业务代码都能用 logger.FromContext(ctx)
 	handler = injectLogger(s.opts.logger)(handler)
 
 	s.httpHandler = handler
@@ -457,7 +457,7 @@ func (s *Server) startHTTP(ctx context.Context) error {
 		}
 	}()
 
-	// 短暂等待以捕获启动时的立即错误（如端口占用）
+	// 短暂等待以捕获启动时的立即错误如端口占用
 	select {
 	case err := <-errCh:
 		return err

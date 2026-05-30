@@ -67,7 +67,7 @@ type geminiPart struct {
 	FunctionResponse *funcResponse `json:"functionResponse,omitempty"`
 }
 
-// inlineData 内联数据（图片等）.
+// inlineData 内联数据图片等.
 type inlineData struct {
 	MIMEType string `json:"mimeType"`
 	Data     string `json:"data"` // base64
@@ -371,7 +371,7 @@ func (c *Client) convertMessage(msg llm.Message) *geminiContent {
 		}
 		content.Parts = []geminiPart{{
 			FunctionResponse: &funcResponse{
-				Name:     msg.ToolCallID, // 使用 ToolCallID 作为函数名（Gemini 要求）
+				Name:     msg.ToolCallID, // 使用 ToolCallID 作为函数名Gemini 要求
 				Response: result,
 			},
 		}}
@@ -446,7 +446,7 @@ func (c *Client) do(ctx context.Context, url string, payload any) ([]byte, int, 
 	}
 	defer resp.Body.Close()
 
-	// 限制响应体读取大小（1MB），防止异常响应消耗过多内存.
+	// 限制响应体读取大小1MB，防止异常响应消耗过多内存.
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if err != nil {
 		return nil, resp.StatusCode, 0, fmt.Errorf("gemini: 读取响应失败: %w", err)

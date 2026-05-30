@@ -2,7 +2,7 @@
 // 幂等性保证同一请求多次执行的效果与执行一次相同，
 // 适用于支付、订单等关键业务场景。
 // 工作原理:
-//  1. 客户端在请求头中携带幂等键（Idempotency-Key）
+//  1. 客户端在请求头中携带幂等键Idempotency-Key
 //  2. 服务端检查该键是否已存在
 //  3. 如果存在，返回之前的结果
 //  4. 如果不存在，执行请求并保存结果
@@ -50,10 +50,10 @@ type KV interface {
 
 // Result 幂等请求的结果.
 type Result struct {
-	// StatusCode HTTP 状态码（HTTP 请求）或 gRPC 状态码
+	// StatusCode HTTP 状态码HTTP 请求或 gRPC 状态码
 	StatusCode int `json:"status_code"`
 
-	// Headers 响应头（HTTP 请求）
+	// Headers 响应头HTTP 请求
 	Headers map[string]string `json:"headers,omitzero"`
 
 	// Body 响应体
@@ -91,7 +91,7 @@ type Store interface {
 	Set(ctx context.Context, key string, result *Result, ttl time.Duration) error
 
 	// SetNX 仅在键不存在时设置.
-	// 返回 true 表示设置成功（键不存在），false 表示键已存在.
+	// 返回 true 表示设置成功键不存在，false 表示键已存在.
 	SetNX(ctx context.Context, key string, ttl time.Duration) (bool, error)
 
 	// Delete 删除幂等键.

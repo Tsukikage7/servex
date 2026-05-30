@@ -47,10 +47,10 @@ type Locker interface {
 	//
 	// 如果锁已被持有，立即返回 false.
 	// key: 锁的唯一标识
-	// ttl: 锁的过期时间（防止死锁）
+	// ttl: 锁的过期时间防止死锁
 	TryLock(ctx context.Context, key string, ttl time.Duration) (bool, error)
 
-	// Lock 获取锁（阻塞）.
+	// Lock 获取锁阻塞.
 	//
 	// 会阻塞等待直到获取成功或 context 取消.
 	// key: 锁的唯一标识

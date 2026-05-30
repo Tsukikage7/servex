@@ -56,8 +56,8 @@ func generateClient(data ClientData, outputDir string) error {
 		return fmt.Errorf("渲染 ports.go: %w", err)
 	}
 
-	// 2. services/<caller>-service/internal/adapter/external/<target>_client.go
-	clientPath := filepath.Join(outputDir, "services", data.CallerName+"-service",
+	// 2. services/<caller>/internal/adapter/external/<target>_client.go
+	clientPath := filepath.Join(outputDir, resolveServiceDirForWrite(data.CallerName),
 		"internal", "adapter", "external", toSnakeCase(data.TargetName)+"_client.go")
 	if err := renderTemplate(aggregateTemplates, "templates/aggregate/adapter_external.go.tmpl", clientPath, data, funcMap); err != nil {
 		return fmt.Errorf("渲染 adapter_external: %w", err)
@@ -65,8 +65,8 @@ func generateClient(data ClientData, outputDir string) error {
 
 	fmt.Printf("客户端适配器 %q 已生成 (调用方: %s):\n", data.TargetName, data.CallerName)
 	fmt.Printf("  domain/%s/ports.go (防腐层)\n", data.CallerName)
-	fmt.Printf("  services/%s-service/internal/adapter/external/%s_client.go\n",
-		data.CallerName, toSnakeCase(data.TargetName))
+	fmt.Printf("  %s/internal/adapter/external/%s_client.go\n",
+		resolveServiceDirForWrite(data.CallerName), toSnakeCase(data.TargetName))
 
 	return nil
 }

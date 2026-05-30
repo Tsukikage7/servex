@@ -55,7 +55,7 @@ func TestNewOTel_NilConfig(t *testing.T) {
 }
 
 func TestNewOTel_DefaultOptions(t *testing.T) {
-	// 使用默认 MeterProvider（全局），不传任何 option
+	// 使用默认 MeterProvider全局，不传任何 option
 	c, err := NewOTel(&Config{Namespace: "test"})
 	require.NoError(t, err)
 	assert.NotNil(t, c)

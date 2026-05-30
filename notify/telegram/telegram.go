@@ -6,7 +6,7 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"github.com/Tsukikage7/servex/v2/notify"
 )
@@ -46,8 +46,8 @@ func NewSenderWithClient(client *tgbotapi.BotAPI) *Sender {
 }
 
 // Send 发送消息。
-// msg.To 为 chat ID 列表（字符串），msg.Body 为消息正文。
-// 逐一向每个 To 发送，任意一个失败则返回错误（继续发其余的）。
+// msg.To 为 chat ID 列表字符串，msg.Body 为消息正文。
+// 逐一向每个 To 发送，任意一个失败则返回错误继续发其余的。
 // Result.MessageID 为最后一条成功消息的 ID。
 func (s *Sender) Send(_ context.Context, msg *notify.Message) (*notify.Result, error) {
 	var lastID string
@@ -75,5 +75,5 @@ func (s *Sender) Send(_ context.Context, msg *notify.Message) (*notify.Result, e
 // Channel 返回渠道标识.
 func (s *Sender) Channel() notify.Channel { return ChannelTelegram }
 
-// Close 关闭连接（tgbotapi 无需显式关闭，返回 nil）.
+// Close 关闭连接tgbotapi 无需显式关闭，返回 nil.
 func (s *Sender) Close() error { return nil }

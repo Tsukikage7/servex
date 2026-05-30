@@ -28,7 +28,7 @@ type testClaims struct {
 
 // newTestJWT 创建测试用 JWT 服务.
 func newTestJWT() *JWT {
-	return NewJWT(
+	return MustNew(
 		WithSecretKey("test-secret-key-for-testing-32b!"),
 		WithLogger(testx.NopLogger()),
 		WithIssuer("test-issuer"),
@@ -356,7 +356,7 @@ func TestNewParser_Whitelist(t *testing.T) {
 	whitelist := NewWhitelist()
 	whitelist.AddHTTPPaths("/health", "/metrics")
 
-	j := NewJWT(
+	j := MustNew(
 		WithSecretKey("test-secret-key-at-least-32bytes!"),
 		WithLogger(testx.NopLogger()),
 		WithWhitelist(whitelist),
@@ -373,7 +373,7 @@ func TestNewParser_Whitelist(t *testing.T) {
 		middleware := NewParser(j)
 		wrapped := middleware(endpoint)
 
-		// 模拟白名单请求（通过 HTTP 请求）
+		// 模拟白名单请求通过 HTTP 请求
 		req := httptest.NewRequest(http.MethodGet, "/health", nil)
 		resp, err := wrapped(t.Context(), req)
 
@@ -533,7 +533,7 @@ func TestHTTPMiddleware_Whitelist(t *testing.T) {
 	whitelist := NewWhitelist()
 	whitelist.AddHTTPPaths("/health", "/public/")
 
-	j := NewJWT(
+	j := MustNew(
 		WithSecretKey("test-secret-key-at-least-32bytes!"),
 		WithLogger(testx.NopLogger()),
 		WithWhitelist(whitelist),
@@ -727,7 +727,7 @@ func TestJWT_GenerateWithDuration(t *testing.T) {
 func TestJWT_GenerateWithTokenStoreCompletesIssuedAt(t *testing.T) {
 	store, err := cache.NewMemoryCache(cache.NewMemoryConfig(), testx.NopLogger())
 	require.NoError(t, err)
-	j := NewJWT(
+	j := MustNew(
 		WithSecretKey("test-secret-key-for-testing-32b!"),
 		WithLogger(testx.NopLogger()),
 		WithTokenStore(CacheTokenStore(store)),
@@ -753,7 +753,7 @@ func TestJWT_GenerateWithTokenStoreCompletesIssuedAt(t *testing.T) {
 func TestJWT_GenerateWithDurationContextUsesTokenStore(t *testing.T) {
 	store, err := cache.NewMemoryCache(cache.NewMemoryConfig(), testx.NopLogger())
 	require.NoError(t, err)
-	j := NewJWT(
+	j := MustNew(
 		WithSecretKey("test-secret-key-for-testing-32b!"),
 		WithLogger(testx.NopLogger()),
 		WithTokenStore(CacheTokenStore(store)),
@@ -775,7 +775,7 @@ func TestJWT_GenerateWithDurationContextUsesTokenStore(t *testing.T) {
 
 func TestJWT_ValidateCachedTokenFailClose(t *testing.T) {
 	storeErr := errors.New("store unavailable")
-	j := NewJWT(
+	j := MustNew(
 		WithSecretKey("test-secret-key-for-testing-32b!"),
 		WithLogger(testx.NopLogger()),
 		WithTokenStore(&failingTokenStore{err: storeErr}),
@@ -830,23 +830,43 @@ func TestWhitelist(t *testing.T) {
 	})
 }
 
-func TestNewJWT_Panics(t *testing.T) {
+func TestMustNew_Panics(t *testing.T) {
 	t.Run("no secret key", func(t *testing.T) {
 		assert.Panics(t, func() {
-			NewJWT(WithLogger(testx.NopLogger()))
+			MustNew(WithLogger(testx.NopLogger()))
 		})
 	})
 
 	t.Run("secret key too short", func(t *testing.T) {
 		assert.Panics(t, func() {
-			NewJWT(WithSecretKey("short"), WithLogger(testx.NopLogger()))
+			MustNew(WithSecretKey("short"), WithLogger(testx.NopLogger()))
 		})
 	})
 
 	t.Run("no logger uses nop", func(t *testing.T) {
 		assert.NotPanics(t, func() {
-			NewJWT(WithSecretKey("a-key-that-is-at-least-32-bytes!"))
+			MustNew(WithSecretKey("a-key-that-is-at-least-32-bytes!"))
 		})
+	})
+}
+
+func TestNew_ReturnsErrorInsteadOfPanic(t *testing.T) {
+	t.Run("no secret key", func(t *testing.T) {
+		j, err := New(WithLogger(testx.NopLogger()))
+		assert.Nil(t, j)
+		assert.Error(t, err)
+	})
+
+	t.Run("secret key too short", func(t *testing.T) {
+		j, err := New(WithSecretKey("short"), WithLogger(testx.NopLogger()))
+		assert.Nil(t, j)
+		assert.Error(t, err)
+	})
+
+	t.Run("valid config", func(t *testing.T) {
+		j, err := New(WithSecretKey("a-key-that-is-at-least-32-bytes!"), WithLogger(testx.NopLogger()))
+		assert.NoError(t, err)
+		assert.NotNil(t, j)
 	})
 }
 

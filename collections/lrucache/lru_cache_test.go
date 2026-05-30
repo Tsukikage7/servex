@@ -84,7 +84,7 @@ func (s *LRUCacheTestSuite) TestLRUOrder() {
 	// 访问 "a"，使其成为最近使用
 	cache.Get("a")
 
-	// 添加新元素，应该淘汰 "b"（最久未使用）
+	// 添加新元素，应该淘汰 "b"最久未使用
 	cache.Put("d", 4)
 
 	s.False(cache.Contains("b"))
@@ -105,7 +105,7 @@ func (s *LRUCacheTestSuite) TestPeek() {
 	s.True(ok)
 	s.Equal(1, val)
 
-	// 添加新元素，"a" 仍然是最久未使用（因为用的是 Peek）
+	// 添加新元素，"a" 仍然是最久未使用因为用的是 Peek
 	cache.Put("d", 4)
 
 	s.False(cache.Contains("a"))

@@ -65,7 +65,7 @@ func FromEntries[K comparable, V any](entries []Entry[K, V]) map[K]V {
 	return result
 }
 
-// Merge 合并多个 map（后面的覆盖前面的）.
+// Merge 合并多个 map后面的覆盖前面的.
 // 示例:
 //
 //	m1 := map[string]int{"a": 1}
@@ -168,7 +168,7 @@ func MapValues[K comparable, V, NV any](m map[K]V, fn func(V) NV) map[K]NV {
 	return result
 }
 
-// Invert 反转 map（键值互换）.
+// Invert 反转 map键值互换.
 // 如果有重复值，后面的会覆盖前面的.
 // 示例:
 //
@@ -183,7 +183,7 @@ func Invert[K comparable, V comparable](m map[K]V) map[V]K {
 	return result
 }
 
-// Clone 复制 map（浅拷贝）.
+// Clone 复制 map浅拷贝.
 // 示例:
 //
 //	m := map[string]int{"a": 1, "b": 2}
@@ -373,7 +373,7 @@ func Diff[K, V comparable](m1, m2 map[K]V) (added, removed, changed []K) {
 	return
 }
 
-// KeysValues 同时返回 map 的键切片和值切片，顺序保持一致（即 keys[i] 对应 values[i]）.
+// KeysValues 同时返回 map 的键切片和值切片，顺序保持一致即 keys[i] 对应 values[i].
 // 示例:
 //
 //	m := map[string]int{"a": 1, "b": 2}
@@ -411,7 +411,7 @@ func MergeFunc[K comparable, V any](mergeFunc func(v1, v2 V) V, maps ...map[K]V)
 	return result
 }
 
-// IterAll 返回遍历 map 所有键值对的迭代器（顺序不确定）.
+// IterAll 返回遍历 map 所有键值对的迭代器顺序不确定.
 // 等价于标准库 maps.All.
 func IterAll[K comparable, V any](m map[K]V) iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
@@ -423,7 +423,7 @@ func IterAll[K comparable, V any](m map[K]V) iter.Seq2[K, V] {
 	}
 }
 
-// IterKeys 返回遍历 map 所有键的迭代器（顺序不确定）.
+// IterKeys 返回遍历 map 所有键的迭代器顺序不确定.
 // 等价于标准库 maps.Keys.
 func IterKeys[K comparable, V any](m map[K]V) iter.Seq[K] {
 	return func(yield func(K) bool) {
@@ -435,7 +435,7 @@ func IterKeys[K comparable, V any](m map[K]V) iter.Seq[K] {
 	}
 }
 
-// IterValues 返回遍历 map 所有值的迭代器（顺序不确定）.
+// IterValues 返回遍历 map 所有值的迭代器顺序不确定.
 // 等价于标准库 maps.Values.
 func IterValues[K comparable, V any](m map[K]V) iter.Seq[V] {
 	return func(yield func(V) bool) {

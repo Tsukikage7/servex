@@ -208,7 +208,7 @@ func (c *Client) buildRequest(messages []llm.Message, o llm.CallOptions, stream 
 		Stream:        stream,
 	}
 
-	// 提取系统提示（Anthropic 要求系统消息单独作为 system 字段）
+	// 提取系统提示Anthropic 要求系统消息单独作为 system 字段
 	var system string
 	for _, msg := range messages {
 		if msg.Role == llm.RoleSystem {
@@ -270,7 +270,7 @@ func (c *Client) convertMessage(msg llm.Message) (anthropicMsg, error) {
 		return am, nil
 	}
 
-	// 助手消息（可能含工具调用）
+	// 助手消息可能含工具调用
 	if msg.Role == llm.RoleAssistant {
 		if len(msg.ToolCalls) > 0 {
 			contents := make([]anthropicContent, 0, 1+len(msg.ToolCalls))
@@ -296,7 +296,7 @@ func (c *Client) convertMessage(msg llm.Message) (anthropicMsg, error) {
 		return am, nil
 	}
 
-	// 用户消息（可能含多模态内容）
+	// 用户消息可能含多模态内容
 	if len(msg.Parts) > 0 {
 		contents := make([]anthropicContent, 0, len(msg.Parts))
 		for _, p := range msg.Parts {
@@ -351,7 +351,7 @@ func (c *Client) do(ctx context.Context, payload any) ([]byte, int, int, error) 
 	}
 	defer resp.Body.Close()
 
-	// 限制响应体读取大小（1MB），防止异常响应消耗过多内存.
+	// 限制响应体读取大小1MB，防止异常响应消耗过多内存.
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if err != nil {
 		return nil, resp.StatusCode, 0, fmt.Errorf("anthropic: 读取响应失败: %w", err)

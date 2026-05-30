@@ -36,7 +36,7 @@ type Locale struct {
 	// Raw 原始 Accept-Language 字符串
 	Raw string
 
-	// Preferred 首选语言标签列表（按优先级排序）
+	// Preferred 首选语言标签列表按优先级排序
 	Preferred []Tag
 }
 
@@ -183,7 +183,7 @@ func Parse(raw string) *Locale {
 		}
 	}
 
-	// 按质量值排序（从高到低）
+	// 按质量值排序从高到低
 	slices.SortFunc(tags, func(a, b Tag) int {
 		return cmp.Compare(b.Quality, a.Quality)
 	})
@@ -216,7 +216,7 @@ func parseTag(s string) Tag {
 		return tag
 	}
 
-	// 语言代码（2-3 字母）
+	// 语言代码2-3 字母
 	tag.Language = strings.ToLower(tagParts[0])
 
 	for i := 1; i < len(tagParts); i++ {

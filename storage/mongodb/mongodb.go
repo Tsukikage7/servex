@@ -123,7 +123,7 @@ func (c *Config) ApplyDefaults() {
 type Client interface {
 	// Database 获取数据库
 	Database(name ...string) Database
-	// Collection 获取集合（使用默认数据库）
+	// Collection 获取集合使用默认数据库
 	Collection(name string) Collection
 	// Ping 测试连接
 	Ping(ctx context.Context) error

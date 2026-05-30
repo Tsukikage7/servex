@@ -1,0 +1,19 @@
+package service
+
+import (
+	"google.golang.org/grpc"
+)
+
+// {{.Name | toPascalCase}}Service 承载 {{.Name}} 服务的协议注册边界。
+//
+// 业务用例应放在根目录 application/{{.Name}}，领域规则放在 domain/{{.Name}}；
+// 这里只负责把生成的 proto service 实现接入 transport。
+type {{.Name | toPascalCase}}Service struct{}
+
+// New{{.Name | toPascalCase}}Service 创建 {{.Name}} 服务注册器。
+func New{{.Name | toPascalCase}}Service() *{{.Name | toPascalCase}}Service {
+	return &{{.Name | toPascalCase}}Service{}
+}
+
+// RegisterGRPC 注册 gRPC 服务。
+func (s *{{.Name | toPascalCase}}Service) RegisterGRPC(_ *grpc.Server) {}

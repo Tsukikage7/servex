@@ -127,7 +127,7 @@ func (c *LRUCache[K, V]) GetOrPut(key K, loader func() V) V {
 	return value
 }
 
-// Peek 查看缓存值（不影响 LRU 顺序）.
+// Peek 查看缓存值不影响 LRU 顺序.
 func (c *LRUCache[K, V]) Peek(key K) (V, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -140,7 +140,7 @@ func (c *LRUCache[K, V]) Peek(key K) (V, bool) {
 	return zero, false
 }
 
-// Contains 判断键是否存在（不影响 LRU 顺序）.
+// Contains 判断键是否存在不影响 LRU 顺序.
 func (c *LRUCache[K, V]) Contains(key K) bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -183,7 +183,7 @@ func (c *LRUCache[K, V]) Clear() {
 	c.tail.prev = c.head
 }
 
-// Keys 返回所有键（按最近使用顺序）.
+// Keys 返回所有键按最近使用顺序.
 func (c *LRUCache[K, V]) Keys() []K {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -213,7 +213,7 @@ func (c *LRUCache[K, V]) Resize(capacity int) {
 	}
 }
 
-// All 返回按最近使用顺序遍历所有键值对的迭代器（最近使用在前）.
+// All 返回按最近使用顺序遍历所有键值对的迭代器最近使用在前.
 // 遍历期间持有读锁，不会影响 LRU 顺序.
 func (c *LRUCache[K, V]) All() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
@@ -227,7 +227,7 @@ func (c *LRUCache[K, V]) All() iter.Seq2[K, V] {
 	}
 }
 
-// 内部方法（调用前需持有锁）
+// 内部方法调用前需持有锁
 
 // addToFront 添加节点到头部.
 func (c *LRUCache[K, V]) addToFront(e *entry[K, V]) {
@@ -249,7 +249,7 @@ func (c *LRUCache[K, V]) moveToFront(e *entry[K, V]) {
 	c.addToFront(e)
 }
 
-// removeLast 移除最后一个节点（最久未使用）.
+// removeLast 移除最后一个节点最久未使用.
 func (c *LRUCache[K, V]) removeLast() {
 	last := c.tail.prev
 	if last != c.head {

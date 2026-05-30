@@ -34,9 +34,9 @@ var (
 
 // Quota 配额定义.
 type Quota struct {
-	Key    string        // 配额键（如 userID, tenantID）
+	Key    string        // 配额键如 userID, tenantID
 	Limit  int64         // 配额上限
-	Window time.Duration // 配额窗口（如 24h, 720h=30天）
+	Window time.Duration // 配额窗口如 24h, 720h=30天
 }
 
 // Usage 配额使用情况.
@@ -49,7 +49,7 @@ type Usage struct {
 
 // QuotaManager 配额管理器接口.
 type QuotaManager interface {
-	// Check 检查配额（不消耗）.
+	// Check 检查配额不消耗.
 	Check(ctx context.Context, quota Quota) (*Usage, error)
 	// Consume 消耗配额.
 	Consume(ctx context.Context, quota Quota, n int64) (*Usage, error)

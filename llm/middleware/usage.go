@@ -38,14 +38,14 @@ func (t *UsageTracker) Middleware() Middleware {
 	}
 }
 
-// Total 返回累计总用量（线程安全）.
+// Total 返回累计总用量线程安全.
 func (t *UsageTracker) Total() llm.Usage {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	return t.total
 }
 
-// Reset 重置累计用量（线程安全）.
+// Reset 重置累计用量线程安全.
 func (t *UsageTracker) Reset() {
 	t.mu.Lock()
 	defer t.mu.Unlock()

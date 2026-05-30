@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Tsukikage7/servex/v2/transport/grpcx"
 	"google.golang.org/grpc/metadata"
+
+	"github.com/Tsukikage7/servex/v2/transport/grpcx"
 )
 
 func ExampleGetMetadataValue() {

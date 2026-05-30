@@ -1,7 +1,7 @@
 // Package promptgorm 提供基于 GORM 的 prompt Registry 持久化实现.
 //
-// 表结构由 prompt.Version 自带的 GORM tag 定义（`prompt_versions` 表，
-// 复合主键 (Name, Version)）. 使用前调用 AutoMigrate 自动建表.
+// 表结构由 prompt.Version 自带的 GORM tag 定义`prompt_versions` 表，
+// 复合主键 (Name, Version). 使用前调用 AutoMigrate 自动建表.
 package promptgorm
 
 import (
@@ -33,10 +33,10 @@ func AutoMigrate(ctx context.Context, db *gorm.DB) error {
 
 // Save 保存或覆盖一条 Version 记录，按 (Name, Version) 主键判断.
 //
-// 注意：对已存在的主键，GORM 的 Save 语义会覆盖所有字段（包括 CreatedAt）.
+// 注意：对已存在的主键，GORM 的 Save 语义会覆盖所有字段包括 CreatedAt.
 // 若传入的 v.CreatedAt 为零值，本方法会把它补为当前时间；这对"新记录"语义正确,
 // 但若调用方手动对已有版本再次 Save 且未保留原 CreatedAt，则该版本的 CreatedAt
-// 会被重置为"本次写入时间". Registry 路径只用它写新版本（version 号单调自增）,
+// 会被重置为"本次写入时间". Registry 路径只用它写新版本version 号单调自增,
 // 所以该行为在 Registry 内部无副作用；作为公开 API 使用时请调用方自行保留原 CreatedAt.
 func (s *gormStore) Save(ctx context.Context, v *prompt.Version) error {
 	if v == nil {
@@ -65,7 +65,7 @@ func (s *gormStore) LoadAll(ctx context.Context, name string) ([]prompt.Version,
 	return versions, nil
 }
 
-// LoadAllNames 返回所有已注册的 name（去重、按字典序）.
+// LoadAllNames 返回所有已注册的 name去重、按字典序.
 func (s *gormStore) LoadAllNames(ctx context.Context) ([]string, error) {
 	var names []string
 	err := s.db.WithContext(ctx).

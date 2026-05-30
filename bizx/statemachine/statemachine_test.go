@@ -78,7 +78,7 @@ func TestGuard(t *testing.T) {
 		},
 	})
 
-	// 守卫拒绝（金额为 0）
+	// 守卫拒绝金额为 0
 	err := sm.Fire(ctx, EventPay, float64(0))
 	assert.ErrorIs(t, err, ErrGuardRejected)
 	assert.Equal(t, StatePending, sm.Current())
@@ -139,7 +139,7 @@ func TestInvalidTransition(t *testing.T) {
 	ctx := t.Context()
 	sm := newOrderMachine()
 
-	// 从 pending 状态触发 ship 事件（无效）
+	// 从 pending 状态触发 ship 事件无效
 	err := sm.Fire(ctx, EventShip, nil)
 	assert.ErrorIs(t, err, ErrInvalidTransition)
 	assert.Equal(t, StatePending, sm.Current())

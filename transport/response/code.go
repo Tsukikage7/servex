@@ -12,8 +12,8 @@ import (
 // Code 业务错误码.
 type Code struct {
 	Num     int         // 数字错误码
-	Message string      // 默认错误消息（不可用 i18n 时的回退）
-	Key     string      // i18n 消息键（可选，设置后由 LocalizedMessage 翻译）
+	Message string      // 默认错误消息不可用 i18n 时的回退
+	Key     string      // i18n 消息键可选，设置后由 LocalizedMessage 翻译
 	Kind    errors.Kind // 业务错误语义，用于推导 HTTP/gRPC 映射
 	http    int         // 非标准 HTTP 映射覆盖值
 }
@@ -66,7 +66,7 @@ func (c Code) Is(target error) bool {
 	return c.Num == t.Num
 }
 
-// ToError 将预定义错误码转为 *errors.Error（统一错误类型）.
+// ToError 将预定义错误码转为 *errors.Error统一错误类型.
 //
 // 推荐用法：
 //

@@ -11,7 +11,7 @@ import (
 
 	"github.com/Tsukikage7/servex/v2/llm"
 	"github.com/Tsukikage7/servex/v2/llm/prompt"
-	"github.com/Tsukikage7/servex/v2/llm/prompt/gorm"
+	promptgorm "github.com/Tsukikage7/servex/v2/llm/prompt/gorm"
 )
 
 // newTestDB 创建 sqlite in-memory DB 并 AutoMigrate prompt_versions 表.

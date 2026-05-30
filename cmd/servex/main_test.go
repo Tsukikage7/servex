@@ -820,14 +820,21 @@ func TestNewProjectWithWire(t *testing.T) {
 	if !contains(got, "wire.NewSet") {
 		t.Error("wire.go should contain wire.NewSet definition")
 	}
-	if !contains(got, "server.NewGRPC") {
-		t.Error("wire.go should contain server.NewGRPC provider when WithGRPC is true")
+	if contains(got, "server.NewGRPC") {
+		t.Error("wire.go should not contain transport server constructors; provideApp assembles servers from config")
 	}
 
 	// 验证 provider.go 存在
 	providerPath := filepath.Join(dir, "wireproject/cmd/server/provider.go")
 	if _, err := os.Stat(providerPath); os.IsNotExist(err) {
 		t.Fatal("provider.go should exist")
+	}
+	providerContent, err := os.ReadFile(providerPath)
+	if err != nil {
+		t.Fatalf("read provider.go: %v", err)
+	}
+	if !contains(string(providerContent), "server.NewGRPC(cfg.GRPC, log)") {
+		t.Error("provider.go should assemble gRPC server from config when WithGRPC is true")
 	}
 
 	// 验证 config.go 存在
@@ -937,13 +944,22 @@ func TestNewMonorepo(t *testing.T) {
 		"myplatform/justfile",
 		"myplatform/.gitignore",
 		"myplatform/README.md",
+		"myplatform/api/buf.yaml",
+		"myplatform/api/buf.gen.yaml",
+		"myplatform/docs/README.md",
 		"myplatform/domain/.gitkeep",
 		"myplatform/application/.gitkeep",
 		"myplatform/services/.gitkeep",
 		"myplatform/api/.gitkeep",
 		"myplatform/infrastructure/.gitkeep",
-		"myplatform/deploy/docker/.gitkeep",
+		"myplatform/deploy/docker/base/.gitkeep",
+		"myplatform/deploy/docker/app/.gitkeep",
+		"myplatform/deploy/docker/infra/.gitkeep",
 		"myplatform/deploy/k8s/.gitkeep",
+		"myplatform/scripts/build/.gitkeep",
+		"myplatform/scripts/dev/.gitkeep",
+		"myplatform/scripts/deploy/.gitkeep",
+		"myplatform/scripts/quality/.gitkeep",
 	}
 
 	for _, f := range expectedFiles {
@@ -968,11 +984,11 @@ func TestNewMonorepo(t *testing.T) {
 		t.Fatalf("read justfile: %v", err)
 	}
 	justStr := string(content)
-	if !contains(justStr, "build service") {
-		t.Error("monorepo justfile should contain 'build service' recipe")
+	if !contains(justStr, "build target") {
+		t.Error("monorepo justfile should contain 'build target' recipe")
 	}
-	if !contains(justStr, "build-all") {
-		t.Error("monorepo justfile should contain 'build-all' recipe")
+	if !contains(justStr, "codegen target") {
+		t.Error("monorepo justfile should contain 'codegen target' recipe")
 	}
 	if !contains(justStr, "run service") {
 		t.Error("monorepo justfile should contain 'run service' recipe")
@@ -989,6 +1005,51 @@ func TestNewMonorepo(t *testing.T) {
 		if _, err := os.Stat(path); !os.IsNotExist(err) {
 			t.Errorf("standalone file %q should not exist in monorepo", f)
 		}
+	}
+}
+
+func TestGenerateAIService(t *testing.T) {
+	dir := t.TempDir()
+	origDir, _ := os.Getwd()
+	defer os.Chdir(origDir)
+	os.Chdir(dir)
+
+	data := AIServiceData{
+		Name:      "assistant",
+		Module:    "github.com/example/assistant",
+		Provider:  "openai",
+		Framework: "eino",
+	}
+
+	if err := generateAIService(data); err != nil {
+		t.Fatalf("generateAIService: %v", err)
+	}
+
+	expectedFiles := []string{
+		"assistant/go.mod",
+		"assistant/README.md",
+		"assistant/justfile",
+		"assistant/configs/config.yaml",
+		"assistant/cmd/server/main.go",
+		"assistant/internal/agent/agent.go",
+		"assistant/internal/http/chat.go",
+		"assistant/internal/llm/model.go",
+		"assistant/internal/tools/tools.go",
+	}
+
+	for _, f := range expectedFiles {
+		path := filepath.Join(dir, f)
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			t.Errorf("expected ai-service file %q does not exist", f)
+		}
+	}
+
+	content, err := os.ReadFile(filepath.Join(dir, "assistant/README.md"))
+	if err != nil {
+		t.Fatalf("read README.md: %v", err)
+	}
+	if got := string(content); !contains(got, "AI service scaffold") {
+		t.Errorf("README.md missing ai-service marker, got:\n%s", got)
 	}
 }
 

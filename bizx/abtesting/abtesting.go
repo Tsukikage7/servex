@@ -126,7 +126,7 @@ func (m *Manager) GetExperiment(ctx context.Context, id string) (*Experiment, er
 	return m.store.GetExperiment(ctx, id)
 }
 
-// Assign 分配用户到实验变体（基于确定性哈希）.
+// Assign 分配用户到实验变体基于确定性哈希.
 func (m *Manager) Assign(ctx context.Context, experimentID, userID string) (*Assignment, error) {
 	// 先检查是否已有分配
 	existing, err := m.store.GetAssignment(ctx, experimentID, userID)
@@ -204,7 +204,7 @@ func assignVariant(exp *Experiment, userID string) string {
 
 // --- Memory Store ---
 
-// MemoryStore 基于内存的 A/B 测试存储（用于测试）.
+// MemoryStore 基于内存的 A/B 测试存储用于测试.
 type MemoryStore struct {
 	mu          sync.RWMutex
 	experiments map[string]*Experiment

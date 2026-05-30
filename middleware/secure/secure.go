@@ -15,17 +15,17 @@ type Config struct {
 	ContentTypeNosniff bool
 	// XSSProtection XSS 保护头，默认 "1; mode=block"
 	XSSProtection string
-	// HSTSMaxAge HSTS 最大有效期（秒），0 表示不设置，默认 31536000（1年）
+	// HSTSMaxAge HSTS 最大有效期秒，0 表示不设置，默认 315360001年
 	HSTSMaxAge int
 	// HSTSIncludeSubdomains HSTS 包含子域名，默认 true
 	HSTSIncludeSubdomains bool
 	// HSTSPreload HSTS 预加载，默认 false
 	HSTSPreload bool
-	// ContentSecurityPolicy CSP 策略，默认空（不设置）
+	// ContentSecurityPolicy CSP 策略，默认空不设置
 	ContentSecurityPolicy string
 	// ReferrerPolicy 引用策略，默认 "strict-origin-when-cross-origin"
 	ReferrerPolicy string
-	// PermissionsPolicy 权限策略，默认空（不设置）
+	// PermissionsPolicy 权限策略，默认空不设置
 	PermissionsPolicy string
 	// IsDevelopment 开发模式下跳过 HSTS，默认 false
 	IsDevelopment bool
@@ -71,7 +71,7 @@ func HTTPMiddleware(cfg *Config) func(http.Handler) http.Handler {
 				w.Header().Set("X-XSS-Protection", cfg.XSSProtection)
 			}
 
-			// Strict-Transport-Security（仅 HTTPS 请求且非开发模式下设置）
+			// Strict-Transport-Security仅 HTTPS 请求且非开发模式下设置
 			if hstsValue != "" && !cfg.IsDevelopment && (r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https") {
 				w.Header().Set("Strict-Transport-Security", hstsValue)
 			}

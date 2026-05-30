@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/Tsukikage7/servex/v2/auth/proto"
+	authpb "github.com/Tsukikage7/servex/v2/auth/proto"
 	"github.com/Tsukikage7/servex/v2/encoding"
 )
 

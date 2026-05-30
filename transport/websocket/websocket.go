@@ -65,7 +65,7 @@ type Message struct {
 	Type MessageType
 	// Data 消息数据
 	Data []byte
-	// ClientID 发送者 ID（仅接收时有效）
+	// ClientID 发送者 ID仅接收时有效
 	ClientID string
 	// Timestamp 时间戳
 	Timestamp time.Time

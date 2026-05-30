@@ -1,4 +1,4 @@
-// Package graphql 提供基于 graphql-go 的 GraphQL 服务器适配器（code-first）.
+// Package graphql 提供基于 graphql-go 的 GraphQL 服务器适配器code-first.
 package graphql
 
 import (
@@ -98,14 +98,14 @@ type graphqlRequest struct {
 }
 
 // Handler 返回处理 GraphQL query/mutation 的 http.Handler.
-// 支持 POST（JSON body）和 GET（query params）两种方式.
+// 支持 POSTJSON body和 GETquery params两种方式.
 func (s *Server) Handler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var req graphqlRequest
 
 		switch r.Method {
 		case http.MethodPost:
-			// 限制请求体大小（10MB），防止 OOM
+			// 限制请求体大小10MB，防止 OOM
 			const maxBodySize = 10 << 20
 			r.Body = http.MaxBytesReader(w, r.Body, maxBodySize)
 			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

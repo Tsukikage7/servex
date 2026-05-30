@@ -78,7 +78,7 @@ func MetadataTokenExtractor(key string) TokenExtractor {
 	}
 }
 
-// PrincipalTokenExtractor 从 auth.Principal.ID 提取令牌（auth→tenant 桥接）.
+// PrincipalTokenExtractor 从 auth.Principal.ID 提取令牌auth→tenant 桥接.
 func PrincipalTokenExtractor() TokenExtractor {
 	return func(ctx context.Context, _ any) (string, error) {
 		principal, ok := auth.FromContext(ctx)

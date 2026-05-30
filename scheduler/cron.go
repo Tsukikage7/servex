@@ -263,7 +263,7 @@ func (s *cronScheduler) executeJob(job *Job) {
 		Attempt:   1,
 	}
 
-	// 1. 单例检查（本地）
+	// 1. 单例检查本地
 	if job.Singleton {
 		if !job.tryStart() {
 			jc.Skipped = true
@@ -315,11 +315,11 @@ func (s *cronScheduler) executeJob(job *Job) {
 		return
 	}
 
-	// 4. 执行任务（带重试）
+	// 4. 执行任务带重试
 	s.runWithRetry(ctx, job, jc)
 }
 
-// runWithRetry 执行任务（带重试）.
+// runWithRetry 执行任务带重试.
 func (s *cronScheduler) runWithRetry(ctx context.Context, job *Job, jc *JobContext) {
 	maxAttempts := job.RetryCount + 1
 
@@ -358,7 +358,7 @@ func (s *cronScheduler) runWithRetry(ctx context.Context, job *Job, jc *JobConte
 			return
 		}
 
-		// 等待重试间隔（尊重 context 取消）
+		// 等待重试间隔尊重 context 取消
 		if job.RetryInterval > 0 {
 			retryTimer := time.NewTimer(job.RetryInterval)
 			select {

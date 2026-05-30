@@ -14,7 +14,7 @@ func Apply[T any](t *T, opts ...Option[T]) {
 	}
 }
 
-// ApplyErr 遇到第一个错误立即返回（fail-fast）.
+// ApplyErr 遇到第一个错误立即返回fail-fast.
 func ApplyErr[T any](t *T, opts ...OptionErr[T]) error {
 	for _, opt := range opts {
 		if err := opt(t); err != nil {

@@ -11,15 +11,19 @@ import (
 	"github.com/Tsukikage7/servex/v2/observability/logger"
 )
 
-func ExampleNewJWT() {
+func ExampleNew() {
 	log := logger.MustNewLogger(&logger.Config{Level: "info", Format: "console", Output: "console"})
 
-	j := jwt.NewJWT(
+	j, err := jwt.New(
 		jwt.WithSecretKey("my-secret-key-at-least-32-bytes!"),
 		jwt.WithIssuer("my-service"),
 		jwt.WithLogger(log),
 		jwt.WithTokenPrefix(""),
 	)
+	if err != nil {
+		fmt.Println("error:", err)
+		return
+	}
 
 	fmt.Println(j.Issuer())
 	fmt.Println(j.Name())
@@ -31,12 +35,16 @@ func ExampleNewJWT() {
 func ExampleJWT_Generate() {
 	log := logger.MustNewLogger(&logger.Config{Level: "info", Format: "console", Output: "console"})
 
-	j := jwt.NewJWT(
+	j, err := jwt.New(
 		jwt.WithSecretKey("my-secret-key-at-least-32-bytes!"),
 		jwt.WithIssuer("my-service"),
 		jwt.WithLogger(log),
 		jwt.WithTokenPrefix(""),
 	)
+	if err != nil {
+		fmt.Println("error:", err)
+		return
+	}
 
 	// 生成令牌.
 	claims := &jwt.StandardClaims{

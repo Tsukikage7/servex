@@ -44,7 +44,7 @@ func TestWildcard(t *testing.T) {
 	_ = b.Publish(t.Context(), "user.created", nil)
 	_ = b.Publish(t.Context(), "user.deleted", nil)
 	_ = b.Publish(t.Context(), "order.created", nil)        // 不应匹配
-	_ = b.Publish(t.Context(), "user.profile.updated", nil) // 不应匹配（多层）
+	_ = b.Publish(t.Context(), "user.profile.updated", nil) // 不应匹配多层
 
 	assert.Len(t, events, 2)
 	assert.Contains(t, events, "user.created")

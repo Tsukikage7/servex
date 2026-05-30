@@ -1,7 +1,7 @@
 // Package deviceinfo 提供设备信息检测功能.
 //
 // 特性：
-//   - 解析 Client Hints 头（Sec-CH-UA-*）
+//   - 解析 Client Hints 头Sec-CH-UA-*
 //   - 支持旧版 User-Agent 解析回退
 //   - 设备类型、平台、浏览器检测
 //   - HTTP/gRPC 中间件支持
@@ -270,7 +270,7 @@ func parseBrandList(list string) (browser, version string) {
 	return bestBrowser, bestVersion
 }
 
-// parseUserAgent 从 User-Agent 解析（回退方案）.
+// parseUserAgent 从 User-Agent 解析回退方案.
 func parseUserAgent(ua string, info *Info) {
 	uaLower := strings.ToLower(ua)
 
@@ -307,7 +307,7 @@ func parseUserAgent(ua string, info *Info) {
 		info.Platform = "Chrome OS"
 	}
 
-	// 检测浏览器（顺序很重要）
+	// 检测浏览器顺序很重要
 	switch {
 	case strings.Contains(uaLower, "edg/") || strings.Contains(uaLower, "edge/"):
 		info.Browser = "Microsoft Edge"

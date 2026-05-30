@@ -13,13 +13,13 @@ type JobContext struct {
 	// StartTime 开始执行时间.
 	StartTime time.Time
 
-	// Attempt 当前重试次数（从 1 开始）.
+	// Attempt 当前重试次数从 1 开始.
 	Attempt int
 
-	// Error 执行错误（仅在 AfterJob/OnError 中有值）.
+	// Error 执行错误仅在 AfterJob/OnError 中有值.
 	Error error
 
-	// Duration 执行耗时（仅在 AfterJob/OnError 中有值）.
+	// Duration 执行耗时仅在 AfterJob/OnError 中有值.
 	Duration time.Duration
 
 	// Skipped 是否被跳过.
@@ -47,7 +47,7 @@ type Hooks struct {
 	// BeforeJob 任务执行前回调列表.
 	BeforeJob []BeforeJobHook
 
-	// AfterJob 任务执行后回调列表（无论成功失败都会调用）.
+	// AfterJob 任务执行后回调列表无论成功失败都会调用.
 	AfterJob []AfterJobHook
 
 	// OnError 任务错误回调列表.

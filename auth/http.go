@@ -59,7 +59,7 @@ func HTTPMiddleware(authenticator Authenticator, opts ...Option) func(http.Handl
 
 // DefaultHTTPCredentialsExtractor 默认的 HTTP 凭据提取器.
 //
-// 仅从 Authorization Header（Bearer）和 X-API-Key Header 中提取凭据.
+// 仅从 Authorization HeaderBearer和 X-API-Key Header 中提取凭据.
 // 如需从 URL 查询参数 ?access_token= 提取，请使用 WithQueryParamExtraction() 显式启用.
 func DefaultHTTPCredentialsExtractor(_ context.Context, request any) (*Credentials, error) {
 	r, ok := request.(*http.Request)
@@ -140,7 +140,7 @@ func BearerExtractor(_ context.Context, request any) (*Credentials, error) {
 	}, nil
 }
 
-// writeHTTPError 写入 HTTP 错误响应（使用 json.Marshal 防止 JSON 注入）.
+// writeHTTPError 写入 HTTP 错误响应使用 json.Marshal 防止 JSON 注入.
 func writeHTTPError(w http.ResponseWriter, code int, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
@@ -163,7 +163,7 @@ func httpMessageForError(err error) string {
 }
 
 // HTTPSkipPaths 返回跳过指定路径的 Skipper.
-// 同时匹配有无尾部斜杠的路径（如 /health 和 /health/）.
+// 同时匹配有无尾部斜杠的路径如 /health 和 /health/.
 func HTTPSkipPaths(paths ...string) Skipper {
 	pathSet := make(map[string]bool)
 	for _, p := range paths {

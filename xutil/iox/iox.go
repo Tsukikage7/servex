@@ -82,7 +82,7 @@ func LimitReadCloser(r io.ReadCloser, n int64) io.ReadCloser {
 func (l *limitReadCloser) Read(p []byte) (int, error) {
 	if l.read >= l.limit {
 		// 返回 io.EOF 而非自定义错误，符合 io.Reader 约定，
-		// 调用方（如 io.ReadAll）能正确识别读取结束
+		// 调用方如 io.ReadAll能正确识别读取结束
 		return 0, io.EOF
 	}
 	remaining := l.limit - l.read

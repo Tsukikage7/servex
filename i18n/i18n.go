@@ -23,7 +23,7 @@ type Bundle struct {
 
 	mu       sync.RWMutex
 	messages map[language.Tag]map[string]string // tag -> messageID -> message
-	tags     []language.Tag                     // 已注册的语言标签（用于构建 matcher）
+	tags     []language.Tag                     // 已注册的语言标签用于构建 matcher
 }
 
 // Option Bundle 配置选项.
@@ -51,7 +51,7 @@ func NewBundle(defaultLang language.Tag, opts ...Option) *Bundle {
 }
 
 // LoadMessageFile 加载 JSON 消息文件.
-// 文件名中须包含语言标签（如 messages.zh.json、en.json），
+// 文件名中须包含语言标签如 messages.zh.json、en.json，
 // 语言标签通过 tag 参数显式指定.
 func (b *Bundle) LoadMessageFile(tag language.Tag, path string) error {
 	data, err := os.ReadFile(path)
@@ -107,8 +107,23 @@ func (b *Bundle) LoadMessages(tag language.Tag, messages map[string]string) {
 	b.matcher = language.NewMatcher(b.tags)
 }
 
+// MergeMessages 追加或覆盖指定语言的消息映射.
+func (b *Bundle) MergeMessages(tag language.Tag, messages map[string]string) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	if _, exists := b.messages[tag]; !exists {
+		b.tags = append(b.tags, tag)
+		b.messages[tag] = make(map[string]string, len(messages))
+	}
+	for k, v := range messages {
+		b.messages[tag][k] = v
+	}
+	b.matcher = language.NewMatcher(b.tags)
+}
+
 // NewLocalizer 创建本地化器.
-// langs 为语言偏好列表（如 Accept-Language 头），按优先级从高到低排列.
+// langs 为语言偏好列表如 Accept-Language 头，按优先级从高到低排列.
 func (b *Bundle) NewLocalizer(langs ...string) *Localizer {
 	parsedTags := make([]language.Tag, 0, len(langs))
 	for _, l := range langs {

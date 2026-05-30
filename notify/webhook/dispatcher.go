@@ -31,7 +31,7 @@ func NewDispatcher(opts ...DispatcherOption) *dispatcher {
 }
 
 // Dispatch 向订阅者投递 webhook 事件.
-// 失败时自动重试（最多 3 次，指数退避）.
+// 失败时自动重试最多 3 次，指数退避.
 func (d *dispatcher) Dispatch(ctx context.Context, sub *Subscription, event *Event) error {
 	if sub == nil {
 		return ErrNilSubscription

@@ -1,5 +1,5 @@
 // Package fallback 提供优雅降级中间件.
-// 当下游服务失败（返回 5xx）或发生 panic 时，自动返回缓存或默认响应.
+// 当下游服务失败返回 5xx或发生 panic 时，自动返回缓存或默认响应.
 package fallback
 
 import (

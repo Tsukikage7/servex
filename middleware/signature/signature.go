@@ -2,8 +2,8 @@
 // 特性：
 //   - HMAC-SHA256/SHA512 签名
 //   - 时间戳防重放攻击
-//   - HTTP 中间件（服务端验签）
-//   - 请求签名辅助函数（客户端签名）
+//   - HTTP 中间件服务端验签
+//   - 请求签名辅助函数客户端签名
 //   - 常量时间比较防时序攻击
 //
 // 签名算法：
@@ -52,9 +52,9 @@ type Config struct {
 	Secret          string        // HMAC 密钥
 	HeaderName      string        // 签名头名，默认 "X-Signature"
 	TimestampHeader string        // 时间戳头名，默认 "X-Timestamp"
-	MaxAge          time.Duration // 签名最大有效期，默认 5 分钟（防重放）
+	MaxAge          time.Duration // 签名最大有效期，默认 5 分钟防重放
 	Algorithm       string        // "sha256" (默认) 或 "sha512"
-	MaxBodySize     int64         // 请求体最大字节数，默认 1MB（0 表示不限制）
+	MaxBodySize     int64         // 请求体最大字节数，默认 1MB0 表示不限制
 }
 
 // DefaultConfig 创建默认签名配置.
@@ -179,7 +179,7 @@ func HTTPMiddleware(cfg *Config) func(http.Handler) http.Handler {
 				return
 			}
 
-			// 读取 body（限制大小）
+			// 读取 body限制大小
 			var bodyReader io.Reader = r.Body
 			if cfg.MaxBodySize > 0 {
 				bodyReader = io.LimitReader(r.Body, cfg.MaxBodySize+1)
@@ -196,7 +196,7 @@ func HTTPMiddleware(cfg *Config) func(http.Handler) http.Handler {
 			// 恢复 body
 			r.Body = io.NopCloser(bytes.NewReader(body))
 
-			// 验证签名（包含 HTTP 方法和路径）
+			// 验证签名包含 HTTP 方法和路径
 			expected := signWithAlgorithm(body, r.Method, r.URL.Path, tsStr, cfg.Secret, cfg.Algorithm)
 			if !hmac.Equal([]byte(expected), []byte(sig)) {
 				http.Error(w, ErrInvalidSignature.Error(), http.StatusUnauthorized)
@@ -208,7 +208,7 @@ func HTTPMiddleware(cfg *Config) func(http.Handler) http.Handler {
 	}
 }
 
-// SignRequest 为 HTTP 请求签名（客户端用）.
+// SignRequest 为 HTTP 请求签名客户端用.
 // 读取请求 body，生成时间戳，计算签名，设置 headers.
 func SignRequest(req *http.Request, secret string) error {
 	return SignRequestWithConfig(req, DefaultConfig(secret))
@@ -232,7 +232,7 @@ func SignRequestWithConfig(req *http.Request, cfg *Config) error {
 	// 生成时间戳
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 
-	// 计算签名（包含 HTTP 方法和路径）
+	// 计算签名包含 HTTP 方法和路径
 	sig := signWithAlgorithm(body, req.Method, req.URL.Path, timestamp, cfg.Secret, cfg.Algorithm)
 
 	// 设置 headers

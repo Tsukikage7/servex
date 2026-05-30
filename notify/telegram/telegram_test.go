@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"github.com/Tsukikage7/servex/v2/notify"
 )
@@ -77,14 +77,14 @@ func TestSend_MultiplePartialFailure(t *testing.T) {
 	if !errors.Is(err, sendErr) {
 		t.Errorf("期望错误包含 sendErr，实际: %v", err)
 	}
-	// lastID 应为最后一条成功消息的 ID（第三条，nextID=2）
+	// lastID 应为最后一条成功消息的 ID第三条，nextID=2
 	if result.MessageID == "" {
 		t.Error("期望 MessageID 不为空（至少有一条成功）")
 	}
 	if result.Error == nil {
 		t.Error("期望 Result.Error 不为 nil")
 	}
-	// 应仍尝试发送全部 3 条（跳过无效 chatID 外，有效的都要尝试）
+	// 应仍尝试发送全部 3 条跳过无效 chatID 外，有效的都要尝试
 	if len(mock.sentMessages) != 3 {
 		t.Errorf("期望尝试发送 3 条，实际: %d", len(mock.sentMessages))
 	}

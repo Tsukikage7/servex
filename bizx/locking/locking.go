@@ -280,14 +280,14 @@ func (l *reentrantLock) LockCount() int {
 
 // rwLock 分布式互斥锁，对外提供 RWLock 接口.
 // 注意: 分布式环境下无法用本地计数器实现真正的读写锁，
-// 因此 RLock/RUnlock 实际退化为写锁（互斥锁），保证正确性.
+// 因此 RLock/RUnlock 实际退化为写锁互斥锁，保证正确性.
 type rwLock struct {
 	locker lock.Locker
 	key    string
 	opts   *options
 }
 
-// NewRWLock 创建分布式锁（实现 RWLock 接口）.
+// NewRWLock 创建分布式锁实现 RWLock 接口.
 // 注意: 分布式场景下 RLock 退化为互斥锁，不支持多读并发.
 // 如需真正的分布式读写锁，请使用支持读写语义的分布式锁服务.
 func NewRWLock(locker lock.Locker, key string, opts ...Option) RWLock {

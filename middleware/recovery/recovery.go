@@ -11,7 +11,7 @@ import (
 
 // Handler 是 panic 处理函数.
 // 参数:
-//   - ctx: 可选的上下文信息（HTTP 为 *http.Request，gRPC 为 context.Context）
+//   - ctx: 可选的上下文信息HTTP 为 *http.Request，gRPC 为 context.Context
 //   - p: panic 值
 //   - stack: 堆栈信息
 //
@@ -25,7 +25,7 @@ type Options struct {
 	Logger logger.Logger
 
 	// Handler 自定义 panic 处理函数.
-	// 如果为 nil，使用默认处理（记录日志并返回内部错误）.
+	// 如果为 nil，使用默认处理记录日志并返回内部错误.
 	Handler Handler
 
 	// StackSize 堆栈大小，默认 64KB.
@@ -103,7 +103,7 @@ func (e *PanicError) Error() string {
 	return fmt.Sprintf("panic: %v", e.Value)
 }
 
-// Unwrap 返回原始错误（如果 panic 值是 error）.
+// Unwrap 返回原始错误如果 panic 值是 error.
 func (e *PanicError) Unwrap() error {
 	if err, ok := e.Value.(error); ok {
 		return err

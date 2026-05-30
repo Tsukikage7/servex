@@ -47,7 +47,7 @@ func (c *discordContext) Text() string {
 	return c.message.Content
 }
 
-// Command 返回命令名（不含前缀）。
+// Command 返回命令名不含前缀。
 // 例如前缀为 "/"，消息 "/start foo" 返回 "start"；非命令返回 ""。
 func (c *discordContext) Command() string {
 	content := c.message.Content
@@ -78,7 +78,7 @@ func (c *discordContext) Args() []string {
 	return fields[1:]
 }
 
-// State 读取当前频道（ChatID）的对话状态。
+// State 读取当前频道ChatID的对话状态。
 func (c *discordContext) State() string {
 	val, err := c.store.Get(c.message.ChannelID)
 	if err != nil {
@@ -88,7 +88,7 @@ func (c *discordContext) State() string {
 	return val
 }
 
-// SetState 设置当前频道（ChatID）的对话状态。
+// SetState 设置当前频道ChatID的对话状态。
 func (c *discordContext) SetState(state string) {
 	if err := c.store.Set(c.message.ChannelID, state); err != nil {
 		log.Printf("component=Discord 设置状态失败 channel=%s error=%v", c.message.ChannelID, err)

@@ -15,7 +15,7 @@ func TestCounter(t *testing.T) {
 	collector, err := NewPrometheus(cfg)
 	require.NoError(t, err)
 
-	// 使用计数器（自动注册）
+	// 使用计数器自动注册
 	collector.Counter("payment_failed_total", map[string]string{"channel": "alipay", "reason": "timeout"})
 	collector.Counter("payment_failed_total", map[string]string{"channel": "wechat", "reason": "insufficient_balance"})
 
@@ -31,7 +31,7 @@ func TestHistogram(t *testing.T) {
 	collector, err := NewPrometheus(cfg)
 	require.NoError(t, err)
 
-	// 使用直方图（自动注册）
+	// 使用直方图自动注册
 	collector.Histogram("payment_amount", 99.9, map[string]string{"channel": "alipay"})
 	collector.Histogram("payment_amount", 199.9, map[string]string{"channel": "wechat"})
 
@@ -45,7 +45,7 @@ func TestGauge(t *testing.T) {
 	collector, err := NewPrometheus(cfg)
 	require.NoError(t, err)
 
-	// 使用仪表盘（自动注册）
+	// 使用仪表盘自动注册
 	collector.Gauge("pending_orders", 42, map[string]string{"status": "unpaid"})
 	collector.Gauge("pending_orders", 10, map[string]string{"status": "paid"})
 

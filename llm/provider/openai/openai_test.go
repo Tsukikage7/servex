@@ -2,9 +2,11 @@ package openai_test
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/Tsukikage7/servex/v2/llm"
@@ -118,6 +120,38 @@ func TestStream_SSEParsing(t *testing.T) {
 
 	if fullContent != "Hello World" {
 		t.Errorf("期望 'Hello World'，得到 %q", fullContent)
+	}
+}
+
+func TestStream_AllowsLargeSSEChunk(t *testing.T) {
+	largeDelta := strings.Repeat("x", 70*1024)
+	sseData := "data: {\"id\":\"1\",\"choices\":[{\"delta\":{\"content\":\"" + largeDelta + "\"},\"finish_reason\":null,\"index\":0}]}\n\n" +
+		"data: [DONE]\n\n"
+
+	srv := mockOpenAIServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(sseData))
+	})
+
+	client := openai.New("test-key", openai.WithBaseURL(srv.URL))
+	reader, err := client.Stream(t.Context(), []llm.Message{llm.UserMessage("Hi")})
+	if err != nil {
+		t.Fatalf("Stream 失败: %v", err)
+	}
+	defer reader.Close()
+
+	chunk, err := reader.Recv()
+	if err != nil {
+		t.Fatalf("Recv 失败: %v", err)
+	}
+	if chunk.Delta != largeDelta {
+		t.Fatalf("期望读取完整长片段，长度=%d，得到长度=%d", len(largeDelta), len(chunk.Delta))
+	}
+
+	_, err = reader.Recv()
+	if err != io.EOF {
+		t.Fatalf("期望 EOF，得到 %v", err)
 	}
 }
 

@@ -26,7 +26,7 @@ var (
 
 // Code 验证码.
 type Code struct {
-	Key       string    // 验证码标识（如手机号、邮箱）
+	Key       string    // 验证码标识如手机号、邮箱
 	Code      string    // 验证码内容
 	ExpiresAt time.Time // 过期时间
 }
@@ -63,14 +63,14 @@ func WithExpiration(d time.Duration) Option {
 	}
 }
 
-// WithMaxAttempts 设置最大验证次数，默认 5（防暴力破解）.
+// WithMaxAttempts 设置最大验证次数，默认 5防暴力破解.
 func WithMaxAttempts(n int) Option {
 	return func(o *options) {
 		o.maxAttempts = n
 	}
 }
 
-// WithCooldown 设置发送冷却时间，默认 60s（防刷）.
+// WithCooldown 设置发送冷却时间，默认 60s防刷.
 func WithCooldown(d time.Duration) Option {
 	return func(o *options) {
 		o.cooldown = d
@@ -202,7 +202,7 @@ type memoryStore struct {
 	cooldowns map[string]time.Time
 }
 
-// NewMemoryStore 创建基于内存的验证码存储（用于测试）.
+// NewMemoryStore 创建基于内存的验证码存储用于测试.
 func NewMemoryStore() Store {
 	return &memoryStore{
 		codes:     make(map[string]memoryEntry),

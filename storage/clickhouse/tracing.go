@@ -8,7 +8,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/semconv/v1.21.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -27,7 +27,7 @@ func newTracingClient(inner *chClient) *tracingClient {
 	}
 }
 
-// spanName 从 SQL 语句中提取操作名（如 SELECT / INSERT / CREATE TABLE 等）.
+// spanName 从 SQL 语句中提取操作名如 SELECT / INSERT / CREATE TABLE 等.
 func spanName(query string) string {
 	q := strings.TrimSpace(query)
 	// 取第一个词作为操作类型

@@ -1,4 +1,4 @@
-// Package discord 提供基于 Gateway（WebSocket）模式的 Discord Bot 实现。
+// Package discord 提供基于 GatewayWebSocket模式的 Discord Bot 实现。
 package discord
 
 import (
@@ -10,7 +10,7 @@ import (
 	"github.com/Tsukikage7/servex/v2/transport/botserver"
 )
 
-// DiscordBot Discord Bot 实现，使用 Gateway（WebSocket）模式。
+// DiscordBot Discord Bot 实现，使用 GatewayWebSocket模式。
 type DiscordBot struct {
 	session    *discordgo.Session
 	router     *botserver.Router

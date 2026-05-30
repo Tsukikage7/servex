@@ -25,7 +25,7 @@ type Sender struct {
 }
 
 // NewSender 创建 Sender，内部创建 discordgo.Session。
-// token 为 Bot Token（不含 "Bot " 前缀，内部自动添加）。
+// token 为 Bot Token不含 "Bot " 前缀，内部自动添加。
 func NewSender(token string, opts ...Option) (*Sender, error) {
 	if token == "" {
 		return nil, ErrEmptyToken
@@ -34,7 +34,7 @@ func NewSender(token string, opts ...Option) (*Sender, error) {
 	if err != nil {
 		return nil, ErrSessionCreate.WithCause(err)
 	}
-	// 注意：只使用 HTTP API 发消息，不需要建立 Gateway 连接（无需 Open）
+	// 注意：只使用 HTTP API 发消息，不需要建立 Gateway 连接无需 Open
 	s := &Sender{client: session}
 	for _, opt := range opts {
 		opt(s)

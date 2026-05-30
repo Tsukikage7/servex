@@ -38,7 +38,7 @@ type RateCounter interface {
 	TTL(ctx context.Context, key string) (time.Duration, error)
 
 	// IncrByWithExpire 原子增加计数并设置过期时间，返回新值.
-	// 实现应保证 INCR 和 EXPIRE 的原子性（如使用 Lua 脚本）.
+	// 实现应保证 INCR 和 EXPIRE 的原子性如使用 Lua 脚本.
 	// 如果底层不支持原子操作，可降级为先 IncrementBy 再 Expire.
 	IncrByWithExpire(ctx context.Context, key string, n int64, ttl time.Duration) (int64, error)
 }
@@ -57,7 +57,7 @@ type TokenBucket struct {
 
 // NewTokenBucket 创建令牌桶限流器.
 // rate: 每秒生成的令牌数
-// capacity: 桶容量（最大令牌数）
+// capacity: 桶容量最大令牌数
 func NewTokenBucket(rate float64, capacity float64) *TokenBucket {
 	return &TokenBucket{
 		rate:       rate,
@@ -120,7 +120,7 @@ func (tb *TokenBucket) WaitN(ctx context.Context, n int) error {
 	}
 }
 
-// refill 补充令牌（需要持有锁）.
+// refill 补充令牌需要持有锁.
 func (tb *TokenBucket) refill() {
 	now := time.Now()
 	elapsed := now.Sub(tb.lastUpdate).Seconds()
@@ -213,7 +213,7 @@ func (sw *SlidingWindow) WaitN(ctx context.Context, n int) error {
 	}
 }
 
-// cleanup 清理过期的时间戳（需要持有锁）.
+// cleanup 清理过期的时间戳需要持有锁.
 func (sw *SlidingWindow) cleanup(now time.Time) {
 	cutoff := now.Add(-sw.window)
 	i := 0

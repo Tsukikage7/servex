@@ -55,7 +55,7 @@ type Event struct {
 	Event string
 	// Data 事件数据
 	Data []byte
-	// Retry 重试间隔（毫秒）
+	// Retry 重试间隔毫秒
 	Retry int
 }
 
@@ -99,7 +99,7 @@ type Config struct {
 	BufferSize int `json:"buffer_size" yaml:"buffer_size" mapstructure:"buffer_size"`
 	// HeartbeatInterval 心跳间隔
 	HeartbeatInterval time.Duration `json:"heartbeat_interval" yaml:"heartbeat_interval" mapstructure:"heartbeat_interval"`
-	// RetryInterval 客户端重试间隔（毫秒）
+	// RetryInterval 客户端重试间隔毫秒
 	RetryInterval int `json:"retry_interval" yaml:"retry_interval" mapstructure:"retry_interval"`
 	// Headers 自定义响应头
 	Headers map[string]string `json:"headers" yaml:"headers" mapstructure:"headers"`
@@ -318,10 +318,10 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set(k, v)
 	}
 
-	// 创建客户端（从请求上下文派生）
+	// 创建客户端从请求上下文派生
 	client := newClient(s.config.BufferSize, r.Context())
 
-	// 注册客户端（带超时保护，防止阻塞）
+	// 注册客户端带超时保护，防止阻塞
 	select {
 	case s.register <- client:
 	default:

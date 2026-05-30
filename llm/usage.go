@@ -2,13 +2,13 @@ package llm
 
 // Usage token 用量统计.
 type Usage struct {
-	// PromptTokens 输入（提示词）token 数.
+	// PromptTokens 输入提示词token 数.
 	PromptTokens int
-	// CompletionTokens 输出（生成）token 数.
+	// CompletionTokens 输出生成token 数.
 	CompletionTokens int
 	// TotalTokens 总 token 数.
 	TotalTokens int
-	// CachedTokens 命中缓存的 token 数（部分 Provider 支持）.
+	// CachedTokens 命中缓存的 token 数部分 Provider 支持.
 	CachedTokens int
 }
 

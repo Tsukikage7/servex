@@ -6,10 +6,22 @@ http:
   read_timeout: 10s
   write_timeout: 10s
   idle_timeout: 120s
+  runtime:
+    recovery: true
+  logging:
+    enabled: true
+    skip_paths:
+      - /healthz
 {{if .WithGRPC}}
 grpc:
   addr: ":9090"
   enable_reflection: true
+  runtime:
+    recovery: true
+  logging:
+    enabled: true
+    skip_paths:
+      - /grpc.health.v1.Health/Check
 {{end}}
 logger:
   level: info

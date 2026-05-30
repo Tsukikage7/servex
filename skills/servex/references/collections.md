@@ -37,7 +37,7 @@ type Task struct {
 func (t Task) Delay() time.Duration { return time.Until(t.RunAt) }
 
 // 创建延迟队列
-dq := delayqueue.New[Task](0)
+dq := delayqueue.New[Task]()
 
 // 入队（立即返回）
 dq.Enqueue(ctx, Task{ID: "1", RunAt: time.Now().Add(5 * time.Second)})

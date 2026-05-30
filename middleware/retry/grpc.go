@@ -150,9 +150,9 @@ func DefaultGRPCRetryable(err error) bool {
 	switch st.Code() {
 	case codes.Unavailable: // 服务不可用
 		return true
-	case codes.ResourceExhausted: // 资源耗尽（如限流）
+	case codes.ResourceExhausted: // 资源耗尽如限流
 		return true
-	case codes.Aborted: // 操作中止（通常是并发问题）
+	case codes.Aborted: // 操作中止通常是并发问题
 		return true
 	case codes.DeadlineExceeded: // 超时
 		return true

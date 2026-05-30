@@ -8,7 +8,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/semconv/v1.21.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -45,7 +45,7 @@ const TraceIDMetadataKey = "x-trace-id"
 
 // UnaryServerInterceptor 返回 gRPC 一元服务端拦截器.
 // 拦截器会自动从请求 metadata 提取或生成 traceId，并通过响应 header 返回.
-// traceId 同时作为请求的唯一标识（requestId），可通过 TraceID(ctx) 获取.
+// traceId 同时作为请求的唯一标识requestId，可通过 TraceID(ctx) 获取.
 // 使用示例:
 //
 //	server := grpc.NewServer(
@@ -81,7 +81,7 @@ func UnaryServerInterceptor(serviceName string) grpc.UnaryServerInterceptor {
 		)
 		defer span.End()
 
-		// 注入 trace 信息到 context（供 middleware/trace 读取）
+		// 注入 trace 信息到 context供 middleware/trace 读取
 		spanCtx := span.SpanContext()
 		if spanCtx.HasTraceID() {
 			ctx = logger.ContextWithTraceID(ctx, spanCtx.TraceID().String())
@@ -115,7 +115,7 @@ func UnaryServerInterceptor(serviceName string) grpc.UnaryServerInterceptor {
 
 // StreamServerInterceptor 返回 gRPC 流式服务端拦截器.
 // 拦截器会自动从请求 metadata 提取或生成 traceId，并通过响应 header 返回.
-// traceId 同时作为请求的唯一标识（requestId），可通过 TraceID(ctx) 获取.
+// traceId 同时作为请求的唯一标识requestId，可通过 TraceID(ctx) 获取.
 // 使用示例:
 //
 //	server := grpc.NewServer(
@@ -150,7 +150,7 @@ func StreamServerInterceptor(serviceName string) grpc.StreamServerInterceptor {
 		)
 		defer span.End()
 
-		// 注入 trace 信息到 context（供 middleware/trace 读取）
+		// 注入 trace 信息到 context供 middleware/trace 读取
 		spanCtx := span.SpanContext()
 		if spanCtx.HasTraceID() {
 			ctx = logger.ContextWithTraceID(ctx, spanCtx.TraceID().String())
@@ -294,7 +294,7 @@ func StreamClientInterceptor(serviceName string) grpc.StreamClientInterceptor {
 		// 执行调用
 		clientStream, err := streamer(ctx, desc, cc, method, opts...)
 
-		// 记录错误（如果有）
+		// 记录错误如果有
 		if err != nil {
 			s, _ := status.FromError(err)
 			span.SetAttributes(attribute.String("rpc.grpc.status_code", s.Code().String()))

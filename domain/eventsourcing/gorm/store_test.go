@@ -123,7 +123,7 @@ func TestEventStore_SaveAndLoad(t *testing.T) {
 	assert.Equal(t, int64(2), events[1].Version)
 	assert.Equal(t, int64(3), events[2].Version)
 
-	// Load（从版本 1 之后）
+	// Load从版本 1 之后
 	events, err = store.Load(ctx, "acc-1", 1)
 	require.NoError(t, err)
 	assert.Len(t, events, 2)
@@ -182,7 +182,7 @@ func TestSnapshotStore_SaveAndLoad(t *testing.T) {
 	assert.Nil(t, loaded)
 }
 
-// --- Repository 测试（无快照） ---
+// --- Repository 测试无快照 ---
 
 func TestRepository_SaveAndLoad(t *testing.T) {
 	store, _ := setupEventStore(t)
@@ -217,7 +217,7 @@ func TestRepository_SaveAndLoad(t *testing.T) {
 	assert.ErrorIs(t, err, eventsourcing.ErrAggregateNotFound)
 }
 
-// --- Repository 测试（带快照） ---
+// --- Repository 测试带快照 ---
 
 func TestRepository_WithSnapshot(t *testing.T) {
 	db := setupTestDB(t)
@@ -250,7 +250,7 @@ func TestRepository_WithSnapshot(t *testing.T) {
 	require.NotNil(t, snapshot)
 	assert.Equal(t, int64(2), snapshot.Version)
 
-	// 再追加一个事件（版本 3）
+	// 再追加一个事件版本 3
 	require.NoError(t, account.Deposit(50))
 	err = repo.Save(ctx, account)
 	require.NoError(t, err)

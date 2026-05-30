@@ -38,7 +38,7 @@ func (s *EncryptColumnTestSuite) TestNullEncryptColumn() {
 }
 
 func (s *EncryptColumnTestSuite) TestNullEncryptColumn_EmptyKey() {
-	// 空 key 允许（延迟注入密钥场景）
+	// 空 key 允许延迟注入密钥场景
 	ec, err := NullEncryptColumn[string]("")
 	s.NoError(err)
 	s.False(ec.Valid)
@@ -213,7 +213,7 @@ func (s *EncryptColumnTestSuite) TestValue_InvalidKey() {
 }
 
 func (s *EncryptColumnTestSuite) TestDifferentEncryptions() {
-	// 相同数据加密两次，密文应不同（随机 nonce）
+	// 相同数据加密两次，密文应不同随机 nonce
 	ec1, err := NewEncryptColumn("same-data", testKey)
 	s.NoError(err)
 	ec2, err := NewEncryptColumn("same-data", testKey)

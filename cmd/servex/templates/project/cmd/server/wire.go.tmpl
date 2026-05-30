@@ -5,17 +5,7 @@ package main
 import (
 	"github.com/google/wire"
 
-	"{{.Module}}/internal/server"
 	"github.com/Tsukikage7/servex/v2/app"
-	"github.com/Tsukikage7/servex/v2/observability/logger"
-{{- range .AllComponents}}{{if .Alias}}
-	{{.Alias}} "{{.Import}}"
-{{- else}}
-	"{{.Import}}"
-{{- end}}{{end}}
-{{- range .AllComponents}}{{range .BlankImports}}
-	_ "{{.}}"
-{{- end}}{{end}}
 )
 
 func initApp() (*app.Application, func(), error) {
@@ -27,10 +17,6 @@ var providerSet = wire.NewSet(
 	provideLogger,
 {{- range .AllComponents}}
 	{{.ProviderFunc}},
-{{- end}}
-	server.NewHTTP,
-{{- if .WithGRPC}}
-	server.NewGRPC,
 {{- end}}
 	provideApp,
 )

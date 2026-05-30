@@ -38,7 +38,7 @@ func (s JobState) String() string {
 
 // Job 调度任务.
 type Job struct {
-	// Name 任务名称（唯一标识）.
+	// Name 任务名称唯一标识.
 	Name string
 
 	// Schedule Cron 表达式.
@@ -47,7 +47,7 @@ type Job struct {
 	// Handler 任务处理函数.
 	Handler JobFunc
 
-	// Timeout 任务超时时间（0 表示使用调度器默认值）.
+	// Timeout 任务超时时间0 表示使用调度器默认值.
 	Timeout time.Duration
 
 	// Singleton 单例模式，防止任务重叠执行.
@@ -58,7 +58,7 @@ type Job struct {
 	// 需要配合 Locker 使用.
 	Distributed bool
 
-	// RetryCount 失败重试次数（0 表示不重试）.
+	// RetryCount 失败重试次数0 表示不重试.
 	RetryCount int
 
 	// RetryInterval 重试间隔.
@@ -77,7 +77,7 @@ type JobStats struct {
 	RunCount      int64         // 执行次数
 	SuccessCount  int64         // 成功次数
 	FailCount     int64         // 失败次数
-	SkipCount     int64         // 跳过次数（因 Singleton 或 Distributed）
+	SkipCount     int64         // 跳过次数因 Singleton 或 Distributed
 	LastRunAt     time.Time     // 上次执行时间
 	LastSuccessAt time.Time     // 上次成功时间
 	LastFailAt    time.Time     // 上次失败时间
@@ -178,7 +178,7 @@ func (j *Job) initStats() {
 	})
 }
 
-// tryStart 尝试开始执行（CAS 操作，保证单例）.
+// tryStart 尝试开始执行CAS 操作，保证单例.
 func (j *Job) tryStart() bool {
 	return j.state.CompareAndSwap(int32(JobStateIdle), int32(JobStateRunning))
 }

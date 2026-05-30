@@ -22,7 +22,7 @@ type Options struct {
 	Rules []Rule
 
 	// BlockHandler 自定义拦截处理函数.
-	// 如果为 nil，使用默认处理（返回 403）.
+	// 如果为 nil，使用默认处理返回 403.
 	BlockHandler func(w http.ResponseWriter, r *http.Request, reason string)
 
 	// Logger 日志记录器.
@@ -110,7 +110,7 @@ type regexRule struct {
 }
 
 // Match 检查请求是否匹配正则规则.
-// 扫描 URL、查询参数和请求体（Content-Type 为 form 时）.
+// 扫描 URL、查询参数和请求体Content-Type 为 form 时.
 func (r *regexRule) Match(req *http.Request) (bool, string) {
 	// 检查 URL 路径
 	if r.matchString(req.URL.Path) {

@@ -1,6 +1,6 @@
 package order
 
-// OrderItem 订单项（值对象）.
+// OrderItem 订单项值对象.
 type OrderItem struct {
 	productID   uint64
 	productName string

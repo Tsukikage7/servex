@@ -3,15 +3,13 @@ package server
 import (
 	"net/http"
 
-	"github.com/Tsukikage7/servex/v2/middleware/logging"
-	"github.com/Tsukikage7/servex/v2/middleware/recovery"
 	"github.com/Tsukikage7/servex/v2/observability/logger"
 	"github.com/Tsukikage7/servex/v2/transport"
 	"github.com/Tsukikage7/servex/v2/transport/httpserver"
 )
 
 // NewHTTP 创建 HTTP 服务器.
-func NewHTTP(log logger.Logger) transport.Server {
+func NewHTTP(cfg transport.HTTPConfig, log logger.Logger) (transport.Server, error) {
 	router := httpserver.NewRouter()
 
 	// 健康检查
@@ -27,12 +25,5 @@ func NewHTTP(log logger.Logger) transport.Server {
 	// api.PUT("/{{.Name}}/{id}", httpserver.HandleWith(decode{{.Name | toPascalCase}}ID, update{{.Name | toPascalCase}}))
 	// api.DELETE("/{{.Name}}/{id}", httpserver.HandleWith(decode{{.Name | toPascalCase}}ID, delete{{.Name | toPascalCase}}))
 
-	return httpserver.New(router,
-		httpserver.WithLogger(log),
-		httpserver.WithAddr(":8080"),
-		httpserver.WithMiddlewares(
-			recovery.HTTPMiddleware(recovery.WithLogger(log)),
-			logging.HTTPMiddleware(logging.WithLogger(log)),
-		),
-	)
+	return httpserver.NewFromTransportConfig(router, cfg, log)
 }

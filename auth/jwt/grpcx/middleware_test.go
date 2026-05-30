@@ -23,7 +23,7 @@ type testClaims struct {
 }
 
 func newTestJWT() *servexjwt.JWT {
-	return servexjwt.NewJWT(
+	return servexjwt.MustNew(
 		servexjwt.WithSecretKey("test-secret-key-for-testing-32b!"),
 		servexjwt.WithLogger(testx.NopLogger()),
 		servexjwt.WithIssuer("test-issuer"),

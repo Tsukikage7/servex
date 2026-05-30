@@ -81,7 +81,7 @@ func NewSubscriber(url string, opts ...SubscriberOption) (*Subscriber, error) {
 	return s, nil
 }
 
-// reconnectLoop 监听连接关闭通知，自动重连（指数退避）.
+// reconnectLoop 监听连接关闭通知，自动重连指数退避.
 func (s *Subscriber) reconnectLoop() {
 	for {
 		s.mu.Lock()
@@ -150,7 +150,7 @@ func (s *Subscriber) logf(format string, args ...any) {
 }
 
 // Subscribe 订阅指定 queue/topic，返回消息 channel.
-// topic 作为 queue 名称（若有 exchange 则作为 routing key）.
+// topic 作为 queue 名称若有 exchange 则作为 routing key.
 func (s *Subscriber) Subscribe(ctx context.Context, topic string) (<-chan *pubsub.Message, error) {
 	if s.closed.Load() {
 		return nil, pubsub.ErrClosed

@@ -12,8 +12,8 @@ import (
 // HTTPMiddleware 返回 HTTP 超时控制中间件.
 // 当请求超时时，中间件会：
 //  1. 取消请求 context
-//  2. 记录超时日志（如果设置了 logger）
-//  3. 调用超时回调（如果设置了 onTimeout）
+//  2. 记录超时日志如果设置了 logger
+//  3. 调用超时回调如果设置了 onTimeout
 //  4. 返回 503 Service Unavailable
 //
 // 注意: 此中间件不会中断正在执行的 handler，只是不再等待其响应.

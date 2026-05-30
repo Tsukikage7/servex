@@ -7,7 +7,7 @@ import (
 
 const defaultColumn = "tenant_id"
 
-// safeColumnName 仅允许字母、数字、下划线和点号（表别名.字段名），防止 SQL 注入.
+// safeColumnName 仅允许字母、数字、下划线和点号表别名.字段名，防止 SQL 注入.
 var safeColumnName = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_.]*$`)
 
 // IDFromContext 从 context 提取 tenant ID，无租户返回空字符串.
@@ -17,8 +17,8 @@ func IDFromContext(ctx context.Context) string {
 }
 
 // WhereClause 返回 SQL WHERE 子句和参数.
-// 无租户时返回空字符串（不过滤）.
-// column 参数仅允许安全的标识符格式（字母/数字/下划线/点号），不合规时使用默认值.
+// 无租户时返回空字符串不过滤.
+// column 参数仅允许安全的标识符格式字母/数字/下划线/点号，不合规时使用默认值.
 // 示例:
 //
 //	clause, args := tenant.WhereClause(ctx)

@@ -82,7 +82,7 @@ func IPKeyFunc() HTTPKeyFunc {
 // 当请求来自受信任的代理时，才使用 X-Forwarded-For / X-Real-IP 头部提取客户端 IP.
 // 否则直接使用 RemoteAddr，防止客户端伪造头部绕过限流.
 //
-// trustedProxies 为可信代理的 IP 地址或 CIDR 列表（如 "10.0.0.0/8", "192.168.1.1"）.
+// trustedProxies 为可信代理的 IP 地址或 CIDR 列表如 "10.0.0.0/8", "192.168.1.1".
 func TrustedProxyIPKeyFunc(trustedProxies ...string) HTTPKeyFunc {
 	// 预解析 CIDR 和 IP
 	var cidrs []*net.IPNet
@@ -120,7 +120,7 @@ func TrustedProxyIPKeyFunc(trustedProxies ...string) HTTPKeyFunc {
 
 	return func(r *http.Request) string {
 		if isTrusted(r.RemoteAddr) {
-			// 来自受信任代理，取 X-Forwarded-For 最左侧（原始客户端 IP）
+			// 来自受信任代理，取 X-Forwarded-For 最左侧原始客户端 IP
 			if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
 				parts := strings.SplitN(xff, ",", 2)
 				return strings.TrimSpace(parts[0])

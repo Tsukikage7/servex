@@ -92,7 +92,7 @@ func TestKeyedHTTPMiddleware(t *testing.T) {
 			t.Errorf("IP1 第二个请求期望 429，得到 %d", rec2.Code)
 		}
 
-		// IP2 第一个请求通过（独立限流）
+		// IP2 第一个请求通过独立限流
 		req3 := httptest.NewRequest(http.MethodGet, "/", nil)
 		req3.RemoteAddr = "192.168.1.2:12345"
 		rec3 := httptest.NewRecorder()

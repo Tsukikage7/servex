@@ -328,7 +328,7 @@ func (c *consulDiscovery) Unregister(ctx context.Context, serviceID string) erro
 
 // Discover 发现服务实例.
 // 默认使用配置中 GRPC 服务的第一个标签进行过滤.
-// 如需按其他协议发现，建议使用 DiscoverWithProtocol（待实现）.
+// 如需按其他协议发现，建议使用 DiscoverWithProtocol待实现.
 func (c *consulDiscovery) Discover(ctx context.Context, serviceName string) ([]string, error) {
 	if serviceName == "" {
 		return nil, discovery.ErrEmptyName
@@ -431,6 +431,9 @@ func (c *consulDiscovery) buildHealthCheckFromEndpoint(serviceID, serviceName, h
 	if healthHost == "" || healthHost == "0.0.0.0" {
 		healthHost = host
 	}
+	if isLoopbackHost(healthHost) && !isLoopbackHost(host) {
+		healthHost = host
+	}
 
 	// 根据健康检查端点类型构建配置
 	switch endpoint.Type {
@@ -457,7 +460,16 @@ func (c *consulDiscovery) buildHealthCheckFromEndpoint(serviceID, serviceName, h
 	return check
 }
 
-// buildHealthCheckWithProtocol 根据协议构建健康检查配置（默认 TCP 检查）.
+func isLoopbackHost(host string) bool {
+	switch host {
+	case "localhost", "127.0.0.1", "::1":
+		return true
+	default:
+		return false
+	}
+}
+
+// buildHealthCheckWithProtocol 根据协议构建健康检查配置默认 TCP 检查.
 // 注意：推荐使用 AddServer 方法，可自动检测健康检查类型.
 func (c *consulDiscovery) buildHealthCheckWithProtocol(serviceID, serviceName, host string, port int, protocol string) *api.AgentServiceCheck {
 	check := &api.AgentServiceCheck{

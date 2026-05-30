@@ -12,7 +12,7 @@ import (
 )
 
 // 集成测试：需要本地运行的 etcd 实例.
-// 可通过环境变量 ETCD_ENDPOINTS 指定地址（逗号分隔）.
+// 可通过环境变量 ETCD_ENDPOINTS 指定地址逗号分隔.
 // 如果 etcd 不可用，测试将自动跳过.
 
 func skipIfNoEtcd(t *testing.T) ([]string, logger.Logger) {
@@ -32,7 +32,7 @@ func skipIfNoEtcd(t *testing.T) ([]string, logger.Logger) {
 	}
 	cfg.SetDefaults()
 
-	// 尝试创建客户端并探测连通性（etcd client 为懒连接，需实际调用 Status）
+	// 尝试创建客户端并探测连通性etcd client 为懒连接，需实际调用 Status
 	d, err := New(cfg, log)
 	if err != nil {
 		t.Skipf("etcd 不可用（%v），跳过集成测试", err)

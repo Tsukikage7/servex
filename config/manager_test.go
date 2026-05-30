@@ -20,7 +20,7 @@ func TestManagerSuite(t *testing.T) {
 
 // === 测试用 Source 实现 ===
 
-// staticSource 静态配置源（用于测试）.
+// staticSource 静态配置源用于测试.
 type staticSource struct {
 	kvs     []*KeyValue
 	loadErr error
@@ -297,7 +297,7 @@ func (s *ManagerTestSuite) TestLoad_MultiSource_Merge() {
 	s.Require().NoError(mgr.Load())
 
 	cfg := mgr.Get()
-	// src2 覆盖 port，但 JSON 不能部分覆盖（非 map merge），
+	// src2 覆盖 port，但 JSON 不能部分覆盖非 map merge，
 	// 实际行为：src2 将 name 设为零值
 	s.Equal(9000, cfg.Port)
 }
@@ -492,7 +492,7 @@ func (s *ManagerTestSuite) TestWatch_DecodeError_SkipUpdate() {
 	s.Require().NoError(mgr.Watch())
 	defer mgr.Close()
 
-	// 触发无法解码的数据（将源数据改为无效 JSON）
+	// 触发无法解码的数据将源数据改为无效 JSON
 	src.kvs = []*KeyValue{{Key: "test", Value: []byte(`{invalid`), Format: "json"}}
 	src.watcher.ch <- src.kvs
 

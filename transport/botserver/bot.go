@@ -21,7 +21,7 @@ type Context interface {
 	Native() any
 }
 
-// ReplyOption Reply 选项（预留扩展点）。
+// ReplyOption Reply 选项预留扩展点。
 type ReplyOption func(*replyOptions)
 
 type replyOptions struct{}

@@ -87,12 +87,18 @@ type HealthEndpoint struct {
 
 #### GatewayConfig
 
-| 字段            | 类型            | 说明           |
-| --------------- | --------------- | -------------- |
-| `Name`          | `string`        | 服务器名称     |
-| `GRPCAddr`      | `string`        | gRPC 监听地址  |
-| `HTTPAddr`      | `string`        | HTTP 监听地址  |
-| `KeepaliveTime` | `time.Duration` | Keepalive 间隔 |
+| 字段            | 类型            | 说明                       |
+| --------------- | --------------- | -------------------------- |
+| `Name`          | `string`        | 服务器名称                 |
+| `Version`       | `string`        | 服务版本                   |
+| `GRPC`          | `GRPCConfig`    | gRPC 端配置                |
+| `HTTP`          | `HTTPConfig`    | HTTP 端配置                |
+| `Runtime`       | `RuntimeConfig` | panic 恢复、统一响应等行为 |
+| `Logging`       | `LoggingConfig` | 请求日志配置               |
+| `Tracing`       | `TracingConfig` | 请求链路追踪中间件配置     |
+| `Metrics`       | `MetricsConfig` | Prometheus 指标配置        |
+| `CORS`          | `CORSConfig`    | HTTP CORS 配置             |
+| `HealthTimeout` | `time.Duration` | 健康检查超时               |
 
 ## 目录结构
 

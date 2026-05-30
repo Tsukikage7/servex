@@ -65,7 +65,7 @@ func ZapHook(shipper *Shipper) zapcore.Core {
 	return &shipperCore{shipper: shipper}
 }
 
-// AttachToLogger 将 Shipper 附加到已有的 *zap.Logger（通过 zap.WrapCore 组合 Core）.
+// AttachToLogger 将 Shipper 附加到已有的 *zap.Logger通过 zap.WrapCore 组合 Core.
 // 返回新的 logger，原 logger 不变.
 func AttachToLogger(log *zap.Logger, shipper *Shipper) *zap.Logger {
 	hook := ZapHook(shipper)
@@ -119,7 +119,7 @@ func parseMinLevel(level string) int {
 }
 
 // NewLoggerHook 返回一个 logger.Logger 包装器，将日志同时投递到 Shipper.
-// minLevel 控制最低投递级别（例如 "info" 则 debug 日志不投递）.
+// minLevel 控制最低投递级别例如 "info" 则 debug 日志不投递.
 func NewLoggerHook(inner logger.Logger, shipper *Shipper, minLevel string) logger.Logger {
 	return &loggerHook{
 		inner:    inner,

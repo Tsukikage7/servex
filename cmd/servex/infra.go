@@ -11,7 +11,7 @@ type ComponentDef struct {
 	Key          string   // "mysql", "redis", "kafka"
 	DisplayName  string   // "MySQL 数据库"
 	Import       string   // 完整 import 路径
-	Alias        string   // import 别名[可选，如 srvredis]
+	Alias        string   // import 别名[仅真实命名冲突时使用]
 	ConfigKey    string   // config.yaml 中的 key
 	ConfigYAML   string   // 默认配置 YAML 片段[缩进好的]
 	CloseCode    string   // defer 关闭代码[可选]
@@ -92,7 +92,6 @@ var componentRegistry = map[string]ComponentDef{
 		Key:         "redis",
 		DisplayName: "Redis",
 		Import:      "github.com/Tsukikage7/servex/v2/storage/redis",
-		Alias:       "srvredis",
 		ConfigKey:   "redis",
 		ConfigYAML: `redis:
   addr: "127.0.0.1:6379"
@@ -100,14 +99,14 @@ var componentRegistry = map[string]ComponentDef{
   db: 0
   pool_size: 10`,
 		ProviderFunc: "provideRedis",
-		ProviderCode: `func provideRedis(cfg *Config, log logger.Logger) (*redis.Client, func(), error) {
-	rdb, err := srvredis.NewClient(&cfg.Redis, log)
+		ProviderCode: `func provideRedis(cfg *Config, log logger.Logger) (redis.Client, func(), error) {
+	rdb, err := redis.NewClient(&cfg.Redis, log)
 	if err != nil {
 		return nil, nil, err
 	}
 	return rdb, func() { rdb.Close() }, nil
 }`,
-		ConfigField: "Redis srvredis.Config `yaml:\"redis\" mapstructure:\"redis\"`",
+		ConfigField: "Redis redis.Config `yaml:\"redis\" mapstructure:\"redis\"`",
 	},
 	"mongo": {
 		Key:         "mongo",
@@ -215,7 +214,6 @@ var componentRegistry = map[string]ComponentDef{
 		Key:         "neo4j",
 		DisplayName: "Neo4j 图数据库",
 		Import:      "github.com/Tsukikage7/servex/v2/storage/neo4j",
-		Alias:       "srvneo4j",
 		ConfigKey:   "neo4j",
 		ConfigYAML: `neo4j:
   uri: "bolt://localhost:7687"
@@ -223,14 +221,14 @@ var componentRegistry = map[string]ComponentDef{
   password: "neo4j"
   database: "neo4j"`,
 		ProviderFunc: "provideNeo4j",
-		ProviderCode: `func provideNeo4j(cfg *Config, log logger.Logger) (*srvneo4j.Client, func(), error) {
-	client, err := srvneo4j.NewClient(&cfg.Neo4j, srvneo4j.WithLogger(log))
+		ProviderCode: `func provideNeo4j(cfg *Config, log logger.Logger) (*neo4j.Client, func(), error) {
+	client, err := neo4j.NewClient(&cfg.Neo4j, neo4j.WithLogger(log))
 	if err != nil {
 		return nil, nil, err
 	}
 	return client, func() { client.Close() }, nil
 }`,
-		ConfigField: "Neo4j srvneo4j.Config `yaml:\"neo4j\" mapstructure:\"neo4j\"`",
+		ConfigField: "Neo4j neo4j.Config `yaml:\"neo4j\" mapstructure:\"neo4j\"`",
 	},
 	"kafka": {
 		Key:         "kafka",
@@ -344,21 +342,20 @@ var componentRegistry = map[string]ComponentDef{
 		Key:         "jwt",
 		DisplayName: "JWT 认证",
 		Import:      "github.com/Tsukikage7/servex/v2/auth/jwt",
-		Alias:       "srvjwt",
 		ConfigKey:   "jwt",
 		ConfigYAML: `jwt:
   secret: "change-me"
   access_duration: 2h
   refresh_duration: 168h`,
 		ProviderFunc: "provideJWT",
-		ProviderCode: `func provideJWT(cfg *Config, log logger.Logger) (*srvjwt.JWT, func(), error) {
-	jwtSvc := srvjwt.NewJWT(
-		srvjwt.WithSecretKey(cfg.JWT.Secret),
-		srvjwt.WithLogger(log),
+		ProviderCode: `func provideJWT(cfg *Config, log logger.Logger) (*jwt.JWT, func(), error) {
+	jwtSvc := jwt.MustNew(
+		jwt.WithSecretKey(cfg.JWT.Secret),
+		jwt.WithLogger(log),
 	)
 	return jwtSvc, func() {}, nil
 }`,
-		ConfigField: "JWT srvjwt.Config `yaml:\"jwt\" mapstructure:\"jwt\"`",
+		ConfigField: "JWT jwt.Config `yaml:\"jwt\" mapstructure:\"jwt\"`",
 	},
 	// ── Service Discovery ────────────────────────────────────────────────
 
@@ -505,7 +502,7 @@ var otherComponents = map[string]ComponentDef{}
 
 func init() {
 	// 从 componentRegistry 中分离各类组件到独立 registry.
-	// 注意：此操作会修改 componentRegistry 的内容（删除已分类的条目），
+	// 注意：此操作会修改 componentRegistry 的内容删除已分类的条目，
 	// 使得 componentRegistry 仅保留基础设施组件.
 	observeKeys := map[string]bool{"metrics": true, "tracing": true, "profiling": true}
 	authKeys := map[string]bool{"jwt": true}

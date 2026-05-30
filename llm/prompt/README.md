@@ -1,6 +1,6 @@
-# ai/prompt
+# llm/prompt
 
-`ai/prompt` 包提供基于 Go `text/template` 的 AI 消息模板引擎，将模板渲染为 `llm.Message`。
+`llm/prompt` 包提供基于 Go `text/template` 的 AI 消息模板引擎，将模板渲染为 `llm.Message`。
 
 ## 功能特性
 

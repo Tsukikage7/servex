@@ -36,9 +36,9 @@ var (
 
 // Config 序列配置.
 type Config struct {
-	Name       string // 序列名（如 "order"）
-	Prefix     string // 前缀（如 "ORD-"）
-	DateFormat string // 日期格式（如 "20060102"），为空则不含日期
+	Name       string // 序列名如 "order"
+	Prefix     string // 前缀如 "ORD-"
+	DateFormat string // 日期格式如 "20060102"，为空则不含日期
 	Padding    int    // 序号补零位数，默认 4 → 0001
 	Step       int64  // 步长，默认 1
 	ResetDaily bool   // 每日重置，默认 false
@@ -58,7 +58,7 @@ type Store interface {
 type Sequence interface {
 	// Next 生成下一个序号.
 	Next(ctx context.Context) (string, error)
-	// Current 获取当前序号（不递增）.
+	// Current 获取当前序号不递增.
 	Current(ctx context.Context) (string, error)
 	// Reset 重置序号.
 	Reset(ctx context.Context) error

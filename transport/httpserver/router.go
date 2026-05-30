@@ -20,7 +20,7 @@ type Middleware = func(http.Handler) http.Handler
 //	// 公开路由
 //	router.POST("/login", httpserver.Handle(loginHandler))
 //
-//	// 带认证的 API 分组（继承 router 的所有中间件）
+//	// 带认证的 API 分组继承 router 的所有中间件
 //	api := router.Group("/api/v1", jwtMiddleware)
 //	api.GET("/users/{id}", httpserver.HandleWith(decodeID, getUser))
 //	api.POST("/users", httpserver.Handle(createUser))
@@ -67,7 +67,7 @@ func (r *Router) Group(prefix string, mws ...Middleware) *Router {
 
 // Handle 注册任意方法路由.
 //
-// pattern 格式同 http.ServeMux："/path" 或 "METHOD /path"（例如 "GET /users/{id}"）.
+// pattern 格式同 http.ServeMux："/path" 或 "METHOD /path"例如 "GET /users/{id}".
 // routeMws 仅对当前路由生效，执行顺序在分组中间件之后.
 func (r *Router) Handle(pattern string, h http.Handler, routeMws ...Middleware) {
 	r.register(pattern, h, routeMws)
@@ -106,7 +106,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 // register 合并中间件并向底层 mux 注册路由.
 func (r *Router) register(pattern string, h http.Handler, routeMws []Middleware) {
 	all := append(slices.Clone(r.mws), routeMws...)
-	// 逆序应用：声明顺序即执行顺序（先声明的先触达请求）
+	// 逆序应用：声明顺序即执行顺序先声明的先触达请求
 	for _, mw := range slices.Backward(all) {
 		h = mw(h)
 	}

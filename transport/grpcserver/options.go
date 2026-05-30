@@ -149,14 +149,14 @@ func WithHealthOptions(opts ...health.Option) Option {
 	}
 }
 
-// WithReadinessChecker 添加就绪检查器（便捷方法）.
+// WithReadinessChecker 添加就绪检查器便捷方法.
 func WithReadinessChecker(checkers ...health.Checker) Option {
 	return func(o *options) {
 		o.healthOptions = append(o.healthOptions, health.WithReadinessChecker(checkers...))
 	}
 }
 
-// WithLivenessChecker 添加存活检查器（便捷方法）.
+// WithLivenessChecker 添加存活检查器便捷方法.
 func WithLivenessChecker(checkers ...health.Checker) Option {
 	return func(o *options) {
 		o.healthOptions = append(o.healthOptions, health.WithLivenessChecker(checkers...))

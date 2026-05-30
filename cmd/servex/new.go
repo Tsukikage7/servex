@@ -14,6 +14,9 @@ var projectTemplates embed.FS
 //go:embed all:templates/monorepo
 var monorepoTemplates embed.FS
 
+//go:embed all:templates/ai-service
+var aiServiceTemplates embed.FS
+
 // ProjectData 项目模板数据.
 type ProjectData struct {
 	Name          string
@@ -21,6 +24,14 @@ type ProjectData struct {
 	WithGRPC      bool
 	Infra         []ComponentDef // 基础设施组件列表
 	AllComponents []ComponentDef // 合并后的全部组件[模板用]
+}
+
+// AIServiceData AI service 模板数据.
+type AIServiceData struct {
+	Name      string
+	Module    string
+	Provider  string
+	Framework string
 }
 
 // templateFiles 定义项目模板文件与输出路径的映射.
@@ -76,7 +87,7 @@ func generateProject(data ProjectData) error {
 		}
 	}
 
-	// 复制 api/third_party（vendor proto 文件，不需要模板渲染）
+	// 复制 api/third_partyvendor proto 文件，不需要模板渲染
 	if err := copyEmbedDir(projectTemplates, "templates/project/api/third_party", filepath.Join(data.Name, "api/third_party")); err != nil {
 		return fmt.Errorf("复制 third_party: %w", err)
 	}
@@ -95,6 +106,9 @@ var monorepoTemplateFiles = []struct {
 	{"templates/monorepo/justfile.tmpl", "justfile"},
 	{"templates/monorepo/.gitignore.tmpl", ".gitignore"},
 	{"templates/monorepo/README.md.tmpl", "README.md"},
+	{"templates/monorepo/api/buf.yaml.tmpl", "api/buf.yaml"},
+	{"templates/monorepo/api/buf.gen.yaml.tmpl", "api/buf.gen.yaml"},
+	{"templates/monorepo/docs/README.md.tmpl", "docs/README.md"},
 	{"templates/monorepo/deploy/docker/infra/docker-compose.yaml.tmpl", "deploy/docker/infra/docker-compose.yaml"},
 	{"templates/monorepo/deploy/docker/app/docker-compose.yaml.tmpl", "deploy/docker/app/docker-compose.yaml"},
 }
@@ -106,8 +120,19 @@ var monorepoGitkeepDirs = []string{
 	"services",
 	"api",
 	"infrastructure",
-	"deploy/docker",
+	"deploy/docker/base",
+	"deploy/docker/app",
+	"deploy/docker/infra",
 	"deploy/k8s",
+	"docs/development",
+	"docs/operations",
+	"docs/product",
+	"scripts/build",
+	"scripts/dev",
+	"scripts/deploy",
+	"scripts/quality",
+	"scripts/ops",
+	"bin",
 }
 
 // generateMonorepo 根据模板数据生成 monorepo 项目结构.
@@ -137,7 +162,7 @@ func generateMonorepo(data ProjectData) error {
 		}
 	}
 
-	// 复制 api/third_party（vendor proto 文件，不需要模板渲染）
+	// 复制 api/third_partyvendor proto 文件，不需要模板渲染
 	if err := copyEmbedDir(monorepoTemplates, "templates/monorepo/api/third_party", filepath.Join(data.Name, "api/third_party")); err != nil {
 		return fmt.Errorf("复制 third_party: %w", err)
 	}
@@ -145,6 +170,48 @@ func generateMonorepo(data ProjectData) error {
 	fmt.Printf("项目 %q 创建成功! (monorepo)\n", data.Name)
 	fmt.Printf("  cd %s && go mod tidy\n", data.Name)
 	fmt.Println("  servex add service <name> --with-grpc --infra mysql,redis")
+	return nil
+}
+
+var aiServiceTemplateFiles = []struct {
+	tmpl string
+	out  string
+}{
+	{"templates/ai-service/go.mod.tmpl", "go.mod"},
+	{"templates/ai-service/README.md.tmpl", "README.md"},
+	{"templates/ai-service/justfile.tmpl", "justfile"},
+	{"templates/ai-service/configs/config.yaml.tmpl", "configs/config.yaml"},
+	{"templates/ai-service/cmd/server/main.go.tmpl", "cmd/server/main.go"},
+	{"templates/ai-service/internal/agent/agent.go.tmpl", "internal/agent/agent.go"},
+	{"templates/ai-service/internal/http/chat.go.tmpl", "internal/http/chat.go"},
+	{"templates/ai-service/internal/llm/model.go.tmpl", "internal/llm/model.go"},
+	{"templates/ai-service/internal/tools/tools.go.tmpl", "internal/tools/tools.go"},
+}
+
+// generateAIService 根据模板数据生成 AI service 项目结构.
+func generateAIService(data AIServiceData) error {
+	if data.Provider == "" {
+		data.Provider = "openai"
+	}
+	if data.Framework == "" {
+		data.Framework = "none"
+	}
+
+	funcMap := template.FuncMap{
+		"toPascalCase": toPascalCase,
+		"toCamelCase":  toCamelCase,
+		"toSnakeCase":  toSnakeCase,
+	}
+
+	for _, tf := range aiServiceTemplateFiles {
+		if err := renderTemplate(aiServiceTemplates, tf.tmpl, filepath.Join(data.Name, tf.out), data, funcMap); err != nil {
+			return fmt.Errorf("渲染 %s: %w", tf.tmpl, err)
+		}
+	}
+
+	fmt.Printf("AI service %q 创建成功!\n", data.Name)
+	fmt.Printf("  cd %s && go mod tidy\n", data.Name)
+	fmt.Println("  OPENAI_API_KEY=sk-... just dev")
 	return nil
 }
 
@@ -177,7 +244,7 @@ func renderTemplate(fsys embed.FS, tmplPath, outPath string, data any, funcMap t
 	return nil
 }
 
-// copyEmbedDir 将 embed.FS 中的目录递归复制到目标路径（原样复制，不做模板渲染）.
+// copyEmbedDir 将 embed.FS 中的目录递归复制到目标路径原样复制，不做模板渲染.
 func copyEmbedDir(fsys embed.FS, srcDir, dstDir string) error {
 	entries, err := fsys.ReadDir(srcDir)
 	if err != nil {

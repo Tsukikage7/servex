@@ -9,6 +9,8 @@ import (
 	"github.com/Tsukikage7/servex/v2/llm"
 )
 
+const maxSSELineSize = 1024 * 1024
+
 // streamReader 实现 llm.StreamReader，解析 OpenAI SSE 流.
 type streamReader struct {
 	scanner  *bufio.Scanner

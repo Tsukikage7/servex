@@ -37,8 +37,8 @@ func HTTPMiddleware(limit int64) func(http.Handler) http.Handler {
 // 匹配人类可读的大小字符串，如 "1MB", "512KB", "10.5GB".
 var sizeRegex = regexp.MustCompile(`(?i)^\s*(\d+(?:\.\d+)?)\s*(B|KB|MB|GB|TB)\s*$`)
 
-// ParseLimit 解析人类可读的大小字符串（如 "1MB", "512KB", "10GB"）.
-// 支持的单位: B, KB, MB, GB, TB（不区分大小写）.
+// ParseLimit 解析人类可读的大小字符串如 "1MB", "512KB", "10GB".
+// 支持的单位: B, KB, MB, GB, TB不区分大小写.
 func ParseLimit(s string) (int64, error) {
 	matches := sizeRegex.FindStringSubmatch(s)
 	if matches == nil {

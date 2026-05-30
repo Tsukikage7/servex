@@ -1,0 +1,21 @@
+server:
+  http:
+    addr: ":8081"
+
+database:
+  driver: mysql
+  dsn: "root:password@tcp(127.0.0.1:3306)/ecommerce?charset=utf8mb4&parseTime=True&loc=Local"
+
+redis:
+  addr: "127.0.0.1:6379"
+
+jwt:
+  secret_key: "ecommerce-secret-key-please-change-in-production"
+  issuer: "ecommerce-user"
+
+logger:
+  type: zap
+  service_name: user
+  level: info
+  format: console
+  output: console

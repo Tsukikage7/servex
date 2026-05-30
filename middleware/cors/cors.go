@@ -1,4 +1,4 @@
-// Package cors 提供 HTTP CORS（跨源资源共享）中间件.
+// Package cors 提供 HTTP CORS跨源资源共享中间件.
 package cors
 
 import (
@@ -18,10 +18,10 @@ type Options struct {
 	AllowHeaders []string `json:"allow_headers" yaml:"allow_headers" mapstructure:"allow_headers"`
 	// ExposeHeaders 允许客户端读取的响应头.
 	ExposeHeaders []string `json:"expose_headers" yaml:"expose_headers" mapstructure:"expose_headers"`
-	// AllowCredentials 是否允许携带凭据（Cookie、Authorization 等）.
+	// AllowCredentials 是否允许携带凭据Cookie、Authorization 等.
 	// AllowOrigins 为 "*" 时此字段不生效.
 	AllowCredentials bool `json:"allow_credentials" yaml:"allow_credentials" mapstructure:"allow_credentials"`
-	// MaxAge 预检结果缓存时间（秒），默认 86400（24 小时）.
+	// MaxAge 预检结果缓存时间秒，默认 8640024 小时.
 	MaxAge int `json:"max_age" yaml:"max_age" mapstructure:"max_age"`
 }
 
@@ -53,7 +53,7 @@ func WithAllowCredentials(allow bool) Option {
 	return func(o *Options) { o.AllowCredentials = allow }
 }
 
-// WithMaxAge 设置预检结果缓存时间（秒）.
+// WithMaxAge 设置预检结果缓存时间秒.
 func WithMaxAge(seconds int) Option {
 	return func(o *Options) { o.MaxAge = seconds }
 }
@@ -107,7 +107,7 @@ func defaultOptions() Options {
 
 // HTTPMiddleware 创建 HTTP CORS 中间件.
 // 处理逻辑：
-//  1. 无 Origin 头 → 直接透传（非 CORS 请求）
+//  1. 无 Origin 头 → 直接透传非 CORS 请求
 //  2. 验证来源是否在白名单
 //  3. 写 Access-Control-* 响应头
 //  4. OPTIONS 预检请求 → 返回 204 短路
@@ -180,7 +180,7 @@ func HTTPMiddleware(opts ...Option) func(http.Handler) http.Handler {
 }
 
 // isOriginAllowed 检查 origin 是否在白名单中.
-// 支持精确匹配和子域名通配符（如 "*.example.com"）.
+// 支持精确匹配和子域名通配符如 "*.example.com".
 func isOriginAllowed(origin string, allowed []string) bool {
 	for _, a := range allowed {
 		if a == "*" || strings.EqualFold(a, origin) {

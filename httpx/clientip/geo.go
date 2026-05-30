@@ -64,7 +64,7 @@ type MaxMindOption func(*MaxMindResolver)
 
 // WithMaxMindASN 添加 ASN 数据库支持.
 //
-// ASN 数据库提供自治系统信息（ISP、组织等）.
+// ASN 数据库提供自治系统信息ISP、组织等.
 func WithMaxMindASN(asnDBPath string) MaxMindOption {
 	return func(r *MaxMindResolver) {
 		db, err := geoip2.Open(asnDBPath)
@@ -157,7 +157,7 @@ func (r *MaxMindResolver) Lookup(ipStr string) (*GeoInfo, error) {
 		}
 	}
 
-	// 查询 ASN 信息（如果配置了 ASN 数据库）
+	// 查询 ASN 信息如果配置了 ASN 数据库
 	if r.asnDB != nil {
 		if asn, err := r.asnDB.ASN(ip); err == nil {
 			geo.ASN = asn.AutonomousSystemNumber

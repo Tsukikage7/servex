@@ -68,7 +68,7 @@ func (s *EventStore) LoadAll(ctx context.Context, aggregateID string) ([]eventso
 }
 
 // isConcurrencyError 检测唯一约束冲突错误.
-// 优先通过数据库驱动错误码精确判断（MySQL 1062, PostgreSQL 23505），
+// 优先通过数据库驱动错误码精确判断MySQL 1062, PostgreSQL 23505，
 // 回退到字符串匹配以兼容 SQLite 等其他数据库.
 func isConcurrencyError(err error) bool {
 	if err == nil {
@@ -85,7 +85,7 @@ func isConcurrencyError(err error) bool {
 		return pgErr.Code == "23505"
 	}
 
-	// SQLite 及其他数据库: 回退到字符串匹配（仅匹配 UNIQUE constraint 相关）
+	// SQLite 及其他数据库: 回退到字符串匹配仅匹配 UNIQUE constraint 相关
 	msg := strings.ToLower(err.Error())
 	return strings.Contains(msg, "unique constraint") ||
 		strings.Contains(msg, "duplicate entry") ||
@@ -110,7 +110,7 @@ func (s *SnapshotStore) AutoMigrate() error {
 	return s.db.AutoMigrate(&eventsourcing.Snapshot{})
 }
 
-// Save 保存快照（upsert 语义）.
+// Save 保存快照upsert 语义.
 // 使用 ON CONFLICT UPDATE 实现 upsert.
 func (s *SnapshotStore) Save(ctx context.Context, snapshot eventsourcing.Snapshot) error {
 	return s.db.WithContext(ctx).

@@ -20,7 +20,7 @@ func WithPublisherLogger(log logger.Logger) PublisherOption {
 	}
 }
 
-// WithExchange 设置交换机名称和类型（direct/fanout/topic）.
+// WithExchange 设置交换机名称和类型direct/fanout/topic.
 func WithExchange(name, typ string) PublisherOption {
 	return func(o *publisherOptions) {
 		o.exchange = name

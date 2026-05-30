@@ -25,7 +25,7 @@ type grpcDetail struct {
 
 // ToGRPCStatus 将 error 转为 gRPC Status.
 // 除了在 message 中嵌入 JSON 详情外，还会附加标准 errdetails:
-//   - ErrorInfo: 携带错误域（domain）、reason 和 metadata
+//   - ErrorInfo: 携带错误域domain、reason 和 metadata
 //   - BadRequest: 当 metadata 中存在 "field" 和 "field_violation" 时附加字段校验详情
 //   - RetryInfo: 当 metadata 中存在 "retry_delay" 时附加重试延迟建议
 func ToGRPCStatus(err error) *status.Status {
@@ -43,7 +43,7 @@ func ToGRPCStatus(err error) *status.Status {
 
 	code := CodeForKind(e.Kind)
 
-	// 内部错误（5xxxx、6xxxx）不透传详细消息，避免暴露敏感信息.
+	// 内部错误5xxxx、6xxxx不透传详细消息，避免暴露敏感信息.
 	// 业务码 1xxxxx+ 不受影响.
 	message := e.Message
 	if e.Code >= 50000 && e.Code < 70000 {
@@ -100,7 +100,7 @@ func ToGRPCStatus(err error) *status.Status {
 		}
 	}
 
-	// 逐个附加 details（WithDetails 接受 protoadapt.MessageV1 可变参数）
+	// 逐个附加 detailsWithDetails 接受 protoadapt.MessageV1 可变参数
 	if stWithDetails, detailErr := st.WithDetails(errorInfo); detailErr == nil {
 		st = stWithDetails
 	}
@@ -151,7 +151,7 @@ func FromGRPCStatus(st *status.Status) *serrors.Error {
 	for _, d := range st.Details() {
 		switch v := d.(type) {
 		case *errdetails.ErrorInfo:
-			// 合并 ErrorInfo.Metadata（不覆盖已有的）
+			// 合并 ErrorInfo.Metadata不覆盖已有的
 			for mk, mv := range v.Metadata {
 				if _, exists := result.Metadata[mk]; !exists {
 					result.Metadata[mk] = mv

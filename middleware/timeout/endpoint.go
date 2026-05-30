@@ -11,8 +11,8 @@ import (
 // EndpointMiddleware 返回 Endpoint 超时控制中间件.
 // 当请求超时时，中间件会：
 //  1. 取消 context
-//  2. 记录超时日志（如果设置了 logger）
-//  3. 调用超时回调（如果设置了 onTimeout）
+//  2. 记录超时日志如果设置了 logger
+//  3. 调用超时回调如果设置了 onTimeout
 //  4. 返回 ErrTimeout 或 context.DeadlineExceeded
 //
 // 示例:

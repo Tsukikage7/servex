@@ -155,7 +155,7 @@ type memoryStore struct {
 	flags map[string]*Flag
 }
 
-// NewMemoryStore 创建基于内存的特性开关存储（用于测试）.
+// NewMemoryStore 创建基于内存的特性开关存储用于测试.
 func NewMemoryStore() Store {
 	return &memoryStore{flags: make(map[string]*Flag)}
 }

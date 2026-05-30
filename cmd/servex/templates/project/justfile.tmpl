@@ -11,15 +11,15 @@ default:
 
 # ── 开发 ──────────────────────────────────────────────────────────
 
-# 开发模式运行（air 热重载，需要先 go install github.com/air-verse/air@latest）
+# 开发模式运行air 热重载，需要先 go install github.com/air-verse/air@latest
 dev:
     air -c .air.toml 2>/dev/null || (echo "air 未安装，使用 go run 启动" && APP_ENV=dev go run ./cmd/server/)
 
-# 运行服务（不热重载）
+# 运行服务不热重载
 run:
     go run ./cmd/server/
 
-# 文件变更自动重启（轻量替代 air，基于 fswatch）
+# 文件变更自动重启轻量替代 air，基于 fswatch
 watch:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -58,7 +58,7 @@ fmt:
     gofmt -w -s .
     goimports -w -local {{.Module}} .
 
-# 格式化检查（只检查不修改，适用于 CI）
+# 格式化检查只检查不修改，适用于 CI
 fmt-check:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -103,7 +103,7 @@ ci: tidy fmt-check lint vet test build
 # ── 部署 ──────────────────────────────────────────────────────────
 
 # 构建并部署到服务器
-# 需要配置 deploy/servers.env（格式：HOST=xxx USER=deploy PORT=22 DIR=/opt/xxx）
+# 需要配置 deploy/servers.env格式：HOST=xxx USER=deploy PORT=22 DIR=/opt/xxx
 deploy tag="latest":
     #!/usr/bin/env bash
     set -euo pipefail
@@ -127,7 +127,7 @@ deploy tag="latest":
 
 # ── 运维 ──────────────────────────────────────────────────────────
 
-# 查看服务日志（Docker 模式）
+# 查看服务日志Docker 模式
 logs lines="100":
     docker logs --tail {{"{{lines}}"}} -f {{.Name}}
 
@@ -159,12 +159,12 @@ infra-logs *args:
 
 # ── 发布 ──────────────────────────────────────────────────────────
 
-# 打版本标签（semver 格式）
+# 打版本标签semver 格式
 tag version:
     git tag -a {{"{{version}}"}} -m "{{"{{version}}"}}"
     @echo "标签 {{"{{version}}"}} 已创建，推送: git push origin {{"{{version}}"}}"
 
-# 生成变更日志（基于 git log）
+# 生成变更日志基于 git log
 changelog from="" to="HEAD":
     #!/usr/bin/env bash
     if [ -z "{{"{{from}}"}}" ]; then
@@ -202,6 +202,6 @@ deps:
 clean:
     rm -rf bin/
 
-# 深度清理（含缓存）
+# 深度清理含缓存
 clean-all: clean
     go clean -cache -testcache -modcache

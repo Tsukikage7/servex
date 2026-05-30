@@ -112,7 +112,7 @@ func RandElement[T any](r *Rand, slice []T) (T, bool) {
 	return slice[r.r.IntN(len(slice))], true
 }
 
-// Sample 从切片中无放回随机采样 n 个元素（n > len 时返回全部打乱副本）.
+// Sample 从切片中无放回随机采样 n 个元素n > len 时返回全部打乱副本.
 func Sample[T any](r *Rand, slice []T, n int) []T {
 	if len(slice) == 0 {
 		return nil

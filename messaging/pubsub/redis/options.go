@@ -18,7 +18,7 @@ func WithPublisherLogger(log logger.Logger) PublisherOption {
 	}
 }
 
-// WithMaxLen 设置 Stream 最大长度. approx=true 使用近似裁剪（性能更好）.
+// WithMaxLen 设置 Stream 最大长度. approx=true 使用近似裁剪性能更好.
 func WithMaxLen(maxLen int64, approx bool) PublisherOption {
 	return func(o *publisherOptions) {
 		o.maxLen = maxLen
@@ -51,7 +51,7 @@ func WithConsumerGroup(group, consumer string) SubscriberOption {
 	}
 }
 
-// WithBlock 设置是否使用阻塞读取（默认 true）.
+// WithBlock 设置是否使用阻塞读取默认 true.
 func WithBlock(block bool) SubscriberOption {
 	return func(o *subscriberOptions) {
 		o.block = block

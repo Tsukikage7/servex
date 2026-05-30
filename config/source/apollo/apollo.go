@@ -100,7 +100,7 @@ func (s *Source) Load() ([]*config.KeyValue, error) {
 		return nil, config.ErrSourceLoad
 	}
 
-	// 对于非 properties 格式的命名空间（如 yaml、json），
+	// 对于非 properties 格式的命名空间如 yaml、json，
 	// Apollo 将完整内容存储在 "content" 键下.
 	value, err := cache.Get("content")
 	if err != nil {

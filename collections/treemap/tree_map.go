@@ -155,7 +155,7 @@ func (m *TreeMap[K, V]) Clear() {
 	m.size = 0
 }
 
-// Keys 返回所有键（按排序顺序）.
+// Keys 返回所有键按排序顺序.
 func (m *TreeMap[K, V]) Keys() []K {
 	keys := make([]K, 0, m.size)
 	m.inorderTraversal(m.root, func(n *node[K, V]) bool {
@@ -165,7 +165,7 @@ func (m *TreeMap[K, V]) Keys() []K {
 	return keys
 }
 
-// Values 返回所有值（按键排序顺序）.
+// Values 返回所有值按键排序顺序.
 func (m *TreeMap[K, V]) Values() []V {
 	values := make([]V, 0, m.size)
 	m.inorderTraversal(m.root, func(n *node[K, V]) bool {
@@ -175,7 +175,7 @@ func (m *TreeMap[K, V]) Values() []V {
 	return values
 }
 
-// Entries 返回所有键值对（按键排序顺序）.
+// Entries 返回所有键值对按键排序顺序.
 func (m *TreeMap[K, V]) Entries() []Entry[K, V] {
 	entries := make([]Entry[K, V], 0, m.size)
 	m.inorderTraversal(m.root, func(n *node[K, V]) bool {
@@ -257,7 +257,7 @@ func (m *TreeMap[K, V]) Last() (Entry[K, V], bool) {
 	return Entry[K, V]{Key: n.key, Value: n.value}, true
 }
 
-// ToMap 转换为原生 map（无序）.
+// ToMap 转换为原生 map无序.
 // 由于 TreeMap 的 K 约束为 any，此处通过类型断言转换.
 // 若 K 实际不可比较，运行时会 panic.
 // 推荐使用独立函数 ToGoMap 来获取类型安全的 map.
@@ -270,7 +270,7 @@ func (m *TreeMap[K, V]) ToMap() map[any]V {
 	return result
 }
 
-// ToGoMap 将 TreeMap 转换为类型安全的原生 map（无序）.
+// ToGoMap 将 TreeMap 转换为类型安全的原生 map无序.
 // K 必须满足 comparable 约束.
 func ToGoMap[K comparable, V any](m *TreeMap[K, V]) map[K]V {
 	result := make(map[K]V, m.Len())
@@ -342,7 +342,7 @@ func (m *TreeMap[K, V]) inorderTraversal(n *node[K, V], fn func(*node[K, V]) boo
 	return m.inorderTraversal(n.right, fn)
 }
 
-// reverseInorderTraversal 逆中序遍历（从大到小）.
+// reverseInorderTraversal 逆中序遍历从大到小.
 func (m *TreeMap[K, V]) reverseInorderTraversal(n *node[K, V], fn func(*node[K, V]) bool) bool {
 	if n == nil {
 		return true

@@ -43,7 +43,7 @@ type verifierEntry struct {
 //
 // 注意: PKCE code_verifier 使用内存存储，不支持多实例部署.
 // 多实例场景下应确保同一用户的 AuthURL 和 Exchange 请求路由到同一实例，
-// 或使用外部存储（如 Redis）替代内存 map.
+// 或使用外部存储如 Redis替代内存 map.
 type Provider struct {
 	opts        options
 	authBaseURL string
@@ -89,7 +89,7 @@ func (p *Provider) Close() {
 	})
 }
 
-// AuthURL 生成 Google OAuth2 授权跳转链接（含 PKCE）.
+// AuthURL 生成 Google OAuth2 授权跳转链接含 PKCE.
 func (p *Provider) AuthURL(state string, opts ...oauth2.AuthURLOption) string {
 	extra := oauth2.ApplyAuthURLOptions(opts)
 	params := url.Values{
@@ -123,7 +123,7 @@ func (p *Provider) Exchange(ctx context.Context, code string) (*oauth2.Token, er
 	return p.ExchangeWithState(ctx, code, "")
 }
 
-// ExchangeWithState 使用授权码和 state 换取访问令牌（含 PKCE code_verifier）.
+// ExchangeWithState 使用授权码和 state 换取访问令牌含 PKCE code_verifier.
 func (p *Provider) ExchangeWithState(ctx context.Context, code, state string) (*oauth2.Token, error) {
 	if code == "" {
 		return nil, oauth2.ErrInvalidCode
@@ -273,7 +273,7 @@ func getString(m map[string]any, key string) string {
 	return v
 }
 
-// generateCodeVerifier 生成 PKCE code_verifier（43-128 字符，URL-safe）.
+// generateCodeVerifier 生成 PKCE code_verifier43-128 字符，URL-safe.
 func generateCodeVerifier() string {
 	b := make([]byte, 32) // 32 bytes -> 43 chars base64url
 	if _, err := rand.Read(b); err != nil {

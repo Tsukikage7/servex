@@ -22,23 +22,23 @@ type options struct {
 	httpClient     *http.Client
 }
 
-// WithBaseURL 设置 Ollama 服务地址（默认 http://localhost:11434/v1）.
+// WithBaseURL 设置 Ollama 服务地址默认 http://localhost:11434/v1.
 func WithBaseURL(url string) Option { return func(o *options) { o.baseURL = url } }
 
-// WithModel 设置默认聊天模型（默认 llama3.2）.
+// WithModel 设置默认聊天模型默认 llama3.2.
 func WithModel(model string) Option { return func(o *options) { o.model = model } }
 
 // WithEmbeddingModel 设置默认嵌入模型.
 func WithEmbeddingModel(m string) Option { return func(o *options) { o.embeddingModel = m } }
 
-// WithHTTPClient 设置自定义 HTTP 客户端（用于配置代理、超时等）.
+// WithHTTPClient 设置自定义 HTTP 客户端用于配置代理、超时等.
 func WithHTTPClient(hc *http.Client) Option { return func(o *options) { o.httpClient = hc } }
 
 // Client Ollama 客户端，底层复用 OpenAI 适配器.
 type Client = openai.Client
 
 // New 创建 Ollama 客户端.
-// apiKey 对 Ollama 通常为空字符串（本地服务不需要鉴权）.
+// apiKey 对 Ollama 通常为空字符串本地服务不需要鉴权.
 func New(apiKey string, opts ...Option) *Client {
 	o := &options{
 		baseURL:    defaultBaseURL,

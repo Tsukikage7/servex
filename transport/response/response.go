@@ -7,7 +7,7 @@ import (
 
 // Envelope 标记一个类型已经是统一响应体，httpserver.Handle 不会再次包装它.
 //
-// 仅 Response[T] 和 PagedResponse[T] 实现此接口（通过不可导出方法密封）.
+// 仅 Response[T] 和 PagedResponse[T] 实现此接口通过不可导出方法密封.
 type Envelope interface {
 	responseEnvelope()
 }
@@ -153,11 +153,11 @@ func PagedFailWithMessage[T any](code Code, message string) PagedResponse[T] {
 // IsSuccess 判断是否成功响应.
 func (r Response[T]) IsSuccess() bool { return r.Code == CodeSuccess.Num }
 
-// responseEnvelope 实现 Envelope 接口（密封，仅本包类型可实现）.
+// responseEnvelope 实现 Envelope 接口密封，仅本包类型可实现.
 func (Response[T]) responseEnvelope() {}
 
 // IsSuccess 判断是否成功响应.
 func (r PagedResponse[T]) IsSuccess() bool { return r.Code == CodeSuccess.Num }
 
-// responseEnvelope 实现 Envelope 接口（密封，仅本包类型可实现）.
+// responseEnvelope 实现 Envelope 接口密封，仅本包类型可实现.
 func (PagedResponse[T]) responseEnvelope() {}

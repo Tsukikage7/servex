@@ -32,7 +32,7 @@ func EncodeCodecResponse(ctx context.Context, w http.ResponseWriter, resp any) e
 	return err
 }
 
-// DefaultMaxBodySize 默认请求体最大大小（10MB），可通过 DecodeCodecRequestWithLimit 自定义.
+// DefaultMaxBodySize 默认请求体最大大小10MB，可通过 DecodeCodecRequestWithLimit 自定义.
 const DefaultMaxBodySize = 10 << 20
 
 // DecodeCodecRequest 基于 Content-Type 头自动选择编解码器的请求解码函数.
@@ -41,7 +41,7 @@ func DecodeCodecRequest[T any]() DecodeRequestFunc {
 	return DecodeCodecRequestWithLimit[T](DefaultMaxBodySize)
 }
 
-// DecodeCodecRequestWithLimit 基于 Content-Type 头自动选择编解码器的请求解码函数（可配置请求体大小限制）.
+// DecodeCodecRequestWithLimit 基于 Content-Type 头自动选择编解码器的请求解码函数可配置请求体大小限制.
 func DecodeCodecRequestWithLimit[T any](maxBodySize int64) DecodeRequestFunc {
 	return func(_ context.Context, r *http.Request) (any, error) {
 		codec := encoding.CodecForRequest(r, "Content-Type")

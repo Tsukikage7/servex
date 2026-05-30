@@ -26,13 +26,19 @@ func TestAddService(t *testing.T) {
 	}
 
 	expectedFiles := []string{
-		"services/user-service/cmd/server/main.go",
-		"services/user-service/cmd/server/wire.go",
-		"services/user-service/cmd/server/provider.go",
-		"services/user-service/cmd/server/config.go",
-		"services/user-service/internal/port/http.go",
-		"services/user-service/internal/adapter/persistence/persistence.go",
-		"services/user-service/configs/config.yaml",
+		"services/user/cmd/server/main.go",
+		"services/user/cmd/server/wire.go",
+		"services/user/cmd/server/provider.go",
+		"services/user/cmd/server/config.go",
+		"services/user/internal/service/service.go",
+		"services/user/internal/port/http.go",
+		"services/user/internal/adapter/persistence/persistence.go",
+		"services/user/configs/config.dev.yaml",
+		"services/user/configs/config.prod.yaml",
+		"api/user/v1/.gitkeep",
+		"domain/user/.gitkeep",
+		"application/user/command/.gitkeep",
+		"application/user/query/.gitkeep",
 	}
 
 	for _, f := range expectedFiles {
@@ -43,7 +49,7 @@ func TestAddService(t *testing.T) {
 	}
 
 	// 验证 main.go 是简洁的 Wire 入口
-	content, err := os.ReadFile(filepath.Join(dir, "services/user-service/cmd/server/main.go"))
+	content, err := os.ReadFile(filepath.Join(dir, "services/user/cmd/server/main.go"))
 	if err != nil {
 		t.Fatalf("read main.go: %v", err)
 	}
@@ -53,7 +59,7 @@ func TestAddService(t *testing.T) {
 	}
 
 	// grpc.go 不应存在
-	grpcPath := filepath.Join(dir, "services/user-service/internal/port/grpc.go")
+	grpcPath := filepath.Join(dir, "services/user/internal/port/grpc.go")
 	if _, err := os.Stat(grpcPath); !os.IsNotExist(err) {
 		t.Error("grpc.go should not exist when --with-grpc is false")
 	}
@@ -81,13 +87,13 @@ func TestAddServiceWithGRPC(t *testing.T) {
 	}
 
 	// grpc.go 应存在
-	grpcPath := filepath.Join(dir, "services/order-service/internal/port/grpc.go")
+	grpcPath := filepath.Join(dir, "services/order/internal/port/grpc.go")
 	if _, err := os.Stat(grpcPath); os.IsNotExist(err) {
 		t.Error("grpc.go should exist when --with-grpc is true")
 	}
 
 	// 验证 wire.go 包含 provider 引用
-	wireContent, err := os.ReadFile(filepath.Join(dir, "services/order-service/cmd/server/wire.go"))
+	wireContent, err := os.ReadFile(filepath.Join(dir, "services/order/cmd/server/wire.go"))
 	if err != nil {
 		t.Fatalf("read wire.go: %v", err)
 	}
@@ -98,24 +104,32 @@ func TestAddServiceWithGRPC(t *testing.T) {
 	if !contains(wireStr, "provideRedis") {
 		t.Error("wire.go should contain provideRedis when --infra redis is set")
 	}
-	if !contains(wireStr, "port.NewGRPC") {
-		t.Error("wire.go should contain port.NewGRPC when --with-grpc is true")
+	if contains(wireStr, "port.NewGRPC") {
+		t.Error("wire.go should not contain port.NewGRPC; provideApp assembles servers from config")
 	}
 
-	// 验证 config.yaml 包含 grpc/db/redis 配置
-	cfgContent, err := os.ReadFile(filepath.Join(dir, "services/order-service/configs/config.yaml"))
+	providerContent, err := os.ReadFile(filepath.Join(dir, "services/order/cmd/server/provider.go"))
 	if err != nil {
-		t.Fatalf("read config.yaml: %v", err)
+		t.Fatalf("read provider.go: %v", err)
+	}
+	if !contains(string(providerContent), "port.NewGRPC(cfg.GRPC, log)") {
+		t.Error("provider.go should assemble gRPC server from config when --with-grpc is true")
+	}
+
+	// 验证 config.dev.yaml 包含 grpc/db/redis 配置
+	cfgContent, err := os.ReadFile(filepath.Join(dir, "services/order/configs/config.dev.yaml"))
+	if err != nil {
+		t.Fatalf("read config.dev.yaml: %v", err)
 	}
 	cfgStr := string(cfgContent)
 	if !contains(cfgStr, "grpc:") {
-		t.Error("config.yaml should contain grpc section when --with-grpc is true")
+		t.Error("config.dev.yaml should contain grpc section when --with-grpc is true")
 	}
 	if !contains(cfgStr, "database:") {
-		t.Error("config.yaml should contain database section when --infra mysql is set")
+		t.Error("config.dev.yaml should contain database section when --infra mysql is set")
 	}
 	if !contains(cfgStr, "redis:") {
-		t.Error("config.yaml should contain redis section when --infra redis is set")
+		t.Error("config.dev.yaml should contain redis section when --infra redis is set")
 	}
 }
 

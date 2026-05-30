@@ -2,7 +2,7 @@
 // 特性：
 //   - 支持秒级 Cron 表达式
 //   - 单例模式：防止同一任务重叠执行
-//   - 分布式锁：多实例部署时保证只有一个实例执行（复用 cache 包）
+//   - 分布式锁：多实例部署时保证只有一个实例执行复用 cache 包
 //   - 任务状态跟踪和统计
 //   - Hook 机制：BeforeJob/AfterJob/OnError/OnSkip
 //   - 失败重试
@@ -10,7 +10,7 @@
 //
 // 示例：
 //
-//	// 创建调度器（使用 cache 包实现分布式锁）
+//	// 创建调度器使用 cache 包实现分布式锁
 //	s := scheduler.MustNewScheduler(
 //	    scheduler.WithLogger(log),
 //	    scheduler.WithCache(redisCache),  // 复用 cache.Cache 接口
@@ -56,7 +56,7 @@ type Scheduler interface {
 	// Running 检查是否运行中.
 	Running() bool
 
-	// Trigger 立即触发任务执行（不影响正常调度）.
+	// Trigger 立即触发任务执行不影响正常调度.
 	Trigger(name string) error
 }
 

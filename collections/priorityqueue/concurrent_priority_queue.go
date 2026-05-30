@@ -69,11 +69,11 @@ func (cpq *ConcurrentPriorityQueue[T]) Clear() {
 	cpq.pq.Clear()
 }
 
-// ToSlice 按优先级顺序弹出所有元素，会清空队列.
-func (cpq *ConcurrentPriorityQueue[T]) ToSlice() []T {
+// DrainToSlice 按优先级顺序弹出所有元素，会清空队列.
+func (cpq *ConcurrentPriorityQueue[T]) DrainToSlice() []T {
 	cpq.mu.Lock()
 	defer cpq.mu.Unlock()
-	return cpq.pq.ToSlice()
+	return cpq.pq.DrainToSlice()
 }
 
 // Clone 返回队列的深拷贝.

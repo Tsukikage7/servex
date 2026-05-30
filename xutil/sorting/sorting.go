@@ -98,7 +98,7 @@ func parseField(part string) (string, Order) {
 	return field, DefaultOrder
 }
 
-// isSafeFieldName 校验字段名是否安全（仅允许字母、数字、下划线和点号），防止 SQL 注入.
+// isSafeFieldName 校验字段名是否安全仅允许字母、数字、下划线和点号，防止 SQL 注入.
 func isSafeFieldName(name string) bool {
 	if name == "" {
 		return false
@@ -137,7 +137,7 @@ func (s Sorting) String() string {
 	return strings.Join(parts, ", ")
 }
 
-// Filter 过滤排序字段，只保留允许的字段（白名单）.
+// Filter 过滤排序字段，只保留允许的字段白名单.
 // 使用示例:
 //
 //	sorting.New("name:asc,password:desc").Filter("id", "name", "created_time")

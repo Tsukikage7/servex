@@ -30,7 +30,7 @@ func New(role llm.Role, text string) (*Template, error) {
 // Role 返回模板的消息角色.
 func (t *Template) Role() llm.Role { return t.role }
 
-// Text 返回模板的原始文本（未渲染）.
+// Text 返回模板的原始文本未渲染.
 func (t *Template) Text() string { return t.text }
 
 // MustNew 创建消息模板，失败时 panic.

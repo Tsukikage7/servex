@@ -9,6 +9,6 @@ var (
 	ErrInvalidRequest = errors.New(60202, "transport.graphql.invalid_request", "请求格式无效")
 	// ErrEmptyQuery 表示查询字符串为空.
 	ErrEmptyQuery = errors.New(60203, "transport.graphql.empty_query", "查询字符串为空")
-	// ErrInternalError 表示 GraphQL 内部错误（如 panic 恢复后返回）.
+	// ErrInternalError 表示 GraphQL 内部错误如 panic 恢复后返回.
 	ErrInternalError = errors.New(60204, "transport.graphql.internal_error", "内部错误")
 )

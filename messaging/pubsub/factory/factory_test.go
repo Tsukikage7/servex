@@ -60,7 +60,7 @@ func TestNewSubscriber_UnsupportedType(t *testing.T) {
 	}
 }
 
-// ---- Kafka 路由正确性（mock broker）----
+// ---- Kafka 路由正确性mock broker----
 
 // TestNewPublisher_Kafka_Route 使用 sarama mock broker 验证 kafka 路由能正确创建 Publisher。
 func TestNewPublisher_Kafka_Route(t *testing.T) {
@@ -79,7 +79,7 @@ func TestNewPublisher_Kafka_Route(t *testing.T) {
 	})
 
 	// 直接通过 kafka.NewPublisher + mock client 验证接口满足，
-	// 而不依赖真实网络连接（factory.NewPublisher 会调 sarama.NewClient）。
+	// 而不依赖真实网络连接factory.NewPublisher 会调 sarama.NewClient。
 	client, err := sarama.NewClient([]string{broker.Addr()}, cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -96,7 +96,7 @@ func TestNewPublisher_Kafka_Route(t *testing.T) {
 	var _ pubsub.Publisher = pub
 }
 
-// ---- Redis 路由正确性（不需要真实连接，仅验证 client 构造）----
+// ---- Redis 路由正确性不需要真实连接，仅验证 client 构造----
 
 func TestNewPublisher_Redis_Route(t *testing.T) {
 	cfg := &factory.Config{
@@ -136,5 +136,5 @@ func TestFactoryTypes(t *testing.T) {
 	var _ pubsub.Subscriber = (*kafka.Subscriber)(nil)
 }
 
-// errCheck 仅用于让 errors 包在测试中被引用（避免 unused import）。
+// errCheck 仅用于让 errors 包在测试中被引用避免 unused import。
 var _ = errors.New

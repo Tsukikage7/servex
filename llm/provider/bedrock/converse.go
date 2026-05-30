@@ -34,7 +34,7 @@ func splitMessages(messages []llm.Message) ([]types.SystemContentBlock, []types.
 }
 
 // convertMessages 将 llm.Message 切片转为 Bedrock types.Message 切片.
-// 注意：system 消息需要调用方提前分离（通过 splitMessages）.
+// 注意：system 消息需要调用方提前分离通过 splitMessages.
 func convertMessages(messages []llm.Message) []types.Message {
 	_, convMsgs := splitMessages(messages)
 	return convMsgs
@@ -52,7 +52,7 @@ func convertMessage(m llm.Message) types.Message {
 
 	var content []types.ContentBlock
 
-	// 工具调用（assistant 消息中的 tool_use blocks）
+	// 工具调用assistant 消息中的 tool_use blocks
 	if len(m.ToolCalls) > 0 {
 		if m.Content != "" {
 			content = append(content, &types.ContentBlockMemberText{Value: m.Content})
@@ -85,7 +85,7 @@ func convertMessage(m llm.Message) types.Message {
 			switch p.Type {
 			case llm.ContentTypeText:
 				content = append(content, &types.ContentBlockMemberText{Value: p.Text})
-				// image 暂不支持（需要 base64 解码），跳过
+				// image 暂不支持需要 base64 解码，跳过
 			}
 		}
 	} else if m.Content != "" {
@@ -95,7 +95,7 @@ func convertMessage(m llm.Message) types.Message {
 	return types.Message{Role: role, Content: content}
 }
 
-// convertToolResultMessage 将 tool 角色消息转换为 Bedrock user 消息（ToolResultBlock）.
+// convertToolResultMessage 将 tool 角色消息转换为 Bedrock user 消息ToolResultBlock.
 func convertToolResultMessage(m llm.Message) types.Message {
 	id := m.ToolCallID
 	block := &types.ContentBlockMemberToolResult{
@@ -119,7 +119,7 @@ func convertToolConfig(tools []llm.Tool) *types.ToolConfiguration {
 		name := t.Function.Name
 		desc := t.Function.Description
 
-		// Parameters 是 JSON Schema（json.RawMessage），需要转为 document.Interface
+		// Parameters 是 JSON Schemajson.RawMessage，需要转为 document.Interface
 		var schemaVal any
 		if len(t.Function.Parameters) > 0 {
 			if err := json.Unmarshal(t.Function.Parameters, &schemaVal); err != nil {

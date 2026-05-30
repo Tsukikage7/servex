@@ -1,0 +1,32 @@
+package agent
+
+import (
+	"context"
+	"fmt"
+
+	"{{ .Module }}/internal/tools"
+	"github.com/Tsukikage7/servex/v2/llm"
+)
+
+type Agent struct {
+	model llm.ChatModel
+	tools *tools.Registry
+}
+
+func New(model llm.ChatModel, tools *tools.Registry) *Agent {
+	return &Agent{model: model, tools: tools}
+}
+
+func (a *Agent) Reply(ctx context.Context, message string) (string, error) {
+	orderContext := a.tools.LookupOrderContext(message)
+	messages := []llm.Message{
+		llm.SystemMessage("你是 AI 客服助手。回答要简洁、准确；如果上下文不足，明确说明需要人工继续处理。"),
+		llm.UserMessage(fmt.Sprintf("可用业务上下文：\n%s\n\n用户问题：%s", orderContext, message)),
+	}
+
+	resp, err := a.model.Generate(ctx, messages)
+	if err != nil {
+		return "", err
+	}
+	return resp.Message.Content, nil
+}

@@ -160,7 +160,7 @@ func (m *Machine) AvailableEvents() []Event {
 	return events
 }
 
-// OnTransition 注册转换回调（所有转换都会触发）.
+// OnTransition 注册转换回调所有转换都会触发.
 func (m *Machine) OnTransition(fn func(from, to State, event Event)) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -181,7 +181,7 @@ func (m *Machine) OnLeave(state State, fn func(ctx context.Context, data any)) {
 	m.onLeave[state] = append(m.onLeave[state], fn)
 }
 
-// findTransition 查找当前状态下匹配事件的转换（调用者需持有锁）.
+// findTransition 查找当前状态下匹配事件的转换调用者需持有锁.
 func (m *Machine) findTransition(event Event) (*Transition, bool) {
 	for i := range m.transitions {
 		if m.transitions[i].From == m.current && m.transitions[i].Event == event {

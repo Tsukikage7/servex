@@ -303,7 +303,7 @@ func (s *DequeTestSuite) TestMixedOperations() {
 }
 
 func (s *DequeTestSuite) TestAsStack() {
-	// 使用 Deque 作为栈（LIFO）
+	// 使用 Deque 作为栈LIFO
 	stack := New[string]()
 
 	stack.PushBack("a")
@@ -321,7 +321,7 @@ func (s *DequeTestSuite) TestAsStack() {
 }
 
 func (s *DequeTestSuite) TestAsQueue() {
-	// 使用 Deque 作为队列（FIFO）
+	// 使用 Deque 作为队列FIFO
 	queue := New[string]()
 
 	queue.PushBack("a")
@@ -352,7 +352,7 @@ func (s *DequeTestSuite) TestWraparound() {
 		dq.PopFront()
 	}
 
-	// 再添加一些（会绕到数组开头）
+	// 再添加一些会绕到数组开头
 	for i := 8; i < 12; i++ {
 		dq.PushBack(i)
 	}

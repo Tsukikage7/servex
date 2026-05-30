@@ -124,7 +124,7 @@ func TestBreaker_FailureCountResetOnSuccess(t *testing.T) {
 	b.Execute(t.Context(), func() error { return errTest })
 	// 成功后重置计数
 	b.Execute(t.Context(), func() error { return nil })
-	// 再次失败不应立即开路（计数从 0 重新开始）
+	// 再次失败不应立即开路计数从 0 重新开始
 	b.Execute(t.Context(), func() error { return errTest })
 	b.Execute(t.Context(), func() error { return errTest })
 

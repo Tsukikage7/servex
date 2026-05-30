@@ -48,7 +48,7 @@ func TestRSA_GenerateAndValidate(t *testing.T) {
 	}
 
 	log := newTestLogger(t)
-	j := jwt.NewJWT(
+	j := jwt.MustNew(
 		jwt.WithRSAKeys(privKey, &privKey.PublicKey),
 		jwt.WithIssuer("test-service"),
 		jwt.WithLogger(log),
@@ -89,7 +89,7 @@ func TestRSA_PublicKeyOnlyValidation(t *testing.T) {
 	log := newTestLogger(t)
 
 	// 服务A：用私钥签名
-	signer := jwt.NewJWT(
+	signer := jwt.MustNew(
 		jwt.WithRSAKeys(privKey, &privKey.PublicKey),
 		jwt.WithLogger(log),
 		jwt.WithTokenPrefix(""),
@@ -101,8 +101,8 @@ func TestRSA_PublicKeyOnlyValidation(t *testing.T) {
 		t.Fatalf("生成令牌失败: %v", err)
 	}
 
-	// 服务B：仅用公钥验证（privateKey 为 nil）
-	verifier := jwt.NewJWT(
+	// 服务B：仅用公钥验证privateKey 为 nil
+	verifier := jwt.MustNew(
 		jwt.WithRSAKeys(nil, &privKey.PublicKey),
 		jwt.WithLogger(log),
 		jwt.WithTokenPrefix(""),
@@ -126,7 +126,7 @@ func TestRSA_WrongKeyRejectsToken(t *testing.T) {
 
 	log := newTestLogger(t)
 
-	signer := jwt.NewJWT(
+	signer := jwt.MustNew(
 		jwt.WithRSAKeys(privKey1, &privKey1.PublicKey),
 		jwt.WithLogger(log),
 		jwt.WithTokenPrefix(""),
@@ -139,7 +139,7 @@ func TestRSA_WrongKeyRejectsToken(t *testing.T) {
 	}
 
 	// 用不同公钥验证
-	verifier := jwt.NewJWT(
+	verifier := jwt.MustNew(
 		jwt.WithRSAKeys(nil, &privKey2.PublicKey),
 		jwt.WithLogger(log),
 		jwt.WithTokenPrefix(""),
@@ -160,7 +160,7 @@ func TestECDSA_GenerateAndValidate(t *testing.T) {
 	}
 
 	log := newTestLogger(t)
-	j := jwt.NewJWT(
+	j := jwt.MustNew(
 		jwt.WithECDSAKeys(privKey, &privKey.PublicKey),
 		jwt.WithIssuer("test-service"),
 		jwt.WithLogger(log),
@@ -192,7 +192,7 @@ func TestECDSA_WrongKeyRejectsToken(t *testing.T) {
 
 	log := newTestLogger(t)
 
-	signer := jwt.NewJWT(
+	signer := jwt.MustNew(
 		jwt.WithECDSAKeys(privKey1, &privKey1.PublicKey),
 		jwt.WithLogger(log),
 		jwt.WithTokenPrefix(""),
@@ -201,7 +201,7 @@ func TestECDSA_WrongKeyRejectsToken(t *testing.T) {
 	ctx := t.Context()
 	token, _ := signer.Generate(ctx, newTestClaims())
 
-	verifier := jwt.NewJWT(
+	verifier := jwt.MustNew(
 		jwt.WithECDSAKeys(nil, &privKey2.PublicKey),
 		jwt.WithLogger(log),
 		jwt.WithTokenPrefix(""),
@@ -222,7 +222,7 @@ func TestEdDSA_GenerateAndValidate(t *testing.T) {
 	}
 
 	log := newTestLogger(t)
-	j := jwt.NewJWT(
+	j := jwt.MustNew(
 		jwt.WithEdDSAKeys(privKey, pubKey),
 		jwt.WithIssuer("test-service"),
 		jwt.WithLogger(log),
@@ -252,7 +252,7 @@ func TestEdDSA_PublicKeyOnlyValidation(t *testing.T) {
 	pubKey, privKey, _ := ed25519.GenerateKey(rand.Reader)
 	log := newTestLogger(t)
 
-	signer := jwt.NewJWT(
+	signer := jwt.MustNew(
 		jwt.WithEdDSAKeys(privKey, pubKey),
 		jwt.WithLogger(log),
 		jwt.WithTokenPrefix(""),
@@ -262,7 +262,7 @@ func TestEdDSA_PublicKeyOnlyValidation(t *testing.T) {
 	token, _ := signer.Generate(ctx, newTestClaims())
 
 	// 仅公钥验证
-	verifier := jwt.NewJWT(
+	verifier := jwt.MustNew(
 		jwt.WithEdDSAKeys(nil, pubKey),
 		jwt.WithLogger(log),
 		jwt.WithTokenPrefix(""),
@@ -285,7 +285,7 @@ func TestRSA_RefreshWithClaims(t *testing.T) {
 	privKey, _ := rsa.GenerateKey(rand.Reader, 2048)
 	log := newTestLogger(t)
 
-	j := jwt.NewJWT(
+	j := jwt.MustNew(
 		jwt.WithRSAKeys(privKey, &privKey.PublicKey),
 		jwt.WithLogger(log),
 		jwt.WithTokenPrefix(""),
@@ -333,12 +333,12 @@ func TestRSA_RefreshWithClaims(t *testing.T) {
 	}
 }
 
-// --- HMAC 向后兼容性测试 ---
+// --- HMAC 签名测试 ---
 
-func TestHMAC_BackwardCompatibility(t *testing.T) {
+func TestHMAC_Signing(t *testing.T) {
 	log := newTestLogger(t)
 
-	j := jwt.NewJWT(
+	j := jwt.MustNew(
 		jwt.WithSecretKey("my-secret-key-at-least-32-bytes!"),
 		jwt.WithIssuer("test-service"),
 		jwt.WithLogger(log),
@@ -371,7 +371,7 @@ func TestAlgorithmMismatchRejected(t *testing.T) {
 	privKey, _ := rsa.GenerateKey(rand.Reader, 2048)
 	log := newTestLogger(t)
 
-	rsaSigner := jwt.NewJWT(
+	rsaSigner := jwt.MustNew(
 		jwt.WithRSAKeys(privKey, &privKey.PublicKey),
 		jwt.WithLogger(log),
 		jwt.WithTokenPrefix(""),
@@ -380,7 +380,7 @@ func TestAlgorithmMismatchRejected(t *testing.T) {
 	ctx := t.Context()
 	token, _ := rsaSigner.Generate(ctx, newTestClaims())
 
-	hmacVerifier := jwt.NewJWT(
+	hmacVerifier := jwt.MustNew(
 		jwt.WithSecretKey("my-secret-key-at-least-32-bytes!"),
 		jwt.WithLogger(log),
 		jwt.WithTokenPrefix(""),
@@ -425,7 +425,7 @@ func TestLoadRSAKeysFromPEM(t *testing.T) {
 
 	// 用加载的密钥签名和验证
 	log := newTestLogger(t)
-	j := jwt.NewJWT(
+	j := jwt.MustNew(
 		jwt.WithRSAKeys(loadedPriv, loadedPub),
 		jwt.WithLogger(log),
 		jwt.WithTokenPrefix(""),
@@ -475,7 +475,7 @@ func TestLoadECDSAKeysFromPEM(t *testing.T) {
 	}
 
 	log := newTestLogger(t)
-	j := jwt.NewJWT(
+	j := jwt.MustNew(
 		jwt.WithECDSAKeys(loadedPriv, loadedPub),
 		jwt.WithLogger(log),
 		jwt.WithTokenPrefix(""),
@@ -525,7 +525,7 @@ func TestLoadEdDSAKeysFromPEM(t *testing.T) {
 	}
 
 	log := newTestLogger(t)
-	j := jwt.NewJWT(
+	j := jwt.MustNew(
 		jwt.WithEdDSAKeys(loadedPriv, loadedPub),
 		jwt.WithLogger(log),
 		jwt.WithTokenPrefix(""),
@@ -572,7 +572,7 @@ func TestRSAKeyFiles(t *testing.T) {
 	}
 
 	log := newTestLogger(t)
-	j := jwt.NewJWT(
+	j := jwt.MustNew(
 		jwt.WithRSAKeyFiles(privPath, pubPath),
 		jwt.WithLogger(log),
 		jwt.WithTokenPrefix(""),
@@ -634,9 +634,9 @@ func TestLoadEdDSAPublicKey_InvalidPEM(t *testing.T) {
 	}
 }
 
-// --- NewJWT panic 测试 ---
+// --- MustNew panic 测试 ---
 
-func TestNewJWT_PanicNoPublicKey(t *testing.T) {
+func TestMustNew_PanicNoPublicKey(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {
 			t.Fatal("非对称模式缺少公钥应 panic")
@@ -646,13 +646,13 @@ func TestNewJWT_PanicNoPublicKey(t *testing.T) {
 	privKey, _ := rsa.GenerateKey(rand.Reader, 2048)
 	log := newTestLogger(t)
 
-	jwt.NewJWT(
+	jwt.MustNew(
 		jwt.WithRSAKeys(privKey, nil),
 		jwt.WithLogger(log),
 	)
 }
 
-func TestNewJWT_PanicNoKeyConfig(t *testing.T) {
+func TestMustNew_PanicNoKeyConfig(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {
 			t.Fatal("无密钥配置应 panic")
@@ -660,7 +660,7 @@ func TestNewJWT_PanicNoKeyConfig(t *testing.T) {
 	}()
 
 	log := newTestLogger(t)
-	jwt.NewJWT(
+	jwt.MustNew(
 		jwt.WithLogger(log),
 	)
 }

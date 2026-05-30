@@ -1,4 +1,4 @@
-// Package logshipper 提供日志投递功能，将结构化日志异步投递到外部存储（ES、Kafka 等）.
+// Package logshipper 提供日志投递功能，将结构化日志异步投递到外部存储ES、Kafka 等.
 package logshipper
 
 import (
@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// Entry 日志条目（结构化 JSON 格式）.
+// Entry 日志条目结构化 JSON 格式.
 type Entry struct {
 	Timestamp  time.Time      `json:"timestamp"`
 	Level      string         `json:"level"`
@@ -65,7 +65,7 @@ func WithBufferSize(n int) Option {
 	}
 }
 
-// WithDropOnFull 设置缓冲区满时丢弃（true，默认）还是阻塞（false）.
+// WithDropOnFull 设置缓冲区满时丢弃true，默认还是阻塞false.
 func WithDropOnFull(drop bool) Option {
 	return func(c *config) {
 		c.dropOnFull = drop
@@ -228,11 +228,11 @@ func (s *Shipper) Flush(ctx context.Context) error {
 }
 
 // Close 关闭投递器：先通知后台协程刷新剩余日志，等待完成后关闭 sink.
-// 可安全多次调用（幂等）.
+// 可安全多次调用幂等.
 func (s *Shipper) Close() error {
 	var closeErr error
 	s.once.Do(func() {
-		// 通知后台协程停止，并等待其退出（含剩余条目 flush）
+		// 通知后台协程停止，并等待其退出含剩余条目 flush
 		close(s.stopCh)
 		s.wg.Wait()
 		closeErr = s.sink.Close()

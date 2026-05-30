@@ -39,15 +39,15 @@ type Page struct {
 type Order int
 
 const (
-	// Descending 降序（默认，分数高的排前面）.
+	// Descending 降序默认，分数高的排前面.
 	Descending Order = iota
-	// Ascending 升序（分数低的排前面）.
+	// Ascending 升序分数低的排前面.
 	Ascending
 )
 
 // Leaderboard 排行榜接口.
 type Leaderboard interface {
-	// AddScore 设置成员分数（覆盖）.
+	// AddScore 设置成员分数覆盖.
 	AddScore(ctx context.Context, member string, score float64) error
 	// IncrScore 增加成员分数，返回新分数.
 	IncrScore(ctx context.Context, member string, delta float64) (float64, error)

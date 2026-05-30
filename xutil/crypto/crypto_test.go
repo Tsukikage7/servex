@@ -114,6 +114,6 @@ func (s *CryptoTestSuite) TestHashPassword_DifferentHashes() {
 	h2, err := HashPassword(password)
 	s.Require().NoError(err)
 
-	// bcrypt 每次生成的哈希值不同（含随机盐）
+	// bcrypt 每次生成的哈希值不同含随机盐
 	s.NotEqual(h1, h2)
 }

@@ -18,7 +18,7 @@ func WithModel(model string) Option {
 	return func(c *Client) { c.model = model }
 }
 
-// WithHTTPClient 设置自定义 HTTP 客户端（用于配置代理、超时等）.
+// WithHTTPClient 设置自定义 HTTP 客户端用于配置代理、超时等.
 func WithHTTPClient(hc *http.Client) Option {
 	return func(c *Client) { c.httpClient = hc }
 }

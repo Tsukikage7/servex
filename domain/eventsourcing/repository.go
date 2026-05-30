@@ -76,7 +76,7 @@ func (r *Repository[T]) Save(ctx context.Context, aggregate T) error {
 		return err
 	}
 
-	// 尝试保存快照（失败仅记录日志，不影响主流程）
+	// 尝试保存快照失败仅记录日志，不影响主流程
 	if r.snapshotStore != nil && r.snapshotEvery > 0 && aggregate.Version()%r.snapshotEvery == 0 {
 		data, err := json.Marshal(aggregate)
 		if err != nil {
@@ -111,14 +111,14 @@ func (r *Repository[T]) Save(ctx context.Context, aggregate T) error {
 //  1. 如果配置了快照存储，尝试加载快照
 //  2. 通过工厂创建空聚合
 //  3. 如果找到快照，反序列化到聚合并设置版本
-//  4. 从快照版本（或 0）加载后续事件
+//  4. 从快照版本或 0加载后续事件
 //  5. 逐个应用事件
 //  6. 返回聚合
 func (r *Repository[T]) Load(ctx context.Context, aggregateID string) (T, error) {
 	aggregate := r.factory()
 	var fromVersion int64
 
-	// 尝试从快照恢复（失败时 fallback 从头加载）
+	// 尝试从快照恢复失败时 fallback 从头加载
 	if r.snapshotStore != nil {
 		snapshot, err := r.snapshotStore.Load(ctx, aggregateID)
 		if err != nil {

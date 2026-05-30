@@ -218,7 +218,7 @@ func runNewWizard() (ProjectData, error) {
 		AllComponents: infraDefs,
 	}
 
-	// 通过包级变量传递模式给 cobra RunE（cobra 不便直接返回额外结果）
+	// 通过包级变量传递模式给 cobra RunEcobra 不便直接返回额外结果
 	if mode == "standalone" {
 		newStandalone = true
 	}

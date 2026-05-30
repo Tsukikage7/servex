@@ -204,7 +204,7 @@ func detectDeviceType(rawLower string) DeviceType {
 		}
 	}
 
-	// Tablet 检测（要在 Mobile 之前）
+	// Tablet 检测要在 Mobile 之前
 	if strings.Contains(rawLower, "ipad") ||
 		(strings.Contains(rawLower, "android") && !strings.Contains(rawLower, "mobile")) ||
 		strings.Contains(rawLower, "tablet") {

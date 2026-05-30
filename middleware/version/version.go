@@ -1,5 +1,5 @@
 // Package version 提供 API 版本控制中间件.
-// 支持从 URL 路径前缀（/v1/、/v2/）或请求头（Accept-Version、API-Version）提取版本信息.
+// 支持从 URL 路径前缀/v1/、/v2/或请求头Accept-Version、API-Version提取版本信息.
 package version
 
 import (
@@ -17,7 +17,7 @@ var versionKey = contextKey{}
 
 // Options 配置选项.
 type Options struct {
-	// PathPrefix 是否从 URL 路径前缀提取版本（默认 true）.
+	// PathPrefix 是否从 URL 路径前缀提取版本默认 true.
 	PathPrefix bool
 
 	// HeaderName 从指定请求头提取版本.

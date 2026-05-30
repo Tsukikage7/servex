@@ -30,7 +30,7 @@ func TestWithRedis(t *testing.T) {
     // 启动 Redis 容器（redis:7-alpine）
     redis, err := testx.NewRedis(ctx)
     require.NoError(t, err)
-    defer redis.Close(ctx)
+    defer redis.Close()
 
     // 获取地址
     addr := redis.Addr()   // "localhost:49153"（动态端口）
@@ -71,7 +71,7 @@ ch, err := testx.NewClickHouse(ctx)
 ```
 
 **关键类型：**
-- `testx.Container` — 封装容器（`Addr() string`, `Host() string`, `Port() string`, `Close(ctx) error`）
+- `testx.Container` — 封装容器（`Addr() string`, `Host() string`, `Port() string`, `Close() error`）
 - `testx.NewRedis(ctx)` — Redis 7 Alpine
 - `testx.NewPostgres(ctx, opts...)` — PostgreSQL 16 Alpine，支持 `WithPostgresUser/Password/DB/Image`
 - `testx.NewMySQL(ctx, opts...)` — MySQL 8，支持 `WithMySQLRootPassword/Database/Image`

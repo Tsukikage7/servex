@@ -64,7 +64,7 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 
 | 模块 | 包路径 | 描述 | 核心类型/函数 |
 |------|--------|------|--------------|
-| cmd/servex | `cmd/servex` | 脚手架 CLI（交互式向导 [charmbracelet/huh, Everforest Dark 主题]、项目生成、DDD 代码生成、Proto 管理[基于 buf]） | `servex new`, `servex add service`, `servex gen aggregate/entity/valueobject/client/dockerfile/justfile`, `servex proto add/client/server/lint/breaking`, `servex run`, `servex dev`, `servex gen k8s`, `servex upgrade`, `servex completion` |
+| cmd/servex | `cmd/servex` | 脚手架 CLI（交互式向导 [charmbracelet/huh, Everforest Dark 主题]、项目生成、DDD 代码生成、Proto 管理[基于 buf]） | `servex new`, `servex add service`, `servex gen entity/valueobject/client/dockerfile/justfile`, `servex proto add/client/server/lint/breaking`, `servex run`, `servex dev`, `servex gen k8s`, `servex upgrade`, `servex completion` |
 
 **CLI 详情：**
 
@@ -73,7 +73,6 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 - **add service：** 在 monorepo 中添加微服务，支持 `--with-grpc`、`--with-gateway`、`--infra`、`--observe`、`--auth`、`--discovery`、`--other`
 - **add aggregate：** 生成 DDD 聚合[domain + application + adapter]，支持 `--commands`、`--unique`、`--service`
 - **add proto：** 添加 proto 服务定义并生成服务端桩代码，支持 `--service`
-- **gen aggregate：** 同 `add aggregate`，兼容旧用法
 - **gen entity：** 生成 DDD 子实体（有 ID，可变，属于聚合），需 `--aggregate`
 - **gen valueobject：** 生成 DDD 值对象（无 ID，不可变，属于聚合），需 `--aggregate`
 - **gen client：** 生成外部服务客户端适配器（防腐层 + gRPC client），需 `--service`
@@ -108,7 +107,7 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 | hertzserver | `transport/hertzserver` | Hertz 适配器 | `New` |
 | websocket | `transport/websocket` | WebSocket 服务端 | `NewServer`, `Handler` |
 | sse | `transport/sse` | Server-Sent Events 服务端 | `NewServer`, `Handler` |
-| gateway | `transport/gateway` | gRPC + HTTP 双协议服务器 | `New`, `Register`, `Registrar`, `WithAuth`, `WithVersion` |
+| gateway | `transport/gateway` | gRPC + HTTP 双协议服务器 | `New`, `Register`, `Registrar`, `WithObservability`, `WithSecurity`, `WithVersion` |
 | grpcclient | `transport/grpcclient` | gRPC 客户端 | `New`, `Conn`, `WithServiceName`, `WithDiscovery` |
 | health | `transport/health` | 健康检查 | `New`, `Checker`, `NewDBChecker`, `NewRedisChecker`, `Middleware`, `WithVersion` |
 | response | `transport/response` | 统一响应格式 | `OK`, `Fail`, `Response`, `Code`, `Code.ToError`, `ExtractCode`, `GatewayErrorHandler`, `GatewayServeMuxOption` |
@@ -150,7 +149,7 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 
 | 模块 | 包路径 | 描述 | 核心类型/函数 |
 |------|--------|------|--------------|
-| auth/jwt | `auth/jwt` | JWT 签发与验证（HS256/RS256/ES256/EdDSA） | `NewJWT`, `NewAuthenticator`, `WithSecretKey`, `WithRSAKeys`, `WithECDSAKeys`, `WithEdDSAKeys`, `LoadRSAPrivateKey`, `Generate`, `Validate` |
+| auth/jwt | `auth/jwt` | JWT 签发与验证（HS256/RS256/ES256/EdDSA） | `MustNew`, `NewAuthenticator`, `WithSecretKey`, `WithRSAKeys`, `WithECDSAKeys`, `WithEdDSAKeys`, `LoadRSAPrivateKey`, `Generate`, `Validate` |
 | auth/apikey | `auth/apikey` | API Key 验证 | `New`, `StaticValidator`, `CacheValidator` |
 | auth/rbac | `auth/rbac` | 可选 RBAC 授权适配 | `NewManager`, `NewMemoryStore`, `NewGORMStore`, `AssignRole`, `HasPermission`, `HTTPMiddleware` |
 | auth/casbin | `auth/casbin` | 可选 Casbin 授权适配 | `NewAuthorizer`, `WithRequestBuilder` |
@@ -203,18 +202,20 @@ description: servex Go 微服务工具库专家。当用户在使用 servex（�
 | 模块 | 包路径 | 描述 | 核心类型/函数 |
 |------|--------|------|--------------|
 | llm | `llm` | LLM facade | `ChatModel`, `EmbeddingModel`, `Message`, `Tool`, `CallOption` |
-| llm/framework/eino | `llm/framework/eino` | 独立 module，CloudWeGo Eino 双向适配 | `NewChatModel`, `AsChatModel`, `NewEmbeddingModel`, `AsEmbedder`, `ToEinoTools` |
-| llm/framework/adk | `llm/framework/adk` | 独立 module，Google ADK 适配 | `NewAgent`, `NewLLMAgent`, `AsModel`, `NewRunner`, `WrapAgent` |
-| llm/provider/router | `llm/provider/router` | 多 Provider 路由 | `New`, `Route` |
+| llm/adapter/eino | `llm/adapter/eino` | 独立 module，CloudWeGo Eino 双向适配 | `NewChatModel`, `AsChatModel`, `NewEmbeddingModel`, `AsEmbedder`, `ToEinoTools` |
+| llm/adapter/adk | `llm/adapter/adk` | 独立 module，Google ADK 适配 | `NewAgent`, `NewLLMAgent`, `AsModel`, `NewRunner`, `WrapAgent` |
+| llm/router | `llm/router` | 多 Provider 路由 | `New`, `Route` |
 | llm/provider/openai | `llm/provider/openai` | OpenAI 客户端（兼容 DeepSeek 等） | `New`, `WithBaseURL`, `WithModel`, `WithEmbeddingModel` |
 | llm/provider/anthropic | `llm/provider/anthropic` | Anthropic Claude 客户端 | `New`, `WithModel`, `WithDefaultMaxTokens` |
 | llm/provider/gemini | `llm/provider/gemini` | Google Gemini 客户端 | `New`, `WithModel`, `WithEmbeddingModel` |
 | llm/prompt | `llm/prompt` | 消息模板引擎 | `New`, `MustNew`, `Render`, `MustRender` |
 | llm/middleware | `llm/middleware` | AI 模型中间件链 | `Chain`, `Logging`, `Retry`, `RateLimit`, `UsageTracker` |
-| llm/serving/cache | `llm/serving/cache` | 语义缓存（Embedding 相似度） | `NewMemoryStore`, `Middleware`, `NewCachedModel`, `Config` |
-| llm/serving/apikey | `llm/serving/apikey` | API Key 管理（签发/验证/配额/限流） | `NewManager`, `NewGORMStore`, `NewMemoryStore`, `HTTPMiddleware`, `FromContext`, `WithQuotaLimit`, `WithRateLimit` |
-| llm/serving/billing | `llm/serving/billing` | 用量计费（按 token 计费/用量报表） | `NewBilling`, `NewGORMStore`, `NewMemoryStore`, `Middleware`, `WithDefaultPricing`, `SetPricing`, `GetSummary` |
-| llm/serving/proxy | `llm/serving/proxy` | AI API 代理网关（OpenAI 兼容/路由/鉴权/计费） | `New`, `RegisterProvider`, `Route`, `Handler`, `WithAPIKeyManager`, `WithBilling`, `WithModeration` |
+| llm/gateway/cache | `llm/gateway/cache` | 语义缓存（Embedding 相似度） | `NewMemoryStore`, `Middleware`, `NewCachedModel`, `Config` |
+| llm/gateway/apikey | `llm/gateway/apikey` | API Key 管理（签发/验证/配额/限流） | `NewManager`, `NewGORMStore`, `NewMemoryStore`, `HTTPMiddleware`, `FromContext`, `WithQuotaLimit`, `WithRateLimit` |
+| llm/gateway/billing | `llm/gateway/billing` | 用量计费（按 token 计费/用量报表） | `NewBilling`, `NewGORMStore`, `NewMemoryStore`, `Middleware`, `WithDefaultPricing`, `SetPricing`, `GetSummary` |
+| llm/gateway | `llm/gateway` | ServeX AI 网关（路由/鉴权/计费/SSE） | `New`, `RegisterProvider`, `Route`, `Handler`, `WithAPIKeyManager`, `WithBilling`, `WithModeration` |
+| llm/mcp | `llm/mcp` | MCP 工具注册、策略和 `llm.Tool` 转换边界 | `NewRegistry`, `Register`, `Call`, `LLMTools`, `Policy` |
+| llm/observability | `llm/observability` | OpenTelemetry GenAI 属性和用量记录辅助 | `ModelAttributes`, `UsageAttributes`, `RecordUsage` |
 
 ### 分布式模式 → 详见 `distributed` skill
 

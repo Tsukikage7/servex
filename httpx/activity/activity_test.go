@@ -150,7 +150,7 @@ func TestTrackerDedupe(t *testing.T) {
 	}
 	_ = tracker.Track(ctx, event1)
 
-	// 第二次追踪（在去重窗口内）
+	// 第二次追踪在去重窗口内
 	event2 := &Event{
 		UserID:    "user123",
 		EventType: EventTypeRequest,
@@ -159,7 +159,7 @@ func TestTrackerDedupe(t *testing.T) {
 	}
 	_ = tracker.Track(ctx, event2)
 
-	// 由于去重，平台应该还是第一次的值（空）
+	// 由于去重，平台应该还是第一次的值空
 	status, _ := tracker.GetStatus(ctx, "user123")
 	if status.LastPlatform == "Android" {
 		t.Error("Second event should be deduped")

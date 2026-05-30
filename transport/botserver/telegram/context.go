@@ -47,7 +47,7 @@ func (c *tgContext) Text() string {
 	return c.update.Message.Text
 }
 
-// Command 返回命令名（不含 "/"），非命令返回 ""。
+// Command 返回命令名不含 "/"，非命令返回 ""。
 func (c *tgContext) Command() string {
 	return c.update.Message.Command()
 }

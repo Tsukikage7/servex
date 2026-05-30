@@ -23,7 +23,7 @@ type OrderItemView struct {
 	Subtotal    float64 `json:"subtotal"`
 }
 
-// OrderView 订单视图对象（返回给外部调用方）.
+// OrderView 订单视图对象返回给外部调用方.
 type OrderView struct {
 	ID          uint64          `json:"id"`
 	UserID      uint64          `json:"user_id"`

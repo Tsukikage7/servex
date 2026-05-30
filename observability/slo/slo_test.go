@@ -134,7 +134,7 @@ func TestErrorBudget(t *testing.T) {
 
 	// 实际错误率 = 5/100 = 0.05
 	// 消耗比 = 0.05 / 0.01 = 5.0
-	// 剩余预算 = 1 - 5.0 = 0（已耗尽）
+	// 剩余预算 = 1 - 5.0 = 0已耗尽
 	if st.ErrorBudgetRemaining != 0 {
 		t.Fatalf("expected error budget remaining 0, got %f", st.ErrorBudgetRemaining)
 	}

@@ -1,236 +1,83 @@
-# {{.Name}} — servex monorepo justfile
+# {{.Name}} — Servex monorepo operations
 
-# 列出所有可用配方
 default:
     @just --list
 
-# ── 开发 ──────────────────────────────────────────────────────────
+# ── 日常开发[Dev]──────────────────────────────────────────────────────
 
-# 开发模式运行（air 热重载，需要先 go install github.com/air-verse/air@latest）
-dev service:
-    cd services/{{"{{service}}"}} && air -c .air.toml 2>/dev/null || (echo "air 未安装，使用 go run 启动" && APP_ENV=dev go run ./cmd/server/)
+dev service="all":
+    @if [ "{{"{{service}}"}}" = "all" ]; then \
+      for dir in services/*; do [ -d "$$dir/cmd/server" ] && APP_ENV=dev go run "./$$dir/cmd/server" & done; wait; \
+    else \
+      APP_ENV=dev go run ./services/{{"{{service}}"}}/cmd/server; \
+    fi
 
-# 运行指定服务（不热重载）
 run service:
-    go run ./services/{{"{{service}}"}}/cmd/server/
+    APP_ENV=dev go run ./services/{{"{{service}}"}}/cmd/server
 
-# 文件变更自动重启指定服务（轻量替代 air，基于 fswatch）
-watch service:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    if ! command -v fswatch &>/dev/null; then echo "需要安装 fswatch"; exit 1; fi
-    echo "监听 services/{{"{{service}}"}}/ 变更..."
-    fswatch -o services/{{"{{service}}"}}/ | while read; do
-        echo "检测到变更，重新启动..."
-        pkill -f "services/{{"{{service}}"}}/cmd/server" 2>/dev/null || true
-        go run ./services/{{"{{service}}"}}/cmd/server/ &
-    done
+# ── 构建与生成[Build & Codegen]────────────────────────────────────────
 
-# ── 构建 ──────────────────────────────────────────────────────────
+build target="all":
+    @if [ "{{"{{target}}"}}" = "all" ]; then \
+      mkdir -p bin; \
+      for dir in services/*/cmd/server; do svc=$$(basename "$$(dirname "$$(dirname "$$dir")")"); echo "building $$svc"; CGO_ENABLED=0 go build -ldflags "-s -w" -o "bin/$$svc" "./$$dir"; done; \
+    else \
+      mkdir -p bin; CGO_ENABLED=0 go build -ldflags "-s -w" -o bin/{{"{{target}}"}} ./services/{{"{{target}}"}}/cmd/server; \
+    fi
 
-# 构建指定服务二进制
-build service:
-    @mkdir -p bin
-    CGO_ENABLED=0 go build -ldflags "-s -w" -o bin/{{"{{service}}"}} ./services/{{"{{service}}"}}/cmd/server/
+wire service="all":
+    @if [ "{{"{{service}}"}}" = "all" ]; then \
+      for dir in services/*/cmd/server; do (cd "$$dir" && go run -mod=mod github.com/google/wire/cmd/wire); done; \
+    else \
+      cd services/{{"{{service}}"}}/cmd/server && go run -mod=mod github.com/google/wire/cmd/wire; \
+    fi
 
-# 构建所有服务二进制
-build-all:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    mkdir -p bin
-    for dir in services/*/cmd/server; do
-        svc=$(basename $(dirname $(dirname "$dir")))
-        echo "building $svc..."
-        CGO_ENABLED=0 go build -ldflags "-s -w" -o "bin/$svc" "./$dir"
-    done
+codegen target="all":
+    @case "{{"{{target}}"}}" in \
+      all|proto) cd api && buf generate ;; \
+      *) echo "unsupported codegen target: {{"{{target}}"}}"; exit 1 ;; \
+    esac
 
-# 构建指定服务 Docker 镜像
-image service tag="latest":
-    docker build -t {{"{{service}}"}}:{{"{{tag}}"}} -f services/{{"{{service}}"}}/Dockerfile .
+# ── 部署与基础设施[Deploy & Infra]────────────────────────────────────
 
-# ── 代码生成 ──────────────────────────────────────────────────────
+infra action="up":
+    @case "{{"{{action}}"}}" in \
+      up) docker compose -f deploy/docker/infra/docker-compose.yaml up -d ;; \
+      down) docker compose -f deploy/docker/infra/docker-compose.yaml down ;; \
+      logs) docker compose -f deploy/docker/infra/docker-compose.yaml logs -f ;; \
+      *) echo "unsupported infra action: {{"{{action}}"}}"; exit 1 ;; \
+    esac
 
-# 生成 proto 代码 (buf)
-proto:
-    cd api && buf generate
+deploy service:
+    @echo "deploy {{"{{service}}"}}: implement scripts/deploy/{{"{{service}}"}}.sh or wire your CI/CD here"
 
-# 生成指定服务的 wire 注入代码
-wire service:
-    wire ./services/{{"{{service}}"}}/cmd/server/
+ops action service lines="100":
+    @case "{{"{{action}}"}}" in \
+      logs) tail -n "{{"{{lines}}"}}" -f logs/{{"{{service}}"}}/*.log ;; \
+      health) curl -sf http://localhost:8080/healthz ;; \
+      *) echo "unsupported ops action: {{"{{action}}"}}"; exit 1 ;; \
+    esac
 
-# 生成所有服务的 wire 注入代码
-wire-all:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    for dir in services/*/cmd/server; do
-        svc=$(basename $(dirname $(dirname "$dir")))
-        echo "wire $svc..."
-        wire "./$dir"
-    done
+# ── 质量[Quality]──────────────────────────────────────────────────────
 
-# ── 测试与检查 ────────────────────────────────────────────────────
-
-# 格式化代码
 fmt:
     gofmt -w -s .
-    goimports -w -local {{.Module}} .
 
-# 格式化检查（只检查不修改，适用于 CI）
-fmt-check:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    bad=$(gofmt -l -s . | head -20)
-    if [ -n "$bad" ]; then
-      echo "gofmt: 以下文件格式不符合规范:"
-      echo "$bad"
-      exit 1
-    fi
-    bad=$(goimports -l -local {{.Module}} . | head -20)
-    if [ -n "$bad" ]; then
-      echo "goimports: 以下文件 import 顺序不符合规范:"
-      echo "$bad"
-      exit 1
+check target="all":
+    @case "{{"{{target}}"}}" in \
+      all) go mod tidy && go test ./... ;; \
+      tidy) go mod tidy ;; \
+      test) go test ./... ;; \
+      vet) go vet ./... ;; \
+      *) echo "unsupported check target: {{"{{target}}"}}"; exit 1 ;; \
+    esac
+
+test service="all":
+    @if [ "{{"{{service}}"}}" = "all" ]; then \
+      go test ./...; \
+    else \
+      go test ./services/{{"{{service}}"}}/...; \
     fi
 
-# 代码检查
-lint:
-    golangci-lint run ./... 2>/dev/null || (echo "golangci-lint not found, falling back to go vet" && go vet ./...)
-
-# go vet
-vet:
-    go vet ./...
-
-# 依赖整理
-tidy:
-    go mod tidy
-
-# 依赖漏洞扫描
-vuln:
-    govulncheck ./... 2>/dev/null || (go install golang.org/x/vuln/cmd/govulncheck@latest && govulncheck ./...)
-
-# 测试全部
-test:
-    go test -race -cover ./...
-
-# 测试指定服务
-test-service service:
-    go test -race -cover ./services/{{"{{service}}"}}/...
-
-# 模拟 CI 完整流程
-ci: tidy fmt-check lint vet test build-all
-    @echo ""
-    @echo "CI 检查全部通过"
-
-# ── 部署 ──────────────────────────────────────────────────────────
-
-# 构建并部署指定服务到对应服务器
-# 用法: just deploy es-proxy [tag]
-# 需要配置 deploy/servers.env（格式：SERVICE_HOST=xxx SERVICE_USER=deploy SERVICE_PORT=22 SERVICE_DIR=/opt/xxx）
-deploy service tag="latest":
-    #!/usr/bin/env bash
-    set -euo pipefail
-    if [ ! -f deploy/servers.env ]; then echo "错误: deploy/servers.env 不存在"; exit 1; fi
-    source deploy/servers.env
-    PREFIX=$(echo "{{"{{service}}"}}" | tr '[:lower:]-' '[:upper:]_')
-    HOST=$(eval echo "\${${PREFIX}_HOST:-}")
-    USER=$(eval echo "\${${PREFIX}_USER:-deploy}")
-    PORT=$(eval echo "\${${PREFIX}_PORT:-22}")
-    DIR=$(eval echo "\${${PREFIX}_DIR:-/opt/{{.Name}}/{{"{{service}}"}}}")
-    if [ -z "$HOST" ]; then echo "错误: 未找到 {{"{{service}}"}} 的部署配置（${PREFIX}_HOST）"; exit 1; fi
-    echo "▶ 构建镜像 {{"{{service}}"}}:{{"{{tag}}"}}"
-    docker build -t {{"{{service}}"}}:{{"{{tag}}"}} -f services/{{"{{service}}"}}/Dockerfile .
-    echo "▶ 导出并传输到 $USER@$HOST:$PORT"
-    docker save {{"{{service}}"}}:{{"{{tag}}"}} | gzip > /tmp/{{"{{service}}"}}-{{"{{tag}}"}}.tar.gz
-    scp -P "$PORT" /tmp/{{"{{service}}"}}-{{"{{tag}}"}}.tar.gz "$USER@$HOST:/tmp/"
-    echo "▶ 远程加载并启动"
-    ssh -p "$PORT" "$USER@$HOST" "
-        mkdir -p $DIR
-        docker load < /tmp/{{"{{service}}"}}-{{"{{tag}}"}}.tar.gz
-        cd $DIR
-        APP_ENV=prod docker compose up -d {{"{{service}}"}}
-        rm /tmp/{{"{{service}}"}}-{{"{{tag}}"}}.tar.gz
-    "
-    rm /tmp/{{"{{service}}"}}-{{"{{tag}}"}}.tar.gz
-    echo "✓ {{"{{service}}"}} 部署完成 -> $USER@$HOST:$DIR"
-
-# ── 运维 ──────────────────────────────────────────────────────────
-
-# 查看指定服务日志（Docker 模式）
-logs service lines="100":
-    docker logs --tail {{"{{lines}}"}} -f {{"{{service}}"}}
-
-# 检查服务健康状态
-health service port="8080":
-    #!/usr/bin/env bash
-    resp=$(curl -sf "http://localhost:{{"{{port}}"}}/healthz" 2>/dev/null)
-    if [ $? -eq 0 ]; then
-      echo "✓ {{"{{service}}"}} 健康"
-      echo "$resp" | jq . 2>/dev/null || echo "$resp"
-    else
-      echo "✗ {{"{{service}}"}} 不可达"
-      exit 1
-    fi
-
-# ── 基础设施 ──────────────────────────────────────────────────────
-
-# 启动 infra（consul/redis/mysql 等）
-infra-up:
-    docker compose -f deploy/docker/infra/docker-compose.yaml up -d
-
-# 停止 infra
-infra-down:
-    docker compose -f deploy/docker/infra/docker-compose.yaml down
-
-# 查看 infra 日志
-infra-logs *args:
-    docker compose -f deploy/docker/infra/docker-compose.yaml logs {{"{{args}}"}}
-
-# ── 发布 ──────────────────────────────────────────────────────────
-
-# 打版本标签（semver 格式）
-tag version:
-    git tag -a {{"{{version}}"}} -m "{{"{{version}}"}}"
-    @echo "标签 {{"{{version}}"}} 已创建，推送: git push origin {{"{{version}}"}}"
-
-# 生成变更日志（基于 git log）
-changelog from="" to="HEAD":
-    #!/usr/bin/env bash
-    if [ -z "{{"{{from}}"}}" ]; then
-      from=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-      if [ -z "$from" ]; then echo "没有找到历史标签"; exit 0; fi
-    else
-      from="{{"{{from}}"}}"
-    fi
-    echo "## $from..{{"{{to}}"}}"
-    echo ""
-    git log "$from"..{{"{{to}}"}} --pretty=format:"- %s" --no-merges
-
-# ── 统计 ──────────────────────────────────────────────────────────
-
-# 代码行数统计
-lines:
-    #!/usr/bin/env bash
-    echo "=== 代码统计 ==="
-    echo -n "Go 文件:     "; find . -name '*.go' -not -path './.git/*' | wc -l | tr -d ' '
-    echo -n "测试文件:    "; find . -name '*_test.go' -not -path './.git/*' | wc -l | tr -d ' '
-    echo -n "代码行数:    "; find . -name '*.go' -not -name '*_test.go' -not -path './.git/*' | xargs wc -l 2>/dev/null | tail -1
-    echo -n "测试行数:    "; find . -name '*_test.go' -not -path './.git/*' | xargs wc -l 2>/dev/null | tail -1
-    echo -n "Proto 文件:  "; find api -name '*.proto' 2>/dev/null | wc -l | tr -d ' '
-
-# 搜索代码中的 TODO/FIXME
-todo:
-    @grep -rn 'TODO\|FIXME\|HACK\|XXX' --include='*.go' . | grep -v vendor | grep -v .git || echo "没有找到 TODO/FIXME"
-
-# 可视化模块依赖关系
-deps:
-    go mod graph | head -50
-
-# ── 清理 ──────────────────────────────────────────────────────────
-
-# 清理构建产物
 clean:
-    rm -rf bin/
-
-# 深度清理（含缓存）
-clean-all: clean
-    go clean -cache -testcache -modcache
+    rm -rf bin tmp

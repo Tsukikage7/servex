@@ -24,7 +24,7 @@ func newRouter() *Router {
 	}
 }
 
-// NewRouter 创建命令路由器（供外部包使用）。
+// NewRouter 创建命令路由器供外部包使用。
 func NewRouter() *Router {
 	return newRouter()
 }

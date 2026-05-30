@@ -1,25 +1,27 @@
 ---
 name: llm
-description: servex LLM 模块专家。当用户使用 servex 的 llm、llm/framework/eino、llm/framework/adk、llm/provider/*、llm/prompt、llm/middleware、llm/serving/* 时触发。
+description: servex LLM 模块专家。当用户使用 servex 的 llm、llm/adapter/eino、llm/adapter/adk、llm/provider/*、llm/prompt、llm/middleware、llm/gateway/* 时触发。
 ---
 
 # servex LLM
 
-servex 的 LLM 模块只提供稳定 facade、Provider、Middleware、Serving 能力。Eino/ADK framework 封装位于独立 Go module，避免根 module 持有这些重依赖。
+servex 的 LLM 模块提供稳定 facade、Provider、Middleware、Gateway、MCP、Observability 和 adapter 能力。Eino/ADK adapter 位于独立 Go module，避免根 module 持有这些重依赖。
 
 ## 当前边界
 
 - `llm`：`ChatModel`、`EmbeddingModel`、`Message`、`Tool`、`CallOption`、`Usage`、`StreamReader`。
-- `llm/framework/eino`：独立 module，CloudWeGo Eino 双向适配。
-- `llm/framework/adk`：独立 module，Google ADK Agent/LLMAgent/Runner 适配。
+- `llm/adapter/eino`：独立 module，CloudWeGo Eino 双向适配。
+- `llm/adapter/adk`：独立 module，Google ADK Agent/LLMAgent/Runner 适配。
 - `llm/provider/*`：模型后端适配。
 - `llm/middleware`：日志、重试、限流、用量追踪。
 - `llm/prompt`：轻量提示词模板。
-- `llm/serving/*`：语义缓存、API Key、计费、OpenAI 兼容代理。
+- `llm/gateway/*`：语义缓存、API Key、计费、ServeX AI Gateway。
+- `llm/mcp`：MCP 工具注册、最小权限策略和 `llm.Tool` 转换边界。
+- `llm/observability`：OpenTelemetry GenAI 属性和用量记录辅助。
 
 已删除自研运行时：`llm/agent`、`llm/compose`、`llm/retrieval`、`llm/processing`、`llm/eval`、`llm/safety`。
 
-## llm/framework/eino
+## llm/adapter/eino
 
 ```go
 model, err := eino.NewChatModel(baseEinoModel)
@@ -42,7 +44,7 @@ resp, err := model.Generate(ctx, []llm.Message{
 - `FromEinoMessage`：Eino 消息转 servex 消息。
 - `ToEinoTool` / `ToEinoTools`：servex 工具定义转 Eino 工具定义。
 
-## llm/framework/adk
+## llm/adapter/adk
 
 ```go
 agent, err := adk.NewLLMAgent(adk.LLMAgentConfig{
@@ -70,5 +72,5 @@ _ = raw
 
 ## 注意
 
-不要在 servex 内重新实现 Agent、Graph、RAG、工具调用循环或内容审核框架；这些能力交给 Eino 或 ADK。
-根 module 的 `go test ./llm/...` 不包含独立 framework module；修改 adapter 时需要分别在 `llm/framework/eino` 或 `llm/framework/adk` 目录运行 `go test ./...`。
+不要在根 module 内重新实现 Agent、Graph、RAG 或工具调用循环；这些能力通过独立 adapter 或业务 runtime 接入，ServeX 负责微服务边界闭环。
+根 module 的 `go test ./llm/...` 不包含独立 adapter module；修改 adapter 时需要分别在 `llm/adapter/eino` 或 `llm/adapter/adk` 目录运行 `go test ./...`。

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 {{- range $imp := extraImports .AllComponents}}
 	"{{$imp}}"
 {{- end}}
@@ -16,16 +15,14 @@ import (
 
 	"{{.Module}}/internal/server"
 	"github.com/Tsukikage7/servex/v2/app"
+	"github.com/Tsukikage7/servex/v2/config"
 	"github.com/Tsukikage7/servex/v2/observability/logger"
 	"github.com/Tsukikage7/servex/v2/transport"
 )
 
 // provideConfig 加载配置.
 func provideConfig() (*Config, error) {
-	// TODO: 从 config.yaml 或环境变量加载
-	return &Config{
-		Name: "{{.Name}}",
-	}, nil
+	return config.Load[Config]("config.yaml")
 }
 
 // provideLogger 创建日志.
@@ -39,14 +36,23 @@ func provideLogger(cfg *Config) (logger.Logger, func()) {
 {{end}}
 
 // provideApp 创建应用.
-func provideApp(cfg *Config, log logger.Logger, httpSrv transport.Server) *app.Application {
+func provideApp(cfg *Config, log logger.Logger) (*app.Application, error) {
 	application := app.New(
 		app.WithLogger(log),
 		app.WithName(cfg.Name),
+		app.WithVersion(cfg.Version),
 	)
-	application.Use(httpSrv)
-	return application
-}
 
-// ensure server package is referenced.
-var _ = server.NewHTTP
+	var servers []transport.Server
+	httpSrv, err := server.NewHTTP(cfg.HTTP, log)
+	if err != nil {
+		return nil, err
+	}
+	servers = append(servers, httpSrv)
+{{- if .WithGRPC}}
+	servers = append(servers, server.NewGRPC(cfg.GRPC, log))
+{{- end}}
+
+	application.Use(servers...)
+	return application, nil
+}

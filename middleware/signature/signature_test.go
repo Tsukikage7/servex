@@ -164,7 +164,7 @@ func TestSignRequest(t *testing.T) {
 		}),
 	)
 
-	// 需要重新构造 request（因为 body 已被读取），路径须与原始请求一致
+	// 需要重新构造 request因为 body 已被读取，路径须与原始请求一致
 	req2 := httptest.NewRequest(http.MethodPost, "/api", bytes.NewReader(body))
 	req2.Header = req.Header
 

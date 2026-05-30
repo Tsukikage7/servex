@@ -418,7 +418,7 @@ func TestHTTPClient_ExponentialBackoff(t *testing.T) {
 		t.Errorf("期望 200，得到 %d", resp.StatusCode)
 	}
 
-	// 验证退避时间增长（大致检查）
+	// 验证退避时间增长大致检查
 	if len(timestamps) >= 3 {
 		gap1 := timestamps[1].Sub(timestamps[0])
 		gap2 := timestamps[2].Sub(timestamps[1])

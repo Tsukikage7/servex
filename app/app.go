@@ -241,7 +241,7 @@ func (a *Application) runCleanups(ctx context.Context) {
 
 	cleanups := make([]Cleanup, len(a.opts.cleanups))
 	copy(cleanups, a.opts.cleanups)
-	// 按 Priority 升序排列：数字越小越先执行，默认值 0 表示最高优先级（最先执行）.
+	// 按 Priority 升序排列：数字越小越先执行，默认值 0 表示最高优先级最先执行.
 	slices.SortFunc(cleanups, func(a, b Cleanup) int {
 		return cmp.Compare(a.Priority, b.Priority)
 	})

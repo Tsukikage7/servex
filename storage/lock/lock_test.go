@@ -215,7 +215,7 @@ func TestWithLock(t *testing.T) {
 			t.Errorf("expected test error, got %v", err)
 		}
 
-		// 验证锁已释放（即使函数返回错误）
+		// 验证锁已释放即使函数返回错误
 		if locker.IsHeld("error-key") {
 			t.Error("expected lock to be released after error")
 		}
@@ -311,7 +311,7 @@ func TestConcurrency(t *testing.T) {
 		t.Errorf("expected 50 executions, got %d", counter.Load())
 	}
 
-	// 验证同一时间只有一个在执行（互斥）
+	// 验证同一时间只有一个在执行互斥
 	if maxConcurrent.Load() > 1 {
 		t.Errorf("expected max concurrent 1, got %d", maxConcurrent.Load())
 	}

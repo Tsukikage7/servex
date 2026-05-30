@@ -51,8 +51,8 @@ func (m *Map[K, V]) Range(fn func(key K, value V) bool) {
 	})
 }
 
-// LoadOrStoreFunc 懒初始化：key 存在时直接返回已有值（loaded=true）；
-// 不存在则调用 fn 创建后存入并返回（loaded=false）.
+// LoadOrStoreFunc 懒初始化：key 存在时直接返回已有值loaded=true；
+// 不存在则调用 fn 创建后存入并返回loaded=false.
 // 返回的 err 来自 fn；若 fn 返回 error，则不存储.
 //
 // 注意：在并发场景下，fn 可能被多个 goroutine 同时调用，但最终只有一个值会被存储.

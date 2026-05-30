@@ -35,11 +35,11 @@ type Config struct {
 	AdvertiseAddr string        `json:"advertise_addr" toml:"advertise_addr" yaml:"advertise_addr" mapstructure:"advertise_addr"`
 	Services      ServiceConfig `json:"services" toml:"services" yaml:"services" mapstructure:"services"`
 
-	// etcd 专用配置字段（Type == TypeEtcd 时生效）.
+	// etcd 专用配置字段Type == TypeEtcd 时生效.
 	EtcdEndpoints   []string      `json:"etcd_endpoints" toml:"etcd_endpoints" yaml:"etcd_endpoints" mapstructure:"etcd_endpoints"`
 	EtcdDialTimeout time.Duration `json:"etcd_dial_timeout" toml:"etcd_dial_timeout" yaml:"etcd_dial_timeout" mapstructure:"etcd_dial_timeout"`
 
-	// Nacos 专用配置字段（Type == TypeNacos 时生效）.
+	// Nacos 专用配置字段Type == TypeNacos 时生效.
 	NacosEndpoints   []string `json:"nacos_endpoints" toml:"nacos_endpoints" yaml:"nacos_endpoints" mapstructure:"nacos_endpoints"`
 	NacosNamespaceID string   `json:"nacos_namespace_id" toml:"nacos_namespace_id" yaml:"nacos_namespace_id" mapstructure:"nacos_namespace_id"`
 	NacosGroupName   string   `json:"nacos_group_name" toml:"nacos_group_name" yaml:"nacos_group_name" mapstructure:"nacos_group_name"`

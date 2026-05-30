@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"github.com/Tsukikage7/servex/v2/transport/botserver"
 	"github.com/Tsukikage7/servex/v2/transport/httpserver"
@@ -43,7 +43,7 @@ func newTestUpdate(chatID int64, userID int64, text string) *tgbotapi.Update {
 	}
 }
 
-// newTestBot 构造不依赖网络的 TelegramBot（无真实 BotAPI）。
+// newTestBot 构造不依赖网络的 TelegramBot无真实 BotAPI。
 func newTestBot() *TelegramBot {
 	b := &TelegramBot{
 		router:      botserver.NewRouter(),
@@ -167,7 +167,7 @@ func TestTgContext_UserID_NilFrom(t *testing.T) {
 	}
 }
 
-// ---- handleUpdate 集成测试（不需要真实 BotAPI）----
+// ---- handleUpdate 集成测试不需要真实 BotAPI----
 
 func TestHandleUpdate_NilMessage(t *testing.T) {
 	// 若 Message 为 nil，handler 不应被调用
@@ -179,7 +179,7 @@ func TestHandleUpdate_NilMessage(t *testing.T) {
 		return nil
 	})
 
-	// 构造只有 CallbackQuery 的 Update（Message 为 nil）
+	// 构造只有 CallbackQuery 的 UpdateMessage 为 nil
 	update := &tgbotapi.Update{
 		UpdateID:      99,
 		CallbackQuery: &tgbotapi.CallbackQuery{ID: "cq1"},
@@ -268,7 +268,7 @@ func TestTelegramBot_HandleUse(t *testing.T) {
 	}
 }
 
-// ---- Start 流程测试（不需要网络）----
+// ---- Start 流程测试不需要网络----
 
 func TestTelegramBot_Start_NoWebhookURL(t *testing.T) {
 	// 未设置 webhookURL 且未设置 client 时，Start 应跳过 SetWebhook 并返回 nil

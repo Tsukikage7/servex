@@ -29,8 +29,8 @@ type DelayQueue[T Delayable] struct {
 	signal chan struct{}
 }
 
-// New 创建延迟队列，capacity 预留兼容性（当前未使用）.
-func New[T Delayable](capacity int) *DelayQueue[T] {
+// New 创建延迟队列.
+func New[T Delayable]() *DelayQueue[T] {
 	return &DelayQueue[T]{
 		pq: priorityqueue.New(func(a, b entry[T]) bool {
 			return a.deadline.Before(b.deadline)
@@ -39,7 +39,7 @@ func New[T Delayable](capacity int) *DelayQueue[T] {
 	}
 }
 
-// Enqueue 如果新元素成为堆顶（最早到期），会唤醒等待中的 Dequeue.
+// Enqueue 如果新元素成为堆顶最早到期，会唤醒等待中的 Dequeue.
 func (dq *DelayQueue[T]) Enqueue(ctx context.Context, item T) error {
 	select {
 	case <-ctx.Done():
@@ -128,7 +128,7 @@ func (dq *DelayQueue[T]) notify() {
 	}
 }
 
-// All 返回按到期时间顺序遍历所有待处理元素的迭代器（快照，不出队）.
+// All 返回按到期时间顺序遍历所有待处理元素的迭代器快照，不出队.
 // 遍历期间持有锁的快照副本，不会修改原队列.
 func (dq *DelayQueue[T]) All() iter.Seq[T] {
 	return func(yield func(T) bool) {

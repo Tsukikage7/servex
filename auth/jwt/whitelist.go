@@ -9,10 +9,10 @@ import (
 
 // Whitelist 白名单配置.
 type Whitelist struct {
-	// HTTPPaths HTTP 路径白名单（支持前缀匹配）.
+	// HTTPPaths HTTP 路径白名单支持前缀匹配.
 	HTTPPaths []string
 
-	// GRPCMethods gRPC 方法白名单（支持前缀匹配）.
+	// GRPCMethods gRPC 方法白名单支持前缀匹配.
 	GRPCMethods []string
 
 	// InternalServiceHeader 内部服务标识 Header.

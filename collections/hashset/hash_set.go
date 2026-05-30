@@ -66,7 +66,7 @@ func (s *HashSet[T]) Clear() {
 	s.m = make(map[T]struct{})
 }
 
-// ToSlice 返回所有元素（顺序不确定）.
+// ToSlice 返回所有元素顺序不确定.
 func (s *HashSet[T]) ToSlice() []T {
 	result := make([]T, 0, len(s.m))
 	for item := range s.m {
@@ -75,7 +75,7 @@ func (s *HashSet[T]) ToSlice() []T {
 	return result
 }
 
-// Range 遍历所有元素（顺序不确定）.
+// Range 遍历所有元素顺序不确定.
 // fn 返回 false 时停止遍历.
 func (s *HashSet[T]) Range(fn func(item T) bool) {
 	for item := range s.m {
@@ -121,7 +121,7 @@ func (s *HashSet[T]) Intersection(other *HashSet[T]) *HashSet[T] {
 	return result
 }
 
-// Difference 返回差集（s - other）.
+// Difference 返回差集s - other.
 func (s *HashSet[T]) Difference(other *HashSet[T]) *HashSet[T] {
 	result := New[T]()
 	for item := range s.m {
@@ -191,7 +191,7 @@ func (s *HashSet[T]) IsDisjoint(other *HashSet[T]) bool {
 	return true
 }
 
-// All 返回遍历所有元素的迭代器（顺序不确定）.
+// All 返回遍历所有元素的迭代器顺序不确定.
 func (s *HashSet[T]) All() iter.Seq[T] {
 	return func(yield func(T) bool) {
 		for item := range s.m {

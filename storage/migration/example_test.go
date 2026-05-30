@@ -3,8 +3,9 @@ package migration_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/v2/storage/migration"
 	"gorm.io/gorm"
+
+	"github.com/Tsukikage7/servex/v2/storage/migration"
 )
 
 func ExampleNewRegistry() {

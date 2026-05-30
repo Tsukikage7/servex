@@ -17,7 +17,7 @@ type runner struct {
 	registry *Registry
 	store    Store
 	log      logger.Logger
-	// ensureMigrated 确保迁移记录表已创建（只执行一次）.
+	// ensureMigrated 确保迁移记录表已创建只执行一次.
 	ensureMigrated func() error
 }
 
@@ -48,7 +48,7 @@ func (r *runner) Up(ctx context.Context) error {
 	return nil
 }
 
-// UpTo 执行迁移到指定版本（含）.
+// UpTo 执行迁移到指定版本含.
 func (r *runner) UpTo(ctx context.Context, version int64) error {
 	if err := r.ensureMigrated(); err != nil {
 		return fmt.Errorf("migration: 创建迁移记录表失败: %w", err)
@@ -104,7 +104,7 @@ func (r *runner) Down(ctx context.Context) error {
 	return r.applyDown(ctx, m)
 }
 
-// DownTo 回滚到指定版本（不含），即保留 target 版本.
+// DownTo 回滚到指定版本不含，即保留 target 版本.
 func (r *runner) DownTo(ctx context.Context, version int64) error {
 	if err := r.ensureMigrated(); err != nil {
 		return fmt.Errorf("migration: 创建迁移记录表失败: %w", err)

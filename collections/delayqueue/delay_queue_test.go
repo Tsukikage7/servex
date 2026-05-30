@@ -34,7 +34,7 @@ func newItem(value string, delay time.Duration) delayItem {
 }
 
 func (s *DelayQueueTestSuite) TestNew() {
-	dq := New[delayItem](10)
+	dq := New[delayItem]()
 	s.NotNil(dq)
 	s.True(dq.IsEmpty())
 	s.Equal(0, dq.Len())
@@ -42,7 +42,7 @@ func (s *DelayQueueTestSuite) TestNew() {
 
 func (s *DelayQueueTestSuite) TestEnqueueDequeue_Expired() {
 	ctx := s.T().Context()
-	dq := New[delayItem](10)
+	dq := New[delayItem]()
 
 	item := newItem("expired", -time.Second)
 	s.NoError(dq.Enqueue(ctx, item))
@@ -54,7 +54,7 @@ func (s *DelayQueueTestSuite) TestEnqueueDequeue_Expired() {
 
 func (s *DelayQueueTestSuite) TestEnqueueDequeue_WithDelay() {
 	ctx := s.T().Context()
-	dq := New[delayItem](10)
+	dq := New[delayItem]()
 
 	start := time.Now()
 	s.NoError(dq.Enqueue(ctx, newItem("delayed", 50*time.Millisecond)))
@@ -70,7 +70,7 @@ func (s *DelayQueueTestSuite) TestDequeue_EmptyBlocks() {
 	ctx, cancel := context.WithTimeout(s.T().Context(), 50*time.Millisecond)
 	defer cancel()
 
-	dq := New[delayItem](10)
+	dq := New[delayItem]()
 	_, err := dq.Dequeue(ctx)
 	s.ErrorIs(err, context.DeadlineExceeded)
 }
@@ -79,7 +79,7 @@ func (s *DelayQueueTestSuite) TestDequeue_ContextCanceled() {
 	ctx, cancel := context.WithCancel(s.T().Context())
 	cancel()
 
-	dq := New[delayItem](10)
+	dq := New[delayItem]()
 	_, err := dq.Dequeue(ctx)
 	s.ErrorIs(err, context.Canceled)
 }
@@ -88,14 +88,14 @@ func (s *DelayQueueTestSuite) TestEnqueue_ContextCanceled() {
 	ctx, cancel := context.WithCancel(s.T().Context())
 	cancel()
 
-	dq := New[delayItem](10)
+	dq := New[delayItem]()
 	err := dq.Enqueue(ctx, newItem("item", time.Second))
 	s.ErrorIs(err, context.Canceled)
 }
 
 func (s *DelayQueueTestSuite) TestEarlierElementWakesDequeue() {
 	ctx := s.T().Context()
-	dq := New[delayItem](10)
+	dq := New[delayItem]()
 
 	s.NoError(dq.Enqueue(ctx, newItem("late", 5*time.Second)))
 
@@ -119,7 +119,7 @@ func (s *DelayQueueTestSuite) TestEarlierElementWakesDequeue() {
 
 func (s *DelayQueueTestSuite) TestOrderByDeadline() {
 	ctx := s.T().Context()
-	dq := New[delayItem](10)
+	dq := New[delayItem]()
 
 	now := time.Now()
 	s.NoError(dq.Enqueue(ctx, delayItem{"third", now.Add(60 * time.Millisecond)}))
@@ -141,7 +141,7 @@ func (s *DelayQueueTestSuite) TestOrderByDeadline() {
 
 func (s *DelayQueueTestSuite) TestLen() {
 	ctx := s.T().Context()
-	dq := New[delayItem](10)
+	dq := New[delayItem]()
 
 	s.NoError(dq.Enqueue(ctx, newItem("a", time.Hour)))
 	s.NoError(dq.Enqueue(ctx, newItem("b", time.Hour)))
@@ -151,7 +151,7 @@ func (s *DelayQueueTestSuite) TestLen() {
 
 func (s *DelayQueueTestSuite) TestConcurrentEnqueueDequeue() {
 	ctx := s.T().Context()
-	dq := New[delayItem](100)
+	dq := New[delayItem]()
 
 	const numItems = 50
 	var wg sync.WaitGroup
@@ -183,7 +183,7 @@ func (s *DelayQueueTestSuite) TestConcurrentEnqueueDequeue() {
 
 func (s *DelayQueueTestSuite) TestAll() {
 	ctx := s.T().Context()
-	dq := New[delayItem](10)
+	dq := New[delayItem]()
 
 	now := time.Now()
 	s.NoError(dq.Enqueue(ctx, delayItem{"third", now.Add(30 * time.Millisecond)}))
@@ -201,7 +201,7 @@ func (s *DelayQueueTestSuite) TestAll() {
 }
 
 func (s *DelayQueueTestSuite) TestAllEmpty() {
-	dq := New[delayItem](10)
+	dq := New[delayItem]()
 	count := 0
 	for range dq.All() {
 		count++
@@ -211,7 +211,7 @@ func (s *DelayQueueTestSuite) TestAllEmpty() {
 
 func (s *DelayQueueTestSuite) TestAllEarlyBreak() {
 	ctx := s.T().Context()
-	dq := New[delayItem](10)
+	dq := New[delayItem]()
 
 	now := time.Now()
 	s.NoError(dq.Enqueue(ctx, delayItem{"a", now.Add(10 * time.Millisecond)}))

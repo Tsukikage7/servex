@@ -15,7 +15,7 @@ import (
 )
 
 // EncryptColumn 数据库加密列类型，AES-GCM 加密 + base64 编码存储.
-// 从数据库读取后需注入 Key 才能解密（通常通过 GORM AfterFind 钩子）.
+// 从数据库读取后需注入 Key 才能解密通常通过 GORM AfterFind 钩子.
 //
 //	type User struct {
 //	    SSN EncryptColumn[string]
@@ -28,11 +28,11 @@ import (
 type EncryptColumn[T any] struct {
 	Val        T
 	Valid      bool
-	key        string // AES 密钥（16/24/32 字节），不导出以防止意外序列化
+	key        string // AES 密钥16/24/32 字节，不导出以防止意外序列化
 	Ciphertext string
 }
 
-// SetKey 设置 AES 密钥（通常在 GORM AfterFind 钩子中调用）.
+// SetKey 设置 AES 密钥通常在 GORM AfterFind 钩子中调用.
 func (ec *EncryptColumn[T]) SetKey(key string) {
 	ec.key = key
 }
@@ -43,7 +43,7 @@ func (ec *EncryptColumn[T]) GetKey() string {
 }
 
 // NewEncryptColumn 创建有效的加密列值.
-// key 必须为 16/24/32 字节（分别对应 AES-128/192/256）.
+// key 必须为 16/24/32 字节分别对应 AES-128/192/256.
 func NewEncryptColumn[T any](val T, key string) (EncryptColumn[T], error) {
 	if err := validateAESKey(key); err != nil {
 		return EncryptColumn[T]{}, err
@@ -52,7 +52,7 @@ func NewEncryptColumn[T any](val T, key string) (EncryptColumn[T], error) {
 }
 
 // NullEncryptColumn 创建空值的加密列.
-// key 为空时允许（用于延迟注入密钥场景），非空时必须为 16/24/32 字节.
+// key 为空时允许用于延迟注入密钥场景，非空时必须为 16/24/32 字节.
 func NullEncryptColumn[T any](key string) (EncryptColumn[T], error) {
 	if key != "" {
 		if err := validateAESKey(key); err != nil {

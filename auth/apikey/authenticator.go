@@ -33,7 +33,7 @@ func New(validator Validator) *Authenticator {
 // Authenticate 验证 API Key 凭据.
 //
 // 校验逻辑：
-//  1. 凭据类型须为 CredentialTypeAPIKey（或空，允许省略类型）
+//  1. 凭据类型须为 CredentialTypeAPIKey或空，允许省略类型
 //  2. 凭据 Token 不能为空
 //  3. 调用 Validator 验证 Key
 //  4. 校验 Principal 是否已过期
@@ -85,8 +85,8 @@ func StaticValidator(keys map[string]*auth.Principal) Validator {
 // CacheValidator 从缓存中查询 API Key 的验证器.
 //
 // 适合 Key 动态发放、需要中心化管理的场景.
-// ttl 为缓存中 Principal 的有效期（与 cache TTL 无关，这里用于
-// 读取缓存内值时检查 ExpiresAt 字段）.
+// ttl 为缓存中 Principal 的有效期与 cache TTL 无关，这里用于
+// 读取缓存内值时检查 ExpiresAt 字段.
 func CacheValidator(c cache.Cache, _ time.Duration) Validator {
 	return func(ctx context.Context, key string) (*auth.Principal, error) {
 		val, err := c.Get(ctx, key)

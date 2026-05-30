@@ -1,4 +1,4 @@
-// Package multimap 提供一对多映射（MultiMap）实现.
+// Package multimap 提供一对多映射MultiMap实现.
 // 注意：本包的数据结构非并发安全，如需在多 goroutine 中使用请自行加锁.
 package multimap
 
@@ -51,7 +51,7 @@ func (m *MultiMap[K, V]) Remove(key K) bool {
 	return true
 }
 
-// RemoveValue 移除 key 下的特定值（仅移除第一次出现），返回是否成功.
+// RemoveValue 移除 key 下的特定值仅移除第一次出现，返回是否成功.
 // V 需满足 comparable 约束，通过独立的泛型函数实现以绕过 Go 泛型限制.
 func RemoveValue[K comparable, V comparable](m *MultiMap[K, V], key K, value V) bool {
 	vals, ok := m.m[key]
@@ -81,7 +81,7 @@ func (m *MultiMap[K, V]) ContainsKey(key K) bool {
 	return ok
 }
 
-// Keys 返回所有键（顺序不确定）.
+// Keys 返回所有键顺序不确定.
 func (m *MultiMap[K, V]) Keys() []K {
 	result := make([]K, 0, len(m.m))
 	for k := range m.m {
@@ -90,7 +90,7 @@ func (m *MultiMap[K, V]) Keys() []K {
 	return result
 }
 
-// Values 返回所有值展开为一维切片（顺序不确定）.
+// Values 返回所有值展开为一维切片顺序不确定.
 func (m *MultiMap[K, V]) Values() []V {
 	result := make([]V, 0, m.size)
 	for _, vals := range m.m {
@@ -99,7 +99,7 @@ func (m *MultiMap[K, V]) Values() []V {
 	return result
 }
 
-// Len 返回总键值对数（所有键的值数量之和）.
+// Len 返回总键值对数所有键的值数量之和.
 func (m *MultiMap[K, V]) Len() int {
 	return m.size
 }
@@ -109,7 +109,7 @@ func (m *MultiMap[K, V]) KeyLen() int {
 	return len(m.m)
 }
 
-// Range 遍历所有键值对（key -> 该键所有值切片）；fn 返回 false 时停止.
+// Range 遍历所有键值对key -> 该键所有值切片；fn 返回 false 时停止.
 func (m *MultiMap[K, V]) Range(fn func(K, []V) bool) {
 	for k, vals := range m.m {
 		if !fn(k, vals) {
@@ -124,7 +124,7 @@ func (m *MultiMap[K, V]) Clear() {
 	m.size = 0
 }
 
-// All 返回遍历所有键及其值切片的迭代器（顺序不确定）.
+// All 返回遍历所有键及其值切片的迭代器顺序不确定.
 func (m *MultiMap[K, V]) All() iter.Seq2[K, []V] {
 	return func(yield func(K, []V) bool) {
 		for k, vals := range m.m {

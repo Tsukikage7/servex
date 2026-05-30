@@ -3,7 +3,7 @@ package llm
 // CallOption 调用选项函数.
 type CallOption func(*CallOptions)
 
-// CallOptions 调用选项集合（导出供子包使用）.
+// CallOptions 调用选项集合导出供子包使用.
 type CallOptions struct {
 	Model       string
 	Temperature *float64
@@ -24,12 +24,12 @@ func ApplyOptions(opts []CallOption) CallOptions {
 	return o
 }
 
-// WithModel 指定模型名称（覆盖 Provider 默认模型）.
+// WithModel 指定模型名称覆盖 Provider 默认模型.
 func WithModel(model string) CallOption {
 	return func(o *CallOptions) { o.Model = model }
 }
 
-// WithTemperature 设置采样温度（0.0~2.0，越高越随机）.
+// WithTemperature 设置采样温度0.0~2.0，越高越随机.
 func WithTemperature(t float64) CallOption {
 	return func(o *CallOptions) { o.Temperature = &t }
 }
@@ -39,7 +39,7 @@ func WithMaxTokens(n int) CallOption {
 	return func(o *CallOptions) { o.MaxTokens = &n }
 }
 
-// WithTopP 设置 nucleus sampling 参数（0.0~1.0）.
+// WithTopP 设置 nucleus sampling 参数0.0~1.0.
 func WithTopP(p float64) CallOption {
 	return func(o *CallOptions) { o.TopP = &p }
 }
@@ -59,7 +59,7 @@ func WithToolChoice(choice ToolChoice) CallOption {
 	return func(o *CallOptions) { o.ToolChoice = &choice }
 }
 
-// WithStreamCallback 设置流式回调函数（在 Generate 中使用，边生成边回调）.
+// WithStreamCallback 设置流式回调函数在 Generate 中使用，边生成边回调.
 func WithStreamCallback(fn StreamCallback) CallOption {
 	return func(o *CallOptions) { o.StreamFunc = fn }
 }

@@ -40,12 +40,12 @@ func New[T any](less LessFunc[T]) *PriorityQueue[T] {
 	}
 }
 
-// NewMin 创建最小堆（小的优先）.
+// NewMin 创建最小堆小的优先.
 func NewMin[T cmp.Ordered]() *PriorityQueue[T] {
 	return New(func(a, b T) bool { return a < b })
 }
 
-// NewMax 创建最大堆（大的优先）.
+// NewMax 创建最大堆大的优先.
 func NewMax[T cmp.Ordered]() *PriorityQueue[T] {
 	return New(func(a, b T) bool { return a > b })
 }
@@ -79,7 +79,7 @@ func (pq *PriorityQueue[T]) Pop() (T, bool) {
 	return top, true
 }
 
-// Peek 查看优先级最高的元素（不弹出）.
+// Peek 查看优先级最高的元素不弹出.
 func (pq *PriorityQueue[T]) Peek() (T, bool) {
 	if len(pq.data) == 0 {
 		var zero T
@@ -112,12 +112,6 @@ func (pq *PriorityQueue[T]) DrainToSlice() []T {
 		result = append(result, item)
 	}
 	return result
-}
-
-// ToSlice 返回所有元素（按优先级顺序弹出）.
-// Deprecated: 此方法会清空队列，请使用 DrainToSlice 替代.
-func (pq *PriorityQueue[T]) ToSlice() []T {
-	return pq.DrainToSlice()
 }
 
 // Clone 克隆优先队列.

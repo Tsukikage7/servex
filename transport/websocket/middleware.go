@@ -116,7 +116,7 @@ func MessageSizeMiddleware(maxSize int64) Middleware {
 	}
 }
 
-// AuthMiddleware 认证中间件（示例）.
+// AuthMiddleware 认证中间件示例.
 // 实际使用时应根据业务需求实现认证逻辑.
 func AuthMiddleware(validateToken func(token string) bool) Middleware {
 	return func(next Handler) Handler {

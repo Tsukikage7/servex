@@ -6,12 +6,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Tsukikage7/servex/v2/validation"
 	"github.com/spf13/viper"
+
+	"github.com/Tsukikage7/servex/v2/validation"
 )
 
 // Load 从文件加载配置.
-// 支持 yaml, json, toml 等格式（根据文件扩展名自动识别）.
+// 支持 yaml, json, toml 等格式根据文件扩展名自动识别.
 // 如果配置类型实现了 Validatable 接口，会自动进行验证.
 func Load[T any](configPath string, opts ...Option) (*T, error) {
 	options := DefaultOptions()

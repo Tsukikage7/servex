@@ -159,7 +159,7 @@ func TestEndpointMiddleware(t *testing.T) {
 
 	wg.Wait()
 
-	// 应该有3个失败（因为只允许2个并发）
+	// 应该有3个失败因为只允许2个并发
 	if errors.Load() != 3 {
 		t.Errorf("expected 3 errors, got %d", errors.Load())
 	}
@@ -190,7 +190,7 @@ func TestEndpointMiddlewareWithBlock(t *testing.T) {
 
 	wg.Wait()
 
-	// 所有请求应该都成功（因为会阻塞等待）
+	// 所有请求应该都成功因为会阻塞等待
 	if callCount.Load() != 5 {
 		t.Errorf("expected 5 calls, got %d", callCount.Load())
 	}

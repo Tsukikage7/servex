@@ -94,7 +94,7 @@ func (c *Config) ApplyDefaults() {
 
 // Client ClickHouse 客户端接口.
 type Client interface {
-	// Exec 执行语句（DDL / INSERT 等不返回行的操作）
+	// Exec 执行语句DDL / INSERT 等不返回行的操作
 	Exec(ctx context.Context, query string, args ...any) error
 	// Query 执行查询，返回多行结果
 	Query(ctx context.Context, query string, args ...any) (driver.Rows, error)

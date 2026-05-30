@@ -51,7 +51,7 @@ func ExampleManager_Assign() {
 		},
 	})
 
-	// 分配用户（确定性哈希，同一用户始终分到同一组）.
+	// 分配用户确定性哈希，同一用户始终分到同一组.
 	a1, _ := mgr.Assign(ctx, "exp-001", "user-42")
 	a2, _ := mgr.Assign(ctx, "exp-001", "user-42")
 	fmt.Println("consistent:", a1.VariantID == a2.VariantID)

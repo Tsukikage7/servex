@@ -479,10 +479,10 @@ func runProtoServer(args []string) error {
 		WithConnect: *withConnect,
 	}
 
-	// monorepo 模式: 若指定 --service 且检测到 monorepo，输出到 services/<service>-service/internal/service/
+	// monorepo 模式: 若指定 --service 且检测到 monorepo，输出到 services/<service>/internal/service/
 	outDir := *target
 	if *service != "" && isMonorepo() {
-		outDir = filepath.Join("services", *service+"-service", "internal", "service")
+		outDir = filepath.Join(resolveServiceDirForWrite(*service), "internal", "service")
 	}
 
 	outPath := filepath.Join(outDir, name+".go")

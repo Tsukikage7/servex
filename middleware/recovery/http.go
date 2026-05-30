@@ -9,7 +9,7 @@ import (
 // HTTPMiddleware 返回 HTTP panic 恢复中间件.
 // 当 handler 发生 panic 时，中间件会：
 //  1. 捕获 panic 并记录堆栈信息
-//  2. 调用自定义 Handler（如果设置）
+//  2. 调用自定义 Handler如果设置
 //  3. 返回 500 Internal Server Error
 //
 // 示例:

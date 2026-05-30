@@ -35,7 +35,7 @@ func ExampleNewMax() {
 }
 
 func ExampleNew() {
-	// 自定义优先级: 按字符串长度（短的优先）.
+	// 自定义优先级: 按字符串长度短的优先.
 	pq := priorityqueue.New(func(a, b string) bool {
 		return len(a) < len(b)
 	})

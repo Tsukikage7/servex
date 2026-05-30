@@ -237,7 +237,7 @@ if err != nil { ... }
 defer registry.Close()
 
 // 服务发现（用于 httpclient）
-addrs, err := disc.Discover(ctx, "order-service")
+addrs, err := disc.Discover(ctx, "order")
 ```
 
 **关键选项：**

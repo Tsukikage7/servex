@@ -159,17 +159,6 @@ func (s *EncoderTestSuite) TestDatetimeEncoder() {
 	s.Equal("2024-01-15 10:30:45", enc.value)
 }
 
-// TestBuildEncoder_Compatibility 测试兼容接口.
-func (s *EncoderTestSuite) TestBuildEncoder_Compatibility() {
-	config := &Config{
-		Format:     FormatJSON,
-		TimeFormat: TimeFormatDateTime,
-	}
-
-	encoder := buildEncoder(config)
-	s.NotNil(encoder)
-}
-
 // ConsoleEncoderTestSuite console 编码器测试套件.
 type ConsoleEncoderTestSuite struct {
 	suite.Suite

@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/Tsukikage7/servex/v2/observability/logger"
+	"github.com/Tsukikage7/servex/v2/transport"
 {{- range .AllComponents}}{{if .Alias}}
 	{{.Alias}} "{{.Import}}"
 {{- else}}
@@ -15,7 +16,15 @@ import (
 // Config 服务配置.
 type Config struct {
 	Name   string        `yaml:"name" mapstructure:"name"`
+	Version string       `yaml:"version" mapstructure:"version"`
 	Logger logger.Config `yaml:"logger" mapstructure:"logger"`
+	HTTP   transport.HTTPConfig `yaml:"http" mapstructure:"http"`
+{{- if .WithGRPC}}
+	GRPC   transport.GRPCConfig `yaml:"grpc" mapstructure:"grpc"`
+{{- end}}
+{{- if .WithGateway}}
+	Gateway transport.GatewayConfig `yaml:"gateway" mapstructure:"gateway"`
+{{- end}}
 {{- range .AllComponents}}{{if .ConfigField}}
 	{{.ConfigField}}
 {{- end}}{{end}}

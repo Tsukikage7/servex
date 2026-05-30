@@ -10,7 +10,7 @@ import (
 
 // Retry 返回对 429/5xx 错误进行指数退避重试的中间件.
 //
-// maxAttempts: 最大尝试次数（含首次），最少为 1.
+// maxAttempts: 最大尝试次数含首次，最少为 1.
 // baseDelay: 首次重试等待时间，后续按指数退避，最大 30 秒.
 // 底层复用 middleware/retry.ExponentialStrategy，带 full jitter.
 func Retry(maxAttempts int, baseDelay time.Duration) Middleware {

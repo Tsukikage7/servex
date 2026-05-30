@@ -18,11 +18,11 @@ build:
 
 # 启动用户服务
 run-user:
-    go run ./services/user-service/cmd/server/
+    go run ./services/user/cmd/server/
 
 # 启动订单服务
 run-order:
-    go run ./services/order-service/cmd/server/
+    go run ./services/order/cmd/server/
 
 # 同步依赖
 tidy:

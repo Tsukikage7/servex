@@ -174,7 +174,7 @@ func RequireGORM(db Database) (*gorm.DB, error) {
 	return nil, ErrNotGORMDatabase
 }
 
-// DB 获取带 context 的 *gorm.DB（推荐）.
+// DB 获取带 context 的 *gorm.DB推荐.
 //
 // 使用此方法可确保链路追踪正常工作:
 //

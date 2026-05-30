@@ -7,10 +7,10 @@ type Option func(*options)
 
 // options 内部配置.
 type options struct {
-	// 可信代理列表（CIDR 格式）
+	// 可信代理列表CIDR 格式
 	trustedProxies []*net.IPNet
 
-	// 是否信任所有代理（默认 true）
+	// 是否信任所有代理默认 true
 	trustAllProxies bool
 
 	// Header 名称

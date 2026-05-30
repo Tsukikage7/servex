@@ -4,7 +4,7 @@
 
 ```go
 // 创建 JWT 服务 — HMAC 对称签名（缺少 WithLogger 会 panic）
-jwtSrv := jwt.NewJWT(
+jwtSrv := jwt.MustNew(
     jwt.WithLogger(log),
     jwt.WithSecretKey("your-secret-key"),
     jwt.WithIssuer("my-service"),
@@ -15,20 +15,20 @@ jwtSrv := jwt.NewJWT(
 // RSA 非对称签名（RS256）
 rsaKey, err := jwt.LoadRSAPrivateKey("/etc/keys/private.pem")
 if err != nil { ... }
-jwtSrv := jwt.NewJWT(
+jwtSrv := jwt.MustNew(
     jwt.WithLogger(log),
     jwt.WithRSAKeys(rsaKey, &rsaKey.PublicKey),
     jwt.WithIssuer("my-service"),
 )
 
 // ECDSA 非对称签名（ES256）
-jwtSrv := jwt.NewJWT(
+jwtSrv := jwt.MustNew(
     jwt.WithLogger(log),
     jwt.WithECDSAKeys(ecdsaPrivateKey, &ecdsaPrivateKey.PublicKey),
 )
 
 // EdDSA 签名（Ed25519）
-jwtSrv := jwt.NewJWT(
+jwtSrv := jwt.MustNew(
     jwt.WithLogger(log),
     jwt.WithEdDSAKeys(ed25519PrivateKey, ed25519PublicKey),
 )
@@ -159,7 +159,10 @@ service UserService {
 
 ```go
 srv := gateway.New(
-    gateway.WithAuth(authenticator, auth.WithAuthorizer(authorizer)),
+    gateway.WithSecurity(gateway.SecurityConfig{
+        Authenticator: authenticator,
+        AuthOptions:   []auth.Option{auth.WithAuthorizer(authorizer)},
+    }),
 )
 ```
 

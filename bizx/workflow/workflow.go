@@ -131,7 +131,7 @@ func WithMaxParallel(n int) Option {
 	}
 }
 
-// WithMaxSteps 设置工作流单次执行的最大步数，防止死循环（默认1000）.
+// WithMaxSteps 设置工作流单次执行的最大步数，防止死循环默认1000.
 func WithMaxSteps(n int) Option {
 	return func(e *Engine) {
 		if n > 0 {
@@ -459,7 +459,7 @@ func (e *Engine) GetInstance(ctx context.Context, instanceID string) (*Instance,
 
 // --- Memory Store ---
 
-// MemoryStore 基于内存的工作流存储（用于测试）.
+// MemoryStore 基于内存的工作流存储用于测试.
 type MemoryStore struct {
 	mu        sync.RWMutex
 	instances map[string]*Instance
@@ -521,7 +521,7 @@ func (s *MemoryStore) ListInstancesByStatus(_ context.Context, status Status) ([
 	return result, nil
 }
 
-// copyData 深拷贝 map（通过 JSON 序列化/反序列化）.
+// copyData 深拷贝 map通过 JSON 序列化/反序列化.
 func copyData(data map[string]any) map[string]any {
 	if data == nil {
 		return nil

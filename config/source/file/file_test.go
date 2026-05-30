@@ -188,7 +188,7 @@ func (s *FileSourceTestSuite) TestWatch_NonExistentDirectory() {
 }
 
 func (s *FileSourceTestSuite) TestWatch_FileCreated() {
-	// 监听一个尚不存在的文件（但目录存在）
+	// 监听一个尚不存在的文件但目录存在
 	path := filepath.Join(s.tempDir, "watch_create.yaml")
 	src := New(path)
 

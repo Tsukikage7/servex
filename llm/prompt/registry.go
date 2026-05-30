@@ -22,7 +22,7 @@ var (
 	ErrEmptyName = errors.New("prompt: empty name")
 	// ErrNotFound 按 name 或 version 未找到.
 	ErrNotFound = errors.New("prompt: not found")
-	// ErrInvalidWeights SetABWeights 的权重集合不合法（例如总和 != 100）.
+	// ErrInvalidWeights SetABWeights 的权重集合不合法例如总和 != 100.
 	ErrInvalidWeights = errors.New("prompt: invalid ab weights")
 )
 
@@ -31,19 +31,19 @@ var (
 // Store 持久化的最小单元；Registry 在内存中缓存 []Version 并按 Active/Weight 做路由决策.
 // 跨版本语义：同一个 name 下 Version 号从 1 开始单调递增；最新版本默认自动 Active.
 type Version struct {
-	// Name 逻辑标识（如 "chat.default_system"）.
+	// Name 逻辑标识如 "chat.default_system".
 	Name string `json:"name" gorm:"primaryKey;size:191"`
 	// Version 版本号，从 1 开始，对同一 Name 唯一.
 	Version int `json:"version" gorm:"primaryKey"`
-	// Role 消息角色（持久化需要；Template.Role() 的快照）.
+	// Role 消息角色持久化需要；Template.Role() 的快照.
 	Role llm.Role `json:"role" gorm:"size:32"`
-	// Text 原始模板文本（持久化需要；Template.Text() 的快照）.
+	// Text 原始模板文本持久化需要；Template.Text() 的快照.
 	Text string `json:"text" gorm:"type:text"`
 	// Active 当前是否为 name 的默认 Active 版本.
 	Active bool `json:"active"`
 	// Weight AB 权重，0 表示不参与 AB 分流.
 	Weight int `json:"weight"`
-	// CreatedAt 创建时间（UTC）.
+	// CreatedAt 创建时间UTC.
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -56,9 +56,9 @@ func (Version) TableName() string { return "prompt_versions" }
 //   - 方法均应幂等且支持并发调用；Registry 层不保证内部持久化调用不并发
 //   - Save：若 (Name, Version) 已存在则覆盖；Registry 严格按 LoadAll 当前最大 Version+1 调用
 //   - UpdateFlags：原子更新 (Active, Weight)；若 (Name, Version) 不存在返回 ErrNotFound
-//   - LoadAll：返回该 Name 下所有版本（按 Version 升序；找不到返回 nil, nil）
+//   - LoadAll：返回该 Name 下所有版本按 Version 升序；找不到返回 nil, nil
 type Store interface {
-	// Save 保存一条 Version 记录（新增或按 (Name, Version) 覆盖）.
+	// Save 保存一条 Version 记录新增或按 (Name, Version) 覆盖.
 	Save(ctx context.Context, v *Version) error
 	// LoadAll 返回指定 Name 下的所有版本.
 	LoadAll(ctx context.Context, name string) ([]Version, error)
@@ -72,17 +72,17 @@ type Store interface {
 //
 // 语义：
 //   - Register：同名首次注册自动 Active；后续追加版本 N+1，新版本默认 Active，旧版本 Active=false
-//   - Get：若设置了 AB 权重（所有参与 AB 的版本 Weight>0），按权重随机分流；否则返回 Active 版本
-//   - SetActive：切换 Active 版本（回滚），同时清空 AB 权重（AB 与单一 Active 互斥）
-//   - SetABWeights：weights 全部为 0 或 nil 则关闭 AB（回退 Active）；否则校验 sum==100 且所有 key 存在
+//   - Get：若设置了 AB 权重所有参与 AB 的版本 Weight>0，按权重随机分流；否则返回 Active 版本
+//   - SetActive：切换 Active 版本回滚，同时清空 AB 权重AB 与单一 Active 互斥
+//   - SetABWeights：weights 全部为 0 或 nil 则关闭 AB回退 Active；否则校验 sum==100 且所有 key 存在
 type Registry interface {
-	// Register 注册新版本；返回分配的 version 号（从 1 起自增）.
+	// Register 注册新版本；返回分配的 version 号从 1 起自增.
 	Register(ctx context.Context, name string, tmpl *Template) (int, error)
-	// Get 返回 name 的当前 Active 版本（若启用 AB，按权重分流）.
+	// Get 返回 name 的当前 Active 版本若启用 AB，按权重分流.
 	Get(ctx context.Context, name string) (*Template, error)
 	// GetVersion 返回指定版本的 Template.
 	GetVersion(ctx context.Context, name string, version int) (*Template, error)
-	// SetActive 切换 name 的 Active 版本（回滚），同时关闭 AB 分流.
+	// SetActive 切换 name 的 Active 版本回滚，同时关闭 AB 分流.
 	SetActive(ctx context.Context, name string, version int) error
 	// SetABWeights 设置 AB 权重：map[version]weight，weight 之和必须 == 100.
 	// 传 nil 或空 map 关闭 AB，回退到单一 Active.
@@ -98,7 +98,7 @@ type Registry interface {
 // memoryStore 基于内存 map 的 Store 实现，用于测试与单机无持久化场景.
 type memoryStore struct {
 	mu sync.RWMutex
-	// data name → versions（按 Version 升序保持）.
+	// data name → versions按 Version 升序保持.
 	data map[string][]Version
 }
 
@@ -180,18 +180,18 @@ type registryImpl struct {
 	store Store
 	// mu 保护 cache 的读写.
 	mu sync.RWMutex
-	// cache name → versions（始终按 Version 升序）.
+	// cache name → versions始终按 Version 升序.
 	cache map[string][]Version
-	// rngMu 独立锁保护 rng 的并发调用（math/rand/v2 *rand.Rand 非并发安全）.
+	// rngMu 独立锁保护 rng 的并发调用math/rand/v2 *rand.Rand 非并发安全.
 	rngMu sync.Mutex
-	// rng 随机源（可由 Option 注入以支持可重现测试）.
+	// rng 随机源可由 Option 注入以支持可重现测试.
 	rng *rand.Rand
 }
 
 // RegistryOption Registry 构造选项.
 type RegistryOption func(*registryImpl)
 
-// WithRand 注入自定义随机源（默认使用 math/rand/v2 的全局源的新实例）.
+// WithRand 注入自定义随机源默认使用 math/rand/v2 的全局源的新实例.
 // 用于让 AB 分流在测试中可重现.
 func WithRand(r *rand.Rand) RegistryOption {
 	return func(reg *registryImpl) { reg.rng = r }
@@ -199,7 +199,7 @@ func WithRand(r *rand.Rand) RegistryOption {
 
 // NewRegistry 创建 Registry.
 //
-// store 不得为 nil. 构造时不会自动从 Store 加载全部数据（避免冷启动慢），
+// store 不得为 nil. 构造时不会自动从 Store 加载全部数据避免冷启动慢，
 // 首次访问某 name 时 lazy load；Register/Set* 会同步写回 Store 与内存 cache.
 func NewRegistry(store Store, opts ...RegistryOption) (Registry, error) {
 	if store == nil {
@@ -216,11 +216,11 @@ func NewRegistry(store Store, opts ...RegistryOption) (Registry, error) {
 	return r, nil
 }
 
-// load 返回某 name 的版本列表 *快照*（优先 cache，miss 时从 Store 加载并填充）.
+// load 返回某 name 的版本列表 *快照*优先 cache，miss 时从 Store 加载并填充.
 //
-// 返回值是底层 cache 切片的浅拷贝（元素是 Version 值），调用方读写返回切片不会影响 cache;
-// 写路径（Register/SetActive/SetABWeights）始终构造新切片再整体替换 cache，
-// 这样读路径（Get/GetVersion/List）可以无锁读取自己的快照，避免遍历时触发并发 read/write race.
+// 返回值是底层 cache 切片的浅拷贝元素是 Version 值，调用方读写返回切片不会影响 cache;
+// 写路径Register/SetActive/SetABWeights始终构造新切片再整体替换 cache，
+// 这样读路径Get/GetVersion/List可以无锁读取自己的快照，避免遍历时触发并发 read/write race.
 func (r *registryImpl) load(ctx context.Context, name string) ([]Version, error) {
 	r.mu.RLock()
 	if list, ok := r.cache[name]; ok {
@@ -357,7 +357,7 @@ func (r *registryImpl) Get(ctx context.Context, name string) (*Template, error) 
 			return rebuildTemplate(v)
 		}
 	}
-	// 若无 Active（理论不可达，Register 保障至少一个 Active），返回最新版本.
+	// 若无 Active理论不可达，Register 保障至少一个 Active，返回最新版本.
 	return rebuildTemplate(list[len(list)-1])
 }
 
@@ -482,7 +482,7 @@ func (r *registryImpl) SetABWeights(ctx context.Context, name string, weights ma
 	return nil
 }
 
-// List 列出所有版本（深拷贝）.
+// List 列出所有版本深拷贝.
 func (r *registryImpl) List(ctx context.Context, name string) ([]Version, error) {
 	if name == "" {
 		return nil, ErrEmptyName
@@ -497,7 +497,7 @@ func (r *registryImpl) List(ctx context.Context, name string) ([]Version, error)
 }
 
 // rebuildTemplate 把 Version 还原为可渲染的 Template.
-// Version 的 Text 已在 Register 时经过 New 解析校验；此处再解析一次仍可能失败（极端情况数据损坏）.
+// Version 的 Text 已在 Register 时经过 New 解析校验；此处再解析一次仍可能失败极端情况数据损坏.
 func rebuildTemplate(v Version) (*Template, error) {
 	tmpl, err := New(v.Role, v.Text)
 	if err != nil {

@@ -11,8 +11,8 @@
 │  ┌───────────┐  ┌───────────────┐  ┌──────────────────────┐│
 │  │  domain/   │  │  application/ │  │     services/        ││
 │  │           │  │               │  │                      ││
-│  │  user/    │  │  user/        │  │  user-service/       ││
-│  │  order/   │  │  order/       │  │  order-service/      ││
+│  │  user/    │  │  user/        │  │  user/       ││
+│  │  order/   │  │  order/       │  │  order/      ││
 │  └───────────┘  └───────────────┘  └──────────────────────┘│
 │                                                             │
 │  领域层           应用层              基础设施层               │
@@ -51,14 +51,14 @@ docker compose -f deploy/docker-compose.yaml up -d
 ### 2. 启动用户服务
 
 ```bash
-go run ./services/user-service/cmd/server/
+go run ./services/user/cmd/server/
 # 监听 :8081
 ```
 
 ### 3. 启动订单服务（另开终端）
 
 ```bash
-go run ./services/order-service/cmd/server/
+go run ./services/order/cmd/server/
 # 监听 :8082
 ```
 
@@ -130,7 +130,7 @@ examples/ecommerce/
 │   ├── user/service.go         # 用户 CRUD + JWT 登录
 │   └── order/service.go        # 订单全生命周期管理
 ├── services/                   # 基础设施层：各微服务独立部署
-│   ├── user-service/
+│   ├── user/
 │   │   ├── cmd/server/main.go  # 入口：组装依赖并启动
 │   │   ├── internal/
 │   │   │   ├── port/
@@ -140,8 +140,8 @@ examples/ecommerce/
 │   │   │       └── persistence/
 │   │   │           ├── user_repo.go   # GORM 实现
 │   │   │           └── user_model.go  # PO 与聚合转换
-│   │   └── configs/config.yaml
-│   └── order-service/
+│   │   └── configs/config.dev.yaml
+│   └── order/
 │       ├── cmd/server/main.go
 │       ├── internal/
 │       │   ├── port/
@@ -151,8 +151,8 @@ examples/ecommerce/
 │       │       │   ├── order_repo.go
 │       │       │   └── order_model.go
 │       │       └── external/
-│       │           └── user_client.go  # HTTP 调用 user-service
-│       └── configs/config.yaml
+│       │           └── user_client.go  # HTTP 调用 user
+│       └── configs/config.dev.yaml
 ├── api/                        # Proto 定义
 │   ├── user/v1/user.proto
 │   └── order/v1/order.proto

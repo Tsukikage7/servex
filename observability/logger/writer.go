@@ -179,7 +179,7 @@ func (w *rotateWriter) cleanupOldLogs() {
 		return
 	}
 
-	// 扫描 baseDir/prefix/ 下的日期子目录（格式 20060102）
+	// 扫描 baseDir/prefix/ 下的日期子目录格式 20060102
 	prefixDir := filepath.Join(w.baseDir, w.prefix)
 	cutoff := time.Now().Add(-w.maxAge)
 
@@ -192,7 +192,7 @@ func (w *rotateWriter) cleanupOldLogs() {
 		if !entry.IsDir() {
 			continue
 		}
-		// 支持按天（8位：20060102）和按小时（10位：2006010215）两种目录格式
+		// 支持按天8位：20060102和按小时10位：2006010215两种目录格式
 		name := entry.Name()
 		var t time.Time
 		var err error
@@ -230,13 +230,12 @@ func (w *rotateWriter) compressDir(dir string) {
 		}
 		w.compressFile(filepath.Join(dir, f.Name()))
 	}
-	// 若目录已空（压缩完毕），删除目录本身
+	// 若目录已空压缩完毕，删除目录本身
 	remaining, _ := os.ReadDir(dir)
 	if len(remaining) == 0 {
 		os.Remove(dir)
 	}
 }
-
 
 func (w *rotateWriter) compressFile(filename string) {
 	input, err := os.Open(filename)

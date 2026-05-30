@@ -32,7 +32,7 @@ type memoryStore struct {
 	userRoles map[string]map[string]bool // userID -> roleName -> exists
 }
 
-// NewMemoryStore 创建基于内存的角色存储（用于测试）.
+// NewMemoryStore 创建基于内存的角色存储用于测试.
 func NewMemoryStore() Store {
 	return &memoryStore{
 		roles:     make(map[string]*Role),

@@ -86,7 +86,7 @@ func TestRegister_MultipleVersionsLatestActive(t *testing.T) {
 			t.Errorf("版本 %d Active 不正确：%v", v.Version, v.Active)
 		}
 	}
-	// Get 应返回最新版本（v.Text=vC）.
+	// Get 应返回最新版本v.Text=vC.
 	got, err := r.Get(context.Background(), "p")
 	if err != nil {
 		t.Fatalf("Get: %v", err)
@@ -175,7 +175,7 @@ func TestGet_PreservesRole(t *testing.T) {
 }
 
 // ──────────────────────────────────────────
-// SetActive（回滚）
+// SetActive回滚
 // ──────────────────────────────────────────
 
 // TestSetActive_Rollback 验证切换 Active 后 Get 返回旧版本.
@@ -245,7 +245,7 @@ func TestSetABWeights_InvalidSum(t *testing.T) {
 	cases := []map[int]int{
 		{1: 30, 2: 30}, // 60
 		{1: 50, 2: 60}, // 110
-		{1: 100},       // 100 但只指定一个其实是允许的（见下方测试）——此处测 0
+		{1: 100},       // 100 但只指定一个其实是允许的见下方测试——此处测 0
 	}
 	// 把最后一个改为真正非法：sum=0.
 	cases[2] = map[int]int{1: 0, 2: 0}
@@ -299,7 +299,7 @@ func TestSetABWeights_NilClearsAB(t *testing.T) {
 	}
 }
 
-// TestSetABWeights_DistributionApproximate 验证 AB 分流频率接近权重（大样本）.
+// TestSetABWeights_DistributionApproximate 验证 AB 分流频率接近权重大样本.
 func TestSetABWeights_DistributionApproximate(t *testing.T) {
 	// 使用固定 seed 的随机源让测试可重现.
 	rng := rand.New(rand.NewPCG(42, 1024))
@@ -455,7 +455,7 @@ func TestRegistry_LoadsFromExistingStore(t *testing.T) {
 	}
 }
 
-// TestRegistry_ConcurrentGetWithAB 并发调用 Get（AB 分流）应不触发 race.
+// TestRegistry_ConcurrentGetWithAB 并发调用 GetAB 分流应不触发 race.
 // 配合 `go test -race` 使用.
 func TestRegistry_ConcurrentGetWithAB(t *testing.T) {
 	r := mustRegistry(t)

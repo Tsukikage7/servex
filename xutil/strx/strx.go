@@ -53,7 +53,7 @@ func TrimAndUpper(s string) string {
 	return strings.ToUpper(strings.TrimSpace(s))
 }
 
-// IsEmpty 检查字符串是否为空（仅含空白字符视为空）.
+// IsEmpty 检查字符串是否为空仅含空白字符视为空.
 func IsEmpty(s string) bool {
 	return strings.TrimSpace(s) == ""
 }
@@ -63,7 +63,7 @@ func IsNotEmpty(s string) bool {
 	return !IsEmpty(s)
 }
 
-// ToTitle 将字符串转为标题格式（首字母大写，其余小写）.
+// ToTitle 将字符串转为标题格式首字母大写，其余小写.
 func ToTitle(s string) string {
 	runes := []rune(strings.TrimSpace(s))
 	if len(runes) == 0 {
@@ -106,7 +106,7 @@ func DefaultIfEmpty(s, defaultValue string) string {
 
 // UnsafeToBytes 零分配地将 string 转换为 []byte.
 //
-// UNSAFE: 返回的 []byte 共享底层内存，绝对不可修改，否则行为未定义（可能导致崩溃或数据损坏）.
+// UNSAFE: 返回的 []byte 共享底层内存，绝对不可修改，否则行为未定义可能导致崩溃或数据损坏.
 // 仅在性能关键路径且确保不会修改返回值时使用.
 func UnsafeToBytes(s string) []byte {
 	if s == "" {
@@ -117,7 +117,7 @@ func UnsafeToBytes(s string) []byte {
 
 // UnsafeToString 零分配地将 []byte 转换为 string.
 //
-// UNSAFE: 转换后不应再修改原 []byte，否则行为未定义（可能导致崩溃或数据损坏）.
+// UNSAFE: 转换后不应再修改原 []byte，否则行为未定义可能导致崩溃或数据损坏.
 // 仅在性能关键路径且确保不会修改原切片时使用.
 func UnsafeToString(b []byte) string {
 	if len(b) == 0 {

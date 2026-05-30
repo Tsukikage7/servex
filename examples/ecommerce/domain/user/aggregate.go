@@ -31,7 +31,7 @@ func NewUser(id uint64, username, email, passwordHash string) *User {
 	return u
 }
 
-// ReconstructUser 从持久化数据重建用户聚合（不触发事件）.
+// ReconstructUser 从持久化数据重建用户聚合不触发事件.
 func ReconstructUser(id uint64, username, email, passwordHash string, createdAt, updatedAt time.Time) *User {
 	return &User{
 		AggregateRoot: domain.NewAggregateRoot(id),

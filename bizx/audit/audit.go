@@ -184,7 +184,7 @@ type memoryStore struct {
 	entries []Entry
 }
 
-// NewMemoryStore 创建基于内存的审计日志存储（用于测试）.
+// NewMemoryStore 创建基于内存的审计日志存储用于测试.
 func NewMemoryStore() Store {
 	return &memoryStore{}
 }

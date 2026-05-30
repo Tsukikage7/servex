@@ -41,10 +41,10 @@ type StoreConfig struct {
 	DSN    string `json:"dsn"    yaml:"dsn"`
 	Table  string `json:"table"  yaml:"table"`
 
-	// EnableTracing 启用链路追踪（Enqueue 时自动注入 trace context 到 Job Headers）.
+	// EnableTracing 启用链路追踪Enqueue 时自动注入 trace context 到 Job Headers.
 	EnableTracing bool `json:"enable_tracing" yaml:"enable_tracing" mapstructure:"enable_tracing"`
 
-	// TracerName 链路追踪 tracer 名称（用于 Worker span，默认 "jobqueue"）.
+	// TracerName 链路追踪 tracer 名称用于 Worker span，默认 "jobqueue".
 	TracerName string `json:"tracer_name" yaml:"tracer_name" mapstructure:"tracer_name"`
 }
 

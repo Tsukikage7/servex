@@ -64,7 +64,6 @@ openapi 包提供 Code-first 的 OpenAPI 3.0 文档生成能力。通过链式 B
 | `.Description(string) *Builder` | 设置描述 |
 | `.Tags(...string) *Builder` | 设置标签 |
 | `.OperationID(string) *Builder` | 设置操作 ID |
-| `.Deprecated(bool) *Builder` | 标记已废弃 |
 | `.Request(any) *Builder` | 设置请求体类型（反射生成 Schema） |
 | `.Response(any) *Builder` | 设置响应类型（反射生成 Schema） |
 | `.Errors(...any) *Builder` | 设置错误类型 |

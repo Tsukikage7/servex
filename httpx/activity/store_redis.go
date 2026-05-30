@@ -167,7 +167,7 @@ func (s *RedisStore) SetOnline(ctx context.Context, userID string, ttl time.Dura
 	onlineKey := s.onlineKey(userID)
 	pipe.Set(ctx, onlineKey, time.Now().Unix(), ttl)
 
-	// 添加到在线集合（用于统计在线人数）
+	// 添加到在线集合用于统计在线人数
 	setKey := s.onlineSetKey()
 	pipe.SAdd(ctx, setKey, userID)
 	pipe.Expire(ctx, setKey, ttl) // 整个集合的过期时间
@@ -192,7 +192,7 @@ func (s *RedisStore) GetOnlineCount(ctx context.Context) (int64, error) {
 	return s.client.SCard(ctx, key).Result()
 }
 
-// GetOnlineUsers 获取在线用户列表（分页）.
+// GetOnlineUsers 获取在线用户列表分页.
 func (s *RedisStore) GetOnlineUsers(ctx context.Context, cursor uint64, count int64) ([]string, uint64, error) {
 	key := s.onlineSetKey()
 	return s.client.SScan(ctx, key, cursor, "*", count).Result()

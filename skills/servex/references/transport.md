@@ -153,7 +153,7 @@ client, err := httpclient.New(
     httpclient.WithName("order-client"),        // 客户端标识，用于日志（可选）
     httpclient.WithLogger(log),
     httpclient.WithTimeout(5 * time.Second),
-    httpclient.WithServiceName("order-service"), // 服务发现的 key（必须）
+    httpclient.WithServiceName("order"), // 服务发现的 key（必须）
     httpclient.WithDiscovery(disc),              // discovery.Discovery 实现（consul/etcd/静态）
     httpclient.WithBalancer(&httpclient.RoundRobinBalancer{}),
 )
@@ -255,16 +255,26 @@ handler.Broadcast(&sse.Event{Event: "update", Data: payload})
 ```go
 // 创建 Gateway 服务器（同时暴露 gRPC 和 HTTP 端口）
 srv := gateway.New(
-    gateway.WithName("order-service"),
+    gateway.WithName("order"),
     gateway.WithGRPCAddr(":9090"),
     gateway.WithHTTPAddr(":8080"),
     gateway.WithLogger(log),
-    gateway.WithRecovery(),                    // panic 恢复（双端）
-    gateway.WithTrace("order-service"),         // 链路追踪（双端）
-    gateway.WithResponse(),                     // 统一响应格式
     gateway.WithReflection(true),               // gRPC 反射
-    gateway.WithAuth(authenticator, auth.WithAuthorizer(authorizer)), // 认证与 proto 权限策略（双端）
-    gateway.WithReadinessChecker(dbChecker),    // 就绪检查
+    gateway.WithObservability(gateway.ObservabilityConfig{
+        TracingService: "order",                 // 链路追踪（双端）
+        Logging:        true,                    // 请求日志（双端）
+    }),
+    gateway.WithRuntime(gateway.RuntimeConfig{
+        Recovery: true,                          // panic 恢复（双端）
+        Response: true,                          // 统一响应格式
+    }),
+    gateway.WithSecurity(gateway.SecurityConfig{
+        Authenticator: authenticator,            // 认证与 proto 权限策略（双端）
+        AuthOptions:   []auth.Option{auth.WithAuthorizer(authorizer)},
+    }),
+    gateway.WithHealthOptions(
+        health.WithReadinessChecker(dbChecker),  // 就绪检查
+    ),
 )
 
 // 注册服务（需实现 gateway.Registrar 接口）
@@ -275,15 +285,18 @@ if err := srv.Start(ctx); err != nil { ... }
 defer srv.Stop(ctx)
 ```
 
-### 中间件选项
+### 聚合中间件选项
 
 **CORS（仅 HTTP 端）**
 
 ```go
-gateway.WithCORS(
-    cors.WithAllowOrigins("https://example.com", "https://app.example.com"),
-    cors.WithAllowCredentials(true),
-)
+gateway.WithSecurity(gateway.SecurityConfig{
+    CORS: true,
+    CORSOptions: []cors.Option{
+        cors.WithAllowOrigins("https://example.com", "https://app.example.com"),
+        cors.WithAllowCredentials(true),
+    },
+})
 ```
 
 **限流（双端）**
@@ -291,14 +304,14 @@ gateway.WithCORS(
 ```go
 // 令牌桶：100 QPS，峰值 200
 limiter := ratelimit.NewTokenBucket(100, 200)
-gateway.WithRateLimit(limiter)
+gateway.WithSecurity(gateway.SecurityConfig{RateLimiter: limiter})
 ```
 
 **Metrics（双端）**
 
 ```go
 collector, _ := metrics.New(metricsCfg)
-gateway.WithMetrics(collector)
+gateway.WithObservability(gateway.ObservabilityConfig{Metrics: collector})
 // HTTP 端：记录方法、路径、状态码、耗时
 // gRPC 端：记录方法名、状态码、耗时
 ```
@@ -307,15 +320,21 @@ gateway.WithMetrics(collector)
 
 ```go
 // 跳过健康检查路径/方法
-gateway.WithLogging("/grpc.health.v1.Health/Check")
+gateway.WithObservability(gateway.ObservabilityConfig{
+    Logging:          true,
+    LoggingSkipPaths: []string{"/grpc.health.v1.Health/Check"},
+})
 ```
 
 **多租户解析（双端）**
 
 ```go
-gateway.WithTenant(resolver,
-    tenant.WithTokenExtractor(tenant.HeaderTokenExtractor("X-Tenant-ID")),
-)
+gateway.WithSecurity(gateway.SecurityConfig{
+    Tenant: resolver,
+    TenantOptions: []tenant.Option{
+        tenant.WithTokenExtractor(tenant.HeaderTokenExtractor("X-Tenant-ID")),
+    },
+})
 ```
 
 **客户端 IP 提取（双端）**
@@ -323,14 +342,10 @@ gateway.WithTenant(resolver,
 ```go
 // HTTP 端：X-Forwarded-For / X-Real-IP / RemoteAddr
 // gRPC 端：metadata + peer 地址
-gateway.WithClientIP(clientip.WithTrustPrivateProxies())
-```
-
-**Request ID（双端）**
-
-```go
-// 自动生成或透传请求 ID，注入 context 并写入响应头/metadata
-gateway.WithRequestID()
+gateway.WithSecurity(gateway.SecurityConfig{
+    ClientIP:     true,
+    ClientIPOpts: []clientip.Option{clientip.WithTrustPrivateProxies()},
+})
 ```
 
 **HTTP TLS**
@@ -388,13 +403,13 @@ srv := gateway.New(
 // 服务发现模式（serviceName、discovery、logger 缺少任一将 panic）
 client, err := grpcclient.New(
     grpcclient.WithName("order-client"),
-    grpcclient.WithServiceName("order-service"),  // 必需
+    grpcclient.WithServiceName("order"),  // 必需
     grpcclient.WithDiscovery(disc),               // 必需
     grpcclient.WithLogger(log),                   // 必需
     grpcclient.WithRetry(3, 100*time.Millisecond),  // 重试：仅 Unavailable/DeadlineExceeded
     grpcclient.WithCircuitBreaker(cb),              // 熔断
     grpcclient.WithLogging(),                       // 内置日志拦截器
-    grpcclient.WithTracing("order-service"),        // OTel Unary + Stream
+    grpcclient.WithTracing("order"),        // OTel Unary + Stream
     grpcclient.WithMetrics(prometheusCollector),    // Prometheus Unary + Stream
     grpcclient.WithBalancer("round_robin"),         // round_robin | pick_first
 )
@@ -410,8 +425,8 @@ resp, err := orderSvc.GetOrder(ctx, &pb.GetOrderRequest{Id: "42"})
 ```go
 // Config 驱动（直连，不走服务发现）
 client, err := grpcclient.NewFromConfig(&grpcclient.Config{
-    ServiceName:   "order-service",
-    Addr:          "order-service:9090",
+    ServiceName:   "order",
+    Addr:          "order:9090",
     Timeout:       5 * time.Second,
     EnableTracing: true,
     EnableMetrics: true,
@@ -576,7 +591,7 @@ queryType := graphql.NewObject(graphql.ObjectConfig{
                     return findUser(p.Context, id)
                 },
                 gqlserver.LoggingMiddleware(log),
-                gqlserver.TracingMiddleware("user-service"),
+                gqlserver.TracingMiddleware("user"),
             ),
         },
     },

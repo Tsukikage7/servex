@@ -4,8 +4,8 @@
 //   - 可扩展的认证器接口
 //   - 可插拔授权器接口
 //   - HTTP/Endpoint 中间件
-//   - gRPC 适配（auth/grpcx 子包）
-//   - 内置 JWT 支持（auth/jwt 子包）
+//   - gRPC 适配auth/grpcx 子包
+//   - 内置 JWT 支持auth/jwt 子包
 //
 // 基本用法:
 //
@@ -67,7 +67,7 @@ type Principal struct {
 	// Type 主体类型: user, service.
 	Type string
 
-	// Name 主体名称（可选）.
+	// Name 主体名称可选.
 	Name string
 
 	// Roles 角色列表.

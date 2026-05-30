@@ -1,4 +1,4 @@
-# 应用服务（各微服务容器）
+# 应用服务各微服务容器
 # 依赖：需先启动 infra/docker-compose.yaml
 version: "3.9"
 
@@ -10,10 +10,10 @@ networks:
 
 services:
   # 示例：添加你的微服务
-  # example-service:
+  # example:
   #   build:
-  #     context: ../../services/example-service
-  #     dockerfile: Dockerfile
+  #     context: ../../../
+  #     dockerfile: services/example/Dockerfile
   #   container_name: {{.Name}}-example
   #   environment:
   #     - CONFIG_PATH=/app/configs/config.yaml

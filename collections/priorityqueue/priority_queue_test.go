@@ -86,11 +86,11 @@ func (s *PriorityQueueTestSuite) TestClear() {
 	s.Equal(0, pq.Len())
 }
 
-func (s *PriorityQueueTestSuite) TestToSlice() {
+func (s *PriorityQueueTestSuite) TestDrainToSlice() {
 	pq := NewMin[int]()
 	pq.Push(3, 1, 2)
 
-	slice := pq.ToSlice()
+	slice := pq.DrainToSlice()
 	s.Equal([]int{1, 2, 3}, slice)
 	s.True(pq.IsEmpty())
 }

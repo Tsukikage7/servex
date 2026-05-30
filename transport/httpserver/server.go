@@ -55,18 +55,18 @@ func New(handler http.Handler, opts ...Option) *Server {
 	healthOpts = append(healthOpts, o.healthOptions...)
 	h := health.New(healthOpts...)
 
-	// 保存原始 Router 引用（如果传入的是 Router），用于后续 Register 调用
+	// 保存原始 Router 引用如果传入的是 Router，用于后续 Register 调用
 	var router *Router
 	if r, ok := handler.(*Router); ok {
 		router = r
 	}
 
-	// 应用用户自定义中间件（按声明顺序执行，最先声明的最先被请求触达）
+	// 应用用户自定义中间件按声明顺序执行，最先声明的最先被请求触达
 	for _, mw := range slices.Backward(o.middlewares) {
 		handler = mw(handler)
 	}
 
-	// 中间件包装（由内到外）
+	// 中间件包装由内到外
 	wrapped := health.Middleware(h)(handler)
 
 	if o.profiling != "" {
@@ -76,14 +76,14 @@ func New(handler http.Handler, opts ...Option) *Server {
 		wrapped = wrapProfiling(wrapped, o.profiling, o.profilingAuth)
 	}
 
-	// logger 注入（最外层，保证所有中间件和业务代码都能用 logger.FromContext(ctx)）
+	// logger 注入最外层，保证所有中间件和业务代码都能用 logger.FromContext(ctx)
 	wrapped = injectLogger(o.logger)(wrapped)
 
 	return &Server{opts: o, router: router, handler: wrapped, health: h}
 }
 
 // injectLogger 返回一个中间件，将 logger 注入到每个请求的 context 中.
-// 后续中间件（如 trace）可通过 logger.FromContext(ctx).With(...) 追加字段后覆盖.
+// 后续中间件如 trace可通过 logger.FromContext(ctx).With(...) 追加字段后覆盖.
 func injectLogger(log logger.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -18,7 +18,7 @@ type ClaimsFactory func() Claims
 //
 // 使用示例:
 //
-//	jwtSrv := jwt.NewJWT(jwt.WithSecretKey("secret"), jwt.WithLogger(log))
+//	jwtSrv := jwt.MustNew(jwt.WithSecretKey("your-secret-key-at-least-32-bytes"), jwt.WithLogger(log))
 //	endpoint = jwt.NewSigner(jwtSrv)(endpoint)
 func NewSigner(j *JWT) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
@@ -51,7 +51,7 @@ func NewSigner(j *JWT) endpoint.Middleware {
 //
 // 使用示例:
 //
-//	jwtSrv := jwt.NewJWT(jwt.WithSecretKey("secret"), jwt.WithLogger(log))
+//	jwtSrv := jwt.MustNew(jwt.WithSecretKey("your-secret-key-at-least-32-bytes"), jwt.WithLogger(log))
 //	endpoint = jwt.NewParser(jwtSrv)(endpoint)
 func NewParser(j *JWT) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
@@ -88,7 +88,7 @@ func NewParser(j *JWT) endpoint.Middleware {
 //
 // 使用示例:
 //
-//	jwtSrv := jwt.NewJWT(jwt.WithSecretKey("secret"), jwt.WithLogger(log))
+//	jwtSrv := jwt.MustNew(jwt.WithSecretKey("your-secret-key-at-least-32-bytes"), jwt.WithLogger(log))
 //	endpoint = jwt.NewParserWithClaims(jwtSrv, func() jwt.Claims {
 //	    return &CustomClaims{}
 //	})(endpoint)
@@ -106,7 +106,7 @@ func NewParserWithClaims(j *JWT, cf ClaimsFactory) endpoint.Middleware {
 				return nil, err
 			}
 
-			// 验证令牌（使用自定义 Claims 类型）
+			// 验证令牌使用自定义 Claims 类型
 			claims, err := j.ValidateWithClaims(ctx, token, cf())
 			if err != nil {
 				return nil, err
@@ -127,7 +127,7 @@ func NewParserWithClaims(j *JWT, cf ClaimsFactory) endpoint.Middleware {
 //
 // 使用示例:
 //
-//	jwtSrv := jwt.NewJWT(jwt.WithSecretKey("secret"), jwt.WithLogger(log))
+//	jwtSrv := jwt.MustNew(jwt.WithSecretKey("your-secret-key-at-least-32-bytes"), jwt.WithLogger(log))
 //	handler = jwt.HTTPMiddleware(jwtSrv)(handler)
 func HTTPMiddleware(j *JWT) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -170,7 +170,7 @@ func HTTPMiddleware(j *JWT) func(http.Handler) http.Handler {
 //
 // 使用示例:
 //
-//	jwtSrv := jwt.NewJWT(jwt.WithSecretKey("secret"), jwt.WithLogger(log))
+//	jwtSrv := jwt.MustNew(jwt.WithSecretKey("your-secret-key-at-least-32-bytes"), jwt.WithLogger(log))
 //	handler = jwt.HTTPMiddlewareWithClaims(jwtSrv, func() jwt.Claims {
 //	    return &CustomClaims{}
 //	})(handler)
@@ -191,7 +191,7 @@ func HTTPMiddlewareWithClaims(j *JWT, cf ClaimsFactory) func(http.Handler) http.
 				return
 			}
 
-			// 验证令牌（使用自定义 Claims 类型）
+			// 验证令牌使用自定义 Claims 类型
 			claims, err := j.ValidateWithClaims(r.Context(), token, cf())
 			if err != nil {
 				// 不向客户端暴露内部错误细节
@@ -211,7 +211,7 @@ func HTTPMiddlewareWithClaims(j *JWT, cf ClaimsFactory) func(http.Handler) http.
 	}
 }
 
-// ExtractToken 从请求中提取令牌（独立函数）.
+// ExtractToken 从请求中提取令牌独立函数.
 func ExtractToken(ctx context.Context, req any) (string, error) {
 	// 从 HTTP 请求提取
 	if httpReq, ok := req.(*http.Request); ok {

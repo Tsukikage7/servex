@@ -58,21 +58,21 @@ func defaultOptions() *options {
 	}
 }
 
-// WithName 设置客户端名称（用于日志）.
+// WithName 设置客户端名称用于日志.
 func WithName(name string) Option {
 	return func(o *options) {
 		o.name = name
 	}
 }
 
-// WithServiceName 设置目标服务名称（必需）.
+// WithServiceName 设置目标服务名称必需.
 func WithServiceName(name string) Option {
 	return func(o *options) {
 		o.serviceName = name
 	}
 }
 
-// WithDiscovery 设置服务发现实例（必需）.
+// WithDiscovery 设置服务发现实例必需.
 func WithDiscovery(d discovery.Discovery) Option {
 	return func(o *options) {
 		o.discovery = d

@@ -2,16 +2,16 @@
 //
 // 特性：
 //   - 生成、验证、刷新令牌
-//   - 可选的缓存集成（用于令牌撤销）
+//   - 可选的缓存集成用于令牌撤销
 //   - HTTP/Endpoint 中间件
-//   - gRPC 适配（auth/jwt/grpcx 子包）
+//   - gRPC 适配auth/jwt/grpcx 子包
 //   - 白名单支持
 //   - Functional Options 模式
 //
 // 示例：
 //
-//	j := jwt.NewJWT(
-//	    jwt.WithSecretKey("your-secret-key"),
+//	j := jwt.MustNew(
+//	    jwt.WithSecretKey("your-secret-key-at-least-32-bytes"),
 //	    jwt.WithIssuer("my-service"),
 //	    jwt.WithLogger(log),
 //	)
@@ -60,7 +60,7 @@ type TokenStore interface {
 // 否则 Revoke 会设置一个撤销标记来使令牌失效.
 type TokenStoreWithKeys interface {
 	TokenStore
-	// Keys 按模式查找 key（支持 * 通配符）.
+	// Keys 按模式查找 key支持 * 通配符.
 	Keys(ctx context.Context, pattern string) ([]string, error)
 }
 
@@ -74,8 +74,8 @@ type cacheTokenStore struct {
 // 示例:
 //
 //	redisCache, _ := cache.New(&cache.Config{Type: "redis", ...})
-//	j := jwt.NewJWT(
-//	    jwt.WithSecretKey("secret"),
+//	j := jwt.MustNew(
+//	    jwt.WithSecretKey("your-secret-key-at-least-32-bytes"),
 //	    jwt.WithTokenStore(jwt.CacheTokenStore(redisCache)),
 //	    jwt.WithLogger(log),
 //	)
@@ -100,20 +100,22 @@ type JWT struct {
 	opts *options
 }
 
-// NewJWT 创建 JWT 服务.
+// New 创建 JWT 服务.
 //
 // 必须配置以下签名方式之一:
-//   - HMAC: 使用 WithSecretKey（对称签名，默认 HS256）
-//   - RSA: 使用 WithRSAKeys 或 WithRSAKeyFiles（RS256）
-//   - ECDSA: 使用 WithECDSAKeys 或 WithECDSAKeyFiles（ES256）
-//   - EdDSA: 使用 WithEdDSAKeys 或 WithEdDSAKeyFiles（Ed25519）
+//   - HMAC: 使用 WithSecretKey对称签名，默认 HS256
+//   - RSA: 使用 WithRSAKeys 或 WithRSAKeyFilesRS256
+//   - ECDSA: 使用 WithECDSAKeys 或 WithECDSAKeyFilesES256
+//   - EdDSA: 使用 WithEdDSAKeys 或 WithEdDSAKeyFilesEd25519
 //
 // HMAC 模式要求 secretKey 至少 32 字节.
-// 非对称模式至少需要 publicKey（验证），privateKey 可选（仅签名时需要）.
-func NewJWT(opts ...Option) *JWT {
+// 非对称模式至少需要 publicKey验证，privateKey 可选仅签名时需要.
+func New(opts ...Option) (*JWT, error) {
 	o := defaultOptions()
 	for _, opt := range opts {
-		opt(o)
+		if err := applyOption(o, opt); err != nil {
+			return nil, err
+		}
 	}
 
 	if o.logger == nil {
@@ -124,24 +126,43 @@ func NewJWT(opts ...Option) *JWT {
 	// 非对称签名模式：验证公钥是否存在
 	if o.signingMethod != nil {
 		if o.publicKey == nil {
-			panic("jwt: 非对称签名模式必须设置公钥（publicKey）")
+			return nil, ErrSigningKeyMissing.WithMessage("非对称签名模式必须设置公钥")
 		}
 	} else {
 		// HMAC 对称签名模式
 		if o.secretKey == "" {
-			panic("jwt: 必须设置 secretKey 或非对称密钥对")
+			return nil, ErrSigningKeyMissing.WithMessage("必须设置 secretKey 或非对称密钥对")
 		}
 		if len(o.secretKey) < 32 {
-			panic("jwt: JWT 密钥长度不足，HMAC-SHA256 至少需要 32 字节")
+			return nil, ErrSigningKeyMissing.WithMessage("JWT 密钥长度不足，HMAC-SHA256 至少需要 32 字节")
 		}
 	}
 
-	return &JWT{opts: o}
+	return &JWT{opts: o}, nil
+}
+
+func applyOption(o *options, opt Option) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("jwt: 应用配置失败: %v", r)
+		}
+	}()
+	opt(o)
+	return nil
+}
+
+// MustNew 创建 JWT 服务，配置错误时 panic.
+func MustNew(opts ...Option) *JWT {
+	j, err := New(opts...)
+	if err != nil {
+		panic(err)
+	}
+	return j
 }
 
 // Generate 生成 JWT 令牌.
 //
-// 使用配置的签名算法（默认 HMAC-SHA256，也支持 RS256/ES256/EdDSA）.
+// 使用配置的签名算法默认 HMAC-SHA256，也支持 RS256/ES256/EdDSA.
 func (j *JWT) Generate(ctx context.Context, claims Claims) (string, error) {
 	if claims == nil {
 		return "", ErrClaimsInvalid
@@ -273,7 +294,7 @@ func (j *JWT) RefreshWithClaims(ctx context.Context, tokenString string, oldClai
 		return j.Generate(ctx, newClaims)
 	}
 
-	// 如果验证失败，尝试解析过期令牌（仍需验证签名方法，防止 "none" 算法攻击）
+	// 如果验证失败，尝试解析过期令牌仍需验证签名方法，防止 "none" 算法攻击
 	tokenString = j.stripPrefix(tokenString)
 	token, parseErr := jwt.ParseWithClaims(tokenString, oldClaimsType, func(token *jwt.Token) (any, error) {
 		if j.opts.signingMethod != nil {
@@ -445,7 +466,7 @@ func (j *JWT) getSigningMethod() jwt.SigningMethod {
 
 // signingKey 获取签名密钥.
 //
-// 非对称模式返回私钥（可能为 nil，仅验证模式不配置私钥），HMAC 模式返回 secretKey 字节.
+// 非对称模式返回私钥可能为 nil，仅验证模式不配置私钥，HMAC 模式返回 secretKey 字节.
 // 调用方应检查返回值是否为 nil.
 func (j *JWT) signingKey() any {
 	if j.opts.signingMethod != nil {
@@ -552,12 +573,12 @@ func (j *JWT) validateCachedToken(ctx context.Context, tokenString string, claim
 		return ErrClaimsInvalid
 	}
 
-	// 检查撤销标记（用于不支持 Keys 查询的存储）
+	// 检查撤销标记用于不支持 Keys 查询的存储
 	revokeKey := j.opts.cacheKeyPrefix + "revoked:" + subject
 	if val, revokeErr := j.opts.store.Get(ctx, revokeKey); revokeErr == nil && val != "" {
 		return ErrTokenRevoked
 	} else if revokeErr != nil && !errors.Is(revokeErr, cache.ErrNotFound) {
-		// 缓存访问错误（如 Redis 宕机）
+		// 缓存访问错误如 Redis 宕机
 		j.opts.logger.With(
 			logger.String("name", j.opts.name),
 			logger.String("subject", subject),
@@ -575,7 +596,7 @@ func (j *JWT) validateCachedToken(ctx context.Context, tokenString string, claim
 			// 缓存中无此令牌，视为已撤销
 			return ErrTokenRevoked
 		}
-		// 缓存访问错误（如 Redis 宕机）
+		// 缓存访问错误如 Redis 宕机
 		j.opts.logger.With(
 			logger.String("name", j.opts.name),
 			logger.String("subject", subject),

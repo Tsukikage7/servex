@@ -66,18 +66,18 @@ type Config struct {
 	Enabled bool
 	// Types 采集的剖析类型.
 	Types []ProfileType
-	// Interval 采集间隔（默认 60s）.
+	// Interval 采集间隔默认 60s.
 	Interval time.Duration
-	// Duration CPU 剖析每次采集时长（默认 10s）.
+	// Duration CPU 剖析每次采集时长默认 10s.
 	Duration time.Duration
-	// OutputDir 本地保存目录（可选）.
+	// OutputDir 本地保存目录可选.
 	OutputDir string
-	// Labels 附加标签（如 service、env）.
+	// Labels 附加标签如 service、env.
 	Labels map[string]string
-	// BlockProfileRate 阻塞剖析采样率（默认 1000000，即每百万次阻塞事件采样一次）.
+	// BlockProfileRate 阻塞剖析采样率默认 1000000，即每百万次阻塞事件采样一次.
 	// 设为 1 可获得最精确的数据，但生产环境开销较大.
 	BlockProfileRate int
-	// MutexProfileFraction 互斥锁剖析采样分数（默认 100）.
+	// MutexProfileFraction 互斥锁剖析采样分数默认 100.
 	MutexProfileFraction int
 }
 
@@ -107,7 +107,7 @@ type Profile struct {
 	Data []byte
 	// Timestamp 采集时间.
 	Timestamp time.Time
-	// Duration 采集时长（仅 CPU 有意义）.
+	// Duration 采集时长仅 CPU 有意义.
 	Duration time.Duration
 	// Labels 附加标签.
 	Labels map[string]string
@@ -148,7 +148,7 @@ func WithExporter(e Exporter) Option {
 	}
 }
 
-// WithHTTPPrefix 设置 pprof HTTP 路径前缀（默认 "/debug/pprof"）.
+// WithHTTPPrefix 设置 pprof HTTP 路径前缀默认 "/debug/pprof".
 func WithHTTPPrefix(prefix string) Option {
 	return func(p *Profiler) {
 		if prefix != "" {
@@ -373,7 +373,7 @@ func (p *Profiler) loop(ctx context.Context) {
 }
 
 // collectAll 采集所有配置的剖析类型.
-// 注意：CPU profiling 是全局操作（runtime/pprof.StartCPUProfile），串行采集避免冲突.
+// 注意：CPU profiling 是全局操作runtime/pprof.StartCPUProfile，串行采集避免冲突.
 func (p *Profiler) collectAll(ctx context.Context) {
 	for _, profileType := range p.config.Types {
 		prof, err := p.Collect(ctx, profileType)

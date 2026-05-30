@@ -27,7 +27,7 @@ func newTestMessageCreate(channelID, userID, content string, isBot bool) *discor
 	}
 }
 
-// newTestBot 构造不依赖网络的 DiscordBot（无真实 session.Open）。
+// newTestBot 构造不依赖网络的 DiscordBot无真实 session.Open。
 func newTestBot() *DiscordBot {
 	// 使用无效 token 创建 session，不会真正连接
 	session, _ := discordgo.New("Bot fake-token-for-test")
@@ -204,7 +204,7 @@ func TestHandleMessageCreate_SkipBotMessage(t *testing.T) {
 }
 
 func TestHandleMessageCreate_SkipNilAuthor(t *testing.T) {
-	// Author 为 nil（系统消息）时，handler 不应被调用
+	// Author 为 nil系统消息时，handler 不应被调用
 	called := false
 	b := newTestBot()
 	b.router.Handle("*", func(_ botserver.Context) error {
@@ -287,17 +287,17 @@ func TestDiscordBot_Session(t *testing.T) {
 	}
 }
 
-// ---- Start ctx 取消后正常退出测试（mock Open/Close）----
+// ---- Start ctx 取消后正常退出测试mock Open/Close----
 
 func TestDiscordBot_Start_CancelContext(t *testing.T) {
 	// 使用真实 discordgo.Session 但替换 Open/Close 逻辑：
 	// 因为 discordgo.Session 不支持接口替换，
-	// 我们验证 Start 在 ctx 取消后能在超时内返回（通过 goroutine + 超时判定）。
+	// 我们验证 Start 在 ctx 取消后能在超时内返回通过 goroutine + 超时判定。
 	b := newTestBot()
 
 	// 替换 session.Open 为无操作：直接覆盖 DiscordBot，绕过真实连接
 	// 由于 discordgo.Session 是具体类型，这里通过子测试隔离 + 短超时检测退出行为。
-	// 若 Open 失败（fake token），Start 会立即返回错误，测试仍能验证退出路径。
+	// 若 Open 失败fake token，Start 会立即返回错误，测试仍能验证退出路径。
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // 立即取消
 
@@ -310,7 +310,7 @@ func TestDiscordBot_Start_CancelContext(t *testing.T) {
 
 	select {
 	case <-doneCh:
-		// Start 正常返回（无论是 Open 失败还是 ctx 取消），符合预期
+		// Start 正常返回无论是 Open 失败还是 ctx 取消，符合预期
 	case <-time.After(3 * time.Second):
 		t.Error("Start() did not return within timeout after ctx cancellation")
 	}

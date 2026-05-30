@@ -103,7 +103,7 @@ func TestNewServerTLSConfig_WithCA(t *testing.T) {
 	cfg := &Config{
 		CertFile:   certFile,
 		KeyFile:    keyFile,
-		CAFile:     certFile, // 使用同一证书作为 CA（测试用）
+		CAFile:     certFile, // 使用同一证书作为 CA测试用
 		ClientAuth: "require_and_verify",
 	}
 

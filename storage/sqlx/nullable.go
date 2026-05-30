@@ -21,7 +21,7 @@ func Of[T any](v T) Nullable[T] {
 	return Nullable[T]{Val: v, Valid: true}
 }
 
-// Null 创建 Valid=false 的 Nullable（表示 NULL）.
+// Null 创建 Valid=false 的 Nullable表示 NULL.
 func Null[T any]() Nullable[T] {
 	return Nullable[T]{}
 }
@@ -58,7 +58,7 @@ func (n *Nullable[T]) UnmarshalJSON(data []byte) error {
 }
 
 // Value 实现 driver.Valuer 接口，用于写入数据库.
-// Valid=false 时返回 nil（NULL），否则通过反射提取基础类型值.
+// Valid=false 时返回 nilNULL，否则通过反射提取基础类型值.
 func (n Nullable[T]) Value() (driver.Value, error) {
 	if !n.Valid {
 		return nil, nil
@@ -79,7 +79,7 @@ func (n Nullable[T]) Value() (driver.Value, error) {
 	case driver.Valuer:
 		return val.Value()
 	default:
-		// 通过反射处理衍生类型（如 ~int64 等）
+		// 通过反射处理衍生类型如 ~int64 等
 		rv := reflect.ValueOf(v)
 		switch rv.Kind() {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:

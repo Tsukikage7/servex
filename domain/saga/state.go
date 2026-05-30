@@ -30,7 +30,7 @@ type State struct {
 	// CompletedAt 完成时间
 	CompletedAt *time.Time `json:"completed_at,omitzero"`
 
-	// Data 共享数据（序列化后）
+	// Data 共享数据序列化后
 	Data map[string]any `json:"data,omitzero"`
 }
 

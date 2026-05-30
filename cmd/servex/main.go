@@ -18,10 +18,12 @@ var rootCmd = &cobra.Command{
 // --- new 命令 ---
 
 var (
-	newModule     string
-	newStandalone bool
-	newWithGRPC   bool
-	newInfra      string
+	newModule      string
+	newStandalone  bool
+	newWithGRPC    bool
+	newInfra       string
+	newAIProvider  string
+	newAIFramework string
 )
 
 // newCmd 项目创建命令[默认 monorepo 模式].
@@ -63,6 +65,26 @@ var newCmd = &cobra.Command{
 			return generateProject(data)
 		}
 		return generateMonorepo(data)
+	},
+}
+
+// newAIServiceCmd 创建 AI service 项目.
+var newAIServiceCmd = &cobra.Command{
+	Use:   "ai-service [name]",
+	Short: "创建 AI service 项目",
+	Long:  "创建用于把 AI 应用接入 Go 微服务体系的最小服务骨架，包含 LLM provider、业务 agent、tool registry 和 HTTP /chat 接口.",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		module := newModule
+		if module == "" {
+			module = "github.com/example/" + args[0]
+		}
+		return generateAIService(AIServiceData{
+			Name:      args[0],
+			Module:    module,
+			Provider:  newAIProvider,
+			Framework: newAIFramework,
+		})
 	},
 }
 
@@ -187,37 +209,7 @@ var addProtoCmd = &cobra.Command{
 // genCmd 代码生成父命令.
 var genCmd = &cobra.Command{
 	Use:   "gen",
-	Short: "生成代码[aggregate/client/entity/valueobject/dockerfile/justfile/k8s]",
-}
-
-var (
-	genAggFields   string
-	genAggOutput   string
-	genAggModule   string
-	genAggService  string
-	genAggCommands string
-	genAggUnique   string
-)
-
-// genAggregateCmd DDD 聚合生成命令.
-var genAggregateCmd = &cobra.Command{
-	Use:   "aggregate <name>",
-	Short: "生成 DDD 聚合代码[aggregate/event/repository/command/query/service]",
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		module := genAggModule
-		if module == "" {
-			m, err := detectModule()
-			if err != nil {
-				return fmt.Errorf("请指定 --module 或在 go.mod 目录下运行: %w", err)
-			}
-			module = m
-		}
-		fields := parseFields(genAggFields)
-		data := buildAggregateData(args[0], module, fields, genAggCommands, genAggUnique)
-		data.Service = genAggService
-		return generateAggregate(data, genAggOutput)
-	},
+	Short: "生成代码[client/entity/valueobject/dockerfile/justfile/k8s]",
 }
 
 var (
@@ -492,6 +484,10 @@ func init() {
 	newCmd.Flags().BoolVar(&newStandalone, "standalone", false, "创建独立单服务项目[默认: monorepo 模式]")
 	newCmd.Flags().BoolVar(&newWithGRPC, "with-grpc", false, "包含 gRPC 服务端")
 	newCmd.Flags().StringVar(&newInfra, "infra", "", "基础设施组件，逗号分隔 (如 mysql,redis,kafka,mongo)")
+	newAIServiceCmd.Flags().StringVar(&newModule, "module", "", "Go module 路径 (默认: github.com/example/<name>)")
+	newAIServiceCmd.Flags().StringVar(&newAIProvider, "provider", "openai", "LLM provider (openai|deepseek|ollama 等 OpenAI 接口格式 provider)")
+	newAIServiceCmd.Flags().StringVar(&newAIFramework, "framework", "none", "Agent runtime 适配说明 (none|eino|adk)")
+	newCmd.AddCommand(newAIServiceCmd)
 
 	// add service
 	addServiceCmd.Flags().BoolVar(&addWithGRPC, "with-grpc", false, "包含 gRPC 服务端")
@@ -516,14 +512,6 @@ func init() {
 	// add 子命令
 	addCmd.AddCommand(addServiceCmd, addAggregateCmd, addProtoCmd)
 
-	// gen aggregate
-	genAggregateCmd.Flags().StringVar(&genAggFields, "fields", "", `字段定义 (如 "id:uint64,name:string,email:string")`)
-	genAggregateCmd.Flags().StringVar(&genAggOutput, "output", ".", "输出目录")
-	genAggregateCmd.Flags().StringVar(&genAggModule, "module", "", "Go module 路径 (默认: 从 go.mod 读取)")
-	genAggregateCmd.Flags().StringVar(&genAggService, "service", "", "目标服务名，生成 adapter/persistence 层到对应服务")
-	genAggregateCmd.Flags().StringVar(&genAggCommands, "commands", "", `业务命令 (如 "Place,Cancel,Ship")`)
-	genAggregateCmd.Flags().StringVar(&genAggUnique, "unique", "", `唯一字段，生成 FindByXxx (如 "email,username")`)
-
 	// gen dockerfile
 	genDockerfileCmd.Flags().StringVar(&genDockerName, "name", "server", "服务名称")
 	genDockerfileCmd.Flags().StringVar(&genDockerPort, "port", "8080", "暴露端口")
@@ -535,7 +523,7 @@ func init() {
 	genJustfileCmd.Flags().StringVar(&genJustOut, "output", ".", "输出目录")
 
 	// gen 子命令
-	genCmd.AddCommand(genAggregateCmd, genDockerfileCmd, genJustfileCmd, genClientCmd, genEntityCmd, genValueObjectCmd, genK8sCmd)
+	genCmd.AddCommand(genDockerfileCmd, genJustfileCmd, genClientCmd, genEntityCmd, genValueObjectCmd, genK8sCmd)
 
 	// gen client
 	genClientCmd.Flags().StringVar(&genClientService, "service", "", "调用方服务名[必填]")

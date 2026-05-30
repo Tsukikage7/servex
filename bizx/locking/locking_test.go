@@ -102,7 +102,7 @@ func TestReentrantLock(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, rl.LockCount())
 
-	// 第二次加锁（相同 token 可重入）
+	// 第二次加锁相同 token 可重入
 	err = rl.Lock(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 2, rl.LockCount())

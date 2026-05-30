@@ -30,12 +30,12 @@ func defaultCacheOptions() *cacheOptions {
 	}
 }
 
-// WithCacheTTL 设置缓存过期时间（默认 5 分钟）.
+// WithCacheTTL 设置缓存过期时间默认 5 分钟.
 func WithCacheTTL(ttl time.Duration) CacheOption {
 	return func(o *cacheOptions) { o.ttl = ttl }
 }
 
-// WithCachePrefix 设置缓存键前缀（默认 "tenant:"）.
+// WithCachePrefix 设置缓存键前缀默认 "tenant:".
 func WithCachePrefix(prefix string) CacheOption {
 	return func(o *cacheOptions) { o.prefix = prefix }
 }
@@ -113,7 +113,7 @@ func (r *cachedResolver) Resolve(ctx context.Context, token string) (Tenant, err
 		return nil, err
 	}
 
-	// 写入缓存（忽略错误）
+	// 写入缓存忽略错误
 	if val, err := r.opts.marshal(t); err == nil {
 		_ = r.store.Set(ctx, key, val, r.opts.ttl)
 	}

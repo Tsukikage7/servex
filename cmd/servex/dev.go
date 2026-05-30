@@ -23,7 +23,7 @@ var (
 	devExclude string
 )
 
-// devCmd 开发模式运行命令（文件变更自动重启）.
+// devCmd 开发模式运行命令文件变更自动重启.
 var devCmd = &cobra.Command{
 	Use:   "dev",
 	Short: "开发模式运行（文件变更自动重启）",

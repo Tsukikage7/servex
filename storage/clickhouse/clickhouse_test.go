@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 		chAddrs = strings.Split(addrs, ",")
 	}
 
-	// 统一探测 ClickHouse 连通性（一次即可）
+	// 统一探测 ClickHouse 连通性一次即可
 	chAvailable = probeCH()
 
 	os.Exit(m.Run())
@@ -68,7 +68,7 @@ func newTestClient(t *testing.T) clickhouse.Client {
 	return client
 }
 
-// ---- 单元测试（不需要服务）----
+// ---- 单元测试不需要服务----
 
 func TestNewClient_NilConfig(t *testing.T) {
 	_, err := clickhouse.NewClient(nil, testx.NopLogger())

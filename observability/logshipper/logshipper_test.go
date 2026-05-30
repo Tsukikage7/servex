@@ -405,6 +405,6 @@ func TestNewLoggerHook(t *testing.T) {
 	// 关闭 shipper 以 flush
 	require.NoError(t, s.Close())
 
-	// 验证 shipper 只收到 info 和 warn（debug 被过滤）
+	// 验证 shipper 只收到 info 和 warndebug 被过滤
 	assert.Equal(t, 2, sink.totalEntries(), "shipper 应收到 2 条日志（debug 被过滤）")
 }

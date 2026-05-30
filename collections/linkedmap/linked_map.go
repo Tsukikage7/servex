@@ -11,7 +11,7 @@ type entry[K comparable, V any] struct {
 	prev, next *entry[K, V]
 }
 
-// LinkedMap 维护插入顺序的 Map（哈希表 + 双向链表）.
+// LinkedMap 维护插入顺序的 Map哈希表 + 双向链表.
 // 零值不可用，需通过 New 创建.
 type LinkedMap[K comparable, V any] struct {
 	table map[K]*entry[K, V]
@@ -33,7 +33,7 @@ func New[K comparable, V any]() *LinkedMap[K, V] {
 }
 
 // Put 插入或更新键值对.
-// 若键已存在则更新值（不改变顺序）；否则追加到末尾.
+// 若键已存在则更新值不改变顺序；否则追加到末尾.
 func (m *LinkedMap[K, V]) Put(key K, value V) {
 	if e, ok := m.table[key]; ok {
 		e.value = value
@@ -41,7 +41,7 @@ func (m *LinkedMap[K, V]) Put(key K, value V) {
 	}
 	e := &entry[K, V]{key: key, value: value}
 	m.table[key] = e
-	// 追加到链表尾部（tail 哨兵之前）
+	// 追加到链表尾部tail 哨兵之前
 	e.prev = m.tail.prev
 	e.next = m.tail
 	m.tail.prev.next = e

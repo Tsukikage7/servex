@@ -86,7 +86,7 @@ func (s *TreeSet[T]) Last() (T, bool) {
 	return s.tm.LastKey()
 }
 
-// ToSlice 返回所有元素（按排序顺序）.
+// ToSlice 返回所有元素按排序顺序.
 func (s *TreeSet[T]) ToSlice() []T {
 	return s.tm.Keys()
 }
@@ -133,7 +133,7 @@ func (s *TreeSet[T]) Intersection(other *TreeSet[T]) *TreeSet[T] {
 	return result
 }
 
-// Difference 返回差集（s - other）.
+// Difference 返回差集s - other.
 func (s *TreeSet[T]) Difference(other *TreeSet[T]) *TreeSet[T] {
 	result := s.Clone()
 	other.Range(func(item T) bool {

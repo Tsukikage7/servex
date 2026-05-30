@@ -94,7 +94,7 @@ type consulWatcher struct {
 }
 
 // Next 阻塞直到 Consul KV 值变更.
-// 使用 Consul blocking query（长轮询）实现.
+// 使用 Consul blocking query长轮询实现.
 func (w *consulWatcher) Next() ([]*config.KeyValue, error) {
 	// 首次调用时先获取当前 index，避免 WaitIndex=0 导致虚假变更通知
 	if w.lastIndex == 0 {

@@ -1,8 +1,8 @@
 // Package referer 提供 HTTP Referer 头解析功能.
 //
 // 特性：
-//   - 解析来源 URL（域名、路径、查询参数）
-//   - 分类来源类型（搜索引擎、社交媒体、直接访问、外部引荐）
+//   - 解析来源 URL域名、路径、查询参数
+//   - 分类来源类型搜索引擎、社交媒体、直接访问、外部引荐
 //   - 提取 UTM 营销追踪参数
 //   - HTTP/gRPC 中间件支持
 //   - 将解析结果存入 context 供链路使用
@@ -55,7 +55,7 @@ type Referer struct {
 	// Type 来源类型
 	Type SourceType
 
-	// Source 来源名称（如 "google", "facebook", "twitter"）
+	// Source 来源名称如 "google", "facebook", "twitter"
 	Source string
 
 	// Domain 来源域名
@@ -64,7 +64,7 @@ type Referer struct {
 	// Path 来源路径
 	Path string
 
-	// SearchQuery 搜索关键词（如果是搜索引擎来源）
+	// SearchQuery 搜索关键词如果是搜索引擎来源
 	SearchQuery string
 
 	// UTM UTM 追踪参数

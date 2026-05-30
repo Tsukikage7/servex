@@ -1,7 +1,7 @@
 // Package llm 提供 LLM/AI 服务的统一客户端抽象.
 //
-// 支持多 Provider（OpenAI、Anthropic、Gemini 等），提供统一的 ChatModel 和 EmbeddingModel 接口。
-// 复杂 Agent、Graph、RAG 编排由 llm/framework/eino 和 llm/framework/adk 对接开源框架承载。
+// 支持多 ProviderOpenAI、Anthropic、Gemini 等，提供统一的 ChatModel 和 EmbeddingModel 接口。
+// 复杂 Agent、Graph、RAG 编排由 llm/adapter/eino 和 llm/adapter/adk 对接开源框架承载。
 package llm
 
 import "context"

@@ -14,11 +14,11 @@ const (
 	DriverMySQL = "mysql"
 	// DriverPostgres PostgreSQL 驱动.
 	DriverPostgres = "postgres"
-	// DriverPostgreSQL PostgreSQL 驱动（别名）.
+	// DriverPostgreSQL PostgreSQL 驱动别名.
 	DriverPostgreSQL = "postgresql"
 	// DriverSQLite SQLite 驱动.
 	DriverSQLite = "sqlite"
-	// DriverSQLite3 SQLite3 驱动（别名）.
+	// DriverSQLite3 SQLite3 驱动别名.
 	DriverSQLite3 = "sqlite3"
 )
 

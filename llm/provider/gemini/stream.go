@@ -34,7 +34,7 @@ func (r *streamReader) Recv() (llm.StreamChunk, error) {
 			continue
 		}
 
-		// 移除前缀 "data: "（Gemini 使用 Server-Sent Events）
+		// 移除前缀 "data: "Gemini 使用 Server-Sent Events
 		if strings.HasPrefix(line, "data: ") {
 			line = strings.TrimPrefix(line, "data: ")
 		}

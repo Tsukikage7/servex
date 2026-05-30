@@ -1,5 +1,5 @@
 // Package openai 提供 OpenAI API 适配器.
-// 兼容 OpenAI 格式的 Provider：DeepSeek、通义千问（Qwen）、Azure OpenAI 等.
+// 兼容 OpenAI 格式的 Provider：DeepSeek、通义千问Qwen、Azure OpenAI 等.
 package openai
 
 import (
@@ -209,7 +209,7 @@ func (c *Client) Generate(ctx context.Context, messages []Message, opts ...llm.C
 		}
 	}
 
-	// 流式回调（在非流模式下的后处理）
+	// 流式回调在非流模式下的后处理
 	if o.StreamFunc != nil {
 		_ = o.StreamFunc(ctx, llm.StreamChunk{Delta: msg.Content, FinishReason: choice.FinishReason})
 	}
@@ -242,8 +242,11 @@ func (c *Client) Stream(ctx context.Context, messages []Message, opts ...llm.Cal
 		return nil, c.parseError(resp.StatusCode, retryAfter, body)
 	}
 
+	scanner := bufio.NewScanner(resp.Body)
+	scanner.Buffer(make([]byte, 0, 64*1024), maxSSELineSize)
+
 	reader := &streamReader{
-		scanner: bufio.NewScanner(resp.Body),
+		scanner: scanner,
 		body:    resp.Body,
 	}
 	return reader, nil
@@ -468,7 +471,7 @@ func (c *Client) do(ctx context.Context, path string, payload any) ([]byte, int,
 	}
 	defer resp.Body.Close()
 
-	// 限制响应体读取大小（1MB），防止异常响应消耗过多内存.
+	// 限制响应体读取大小1MB，防止异常响应消耗过多内存.
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if err != nil {
 		return nil, resp.StatusCode, 0, fmt.Errorf("openai: 读取响应失败: %w", err)

@@ -173,7 +173,7 @@ func (s *ZapLoggerTestSuite) TestSync() {
 
 	log.Info("test sync")
 
-	// Sync 可能返回错误（对于 stdout），但不应该 panic
+	// Sync 可能返回错误对于 stdout，但不应该 panic
 	s.NotPanics(func() {
 		_ = log.Sync()
 	})
@@ -592,7 +592,7 @@ func (s *BuildCoresTestSuite) TestBuildCores_FileOnly() {
 	}
 	config.ApplyDefaults()
 
-	encoder := buildEncoder(config)
+	encoder := NewEncoderBuilder(config).Build()
 	cores, writers, err := buildCores(config, parseLevel(config.Level), encoder)
 
 	s.NoError(err)
@@ -612,7 +612,7 @@ func (s *BuildCoresTestSuite) TestBuildCores_ConsoleOnly() {
 	}
 	config.ApplyDefaults()
 
-	encoder := buildEncoder(config)
+	encoder := NewEncoderBuilder(config).Build()
 	cores, writers, err := buildCores(config, parseLevel(config.Level), encoder)
 
 	s.NoError(err)
@@ -631,7 +631,7 @@ func (s *BuildCoresTestSuite) TestBuildCores_BothOutput() {
 	}
 	config.ApplyDefaults()
 
-	encoder := buildEncoder(config)
+	encoder := NewEncoderBuilder(config).Build()
 	cores, writers, err := buildCores(config, parseLevel(config.Level), encoder)
 
 	s.NoError(err)
@@ -654,7 +654,7 @@ func (s *BuildCoresTestSuite) TestBuildCores_InvalidFileDir() {
 	}
 	config.ApplyDefaults()
 
-	encoder := buildEncoder(config)
+	encoder := NewEncoderBuilder(config).Build()
 	cores, writers, err := buildCores(config, parseLevel(config.Level), encoder)
 
 	s.Error(err)
@@ -672,7 +672,7 @@ func TestContextSuite(t *testing.T) {
 }
 
 func (s *ContextTestSuite) TestFromContext_EmptyContext() {
-	// 空 context（没有注入 logger）应该返回 nopLogger
+	// 空 context没有注入 logger应该返回 nopLogger
 	result := FromContext(s.T().Context())
 	s.NotNil(result)
 	// nopLogger 不应该 panic

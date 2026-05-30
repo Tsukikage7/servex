@@ -42,7 +42,7 @@ func WithSource[T any](src Source) ManagerOption[T] {
 	}
 }
 
-// WithDecoder 设置配置解码函数（KeyValue -> T）.
+// WithDecoder 设置配置解码函数KeyValue -> T.
 // 默认实现: 根据 KeyValue.Format 选择 json/yaml 解码.
 func WithDecoder[T any](fn func([]*KeyValue) (*T, error)) ManagerOption[T] {
 	return func(m *Manager[T]) {
@@ -123,7 +123,7 @@ func (m *Manager[T]) Watch() error {
 	return nil
 }
 
-// Get 获取当前配置（无锁，atomic.Pointer.Load）.
+// Get 获取当前配置无锁，atomic.Pointer.Load.
 func (m *Manager[T]) Get() *T {
 	return m.current.Load()
 }
@@ -197,7 +197,7 @@ func (m *Manager[T]) watchLoop(w Watcher) {
 			return
 		}
 
-		// 重新从所有源加载（确保合并一致性）
+		// 重新从所有源加载确保合并一致性
 		kvs, err := m.loadAll()
 		if err != nil {
 			slog.Error("热加载失败: 加载数据源出错", slog.String("component", "Config"), slog.Any("error", err))
@@ -218,7 +218,7 @@ func (m *Manager[T]) watchLoop(w Watcher) {
 		}
 
 		old := m.current.Swap(cfg)
-		// 通知观察者（panic recovery 保护，避免单个观察者崩溃影响其他观察者）
+		// 通知观察者panic recovery 保护，避免单个观察者崩溃影响其他观察者
 		for _, obs := range m.observers {
 			func() {
 				defer func() {
@@ -233,10 +233,10 @@ func (m *Manager[T]) watchLoop(w Watcher) {
 }
 
 // defaultDecoder 默认解码器，根据 Format 选择 json/yaml 解码.
-// 多个 KeyValue 时，后者覆盖前者（先解码到同一结构）.
+// 多个 KeyValue 时，后者覆盖前者先解码到同一结构.
 //
 // 注意: json.Unmarshal 对 slice 字段采用追加语义而非覆盖，
-// 若需要覆盖行为请使用自定义 decoder（通过 WithDecoder 设置）.
+// 若需要覆盖行为请使用自定义 decoder通过 WithDecoder 设置.
 func defaultDecoder[T any](kvs []*KeyValue) (*T, error) {
 	cfg := new(T)
 	for _, kv := range kvs {

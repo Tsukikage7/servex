@@ -56,7 +56,7 @@ func TestCachedResolver_CacheMiss(t *testing.T) {
 		t.Fatalf("TenantID = %q, want %q", tn.TenantID(), "t1")
 	}
 
-	// 验证缓存写入（使用 hash key）
+	// 验证缓存写入使用 hash key
 	if _, ok := store.data[tokenHashKey("tenant:", "token-1")]; !ok {
 		t.Fatal("应写入缓存")
 	}

@@ -18,7 +18,7 @@
 
 ## 失败策略
 
-**fail-closed**：Redis 错误、`client` 为 nil、`n` 超过桶容量均返回 `false` / 拒绝。与 `middleware/ratelimit` 包的 `DistributedLimiter` 的可配置 `FailOpen` 不同；如需放行行为，请在调用侧自行处理 Redis 返回的 `false`。
+**fail-closed**：Redis 错误、`client` 为 nil、`n` 超过桶容量均返回 `false` / 拒绝。`middleware/ratelimit` 包的 `DistributedLimiter` 默认同样 fail-closed；确实需要后端错误放行时显式设置 `FailOpen: true`。
 
 ## Lua 脚本
 

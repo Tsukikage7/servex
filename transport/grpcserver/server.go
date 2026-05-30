@@ -198,12 +198,12 @@ func (s *Server) Addr() string {
 // buildServerOptions 构建 gRPC 服务器选项.
 func (s *Server) buildServerOptions() []grpc.ServerOption {
 	opts := []grpc.ServerOption{
-		// Keepalive 执行策略（防止客户端 ping 过于频繁）
+		// Keepalive 执行策略防止客户端 ping 过于频繁
 		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
 			MinTime:             s.opts.minPingInterval,
 			PermitWithoutStream: true,
 		}),
-		// Keepalive 服务端参数（主动检测客户端健康）
+		// Keepalive 服务端参数主动检测客户端健康
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			Time:    s.opts.keepaliveTime,
 			Timeout: s.opts.keepaliveTimeout,

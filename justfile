@@ -10,8 +10,12 @@ default: check
 
 # ── 检查 ──────────────────────────────────────────────
 
-# 完整检查（lint + deps-check + test + build）
-check: lint deps-check test-unit build
+# 完整检查lint + deps-check + test + build + vuln
+check: lint deps-check test-unit build vuln
+
+# 发布前工作区检查覆盖 go.work 中的所有 module
+check-workspace:
+    ./scripts/check-workspace.sh
 
 # ── 构建 ──────────────────────────────────────────────
 
@@ -30,21 +34,21 @@ clean:
 
 # ── 测试 ──────────────────────────────────────────────
 
-# 单元测试（不需要外部服务）
+# 单元测试不需要外部服务
 test-unit:
     go test -short -race -coverprofile=coverage.out ./...
     @echo ""
     @echo "Coverage:"
     @go tool cover -func=coverage.out | tail -1
 
-# 集成测试（需要先 just services-up 启动依赖）
+# 集成测试需要先 just services-up 启动依赖
 test-integration:
     #!/usr/bin/env bash
     set -euo pipefail
     set -a; source tests/.env.test; set +a
     go test -race -count=1 -tags=integration ./tests/integration/...
 
-# 在 Docker 中运行全量测试（自动启动服务 + 跑测试 + 清理）
+# 在 Docker 中运行全量测试自动启动服务 + 跑测试 + 清理
 test-docker:
     #!/usr/bin/env bash
     set -e
@@ -59,7 +63,7 @@ test-docker:
     docker compose -f tests/docker-compose.yml down -v
     echo "Done."
 
-# 全量测试（单元 + 集成）
+# 全量测试单元 + 集成
 test-all: test-unit test-integration
 
 # 运行指定包的测试
@@ -72,12 +76,12 @@ test-run pattern:
 
 # ── 覆盖率 ──────────────────────────────────────────────
 
-# 覆盖率报告（终端）
+# 覆盖率报告终端
 coverage:
     go test -short -race -coverprofile=coverage.out ./...
     go tool cover -func=coverage.out | tail -20
 
-# 覆盖率报告（HTML）
+# 覆盖率报告HTML
 coverage-html:
     go test -short -race -coverprofile=coverage.out ./...
     go tool cover -html=coverage.out -o coverage.html
@@ -106,7 +110,7 @@ coverage-stats:
 
 # ── 代码质量 ──────────────────────────────────────────────
 
-# 代码检查（golangci-lint）
+# 代码检查golangci-lint
 lint:
     golangci-lint run ./... 2>/dev/null || (echo "golangci-lint not found, falling back to go vet" && go vet ./...)
 
@@ -118,12 +122,12 @@ vet:
 deps-check:
     ./scripts/check-deps.sh
 
-# 格式化（修改文件）
+# 格式化修改文件
 fmt:
     gofmt -w -s .
     goimports -w -local github.com/Tsukikage7/servex/v2 .
 
-# 格式化检查（只检查不修改，适用于 CI）
+# 格式化检查只检查不修改，适用于 CI
 fmt-check:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -146,8 +150,7 @@ tidy:
 
 # 检查依赖漏洞
 vuln:
-    go install golang.org/x/vuln/cmd/govulncheck@latest
-    govulncheck ./...
+    ./scripts/check-vuln.sh
 
 # 检查过时依赖
 outdated:
@@ -214,18 +217,18 @@ services-check:
     check "Consul       (8500)" "curl -sf http://localhost:8500/v1/status/leader"
     check "Etcd         (2379)" "curl -sf http://localhost:2379/health"
 
-# 启动指定服务（如 just service redis postgres）
+# 启动指定服务如 just service redis postgres
 service *names:
     docker compose -f {{compose_file}} up -d {{names}}
 
 # ── CI 本地模拟 ──────────────────────────────────────────────
 
-# 模拟 CI 完整流程（仅单元测试）
+# 模拟 CI 完整流程仅单元测试
 ci: tidy fmt-check lint vet test-unit build
     @echo ""
     @echo "CI 检查全部通过"
 
-# 模拟 CI 完整流程（含集成测试，需要先 just services-up）
+# 模拟 CI 完整流程含集成测试，需要先 just services-up
 ci-full: tidy fmt-check lint vet test-unit test-integration build
     @echo ""
     @echo "CI 全量检查通过"

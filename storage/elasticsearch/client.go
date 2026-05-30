@@ -39,7 +39,7 @@ func newESClient(config *Config, log logger.Logger) (*esClient, error) {
 		cfg.CACert = []byte(config.CACert)
 	}
 
-	// 自定义 Transport 设置（基于默认 Transport 克隆，保留 TLS、DialContext 等默认配置）
+	// 自定义 Transport 设置基于默认 Transport 克隆，保留 TLS、DialContext 等默认配置
 	tp := http.DefaultTransport.(*http.Transport).Clone()
 	if config.MaxIdleConnsPerHost > 0 {
 		tp.MaxIdleConnsPerHost = config.MaxIdleConnsPerHost

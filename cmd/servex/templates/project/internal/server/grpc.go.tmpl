@@ -9,20 +9,29 @@ import (
 )
 
 // NewGRPC 创建 gRPC 服务器.
-func NewGRPC(log logger.Logger) transport.Server {
-	srv := grpcserver.New(
+func NewGRPC(cfg transport.GRPCConfig, log logger.Logger) transport.Server {
+	opts := []grpcserver.Option{
 		grpcserver.WithLogger(log),
-		grpcserver.WithAddr(":9090"),
-		grpcserver.WithReflection(true),
-		grpcserver.WithUnaryInterceptor(
-			recovery.UnaryServerInterceptor(recovery.WithLogger(log)),
-			logging.UnaryServerInterceptor(logging.WithLogger(log)),
-		),
-		grpcserver.WithStreamInterceptor(
-			recovery.StreamServerInterceptor(recovery.WithLogger(log)),
-			logging.StreamServerInterceptor(logging.WithLogger(log)),
-		),
-	)
+		grpcserver.WithConfig(cfg),
+	}
+	if cfg.Runtime.Recovery {
+		opts = append(opts,
+			grpcserver.WithUnaryInterceptor(recovery.UnaryServerInterceptor(recovery.WithLogger(log))),
+			grpcserver.WithStreamInterceptor(recovery.StreamServerInterceptor(recovery.WithLogger(log))),
+		)
+	}
+	if cfg.Logging.Enabled {
+		loggingOpts := []logging.Option{
+			logging.WithLogger(log),
+			logging.WithSkipPaths(cfg.Logging.SkipPaths...),
+		}
+		opts = append(opts,
+			grpcserver.WithUnaryInterceptor(logging.UnaryServerInterceptor(loggingOpts...)),
+			grpcserver.WithStreamInterceptor(logging.StreamServerInterceptor(loggingOpts...)),
+		)
+	}
+
+	srv := grpcserver.New(opts...)
 
 	// TODO: 注册 gRPC 服务
 	// srv.Register(myService)

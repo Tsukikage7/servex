@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
@@ -15,87 +16,6 @@ import (
 	"github.com/Tsukikage7/servex/v2/observability/metrics"
 	"github.com/Tsukikage7/servex/v2/testx"
 )
-
-func TestGateway_WithCORS(t *testing.T) {
-	log := testx.NopLogger()
-
-	srv := New(
-		WithLogger(log),
-		WithCORS(
-			cors.WithAllowOrigins("https://example.com"),
-			cors.WithAllowCredentials(true),
-		),
-	)
-
-	if !srv.opts.enableCORS {
-		t.Error("期望 CORS 已启用")
-	}
-	if len(srv.opts.corsOpts) != 2 {
-		t.Errorf("期望 2 个 CORS 选项，实际为 %d", len(srv.opts.corsOpts))
-	}
-}
-
-func TestGateway_WithRateLimit(t *testing.T) {
-	log := testx.NopLogger()
-	limiter := ratelimit.NewTokenBucket(100, 200)
-
-	srv := New(
-		WithLogger(log),
-		WithRateLimit(limiter),
-	)
-
-	if srv.opts.rateLimiter == nil {
-		t.Error("期望限流器已设置")
-	}
-
-	// 验证 gRPC 拦截器已添加（ratelimit 添加 unary + stream）
-	hasUnary := false
-	for range srv.opts.unaryInterceptors {
-		hasUnary = true
-		break
-	}
-	if !hasUnary {
-		t.Error("期望至少有一个一元拦截器")
-	}
-}
-
-func TestGateway_WithMetrics(t *testing.T) {
-	log := testx.NopLogger()
-	collector, err := metrics.NewMetrics(&metrics.Config{
-		Namespace: "test_gateway",
-	})
-	if err != nil {
-		t.Fatalf("创建 metrics collector 失败: %v", err)
-	}
-
-	srv := New(
-		WithLogger(log),
-		WithMetrics(collector),
-	)
-
-	if srv.opts.metricsCollector == nil {
-		t.Error("期望 metrics collector 已设置")
-	}
-}
-
-func TestGateway_WithLogging(t *testing.T) {
-	log := testx.NopLogger()
-
-	srv := New(
-		WithLogger(log),
-		WithLogging("/grpc.health.v1.Health/Check"),
-	)
-
-	if !srv.opts.enableLogging {
-		t.Error("期望 logging 已启用")
-	}
-	if len(srv.opts.loggingSkipPaths) != 1 {
-		t.Errorf("期望 1 个跳过路径，实际为 %d", len(srv.opts.loggingSkipPaths))
-	}
-	if srv.opts.loggingSkipPaths[0] != "/grpc.health.v1.Health/Check" {
-		t.Errorf("跳过路径不匹配: %s", srv.opts.loggingSkipPaths[0])
-	}
-}
 
 func TestGateway_Options_Applied(t *testing.T) {
 	log := testx.NopLogger()
@@ -112,14 +32,23 @@ func TestGateway_Options_Applied(t *testing.T) {
 		WithName("test-gw"),
 		WithGRPCAddr(":0"),
 		WithHTTPAddr(":0"),
-		WithRecovery(),
-		WithLogging("/health"),
-		WithTrace("test-service"),
-		WithMetrics(collector),
-		WithCORS(cors.WithAllowOrigins("*")),
-		WithRateLimit(limiter),
-		WithClientIP(clientip.WithTrustAllProxies()),
-		WithResponse(),
+		WithObservability(ObservabilityConfig{
+			Logging:          true,
+			LoggingSkipPaths: []string{"/health"},
+			TracingService:   "test-service",
+			Metrics:          collector,
+		}),
+		WithRuntime(RuntimeConfig{
+			Recovery: true,
+			Response: true,
+		}),
+		WithSecurity(SecurityConfig{
+			CORS:         true,
+			CORSOptions:  []cors.Option{cors.WithAllowOrigins("*")},
+			RateLimiter:  limiter,
+			ClientIP:     true,
+			ClientIPOpts: []clientip.Option{clientip.WithTrustAllProxies()},
+		}),
 	)
 
 	// 验证所有选项都已正确设置
@@ -164,17 +93,53 @@ func TestGateway_Options_Applied(t *testing.T) {
 	}
 }
 
-func TestGateway_WithClientIP(t *testing.T) {
+func TestGateway_WithObservabilityAndSecurity(t *testing.T) {
 	log := testx.NopLogger()
+	limiter := ratelimit.NewTokenBucket(100, 200)
+	collector, err := metrics.NewMetrics(&metrics.Config{
+		Namespace: "test_gateway_grouped_options",
+	})
+	if err != nil {
+		t.Fatalf("创建 metrics collector 失败: %v", err)
+	}
 
 	srv := New(
 		WithLogger(log),
-		WithClientIP(),
+		WithObservability(ObservabilityConfig{
+			TracingService: "gateway",
+			TracingSkipPaths: []string{
+				"/healthz",
+				"/metrics",
+			},
+			Metrics:          collector,
+			Logging:          true,
+			LoggingSkipPaths: []string{"/healthz"},
+		}),
+		WithRuntime(RuntimeConfig{
+			Response: true,
+			Recovery: true,
+		}),
+		WithSecurity(SecurityConfig{
+			CORS:         true,
+			CORSOptions:  []cors.Option{cors.WithAllowOrigins("https://example.com")},
+			RateLimiter:  limiter,
+			ClientIP:     true,
+			ClientIPOpts: []clientip.Option{clientip.WithTrustAllProxies()},
+		}),
 	)
 
-	if !srv.opts.enableClientIP {
-		t.Error("期望 clientIP 已启用")
-	}
+	assert.Equal(t, "gateway", srv.opts.tracerName)
+	assert.Equal(t, []string{"/healthz", "/metrics"}, srv.opts.tracingSkipPaths)
+	assert.Same(t, collector, srv.opts.metricsCollector)
+	assert.True(t, srv.opts.enableLogging)
+	assert.Equal(t, []string{"/healthz"}, srv.opts.loggingSkipPaths)
+	assert.True(t, srv.opts.enableResponse)
+	assert.True(t, srv.opts.enableRecovery)
+	assert.True(t, srv.opts.enableCORS)
+	assert.Len(t, srv.opts.corsOpts, 1)
+	assert.Same(t, limiter, srv.opts.rateLimiter)
+	assert.True(t, srv.opts.enableClientIP)
+	assert.Len(t, srv.opts.clientIPOpts, 1)
 }
 
 func TestGateway_WithHTTPTLS(t *testing.T) {

@@ -111,7 +111,7 @@ func WithTTL(ttl time.Duration) Option {
 }
 
 // NewStore 创建 KV 存储.
-// kv: KV 存储实现（可用 CacheKV 适配 cache.Cache）
+// kv: KV 存储实现可用 CacheKV 适配 cache.Cache
 func NewStore(kv saga.KV, opts ...Option) *Store {
 	s := &Store{
 		kv:         kv,

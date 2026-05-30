@@ -1,0 +1,9 @@
+server:
+  addr: ":8080"
+
+llm:
+  provider: {{ .Provider }}
+  framework: {{ .Framework }}
+  model: gpt-4o-mini
+  base_url: https://api.openai.com/v1
+  timeout: 30s

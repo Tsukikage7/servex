@@ -60,7 +60,7 @@ type Config struct {
 	Bucket string `json:"bucket" yaml:"bucket" mapstructure:"bucket"`
 	// UseSSL 是否使用 SSL
 	UseSSL bool `json:"use_ssl" yaml:"use_ssl" mapstructure:"use_ssl"`
-	// UsePathStyle 是否使用路径风格（MinIO 需要）
+	// UsePathStyle 是否使用路径风格MinIO 需要
 	UsePathStyle bool `json:"use_path_style" yaml:"use_path_style" mapstructure:"use_path_style"`
 	// ConnectTimeout 连接超时
 	ConnectTimeout time.Duration `json:"connect_timeout" yaml:"connect_timeout" mapstructure:"connect_timeout"`
@@ -68,7 +68,7 @@ type Config struct {
 	RequestTimeout time.Duration `json:"request_timeout" yaml:"request_timeout" mapstructure:"request_timeout"`
 	// MaxRetries 最大重试次数
 	MaxRetries int `json:"max_retries" yaml:"max_retries" mapstructure:"max_retries"`
-	// PartSize 分片大小（字节）
+	// PartSize 分片大小字节
 	PartSize int64 `json:"part_size" yaml:"part_size" mapstructure:"part_size"`
 	// EnableTracing 启用链路追踪
 	EnableTracing bool `json:"enable_tracing" yaml:"enable_tracing" mapstructure:"enable_tracing"`
@@ -165,7 +165,7 @@ type Client interface {
 	PresignPutObject(ctx context.Context, key string, expires time.Duration, opts ...PutOption) (string, error)
 
 	// 工具方法
-	// Upload 智能上传（自动选择普通/分片上传）
+	// Upload 智能上传自动选择普通/分片上传
 	Upload(ctx context.Context, key string, reader io.Reader, size int64, opts ...PutOption) (*PutObjectResult, error)
 	// Download 下载到 Writer
 	Download(ctx context.Context, key string, writer io.Writer) (int64, error)

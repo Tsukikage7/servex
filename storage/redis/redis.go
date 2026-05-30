@@ -1,8 +1,8 @@
 // Package redis 封装 go-redis/v9，提供统一的 Redis 操作接口.
 //
 // 特性：
-//   - 完整的 Redis 数据类型操作（String/Hash/List/Set/Sorted Set）
-//   - 脚本执行（Eval/EvalSha）
+//   - 完整的 Redis 数据类型操作String/Hash/List/Set/Sorted Set
+//   - 脚本执行Eval/EvalSha
 //   - Pipeline 批量操作
 //   - Pub/Sub 发布订阅
 //   - 配置校验与默认值
@@ -101,7 +101,7 @@ func (c *Config) ApplyDefaults() {
 	}
 }
 
-// Z 有序集合成员（封装 go-redis 的 Z 类型）.
+// Z 有序集合成员封装 go-redis 的 Z 类型.
 type Z = redis.Z
 
 // Pipeline Redis 管道接口.
@@ -231,15 +231,6 @@ func NewClient(config *Config, log logger.Logger) (Client, error) {
 		client: rdb,
 		log:    log,
 	}, nil
-}
-
-// NewUniversalClientWithCleanup 创建 go-redis 兼容客户端，并返回生命周期清理函数.
-func NewUniversalClientWithCleanup(config *Config, log logger.Logger) (redis.UniversalClient, func(), error) {
-	client, err := NewClient(config, log)
-	if err != nil {
-		return nil, nil, err
-	}
-	return client.Underlying(), func() { _ = client.Close() }, nil
 }
 
 // MustNewClient 创建 Redis 客户端，失败时 panic.

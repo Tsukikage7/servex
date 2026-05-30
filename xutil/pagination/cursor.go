@@ -55,7 +55,7 @@ type CursorResponse[T any] struct {
 	HasMore    bool   `json:"has_more"`
 }
 
-// EncodeCursor 将值编码为游标字符串（base64url + JSON）.
+// EncodeCursor 将值编码为游标字符串base64url + JSON.
 func EncodeCursor(values ...any) string {
 	data, err := json.Marshal(values)
 	if err != nil {

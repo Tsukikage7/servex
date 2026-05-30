@@ -501,7 +501,7 @@ func TestConsulDiscovery_Discover_NoConsul(t *testing.T) {
 	if err != nil {
 		assert.ErrorIs(t, err, discovery.ErrDiscover)
 	} else {
-		// 如果成功，返回的应该是空列表（服务不存在）
+		// 如果成功，返回的应该是空列表服务不存在
 		assert.Empty(t, addresses)
 	}
 }

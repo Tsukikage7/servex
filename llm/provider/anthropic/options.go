@@ -28,7 +28,7 @@ func WithAnthropicVersion(version string) Option {
 	return func(c *Client) { c.version = version }
 }
 
-// WithDefaultMaxTokens 设置默认最大 token 数（Anthropic API 必须提供此参数）.
+// WithDefaultMaxTokens 设置默认最大 token 数Anthropic API 必须提供此参数.
 func WithDefaultMaxTokens(n int) Option {
 	return func(c *Client) { c.defaultMaxTokens = n }
 }

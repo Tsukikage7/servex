@@ -34,7 +34,7 @@ func New{{.Name}}(id {{.IDType}}{{range .NonIDFields}}, {{.CamelName}} {{.Type}}
 	return o
 }
 
-// Reconstruct{{.Name}} 从持久化数据恢复聚合根（不触发事件）.
+// Reconstruct{{.Name}} 从持久化数据恢复聚合根不触发事件.
 func Reconstruct{{.Name}}(id {{.IDType}}{{range .NonIDFields}}, {{.CamelName}} {{.Type}}{{end}}) *{{.Name}} {
 	return &{{.Name}}{
 		AggregateRoot: domain.NewAggregateRoot[{{.IDType}}](id),

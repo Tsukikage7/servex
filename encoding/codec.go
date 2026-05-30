@@ -17,7 +17,7 @@ type Codec interface {
 	Marshal(v any) ([]byte, error)
 	// Unmarshal 将字节解码到值.
 	Unmarshal(data []byte, v any) error
-	// Name 返回编解码器名称（内容子类型），如 "json", "xml", "proto".
+	// Name 返回编解码器名称内容子类型，如 "json", "xml", "proto".
 	Name() string
 }
 
@@ -56,8 +56,8 @@ var commonMIME = map[string]string{
 }
 
 // CodecForRequest 根据 HTTP 请求头选择编解码器.
-// headerName 通常为 "Content-Type"（解码）或 "Accept"（编码）.
-// 解析 MIME 类型的 subtype 部分（如 "application/xml" -> "xml"）.
+// headerName 通常为 "Content-Type"解码或 "Accept"编码.
+// 解析 MIME 类型的 subtype 部分如 "application/xml" -> "xml".
 // 未匹配时回退到 JSON；若 JSON 编解码器也未注册则返回 nil.
 func CodecForRequest(r *http.Request, headerName string) Codec {
 	header := r.Header.Get(headerName)
@@ -80,13 +80,13 @@ func CodecForRequest(r *http.Request, headerName string) Codec {
 
 // subtypeFromHeader 从 MIME 类型中提取子类型.
 // "application/json; charset=utf-8" -> "json"
-// "application/x-protobuf" -> "proto"（移除 x- 前缀后映射）
+// "application/x-protobuf" -> "proto"移除 x- 前缀后映射
 // "text/xml" -> "xml"
 func subtypeFromHeader(contentType string) string {
 	if contentType == "" {
 		return ""
 	}
-	// 去除参数部分（charset 等）
+	// 去除参数部分charset 等
 	if idx := strings.IndexByte(contentType, ';'); idx != -1 {
 		contentType = contentType[:idx]
 	}

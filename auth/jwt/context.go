@@ -35,7 +35,7 @@ func TokenFromContext(ctx context.Context) (string, bool) {
 	return token, ok
 }
 
-// GetSubjectFromContext 从上下文获取主题（用户标识）.
+// GetSubjectFromContext 从上下文获取主题用户标识.
 func GetSubjectFromContext(ctx context.Context) (string, bool) {
 	claims, ok := ClaimsFromContext(ctx)
 	if !ok {

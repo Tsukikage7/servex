@@ -104,7 +104,7 @@ func (s *Subscriber) Ack(ctx context.Context, msg *pubsub.Message) error {
 	return nil
 }
 
-// Nack 拒绝消息（Kafka 不支持原生 Nack，此处为空操作）.
+// Nack 拒绝消息Kafka 不支持原生 Nack，此处为空操作.
 func (s *Subscriber) Nack(ctx context.Context, msg *pubsub.Message) error {
 	if msg == nil {
 		return pubsub.ErrNilMessage

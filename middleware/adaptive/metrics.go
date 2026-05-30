@@ -105,7 +105,7 @@ func (lt *latencyTracker) record(d time.Duration) {
 	lt.samples = append(lt.samples, latencySample{ts: now, d: d})
 }
 
-// percentile 获取百分位延迟（如 0.99 表示 P99）.
+// percentile 获取百分位延迟如 0.99 表示 P99.
 func (lt *latencyTracker) percentile(p float64) time.Duration {
 	lt.mu.Lock()
 	defer lt.mu.Unlock()

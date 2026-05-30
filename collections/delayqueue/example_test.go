@@ -19,7 +19,7 @@ func (t task) Delay() time.Duration {
 }
 
 func ExampleNew() {
-	dq := delayqueue.New[task](10)
+	dq := delayqueue.New[task]()
 	ctx := context.Background()
 
 	// 添加已到期的元素.

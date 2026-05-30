@@ -20,7 +20,7 @@ type zapLogger struct {
 // newZapLogger 创建 zap logger.
 func newZapLogger(config *Config) (Logger, error) {
 	level := parseLevel(config.Level)
-	encoder := buildEncoder(config)
+	encoder := NewEncoderBuilder(config).Build()
 	options := buildOptions(config)
 
 	var writers []RotateWriter
@@ -395,7 +395,7 @@ func (z *zapLogger) Close() error {
 		}
 	}
 
-	// 仅在存在文件写入器时返回 sync 错误（stdout/stderr 的忽略）
+	// 仅在存在文件写入器时返回 sync 错误stdout/stderr 的忽略
 	if syncErr != nil && len(z.writers) > 0 {
 		return syncErr
 	}

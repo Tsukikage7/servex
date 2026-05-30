@@ -12,6 +12,21 @@ JWT 认证服务，提供令牌生成、验证、刷新和撤销功能。
 - 自定义 Claims
 - Functional Options 模式
 
+## 构造器
+
+新代码使用 `New` 显式处理配置错误；确实需要启动期快速失败时使用 `MustNew`。
+
+```go
+j, err := jwt.New(
+    jwt.WithSecretKey("your-secret-key-at-least-32-bytes"),
+    jwt.WithIssuer("my-service"),
+    jwt.WithLogger(log),
+)
+if err != nil {
+    return err
+}
+```
+
 ## 配置选项
 
 | 选项                  | 默认值       | 说明               |
@@ -24,7 +39,7 @@ JWT 认证服务，提供令牌生成、验证、刷新和撤销功能。
 | `WithRefreshWindow`   | `1h`         | 过期后可刷新窗口   |
 | `WithTokenPrefix`     | `Bearer `    | 令牌前缀           |
 | `WithCacheKeyPrefix`  | `jwt:token:` | 缓存 key 前缀      |
-| `WithCache`           | -            | 缓存实例           |
+| `WithTokenStore`      | -            | 令牌存储           |
 | `WithLogger`          | -            | 日志记录器（必需） |
 | `WithWhitelist`       | -            | 白名单配置         |
 
@@ -58,16 +73,16 @@ claims := &UserClaims{
     Role:     "admin",
 }
 
-token, err := j.Generate(claims)
+token, err := j.Generate(ctx, claims)
 
 // 验证时使用自定义类型
-validatedClaims, err := j.ValidateWithClaims(token, &UserClaims{})
+validatedClaims, err := j.ValidateWithClaims(ctx, token, &UserClaims{})
 userClaims := validatedClaims.(*UserClaims)
 ```
 
 ## Authenticator 与自定义 Claims
 
-`NewAuthenticator` 可直接接入 `auth` / `gateway.WithAuth`。如果令牌中包含业务字段
+`NewAuthenticator` 可直接接入 `auth` / `gateway.WithSecurity`。如果令牌中包含业务字段
 （如 `roles`、`permissions`、`username`、`tenant_id`），应通过 `WithClaimsFactory`
 指定解析类型；认证器会为每次请求创建新的 Claims 实例，避免并发复用。
 
@@ -78,10 +93,13 @@ type UserClaims struct {
     Roles    []string `json:"roles"`
 }
 
-jwtSrv := jwt.NewJWT(
+jwtSrv, err := jwt.New(
     jwt.WithSecretKey("your-secret-key-at-least-32-bytes"),
     jwt.WithLogger(log),
 )
+if err != nil {
+    return err
+}
 
 authenticator := jwt.NewAuthenticator(jwtSrv,
     jwt.WithClaimsFactory(func() jwt.Claims {
@@ -105,7 +123,9 @@ authenticator := jwt.NewAuthenticator(jwtSrv,
 )
 
 server := gateway.New(
-    gateway.WithAuth(authenticator),
+    gateway.WithSecurity(gateway.SecurityConfig{
+        Authenticator: authenticator,
+    }),
 )
 ```
 
@@ -268,11 +288,14 @@ whitelist := jwt.NewWhitelist().
     AddGRPCMethods("/grpc.health.v1.Health/").
     SetInternalServiceHeader("x-internal-service")
 
-j := jwt.NewJWT(
-    jwt.WithSecretKey("secret"),
+j, err := jwt.New(
+    jwt.WithSecretKey("your-secret-key-at-least-32-bytes"),
     jwt.WithLogger(log),
     jwt.WithWhitelist(whitelist),
 )
+if err != nil {
+    return err
+}
 ```
 
 ## 缓存集成
@@ -280,12 +303,15 @@ j := jwt.NewJWT(
 启用缓存可以实现令牌撤销功能：
 
 ```go
-j := jwt.NewJWT(
-    jwt.WithSecretKey("secret"),
+j, err := jwt.New(
+    jwt.WithSecretKey("your-secret-key-at-least-32-bytes"),
     jwt.WithLogger(log),
-    jwt.WithCache(redisCache),
+    jwt.WithTokenStore(jwt.CacheTokenStore(redisCache)),
     jwt.WithCacheKeyPrefix("myapp:jwt:"),
 )
+if err != nil {
+    return err
+}
 
 // 撤销用户所有令牌
 j.Revoke(ctx, "user-123")
@@ -328,7 +354,7 @@ newClaims := &UserClaims{
     Role:     "admin",
 }
 
-newToken, err := j.RefreshWithClaims(oldToken, &UserClaims{}, newClaims)
+newToken, err := j.RefreshWithClaims(ctx, oldToken, &UserClaims{}, newClaims)
 ```
 
 ## 完整示例
@@ -363,13 +389,17 @@ func main() {
         AddHTTPPaths("/health", "/login")
 
     // JWT 服务
-    j := jwt.NewJWT(
-        jwt.WithSecretKey("your-secret-key"),
+    j, err := jwt.New(
+        jwt.WithSecretKey("your-secret-key-at-least-32-bytes"),
         jwt.WithIssuer("my-service"),
         jwt.WithAccessDuration(2 * time.Hour),
         jwt.WithLogger(log),
         jwt.WithWhitelist(whitelist),
     )
+    if err != nil {
+        log.Error("JWT 初始化失败", logger.Err(err))
+        return
+    }
 
     // 路由
     mux := http.NewServeMux()
@@ -400,7 +430,7 @@ func loginHandler(j *jwt.JWT) http.HandlerFunc {
             Username: "john",
         }
 
-        token, err := j.Generate(claims)
+        token, err := j.Generate(r.Context(), claims)
         if err != nil {
             http.Error(w, err.Error(), http.StatusInternalServerError)
             return

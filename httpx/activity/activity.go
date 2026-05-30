@@ -91,7 +91,7 @@ type Status struct {
 	// LastIP 最后 IP
 	LastIP string `json:"last_ip,omitempty"`
 
-	// OnlineDuration 本次在线时长（秒）
+	// OnlineDuration 本次在线时长秒
 	OnlineDuration int64 `json:"online_duration,omitempty"`
 }
 
@@ -176,7 +176,7 @@ func (t *Tracker) Track(ctx context.Context, event *Event) error {
 		return nil
 	}
 
-	// 同步写入存储（用于消费端或非异步模式）
+	// 同步写入存储用于消费端或非异步模式
 	if t.opts.store != nil {
 		if err := t.opts.store.SetLastActive(ctx, event.UserID, event); err != nil {
 			return fmt.Errorf("activity: failed to set last active: %w", err)

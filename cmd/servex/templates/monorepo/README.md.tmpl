@@ -1,36 +1,62 @@
-# {{.Name}}
+# {{.Name}} 平台
 
-基于 [servex](https://github.com/Tsukikage7/servex) 构建的微服务项目.
+{{.Name}} 是基于 [servex](https://github.com/Tsukikage7/servex) 构建的 Go 后端 monorepo。仓库采用分层服务化组织，把 API 契约、领域模型、应用用例、基础设施适配、服务入口、脚本、部署和文档放在清晰的边界内。
+
+## 架构边界
+
+- `api/`：protobuf、HTTP annotation、OpenAPI 生成产物和第三方 proto。
+- `domain/`：核心领域模型、业务不变量、领域事件和仓储接口。
+- `application/`：应用服务与用例编排，按 command/query 拆分。
+- `infrastructure/`：配置、存储、鉴权、消息、对象存储、可观测性等框架适配。
+- `services/`：具体服务，每个服务拥有 `cmd/server`、`configs` 和 `internal`。
+- `scripts/`：开发、构建、质量、部署和运维脚本入口。
+- `deploy/`：Docker、Kubernetes 和网关部署工件。
+- `docs/`：研发、运维、产品协作说明。
 
 ## 快速开始
 
 ```bash
-# 添加服务
 servex add service user --with-grpc --infra mysql,redis
-
-# 运行服务
-just run user
-
-# 构建全部
-just build-all
+servex add aggregate user --fields "id:uint64,name:string,email:string" --service user
+servex proto add user
+servex proto server api/user/v1/user.proto --service user
+just dev user
 ```
 
-## 项目结构
+## 仓库结构
 
-```
+```text
 {{.Name}}/
-  go.mod
-  justfile
-  domain/           # 领域层（共享领域模型）
-  application/      # 应用层（共享应用服务）
-  services/         # 各微服务
-    <service>/
-      cmd/          # 服务入口
-      internal/     # 服务内部实现
-      proto/        # Proto 定义
-  api/              # API 定义（共享 proto/openapi）
-  infrastructure/   # 基础设施层
-  deploy/
-    docker/         # Docker 编排
-    k8s/            # Kubernetes 部署清单
+├── api/                 # API 契约定义
+├── application/         # 应用层能力与用例编排
+├── domain/              # 业务域与领域规则
+├── infrastructure/      # 基础设施适配层
+├── services/            # 具体服务：services/<name>/cmd/server
+├── scripts/             # 开发、质量、部署、运维脚本
+├── deploy/              # docker/k8s 编排与配置
+├── docs/                # 研发、运维、产品文档
+├── bin/                 # 本地构建产物
+├── justfile             # 统一工程入口
+└── go.mod               # Go module
 ```
+
+## 常用命令
+
+```bash
+just --list
+just dev user
+just build user
+just codegen proto
+just test user
+just check all
+just infra up
+```
+
+## 约定
+
+- 新服务放在 `services/<name>`，不使用历史的 `<name>-service` 后缀。
+- `servex add service <name>` 会同步创建 `api/<name>/v1`、`domain/<name>`、`application/<name>/command` 和 `application/<name>/query`。
+- Handler 只负责协议适配，业务规则进入 `domain/`，用例编排进入 `application/`。
+- 服务内部适配层放在 `services/<name>/internal/adapter`，对外端口放在 `services/<name>/internal/port`。
+- 共享基础设施优先放在 `infrastructure/`，避免在各服务里重复实现。
+- 配置按 `services/<name>/configs/config.<env>.yaml` 分层维护。

@@ -32,7 +32,7 @@ func WithTTL(ttl time.Duration) RedisOption {
 }
 
 // NewRedisStore 创建基于缓存的 StateStore.
-// 接受 servex 的 cache.Cache（Redis 或内存均可），复用已有连接.
+// 接受 servex 的 cache.CacheRedis 或内存均可，复用已有连接.
 func NewRedisStore(c cache.Cache, opts ...RedisOption) (*RedisStore, error) {
 	if c == nil {
 		return nil, errors.New("oauth2/state: cache 不能为空")

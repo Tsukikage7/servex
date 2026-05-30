@@ -16,7 +16,7 @@ type Options struct {
 	// AllowEmptyEnv 是否允许空环境变量值覆盖配置
 	AllowEmptyEnv bool
 
-	// ConfigType 显式指定配置文件类型（yaml, json, toml 等）
+	// ConfigType 显式指定配置文件类型yaml, json, toml 等
 	ConfigType string
 
 	// Defaults 默认配置值

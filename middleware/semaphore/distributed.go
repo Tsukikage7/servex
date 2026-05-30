@@ -40,7 +40,7 @@ func WithRetryWait(wait time.Duration) Option {
 }
 
 // New 创建分布式信号量.
-// counter: 计数器实现（可用 CacheCounter 适配 cache.Cache）
+// counter: 计数器实现可用 CacheCounter 适配 cache.Cache
 // key: 信号量唯一标识
 // size: 最大并发数
 func New(counter Counter, key string, size int64, opts ...Option) *Distributed {

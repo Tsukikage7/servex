@@ -40,7 +40,7 @@ func applyOptions(opts []Option) *options {
 }
 
 // WithStore 设置状态存储.
-// 如果不设置，使用内部空存储（不保存状态）.
+// 如果不设置，使用内部空存储不保存状态.
 // 生产环境建议使用 NewRedisStore 保存状态.
 func WithStore(store Store) Option {
 	return func(o *options) {

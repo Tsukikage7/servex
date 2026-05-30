@@ -16,7 +16,7 @@ type AlertState string
 const (
 	// StateOK 正常状态.
 	StateOK AlertState = "ok"
-	// StatePending 待确认状态（条件满足但未超过持续时间）.
+	// StatePending 待确认状态条件满足但未超过持续时间.
 	StatePending AlertState = "pending"
 	// StateFiring 告警触发状态.
 	StateFiring AlertState = "firing"
@@ -138,7 +138,7 @@ type Notifier interface {
 // Option 配置选项函数.
 type Option func(*Engine)
 
-// WithLogger 设置日志记录器（兼容标准库 log.Logger 签名）.
+// WithLogger 设置日志记录器兼容标准库 log.Logger 签名.
 func WithLogger(printf func(format string, v ...any)) Option {
 	return func(e *Engine) {
 		if printf != nil {
@@ -339,7 +339,7 @@ func (e *Engine) Evaluate(ctx context.Context) ([]*Alert, error) {
 	return e.evaluateAll(ctx)
 }
 
-// ActiveAlerts 返回当前活跃的告警（Pending 或 Firing）.
+// ActiveAlerts 返回当前活跃的告警Pending 或 Firing.
 func (e *Engine) ActiveAlerts() []*Alert {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
@@ -410,7 +410,7 @@ func (e *Engine) evalLoop(ctx context.Context) {
 	}
 }
 
-// evaluateAll 评估所有规则（调用者需持有写锁）.
+// evaluateAll 评估所有规则调用者需持有写锁.
 func (e *Engine) evaluateAll(ctx context.Context) ([]*Alert, error) {
 	return e.evaluateSnapshot(ctx, e.rules, e.states)
 }
@@ -463,7 +463,7 @@ func (e *Engine) evaluateRule(ctx context.Context, rule *Rule, rs *ruleState, no
 	return e.handleResolution(rule, rs, value, now), nil
 }
 
-// handleAbsence 处理缺失检测（查询失败视为指标缺失）.
+// handleAbsence 处理缺失检测查询失败视为指标缺失.
 func (e *Engine) handleAbsence(rule *Rule, rs *ruleState, now time.Time) *Alert {
 	switch rs.alert.State {
 	case StateOK, StateResolved:

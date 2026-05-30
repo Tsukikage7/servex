@@ -81,7 +81,7 @@ func TestKeyedUnaryServerInterceptor(t *testing.T) {
 			t.Error("Method1 第二个请求应该被限流")
 		}
 
-		// Method2 第一个请求通过（独立限流）
+		// Method2 第一个请求通过独立限流
 		_, err = interceptor(ctx, nil, &grpc.UnaryServerInfo{FullMethod: "/service/Method2"}, handler)
 		if err != nil {
 			t.Errorf("Method2 第一个请求不应该被限流: %v", err)

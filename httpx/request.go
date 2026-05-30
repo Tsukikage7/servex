@@ -3,7 +3,7 @@
 // 本包整合了多个请求上下文提取模块:
 //   - clientip: 客户端 IP 提取、地理位置、访问控制
 //   - useragent: User-Agent 解析
-//   - deviceinfo: 设备信息（Client Hints 优先）
+//   - deviceinfo: 设备信息Client Hints 优先
 //   - botdetect: 机器人检测
 //   - locale: 语言区域设置
 //   - referer: 来源页面解析

@@ -19,10 +19,10 @@ type TracingConfig struct {
 type OTLPConfig struct {
 	// Endpoint OTLP Collector端点
 	Endpoint string `json:"endpoint" yaml:"endpoint" mapstructure:"endpoint"`
-	// Protocol 传输协议，"http"（默认）或 "grpc"
+	// Protocol 传输协议，"http"默认或 "grpc"
 	Protocol string `json:"protocol" yaml:"protocol" mapstructure:"protocol"`
 	// Headers 请求头[可选]
 	Headers map[string]string `json:"headers" yaml:"headers" mapstructure:"headers"`
-	// Insecure 是否使用 HTTP（不加密），默认 true 以兼容旧行为；生产环境建议设为 false
+	// Insecure 是否使用 HTTP不加密；生产环境建议保持 false
 	Insecure bool `json:"insecure" yaml:"insecure" mapstructure:"insecure"`
 }

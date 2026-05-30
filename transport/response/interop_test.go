@@ -184,7 +184,7 @@ func TestLocalizedMessage_WithErrorsPackage(t *testing.T) {
 	// servex/errors.Error 的 Key 应该能被 i18n 翻译
 	err := errors.NewWithKind(40001, "error.not_found", "资源不存在", errors.KindNotFound)
 
-	// 使用内置英文翻译（Key 为 "error.not_found" 时翻译为 "Resource not found"）
+	// 使用内置英文翻译Key 为 "error.not_found" 时翻译为 "Resource not found"
 	msg := response.LocalizedMessage(err, "en")
 	assert.Equal(t, "Resource not found", msg)
 }

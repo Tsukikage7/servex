@@ -30,7 +30,7 @@ func ExampleEncodeCodecResponse() {
 		return greetResponse{Message: "Hello, " + r.Name}, nil
 	})
 
-	// 创建 handler（自动内容协商）
+	// 创建 handler自动内容协商
 	handler := httpserver.NewEndpointHandler(
 		greetEndpoint,
 		httpserver.DecodeCodecRequest[greetRequest](),

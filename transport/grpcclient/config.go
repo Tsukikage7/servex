@@ -7,7 +7,7 @@ import (
 	"github.com/Tsukikage7/servex/v2/middleware/circuitbreaker"
 	"github.com/Tsukikage7/servex/v2/observability/logger"
 	"github.com/Tsukikage7/servex/v2/observability/metrics"
-	"github.com/Tsukikage7/servex/v2/transport/tls"
+	tlsx "github.com/Tsukikage7/servex/v2/transport/tls"
 )
 
 // Config gRPC 客户端配置.
@@ -95,7 +95,7 @@ func NewFromConfig(cfg *Config, additionalOpts ...Option) (*Client, error) {
 	return newDirect(cfg.Addr, opts...)
 }
 
-// newDirect 直接连接指定地址创建客户端（不走服务发现）.
+// newDirect 直接连接指定地址创建客户端不走服务发现.
 func newDirect(addr string, opts ...Option) (*Client, error) {
 	o := defaultOptions()
 	for _, opt := range opts {

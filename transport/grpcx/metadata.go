@@ -30,7 +30,7 @@ func GetMetadataValues(ctx context.Context, key string) []string {
 	return md.Get(key)
 }
 
-// SetOutgoingMetadata 设置出站 metadata（客户端调用前设置）.
+// SetOutgoingMetadata 设置出站 metadata客户端调用前设置.
 // 会替换已有的出站 metadata.
 func SetOutgoingMetadata(ctx context.Context, kv ...string) context.Context {
 	return metadata.NewOutgoingContext(ctx, metadata.Pairs(kv...))
@@ -42,7 +42,7 @@ func AppendOutgoingMetadata(ctx context.Context, kv ...string) context.Context {
 	return metadata.AppendToOutgoingContext(ctx, kv...)
 }
 
-// CopyIncomingToOutgoing 将入站 metadata 复制到出站（用于中间代理/网关）.
+// CopyIncomingToOutgoing 将入站 metadata 复制到出站用于中间代理/网关.
 // 若指定 keys，则只复制指定的 key；若未指定则复制全部.
 func CopyIncomingToOutgoing(ctx context.Context, keys ...string) context.Context {
 	md, ok := metadata.FromIncomingContext(ctx)

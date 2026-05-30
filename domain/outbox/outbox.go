@@ -66,12 +66,12 @@ func (s MessageStatus) String() string {
 
 // OutboxMessage 发件箱消息 GORM 模型.
 type OutboxMessage struct {
-	ID         uint64        `gorm:"primaryKey;autoIncrement"`
-	Topic      string        `gorm:"type:varchar(255);not null"`
-	Key        []byte        `gorm:"type:varbinary(255)"`
-	Value      []byte        `gorm:"type:mediumblob;not null"`
+	ID         uint64 `gorm:"primaryKey;autoIncrement"`
+	Topic      string `gorm:"type:varchar(255);not null"`
+	Key        []byte
+	Value      []byte        `gorm:"not null"`
 	Headers    string        `gorm:"type:text"`
-	Status     MessageStatus `gorm:"type:tinyint;not null;default:0;index:idx_outbox_status"`
+	Status     MessageStatus `gorm:"not null;default:0;index:idx_outbox_status"`
 	RetryCount int           `gorm:"type:int;not null;default:0"`
 	LastError  string        `gorm:"type:text"`
 	CreatedAt  time.Time     `gorm:"autoCreateTime;not null"`
@@ -81,7 +81,7 @@ type OutboxMessage struct {
 
 // TableName 指定表名.
 func (OutboxMessage) TableName() string {
-	return "outbox_messages"
+	return "outbox_message"
 }
 
 // ToMessage 将 OutboxMessage 转换为 pubsub.Message.

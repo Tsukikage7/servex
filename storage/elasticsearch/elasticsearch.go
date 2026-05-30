@@ -146,7 +146,7 @@ type Index interface {
 
 // Document 文档操作接口.
 type Document interface {
-	// Index 索引（创建或覆盖）文档
+	// Index 索引创建或覆盖文档
 	Index(ctx context.Context, id string, body any) (*IndexResult, error)
 	// Get 获取文档
 	Get(ctx context.Context, id string) (*GetResult, error)
@@ -206,11 +206,11 @@ type DeleteResult struct {
 type BulkAction struct {
 	// Type 操作类型: "index", "create", "update", "delete"
 	Type string `json:"type"`
-	// Index 目标索引（可选，默认使用当前索引）
+	// Index 目标索引可选，默认使用当前索引
 	Index string `json:"index,omitempty"`
 	// ID 文档 ID
 	ID string `json:"id"`
-	// Body 文档内容（delete 操作不需要）
+	// Body 文档内容delete 操作不需要
 	Body any `json:"body,omitempty"`
 }
 

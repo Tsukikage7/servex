@@ -1,6 +1,6 @@
 package openapi
 
-// Operation 描述一个 API 端点（用户注册时传入的数据）.
+// Operation 描述一个 API 端点用户注册时传入的数据.
 type Operation struct {
 	Method       string
 	Path         string
@@ -8,7 +8,6 @@ type Operation struct {
 	Description  string
 	Tags         []string
 	OperationID  string
-	IsDeprecated bool
 	RequestType  any
 	ResponseType any
 	ErrorTypes   []any
@@ -49,9 +48,6 @@ func (b *Builder) Tags(tags ...string) *Builder { b.op.Tags = append(b.op.Tags, 
 
 // OperationID 设置操作唯一标识.
 func (b *Builder) OperationID(id string) *Builder { b.op.OperationID = id; return b }
-
-// Deprecated 标记操作是否已弃用.
-func (b *Builder) Deprecated(d bool) *Builder { b.op.IsDeprecated = d; return b }
 
 // Request 设置请求体类型.
 func (b *Builder) Request(v any) *Builder { b.op.RequestType = v; return b }

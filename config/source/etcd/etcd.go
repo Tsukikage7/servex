@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"go.etcd.io/etcd/api/v3/mvccpb"
-	"go.etcd.io/etcd/client/v3"
+	clientv3 "go.etcd.io/etcd/client/v3"
 
 	"github.com/Tsukikage7/servex/v2/config"
 )
@@ -94,7 +94,7 @@ func (w *etcdWatcher) Next() ([]*config.KeyValue, error) {
 				return nil, resp.Err()
 			}
 
-			// 仅处理 PUT（创建/更新）事件
+			// 仅处理 PUT创建/更新事件
 			for _, event := range resp.Events {
 				if event.Type == mvccpb.PUT {
 					return []*config.KeyValue{

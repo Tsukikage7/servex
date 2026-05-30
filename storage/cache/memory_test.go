@@ -385,7 +385,7 @@ func (s *MemoryCacheTestSuite) TestEviction_NoExpiredItems() {
 }
 
 func (s *MemoryCacheTestSuite) TestSet_SerializeError() {
-	// 测试序列化错误（使用无法序列化的类型）
+	// 测试序列化错误使用无法序列化的类型
 	err := s.cache.Set(s.ctx, "key1", make(chan int), time.Minute)
 	s.Error(err)
 	s.Contains(err.Error(), "序列化值失败")
@@ -434,7 +434,7 @@ func (s *MemoryCacheTestSuite) TestMSet_NoExpire() {
 }
 
 func (s *MemoryCacheTestSuite) TestTTL_Expired() {
-	// 测试 TTL 获取已过期的键（ttl < 0 分支）
+	// 测试 TTL 获取已过期的键ttl < 0 分支
 	s.cache.Set(s.ctx, "key1", "value1", 5*time.Millisecond)
 	time.Sleep(10 * time.Millisecond)
 

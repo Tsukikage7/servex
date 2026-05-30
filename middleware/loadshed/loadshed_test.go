@@ -38,7 +38,7 @@ func TestHTTPMiddleware_并发超限(t *testing.T) {
 	var shedded atomic.Int32
 	var wg sync.WaitGroup
 
-	// 启动第一个请求（阻塞中）
+	// 启动第一个请求阻塞中
 	wg.Go(func() {
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		rec := httptest.NewRecorder()
@@ -83,7 +83,7 @@ func TestHTTPMiddleware_队列深度超限(t *testing.T) {
 	var shedded atomic.Int32
 	var wg sync.WaitGroup
 
-	// 启动第一个请求（占用排队位置）
+	// 启动第一个请求占用排队位置
 	wg.Go(func() {
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		rec := httptest.NewRecorder()
@@ -121,7 +121,7 @@ func TestHTTPMiddleware_延迟超限(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	// 第一个请求（慢请求，通过但记录高延迟）
+	// 第一个请求慢请求，通过但记录高延迟
 	req1 := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec1 := httptest.NewRecorder()
 	handler.ServeHTTP(rec1, req1)
@@ -158,7 +158,7 @@ func TestHTTPMiddleware_延迟恢复(t *testing.T) {
 	rec1 := httptest.NewRecorder()
 	handler.ServeHTTP(rec1, req1)
 
-	// 第二个请求被拒绝（延迟记录过高）
+	// 第二个请求被拒绝延迟记录过高
 	req2 := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec2 := httptest.NewRecorder()
 	handler.ServeHTTP(rec2, req2)

@@ -107,7 +107,7 @@ func TestSagaFailureWithCompensation(t *testing.T) {
 		t.Errorf("expected 3 steps executed, got %d", len(executed))
 	}
 
-	// 验证补偿顺序（逆序）
+	// 验证补偿顺序逆序
 	if len(compensated) != 2 {
 		t.Errorf("expected 2 compensations, got %d", len(compensated))
 	}

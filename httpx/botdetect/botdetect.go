@@ -2,8 +2,8 @@
 //
 // 特性：
 //   - 基于 User-Agent 的模式检测
-//   - 已知机器人数据库（搜索引擎、社交媒体等）
-//   - 机器人分类（好机器人、坏机器人、未知）
+//   - 已知机器人数据库搜索引擎、社交媒体等
+//   - 机器人分类好机器人、坏机器人、未知
 //   - 置信度评分
 //   - HTTP/gRPC 中间件支持
 //
@@ -51,9 +51,9 @@ const (
 type Intent string
 
 const (
-	IntentGood    Intent = "good"    // 良性机器人（如搜索引擎）
+	IntentGood    Intent = "good"    // 良性机器人如搜索引擎
 	IntentBad     Intent = "bad"     // 恶意机器人
-	IntentNeutral Intent = "neutral" // 中性（未知意图）
+	IntentNeutral Intent = "neutral" // 中性未知意图
 )
 
 // Result 检测结果.
@@ -67,7 +67,7 @@ type Result struct {
 	// Intent 机器人意图
 	Intent Intent
 
-	// Name 机器人名称（如 "Googlebot"）
+	// Name 机器人名称如 "Googlebot"
 	Name string
 
 	// Company 所属公司/组织

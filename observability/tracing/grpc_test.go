@@ -357,7 +357,7 @@ func TestExtractGRPCMetadata_NoMetadata(t *testing.T) {
 
 	ctx := t.Context()
 
-	// 提取 metadata（无 metadata）
+	// 提取 metadata无 metadata
 	newCtx := ExtractGRPCMetadata(ctx)
 
 	// 应该返回原 context

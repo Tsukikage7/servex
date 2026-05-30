@@ -176,7 +176,7 @@ func NewPrometheus(cfg *Config) (*PrometheusCollector, error) {
 		}
 	}
 
-	// 注册 service_info 指标（Prometheus 标准做法，value=1 + 标签携带元信息）
+	// 注册 service_info 指标Prometheus 标准做法，value=1 + 标签携带元信息
 	if cfg.ServiceName != "" || cfg.Version != "" {
 		serviceInfo := prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -229,7 +229,7 @@ func (c *PrometheusCollector) UpdateMemoryUsage(bytes int64) {
 //
 //	collector.Counter("payment_failed_total", map[string]string{"channel": "alipay", "reason": "timeout"})
 func (c *PrometheusCollector) Counter(name string, labels map[string]string) {
-	// 提取 label 名称和值（保持顺序一致）
+	// 提取 label 名称和值保持顺序一致
 	labelNames, labelValues := extractLabels(labels)
 
 	c.mu.RLock()
@@ -268,7 +268,7 @@ func (c *PrometheusCollector) Counter(name string, labels map[string]string) {
 //
 //	collector.Histogram("payment_duration_seconds", 0.5, map[string]string{"channel": "alipay"})
 func (c *PrometheusCollector) Histogram(name string, value float64, labels map[string]string) {
-	// 提取 label 名称和值（保持顺序一致）
+	// 提取 label 名称和值保持顺序一致
 	labelNames, labelValues := extractLabels(labels)
 
 	c.mu.RLock()
@@ -308,7 +308,7 @@ func (c *PrometheusCollector) Histogram(name string, value float64, labels map[s
 //
 //	collector.Gauge("pending_orders", 42, map[string]string{"status": "unpaid"})
 func (c *PrometheusCollector) Gauge(name string, value float64, labels map[string]string) {
-	// 提取 label 名称和值（保持顺序一致）
+	// 提取 label 名称和值保持顺序一致
 	labelNames, labelValues := extractLabels(labels)
 
 	c.mu.RLock()

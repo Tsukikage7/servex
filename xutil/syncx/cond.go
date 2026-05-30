@@ -27,7 +27,7 @@ func (c *Cond) subscribe() chan struct{} {
 	return ch
 }
 
-// unsubscribe 从等待列表中移除指定 channel（ctx 取消时调用）.
+// unsubscribe 从等待列表中移除指定 channelctx 取消时调用.
 func (c *Cond) unsubscribe(ch chan struct{}) {
 	c.mu.Lock()
 	defer c.mu.Unlock()

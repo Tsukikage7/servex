@@ -3,9 +3,9 @@
 // 业务级计数能力.
 // 基本用法:
 //
-//	// 内存实现（适合测试或单进程场景）
+//	// 内存实现适合测试或单进程场景
 //	c := counter.NewMemoryCounter(counter.WithPrefix("app:"))
-//	// Redis 实现（分布式场景）
+//	// Redis 实现分布式场景
 //	c := counter.NewRedisCounter(redisClient, counter.WithPrefix("app:"))
 //	// 简单计数
 //	val, _ := c.Incr(ctx, "login_count", 1)
@@ -34,7 +34,7 @@ type Counter interface {
 	// Reset 重置计数.
 	Reset(ctx context.Context, key string) error
 
-	// IncrWindow 滑动窗口计数（最近 N 时间内的计数）.
+	// IncrWindow 滑动窗口计数最近 N 时间内的计数.
 	IncrWindow(ctx context.Context, key string, window time.Duration) (int64, error)
 	// GetWindow 获取滑动窗口内的计数.
 	GetWindow(ctx context.Context, key string, window time.Duration) (int64, error)
@@ -68,7 +68,7 @@ func applyOptions(opts []Option) *options {
 
 // ---- 内存实现 ----
 
-// memoryCounter 基于内存的计数器实现（单进程，用于测试）.
+// memoryCounter 基于内存的计数器实现单进程，用于测试.
 type memoryCounter struct {
 	mu      sync.RWMutex
 	counts  map[string]int64
@@ -150,7 +150,7 @@ func (c *memoryCounter) MGet(_ context.Context, keys ...string) (map[string]int6
 	return result, nil
 }
 
-// filterAfter 返回在 cutoff 之后（含）的时间戳.
+// filterAfter 返回在 cutoff 之后含的时间戳.
 // 当有效元素不足底层数组容量一半时，重新分配切片以释放内存.
 func filterAfter(times []time.Time, cutoff time.Time) []time.Time {
 	n := 0

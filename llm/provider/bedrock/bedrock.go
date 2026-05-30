@@ -1,4 +1,4 @@
-// Package bedrock 提供 AWS Bedrock（Converse API）适配器.
+// Package bedrock 提供 AWS BedrockConverse API适配器.
 // 支持所有 Bedrock 上的模型：Claude、Titan、Llama、Mistral 等.
 package bedrock
 
@@ -148,7 +148,7 @@ type bedrockStreamReader struct {
 	ctx          context.Context
 	stream       *bedrockruntime.ConverseStreamEventStream
 	content      string
-	toolCalls    map[int]*llm.ToolCall // index → ToolCall（流式累积）
+	toolCalls    map[int]*llm.ToolCall // index → ToolCall流式累积
 	usage        llm.Usage
 	finishReason string
 	modelID      string

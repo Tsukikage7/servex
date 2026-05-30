@@ -70,7 +70,7 @@ func New(opts ...Option) (*Client, error) {
 		balancer = &RoundRobinBalancer{}
 	}
 
-	// 构建 RoundTripper 链（中间件）
+	// 构建 RoundTripper 链中间件
 	var rt http.RoundTripper = o.transport
 	if rt == nil {
 		rt = http.DefaultTransport
@@ -83,7 +83,7 @@ func New(opts ...Option) (*Client, error) {
 		rt = o.middlewares[i](rt)
 	}
 
-	// 内置中间件（最先注册 = 最外层）
+	// 内置中间件最先注册 = 最外层
 	if o.logger != nil {
 		rt = LoggingMiddleware(o.logger)(rt)
 	}
@@ -127,7 +127,7 @@ func (c *Client) HTTPClient() *http.Client {
 	return c.httpClient
 }
 
-// BaseURL 返回当前缓存中首个地址的 base URL（仅供参考/日志用途）.
+// BaseURL 返回当前缓存中首个地址的 base URL仅供参考/日志用途.
 func (c *Client) BaseURL() string {
 	c.mu.RLock()
 	addrs := c.cachedAddrs
@@ -241,14 +241,14 @@ func defaultOptions() *options {
 	}
 }
 
-// WithName 设置客户端名称（用于日志）.
+// WithName 设置客户端名称用于日志.
 func WithName(name string) Option {
 	return func(o *options) {
 		o.name = name
 	}
 }
 
-// WithServiceName 设置目标服务名称（必需）.
+// WithServiceName 设置目标服务名称必需.
 func WithServiceName(name string) Option {
 	return func(o *options) {
 		o.serviceName = name
@@ -262,7 +262,7 @@ func WithScheme(scheme string) Option {
 	}
 }
 
-// WithDiscovery 设置服务发现实例（必需）.
+// WithDiscovery 设置服务发现实例必需.
 func WithDiscovery(d discovery.Discovery) Option {
 	return func(o *options) {
 		o.discovery = d
@@ -299,7 +299,7 @@ func WithHeaders(headers map[string]string) Option {
 	}
 }
 
-// WithTransport 设置自定义底层 Transport（中间件链的最内层）.
+// WithTransport 设置自定义底层 Transport中间件链的最内层.
 func WithTransport(transport http.RoundTripper) Option {
 	return func(o *options) {
 		o.transport = transport
@@ -313,14 +313,14 @@ func WithBalancer(b Balancer) Option {
 	}
 }
 
-// WithMiddlewares 添加 HTTP 中间件（按添加顺序从外到内执行）.
+// WithMiddlewares 添加 HTTP 中间件按添加顺序从外到内执行.
 func WithMiddlewares(mws ...Middleware) Option {
 	return func(o *options) {
 		o.middlewares = append(o.middlewares, mws...)
 	}
 }
 
-// WithBaseURL 设置静态 base URL（用于 NewSimple 模式）.
+// WithBaseURL 设置静态 base URL用于 NewSimple 模式.
 func WithBaseURL(url string) Option {
 	return func(o *options) { o.baseURL = url }
 }
@@ -442,12 +442,12 @@ func NewSimple(opts ...Option) *Client {
 	// Apply TLS configuration
 	rt = applyTLSConfig(rt, o.tlsConfig)
 
-	// 先应用用户自定义中间件（内层），再应用内置中间件（外层），与 New 保持一致
+	// 先应用用户自定义中间件内层，再应用内置中间件外层，与 New 保持一致
 	for i := len(o.middlewares) - 1; i >= 0; i-- {
 		rt = o.middlewares[i](rt)
 	}
 
-	// Build middleware chain: 内置中间件（最先注册 = 最外层）
+	// Build middleware chain: 内置中间件最先注册 = 最外层
 	if o.logger != nil {
 		rt = LoggingMiddleware(o.logger)(rt)
 	}

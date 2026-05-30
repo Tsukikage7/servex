@@ -60,7 +60,7 @@ func newTestClient(t *testing.T) elasticsearch.Client {
 	return client
 }
 
-// ---- 单元测试（不需要服务）----
+// ---- 单元测试不需要服务----
 
 func TestNewClient_NilConfig(t *testing.T) {
 	_, err := elasticsearch.NewClient(nil, testx.NopLogger())

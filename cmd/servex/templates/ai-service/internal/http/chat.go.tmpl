@@ -1,0 +1,44 @@
+package http
+
+import (
+	"encoding/json"
+	"net/http"
+
+	"github.com/Tsukikage7/servex/v2/transport/response"
+	supportagent "{{ .Module }}/internal/agent"
+)
+
+type ChatHandler struct {
+	agent *supportagent.Agent
+}
+
+func NewChatHandler(agent *supportagent.Agent) http.Handler {
+	return &ChatHandler{agent: agent}
+}
+
+type chatRequest struct {
+	Message string `json:"message"`
+}
+
+type chatResponse struct {
+	Reply string `json:"reply"`
+}
+
+func (h *ChatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var req chatRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		_ = response.WriteLocalizedError(w, r, response.CodeInvalidParam.ToError())
+		return
+	}
+	if req.Message == "" {
+		_ = response.WriteLocalizedError(w, r, response.CodeMissingParam.ToError())
+		return
+	}
+
+	reply, err := h.agent.Reply(r.Context(), req.Message)
+	if err != nil {
+		_ = response.WriteLocalizedError(w, r, response.CodeUpstreamError.ToError())
+		return
+	}
+	_ = response.WriteSuccess(w, chatResponse{Reply: reply})
+}

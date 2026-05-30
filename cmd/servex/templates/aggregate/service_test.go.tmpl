@@ -39,7 +39,7 @@ func TestService_HandleGet(t *testing.T) {
 	_, err := svc.HandleCreate(context.Background(), domain{{.Name}}.Create{{.Name}}Command{})
 	require.NoError(t, err)
 
-	// 查询（ID 0 为 New{{.Name}}(0,...) 传入的默认值）
+	// 查询ID 0 为 New{{.Name}}(0,...) 传入的默认值
 	view, err := svc.HandleGet(context.Background(), domain{{.Name}}.Get{{.Name}}Query{ID: 0})
 	require.NoError(t, err)
 	require.NotNil(t, view)

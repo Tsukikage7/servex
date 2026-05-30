@@ -10,7 +10,7 @@ import (
 
 // Handle 创建类型安全的 HTTP Handler，自动处理内容协商编解码与统一响应格式.
 //
-// 适用于请求参数从请求体读取的场景（POST/PUT/PATCH）。
+// 适用于请求参数从请求体读取的场景POST/PUT/PATCH。
 // 成功响应自动包装为 {"code":0,"message":"成功","data":{...}}；
 // 若 Resp 已是 response.Response[T] 或 response.PagedResponse[T]，则不再二次包装。
 // 错误自动转换为 {"code":xxxxx,"message":"..."} 并映射正确 HTTP 状态码。
@@ -48,7 +48,7 @@ func Handle[Req any, Resp any](
 
 // HandleWith 创建带自定义解码器的类型安全 HTTP Handler.
 //
-// 适用于需要从路径参数、查询字符串等位置提取请求数据的场景（GET/DELETE）。
+// 适用于需要从路径参数、查询字符串等位置提取请求数据的场景GET/DELETE。
 // 响应包装规则与 Handle 相同。
 //
 // 示例：
@@ -91,7 +91,7 @@ func HandleWith[Req any, Resp any](
 
 // wrapEnvelope 将响应包装在统一响应体中.
 //
-// 若 v 已实现 response.Envelope（即已是 Response[T] 或 PagedResponse[T]），
+// 若 v 已实现 response.Envelope即已是 Response[T] 或 PagedResponse[T]，
 // 直接返回，不做二次包装.
 func wrapEnvelope(v any) any {
 	if _, ok := v.(response.Envelope); ok {

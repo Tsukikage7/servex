@@ -98,7 +98,7 @@ func (d *Deque[T]) PopBack() (T, bool) {
 	return item, true
 }
 
-// PeekFront 查看头部元素（不移除）.
+// PeekFront 查看头部元素不移除.
 func (d *Deque[T]) PeekFront() (T, bool) {
 	if d.count == 0 {
 		var zero T
@@ -107,7 +107,7 @@ func (d *Deque[T]) PeekFront() (T, bool) {
 	return d.buf[d.head], true
 }
 
-// PeekBack 查看尾部元素（不移除）.
+// PeekBack 查看尾部元素不移除.
 func (d *Deque[T]) PeekBack() (T, bool) {
 	if d.count == 0 {
 		var zero T
@@ -116,7 +116,7 @@ func (d *Deque[T]) PeekBack() (T, bool) {
 	return d.buf[d.prev(d.tail)], true
 }
 
-// At 获取指定位置的元素（0 为头部）.
+// At 获取指定位置的元素0 为头部.
 func (d *Deque[T]) At(index int) (T, bool) {
 	if index < 0 || index >= d.count {
 		var zero T
@@ -176,14 +176,14 @@ func (d *Deque[T]) Clone() *Deque[T] {
 	}
 }
 
-// ForEach 遍历队列（从头到尾）.
+// ForEach 遍历队列从头到尾.
 func (d *Deque[T]) ForEach(fn func(T)) {
 	for i := range d.count {
 		fn(d.buf[(d.head+i)&(len(d.buf)-1)])
 	}
 }
 
-// ForEachReverse 反向遍历队列（从尾到头）.
+// ForEachReverse 反向遍历队列从尾到头.
 func (d *Deque[T]) ForEachReverse(fn func(T)) {
 	for i := d.count - 1; i >= 0; i-- {
 		fn(d.buf[(d.head+i)&(len(d.buf)-1)])
@@ -191,8 +191,8 @@ func (d *Deque[T]) ForEachReverse(fn func(T)) {
 }
 
 // Rotate 旋转队列.
-// n > 0: 向右旋转（头部元素移到尾部）
-// n < 0: 向左旋转（尾部元素移到头部）
+// n > 0: 向右旋转头部元素移到尾部
+// n < 0: 向左旋转尾部元素移到头部
 // 使用三次反转算法实现 O(n) 旋转，避免逐个 Pop/Push 触发多次 resize.
 func (d *Deque[T]) Rotate(n int) {
 	if d.count <= 1 {

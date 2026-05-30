@@ -38,7 +38,6 @@ type OperationSpec struct {
 	Description string               `json:"description,omitempty" yaml:"description,omitempty"`
 	OperationID string               `json:"operationId,omitempty" yaml:"operationId,omitempty"`
 	Tags        []string             `json:"tags,omitzero" yaml:"tags,omitempty"`
-	Deprecated  bool                 `json:"deprecated,omitempty" yaml:"deprecated,omitempty"`
 	Parameters  []Parameter          `json:"parameters,omitzero" yaml:"parameters,omitempty"`
 	RequestBody *RequestBody         `json:"requestBody,omitempty" yaml:"requestBody,omitempty"`
 	Responses   map[string]*Response `json:"responses" yaml:"responses"`

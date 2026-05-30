@@ -1,7 +1,7 @@
 // Package factory 提供根据配置创建 pubsub.Publisher 和 pubsub.Subscriber 的工厂方法.
 //
 // 该包解决了 pubsub 核心包与各 driver 子包之间的循环依赖问题：
-// pubsub/kafka、pubsub/rabbitmq、pubsub/redis 均依赖 pubsub（获取 Message/Publisher/Subscriber），
+// pubsub/kafka、pubsub/rabbitmq、pubsub/redis 均依赖 pubsub获取 Message/Publisher/Subscriber，
 // 因此工厂逻辑必须放在独立包中，而非 pubsub 本身.
 package factory
 
@@ -45,7 +45,7 @@ type Config struct {
 	Password string `json:"-" yaml:"password"`
 	DB       int    `json:"db"       yaml:"db"`
 
-	// EnableTracing 启用链路追踪（Publish 时自动注入 trace context 到消息 Headers）.
+	// EnableTracing 启用链路追踪Publish 时自动注入 trace context 到消息 Headers.
 	EnableTracing bool `json:"enable_tracing" yaml:"enable_tracing" mapstructure:"enable_tracing"`
 }
 

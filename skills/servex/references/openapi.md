@@ -29,13 +29,6 @@ reg.Add(openapi.GET("/orders/{id}").
     Build(),
 )
 
-reg.Add(openapi.DELETE("/orders/{id}").
-    Summary("删除订单").
-    Tags("orders").
-    Deprecated(true).
-    Build(),
-)
-
 // 3. 挂载文档端点
 mux.Handle("/openapi.json", reg.ServeJSON())
 mux.Handle("/openapi.yaml", reg.ServeYAML())
@@ -88,7 +81,6 @@ type CreateOrderRequest struct {
 | `.Description(s)` | 详细描述 |
 | `.Tags(tags...)` | 分组标签 |
 | `.OperationID(id)` | 操作 ID |
-| `.Deprecated(bool)` | 标记废弃 |
 | `.Request(v)` | 请求体类型（自动生成 Schema） |
 | `.Response(v)` | 响应体类型 |
 | `.Errors(types...)` | 错误响应类型 |

@@ -10,7 +10,7 @@
 - Pub/Sub 发布订阅
 - 配置校验与自动填充默认值
 - 可选 OpenTelemetry 链路追踪（`EnableTracing`）
-- `Underlying()` 暴露底层 `*goredis.Client`，兼容第三方库
+- `Underlying()` 暴露底层 `*goredis.Client`，用于接入第三方库
 
 ## 快速开始
 

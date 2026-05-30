@@ -19,7 +19,7 @@ import (
 const (
 	// etcdServiceKeyPrefix 服务注册 key 前缀.
 	etcdServiceKeyPrefix = "/services/"
-	// defaultEtcdLeaseTTL 默认租约 TTL（秒）.
+	// defaultEtcdLeaseTTL 默认租约 TTL秒.
 	defaultEtcdLeaseTTL = 10
 	// defaultEtcdDialTimeout 默认连接超时.
 	defaultEtcdDialTimeout = 5 * time.Second
@@ -154,7 +154,7 @@ func (e *etcdDiscovery) RegisterWithHealthEndpoint(ctx context.Context, serviceN
 		return "", discovery.ErrRegister
 	}
 
-	// 持续续约（使用独立可取消 context，Unregister/Close 时取消以防 goroutine 泄漏）
+	// 持续续约使用独立可取消 context，Unregister/Close 时取消以防 goroutine 泄漏
 	keepAliveCtx, keepAliveCancel := context.WithCancel(context.Background())
 	keepAliveCh, err := e.client.KeepAlive(keepAliveCtx, lease.ID)
 	if err != nil {
@@ -170,7 +170,7 @@ func (e *etcdDiscovery) RegisterWithHealthEndpoint(ctx context.Context, serviceN
 	}()
 
 	e.mu.Lock()
-	// 如果同一个 serviceID 已存在（重复注册），先取消旧的 keepalive goroutine
+	// 如果同一个 serviceID 已存在重复注册，先取消旧的 keepalive goroutine
 	if oldCancel, ok := e.cancels[serviceID]; ok {
 		oldCancel()
 	}
@@ -188,7 +188,7 @@ func (e *etcdDiscovery) RegisterWithHealthEndpoint(ctx context.Context, serviceN
 	return serviceID, nil
 }
 
-// Unregister 注销服务实例（撤销 lease，自动删除对应 key）.
+// Unregister 注销服务实例撤销 lease，自动删除对应 key.
 func (e *etcdDiscovery) Unregister(ctx context.Context, serviceID string) error {
 	if serviceID == "" {
 		return discovery.ErrEmptyServiceID

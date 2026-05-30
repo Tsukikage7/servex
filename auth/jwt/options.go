@@ -28,12 +28,12 @@ type options struct {
 	store           TokenStore
 	logger          logger.Logger
 	whitelist       *Whitelist
-	revokeFailClose bool // 撤销检查缓存故障时是否 fail-close（拒绝请求）
+	revokeFailClose bool // 撤销检查缓存故障时是否 fail-close拒绝请求
 
 	// 非对称签名相关字段
-	signingMethod jwt.SigningMethod // 签名算法（nil 表示使用默认的 HS256）
-	privateKey    crypto.PrivateKey // 签名私钥（用于生成令牌）
-	publicKey     crypto.PublicKey  // 验证公钥（用于验证令牌）
+	signingMethod jwt.SigningMethod // 签名算法nil 表示使用默认的 HS256
+	privateKey    crypto.PrivateKey // 签名私钥用于生成令牌
+	publicKey     crypto.PublicKey  // 验证公钥用于验证令牌
 }
 
 // defaultOptions 返回默认配置.
@@ -114,7 +114,7 @@ func WithCacheKeyPrefix(prefix string) Option {
 	}
 }
 
-// WithTokenStore 设置令牌存储（用于令牌存储和撤销）.
+// WithTokenStore 设置令牌存储用于令牌存储和撤销.
 //
 // 可以使用 CacheTokenStore 适配 cache.Cache:
 //
@@ -141,17 +141,17 @@ func WithWhitelist(w *Whitelist) Option {
 
 // WithRevokeFailClose 设置撤销检查的 fail-close 策略.
 //
-// 默认情况下，当缓存不可用时（如 Redis 宕机），撤销检查采用 fail-open 策略（跳过检查，允许请求通过）。
-// 启用此选项后，缓存不可用时将拒绝请求（fail-close），适用于对安全性要求更高的场景。
+// 默认情况下，当缓存不可用时如 Redis 宕机，撤销检查采用 fail-open 策略跳过检查，允许请求通过。
+// 启用此选项后，缓存不可用时将拒绝请求fail-close，适用于对安全性要求更高的场景。
 func WithRevokeFailClose() Option {
 	return func(o *options) {
 		o.revokeFailClose = true
 	}
 }
 
-// WithRSAKeys 使用 RSA 密钥对进行签名和验证（RS256）.
+// WithRSAKeys 使用 RSA 密钥对进行签名和验证RS256.
 //
-// privateKey 用于签名（可为 nil，仅验证时），publicKey 用于验证.
+// privateKey 用于签名可为 nil，仅验证时，publicKey 用于验证.
 func WithRSAKeys(privateKey *rsa.PrivateKey, publicKey *rsa.PublicKey) Option {
 	return func(o *options) {
 		o.signingMethod = jwt.SigningMethodRS256
@@ -164,9 +164,9 @@ func WithRSAKeys(privateKey *rsa.PrivateKey, publicKey *rsa.PublicKey) Option {
 	}
 }
 
-// WithECDSAKeys 使用 ECDSA 密钥对进行签名和验证（ES256）.
+// WithECDSAKeys 使用 ECDSA 密钥对进行签名和验证ES256.
 //
-// privateKey 用于签名（可为 nil，仅验证时），publicKey 用于验证.
+// privateKey 用于签名可为 nil，仅验证时，publicKey 用于验证.
 func WithECDSAKeys(privateKey *ecdsa.PrivateKey, publicKey *ecdsa.PublicKey) Option {
 	return func(o *options) {
 		o.signingMethod = jwt.SigningMethodES256
@@ -179,9 +179,9 @@ func WithECDSAKeys(privateKey *ecdsa.PrivateKey, publicKey *ecdsa.PublicKey) Opt
 	}
 }
 
-// WithEdDSAKeys 使用 Ed25519 密钥对进行签名和验证（EdDSA）.
+// WithEdDSAKeys 使用 Ed25519 密钥对进行签名和验证EdDSA.
 //
-// privateKey 用于签名（可为 nil，仅验证时），publicKey 用于验证.
+// privateKey 用于签名可为 nil，仅验证时，publicKey 用于验证.
 func WithEdDSAKeys(privateKey ed25519.PrivateKey, publicKey ed25519.PublicKey) Option {
 	return func(o *options) {
 		o.signingMethod = jwt.SigningMethodEdDSA
@@ -194,9 +194,9 @@ func WithEdDSAKeys(privateKey ed25519.PrivateKey, publicKey ed25519.PublicKey) O
 	}
 }
 
-// WithRSAKeyFiles 从 PEM 文件加载 RSA 密钥对（RS256）.
+// WithRSAKeyFiles 从 PEM 文件加载 RSA 密钥对RS256.
 //
-// 如果 privateKeyPath 为空，则只加载公钥（仅验证模式）.
+// 如果 privateKeyPath 为空，则只加载公钥仅验证模式.
 func WithRSAKeyFiles(privateKeyPath, publicKeyPath string) Option {
 	return func(o *options) {
 		o.signingMethod = jwt.SigningMethodRS256
@@ -215,9 +215,9 @@ func WithRSAKeyFiles(privateKeyPath, publicKeyPath string) Option {
 	}
 }
 
-// WithECDSAKeyFiles 从 PEM 文件加载 ECDSA 密钥对（ES256）.
+// WithECDSAKeyFiles 从 PEM 文件加载 ECDSA 密钥对ES256.
 //
-// 如果 privateKeyPath 为空，则只加载公钥（仅验证模式）.
+// 如果 privateKeyPath 为空，则只加载公钥仅验证模式.
 func WithECDSAKeyFiles(privateKeyPath, publicKeyPath string) Option {
 	return func(o *options) {
 		o.signingMethod = jwt.SigningMethodES256
@@ -236,9 +236,9 @@ func WithECDSAKeyFiles(privateKeyPath, publicKeyPath string) Option {
 	}
 }
 
-// WithEdDSAKeyFiles 从 PEM 文件加载 Ed25519 密钥对（EdDSA）.
+// WithEdDSAKeyFiles 从 PEM 文件加载 Ed25519 密钥对EdDSA.
 //
-// 如果 privateKeyPath 为空，则只加载公钥（仅验证模式）.
+// 如果 privateKeyPath 为空，则只加载公钥仅验证模式.
 func WithEdDSAKeyFiles(privateKeyPath, publicKeyPath string) Option {
 	return func(o *options) {
 		o.signingMethod = jwt.SigningMethodEdDSA

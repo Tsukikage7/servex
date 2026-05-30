@@ -23,7 +23,7 @@ type Source struct {
 // Option 环境变量配置源选项.
 type Option func(*Source)
 
-// WithPrefix 仅读取指定前缀的环境变量（前缀将被去除）.
+// WithPrefix 仅读取指定前缀的环境变量前缀将被去除.
 func WithPrefix(prefix string) Option {
 	return func(s *Source) {
 		s.prefix = prefix
@@ -63,7 +63,7 @@ func (s *Source) Load() ([]*config.KeyValue, error) {
 
 // Watch 监听配置变更.
 // 若设置了 EnvFile，使用 fsnotify 监听文件变化.
-// 否则返回不支持 Watch 的 watcher（Next 直接返回 ErrSourceClosed）.
+// 否则返回不支持 Watch 的 watcherNext 直接返回 ErrSourceClosed.
 func (s *Source) Watch() (config.Watcher, error) {
 	if s.envFile == "" {
 		return &noopWatcher{}, nil

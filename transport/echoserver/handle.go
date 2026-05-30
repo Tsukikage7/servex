@@ -16,7 +16,7 @@ import (
 
 // Handle 创建类型安全的 Echo HandlerFunc，自动处理 JSON 解码、校验与统一响应格式.
 //
-// 适用于请求体为 JSON 的场景（POST/PUT/PATCH）。
+// 适用于请求体为 JSON 的场景POST/PUT/PATCH。
 // 成功响应自动包装为 {"code":0,"message":"成功","data":{...}}；
 // 若返回值已是 response.Response[T] 或 response.PagedResponse[T]，则不再二次包装。
 // 错误自动转换为 {"code":xxxxx,"message":"..."} 并映射正确 HTTP 状态码.
@@ -52,7 +52,7 @@ func Handle[Req any, Resp any](fn func(ctx context.Context, req Req) (Resp, erro
 
 // HandleWith 创建带自定义解码器的类型安全 Echo HandlerFunc.
 //
-// 适用于需要从路径参数、查询字符串等位置提取请求数据的场景（GET/DELETE）.
+// 适用于需要从路径参数、查询字符串等位置提取请求数据的场景GET/DELETE.
 // 响应包装规则与 Handle 相同.
 //
 // 示例：

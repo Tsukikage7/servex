@@ -1,6 +1,6 @@
 // Package tlsx 提供 TLS 配置工具.
 //
-// 简化服务端/客户端 TLS 配置的创建，支持 mTLS（双向 TLS）.
+// 简化服务端/客户端 TLS 配置的创建，支持 mTLS双向 TLS.
 // 包名使用 tlsx 以避免与标准库 crypto/tls 冲突.
 package tlsx
 
@@ -37,7 +37,7 @@ type Config struct {
 	MinVersion string `json:"min_version" yaml:"min_version" mapstructure:"min_version"`
 	// ClientAuth 客户端认证模式，默认 NoClientCert
 	ClientAuth string `json:"client_auth" yaml:"client_auth" mapstructure:"client_auth"`
-	// InsecureSkipVerify 跳过证书验证（仅测试用），默认 false
+	// InsecureSkipVerify 跳过证书验证仅测试用，默认 false
 	InsecureSkipVerify bool `json:"insecure_skip_verify" yaml:"insecure_skip_verify" mapstructure:"insecure_skip_verify"`
 }
 
@@ -65,7 +65,7 @@ func NewTLSConfig(cfg *Config) (*tls.Config, error) {
 		MinVersion:   parseMinVersion(cfg.MinVersion),
 	}
 
-	// 加载 CA 证书（用于验证对端证书）
+	// 加载 CA 证书用于验证对端证书
 	if cfg.CAFile != "" {
 		caCert, err := os.ReadFile(cfg.CAFile)
 		if err != nil {
@@ -96,10 +96,10 @@ func NewServerTLSConfig(cfg *Config) (*tls.Config, error) {
 	return NewTLSConfig(cfg)
 }
 
-// NewClientTLSConfig 创建客户端 TLS 配置（用于 mTLS 客户端）.
+// NewClientTLSConfig 创建客户端 TLS 配置用于 mTLS 客户端.
 //
-// 如果未提供 cert/key，仅配置 CA 和最低版本（普通 TLS 客户端）.
-// 如果提供了 cert/key，同时加载客户端证书（mTLS 客户端）.
+// 如果未提供 cert/key，仅配置 CA 和最低版本普通 TLS 客户端.
+// 如果提供了 cert/key，同时加载客户端证书mTLS 客户端.
 func NewClientTLSConfig(cfg *Config) (*tls.Config, error) {
 	if cfg == nil {
 		return nil, ErrNilConfig
@@ -114,7 +114,7 @@ func NewClientTLSConfig(cfg *Config) (*tls.Config, error) {
 		slog.Warn("客户端不安全跳过证书验证已启用，仅应在测试环境中使用", "component", "TLS")
 	}
 
-	// 加载客户端证书（mTLS）
+	// 加载客户端证书mTLS
 	if cfg.CertFile != "" && cfg.KeyFile != "" {
 		cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
 		if err != nil {

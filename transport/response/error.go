@@ -65,7 +65,7 @@ func lookupBuiltinCode(num int, key string) (Code, bool) {
 	return Code{}, false
 }
 
-// ExtractMetadata 从错误中提取元数据（仅 servex/errors.Error 携带 metadata）.
+// ExtractMetadata 从错误中提取元数据仅 servex/errors.Error 携带 metadata.
 //
 // 返回 nil 表示错误无元数据或不是 servex/errors.Error.
 func ExtractMetadata(err error) map[string]string {
@@ -80,7 +80,7 @@ func ExtractMetadata(err error) map[string]string {
 
 // ExtractMessage 从错误中提取错误消息.
 //
-// 对于内部错误（5xxxx、6xxxx），返回通用消息，避免暴露敏感信息.
+// 对于内部错误5xxxx、6xxxx，返回通用消息，避免暴露敏感信息.
 func ExtractMessage(err error) string {
 	if err == nil {
 		return CodeSuccess.Message
@@ -91,7 +91,7 @@ func ExtractMessage(err error) string {
 		return code.Message
 	}
 
-	// 再检查 servex/errors.Error（可能携带 cause 等敏感信息）
+	// 再检查 servex/errors.Error可能携带 cause 等敏感信息
 	if srvErr, ok := errors.FromError(err); ok {
 		if isInternalCode(srvErr.Code) {
 			return CodeInternal.Message
@@ -102,13 +102,13 @@ func ExtractMessage(err error) string {
 	return CodeInternal.Message
 }
 
-// isInternalCode 判断是否为内部/外部服务错误（应掩码 Message）.
+// isInternalCode 判断是否为内部/外部服务错误应掩码 Message.
 // 规范：5xxxx=服务器内部，6xxxx=外部服务；业务码 >= 70000 不掩码.
 func isInternalCode(code int) bool {
 	return code >= 50000 && code < 70000
 }
 
-// ExtractMessageUnsafe 从错误中提取完整错误消息（包含敏感信息）.
+// ExtractMessageUnsafe 从错误中提取完整错误消息包含敏感信息.
 //
 // 仅用于日志记录，不应返回给客户端.
 func ExtractMessageUnsafe(err error) string {

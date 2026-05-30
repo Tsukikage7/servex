@@ -65,7 +65,7 @@ service_info{service_name="my-service",version="v2.0.5"} 1
 cfg := &metrics.Config{
     Path:        "/metrics",
     Namespace:   "app",
-    ServiceName: "order-service",
+    ServiceName: "order",
     Version:     "v2.0.5",
 }
 m := metrics.MustNewMetrics(cfg)

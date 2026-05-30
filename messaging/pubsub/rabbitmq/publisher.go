@@ -58,7 +58,7 @@ func NewPublisher(url string, opts ...PublisherOption) (*Publisher, error) {
 	return p, nil
 }
 
-// reconnectLoop 监听连接关闭通知，自动重连（指数退避）.
+// reconnectLoop 监听连接关闭通知，自动重连指数退避.
 func (p *Publisher) reconnectLoop() {
 	for !p.closed.Load() {
 		p.mu.Lock()
@@ -179,7 +179,7 @@ func (p *Publisher) setupChannel() error {
 	return nil
 }
 
-// Publish 发布一条或多条消息到指定 routing key（topic）.
+// Publish 发布一条或多条消息到指定 routing keytopic.
 func (p *Publisher) Publish(ctx context.Context, topic string, msgs ...*pubsub.Message) error {
 	if p.closed.Load() {
 		return pubsub.ErrClosed

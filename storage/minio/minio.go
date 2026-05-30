@@ -4,7 +4,7 @@
 //   - 基于 MinIO 原生 Go SDK 实现
 //   - 支持对象上传、下载、删除、列表、复制
 //   - 支持预签名 URL
-//   - 支持文件级别上传下载（FPutObject / FGetObject）
+//   - 支持文件级别上传下载FPutObject / FGetObject
 //
 // 示例:
 //
@@ -53,7 +53,7 @@ var (
 
 // Config MinIO 配置.
 type Config struct {
-	// Endpoint MinIO 端点地址（不含协议前缀，如 "localhost:9000"）.
+	// Endpoint MinIO 端点地址不含协议前缀，如 "localhost:9000".
 	Endpoint string `json:"endpoint" yaml:"endpoint" mapstructure:"endpoint"`
 	// AccessKey 访问密钥 ID.
 	AccessKey string `json:"-" yaml:"access_key" mapstructure:"access_key"`

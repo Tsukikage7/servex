@@ -103,7 +103,6 @@ func (r *Registry) buildOperationSpec(op *Operation) *OperationSpec {
 		Description: op.Description,
 		OperationID: op.OperationID,
 		Tags:        op.Tags,
-		Deprecated:  op.IsDeprecated,
 		Responses:   make(map[string]*Response),
 	}
 

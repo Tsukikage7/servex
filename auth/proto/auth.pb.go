@@ -12,12 +12,13 @@
 package authpb
 
 import (
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	descriptorpb "google.golang.org/protobuf/types/descriptorpb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
+
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	descriptorpb "google.golang.org/protobuf/types/descriptorpb"
 )
 
 const (
@@ -85,11 +86,6 @@ func (x *MethodAuthOptions) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use MethodAuthOptions.ProtoReflect.Descriptor instead.
-func (*MethodAuthOptions) Descriptor() ([]byte, []int) {
-	return file_auth_proto_auth_proto_rawDescGZIP(), []int{0}
-}
-
 func (x *MethodAuthOptions) GetPublic() bool {
 	if x != nil {
 		return x.Public
@@ -153,11 +149,6 @@ func (x *ServiceAuthOptions) ProtoReflect() protoreflect.Message {
 		return ms
 	}
 	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ServiceAuthOptions.ProtoReflect.Descriptor instead.
-func (*ServiceAuthOptions) Descriptor() ([]byte, []int) {
-	return file_auth_proto_auth_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ServiceAuthOptions) GetPublic() bool {

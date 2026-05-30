@@ -44,7 +44,7 @@ func (t *Task) Delay() time.Duration {
 }
 
 func main() {
-    dq := delayqueue.New[*Task](16)
+    dq := delayqueue.New[*Task]()
     ctx := context.Background()
 
     now := time.Now()

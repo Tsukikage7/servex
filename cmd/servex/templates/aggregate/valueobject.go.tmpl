@@ -5,7 +5,7 @@ package {{.AggLower}}
 import "time"
 {{- end}}
 
-// {{.Name}} 值对象（不可变）.
+// {{.Name}} 值对象不可变.
 type {{.Name}} struct {
 {{- range .Fields}}
 	{{.CamelName}} {{.Type}}

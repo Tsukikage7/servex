@@ -51,7 +51,7 @@ func TestDispatch_ExactMatch(t *testing.T) {
 	}
 }
 
-// TestDispatch_WildcardFallback 验证通配符匹配（精确不命中时）。
+// TestDispatch_WildcardFallback 验证通配符匹配精确不命中时。
 func TestDispatch_WildcardFallback(t *testing.T) {
 	r := newRouter()
 	var got string
@@ -102,7 +102,7 @@ func TestDispatch_NoMatch(t *testing.T) {
 	}
 }
 
-// TestDispatch_GlobalMiddlewareOrder 验证全局中间件执行顺序（先注册先执行）。
+// TestDispatch_GlobalMiddlewareOrder 验证全局中间件执行顺序先注册先执行。
 func TestDispatch_GlobalMiddlewareOrder(t *testing.T) {
 	r := newRouter()
 	var order []string
@@ -131,7 +131,7 @@ func TestDispatch_GlobalMiddlewareOrder(t *testing.T) {
 	}
 }
 
-// TestDispatch_RouteLevelMiddlewareOrder 验证路由级中间件执行顺序（在全局中间件之后）。
+// TestDispatch_RouteLevelMiddlewareOrder 验证路由级中间件执行顺序在全局中间件之后。
 func TestDispatch_RouteLevelMiddlewareOrder(t *testing.T) {
 	r := newRouter()
 	var order []string

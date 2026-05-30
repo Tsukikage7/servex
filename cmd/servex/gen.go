@@ -57,51 +57,6 @@ type AggregateData struct {
 	HasCommands  bool         // 是否指定了 --commands
 }
 
-// runGenAggregate 执行 servex gen aggregate 命令.
-func runGenAggregate(args []string) error {
-	fs := flag.NewFlagSet("gen aggregate", flag.ExitOnError)
-	fieldsStr := fs.String("fields", "", `字段定义 (如 "id:uint64,name:string,email:string")`)
-	commandsStr := fs.String("commands", "", `业务命令 (如 "Place,Cancel,Ship")`)
-	uniqueStr := fs.String("unique", "", `唯一字段，生成 FindByXxx (如 "email,username")`)
-	output := fs.String("output", ".", "输出目录")
-	fs.Usage = func() {
-		fmt.Println("用法: servex gen aggregate <name> [options]")
-		fmt.Println()
-		fmt.Println("生成 DDD 聚合文件:")
-		fmt.Println("  domain/<name>/aggregate.go         聚合根")
-		fmt.Println("  domain/<name>/event.go             领域事件")
-		fmt.Println("  domain/<name>/repository.go        仓储接口 (端口)")
-		fmt.Println("  domain/<name>/command.go            CQRS 命令")
-		fmt.Println("  domain/<name>/query.go              CQRS 查询 & 视图")
-		fmt.Println("  domain/<name>/aggregate_test.go    聚合单元测试")
-		fmt.Println("  domain/<name>/repository_mock.go   仓储 Mock")
-		fmt.Println("  application/<name>/service.go      应用服务")
-		fmt.Println("  application/<name>/service_test.go 服务单元测试")
-		fmt.Println()
-		fmt.Println("选项:")
-		fs.PrintDefaults()
-	}
-
-	if len(args) == 0 {
-		fs.Usage()
-		return fmt.Errorf("必须指定聚合名称")
-	}
-
-	name := args[0]
-	if err := fs.Parse(args[1:]); err != nil {
-		return err
-	}
-
-	fields := parseFields(*fieldsStr)
-	module := ""
-	if m, err := detectModule(); err == nil {
-		module = m
-	}
-	data := buildAggregateData(name, module, fields, *commandsStr, *uniqueStr)
-
-	return generateAggregate(data, *output)
-}
-
 // parseFields 解析字段定义字符串.
 func parseFields(s string) []Field {
 	if s == "" {
@@ -289,14 +244,14 @@ func generateAggregate(data AggregateData, outputDir string) error {
 
 	// 如果指定了 --service，生成 adapter/persistence 层
 	if data.Service != "" {
-		adapterBase := filepath.Join(outputDir, "services", data.Service+"-service", "internal", "adapter", "persistence")
+		adapterBase := filepath.Join(outputDir, resolveServiceDirForWrite(data.Service), "internal", "adapter", "persistence")
 		for _, af := range adapterFiles {
 			outPath := filepath.Join(adapterBase, data.NameSnake+af.out)
 			if err := renderTemplate(aggregateTemplates, af.tmpl, outPath, data, funcMap); err != nil {
 				return fmt.Errorf("渲染 %s: %w", af.tmpl, err)
 			}
 		}
-		fmt.Printf("  services/%s-service/internal/adapter/persistence/ (仓储, 模型, 测试)\n", data.Service)
+		fmt.Printf("  %s/internal/adapter/persistence/ (仓储, 模型, 测试)\n", resolveServiceDirForWrite(data.Service))
 	}
 
 	return nil

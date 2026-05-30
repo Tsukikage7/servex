@@ -188,7 +188,7 @@ func (s *scheduler) Submit(ctx context.Context, name string, payload any, opts .
 	return task.ID, nil
 }
 
-// Start 启动调度器（多次调用仅首次生效）.
+// Start 启动调度器多次调用仅首次生效.
 func (s *scheduler) Start(ctx context.Context) error {
 	if s.store == nil {
 		return ErrNilStore
@@ -299,7 +299,7 @@ type memoryStore struct {
 	tasks map[string]*Task
 }
 
-// NewMemoryStore 创建基于内存的任务存储（用于测试）.
+// NewMemoryStore 创建基于内存的任务存储用于测试.
 func NewMemoryStore() Store {
 	return &memoryStore{tasks: make(map[string]*Task)}
 }

@@ -20,7 +20,7 @@ type redisClient interface {
 	Del(ctx context.Context, keys ...string) (int64, error)
 }
 
-// memoryStateStore 内存状态存储实现（开发/单机场景）。
+// memoryStateStore 内存状态存储实现开发/单机场景。
 type memoryStateStore struct {
 	mu   sync.RWMutex
 	data map[string]string
@@ -54,14 +54,14 @@ func (m *memoryStateStore) Del(chatID string) error {
 // RedisStateOption Redis 状态存储选项。
 type RedisStateOption func(*redisStateStore)
 
-// WithKeyPrefix 设置 Redis key 前缀（默认 "botstate:"）。
+// WithKeyPrefix 设置 Redis key 前缀默认 "botstate:"。
 func WithKeyPrefix(prefix string) RedisStateOption {
 	return func(s *redisStateStore) {
 		s.prefix = prefix
 	}
 }
 
-// redisStateStore Redis 状态存储实现（生产多实例场景）。
+// redisStateStore Redis 状态存储实现生产多实例场景。
 type redisStateStore struct {
 	client redisClient
 	prefix string

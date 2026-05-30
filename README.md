@@ -1,11 +1,54 @@
 [![CI](https://github.com/Tsukikage7/servex/actions/workflows/ci.yml/badge.svg)](https://github.com/Tsukikage7/servex/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Tsukikage7/servex)](https://goreportcard.com/report/github.com/Tsukikage7/servex)
-[![Go Reference](https://pkg.go.dev/badge/github.com/Tsukikage7/servex.svg)](https://pkg.go.dev/github.com/Tsukikage7/servex)
+[![Go Reference](https://pkg.go.dev/badge/github.com/Tsukikage7/servex/v2.svg)](https://pkg.go.dev/github.com/Tsukikage7/servex/v2)
 [![codecov](https://codecov.io/gh/Tsukikage7/servex/branch/main/graph/badge.svg)](https://codecov.io/gh/Tsukikage7/servex)
 
 # servex
 
-Go 微服务开发工具包，提供构建生产级微服务所需的核心组件。
+servex 是一个面向 AI 应用的 Go 微服务开发工具包。它把模型访问、AI 网关、鉴权、计费、限流、缓存、MCP 工具、可观测性、脚手架和部署治理收敛到同一套 Go 微服务体系中；Eino、ADK 等 Agent/Workflow 框架通过 adapter 接入，而不是反过来主导 servex 的包边界。
+
+当前 v2 主线中，servex 的公共 API 按稳定性分层：核心包承诺长期兼容；重依赖和框架适配器按需导入；历史工具包和业务组件不再进入核心叙事，避免把通用工具库、业务中台组件和微服务框架绑成一个不可维护的公共面。
+
+## 发布状态
+
+当前 v2 主线正在进行破坏性 API 整理。仓库已经提供明确的发布门槛和迁移说明：
+
+- [BREAKING.md](./BREAKING.md)：记录已删除的旧 API、历史别名和兼容入口。
+- [docs/API_BOUNDARY.md](./docs/API_BOUNDARY.md)：定义稳定核心、按需扩展和非核心包边界。
+- [docs/RELEASE_CHECKLIST.md](./docs/RELEASE_CHECKLIST.md)：发布前检查清单。
+- [SECURITY.md](./SECURITY.md)：安全报告方式、漏洞扫描要求和当前工具链风险说明。
+- [CONTRIBUTING.md](./CONTRIBUTING.md)：贡献边界、API 规则和验证命令。
+
+发布候选至少需要通过：
+
+```bash
+just check
+just check-workspace
+just vuln
+```
+
+CI 会对 `go.work` 中的根模块、CLI、LLM adapters 和 `testx/container` 分别执行 test、vet、build 和 `govulncheck`。
+
+## 定位
+
+servex 解决的是 AI 应用生产化接入问题：
+
+- 把 OpenAI、Anthropic、Gemini、DeepSeek、Ollama、Bedrock 等模型后端统一成 Go 接口。
+- 用 middleware、router、gateway、apikey、billing、cache、prompt、mcp、observability 等组件承接生产治理。
+- 通过 `llm/adapter/eino` 和 `llm/adapter/adk` 把 Go Agent 框架接入 servex LLM facade。
+- 用 CLI 生成传统微服务和 AI service 骨架，保持 monorepo、DDD、HTTP/gRPC、配置和部署结构一致。
+- 保留 Go 微服务基础设施能力：transport、discovery、config、auth、storage、messaging、observability、testx。
+
+servex 不在根 module 里复刻以下运行时：
+
+- Agent planning runtime
+- Graph workflow scheduler
+- RAG framework
+- Long-term memory engine
+- Multi-agent conversation framework
+- Evaluation platform
+
+这些能力通过 `llm/adapter/*`、`llm/mcp` 和业务层显式接入。servex 的职责是把 AI 应用稳定地纳入 Go 服务、网关和微服务治理体系，同时保持根 module 的依赖面可控。
 
 ## 安装
 
@@ -13,9 +56,58 @@ Go 微服务开发工具包，提供构建生产级微服务所需的核心组�
 go get github.com/Tsukikage7/servex/v2
 ```
 
-## 按需依赖
+## License
 
-servex 的基础包默认只暴露抽象和轻量实现，Redis、Consul、etcd、Nacos、Kafka、RabbitMQ、GORM、gRPC adapter、testcontainers 等重依赖放在子包中按需导入。常见拆分路径如下：
+servex is released under the [MIT License](./LICENSE).
+
+## AI 应用快速开始
+
+创建一个最小 AI service：
+
+```bash
+go install github.com/Tsukikage7/servex/v2/cmd/servex@latest
+servex new ai-service assistant --module github.com/example/assistant --provider openai --framework eino
+cd assistant
+go mod tidy
+OPENAI_API_KEY=sk-... just dev
+```
+
+生成的服务包含：
+
+- `internal/llm`：模型 Provider 初始化。
+- `internal/agent`：业务 Agent 边界，不内置复杂 runtime。
+- `internal/tools`：业务工具定义入口。
+- `internal/http`：`POST /chat` HTTP 接口，复用 `transport/response` 和 i18n 错误输出。
+- `configs/config.yaml`：Provider、model、timeout 等配置。
+
+完整示例见 [examples/ai-support](./examples/ai-support/)。
+
+## API 分层
+
+servex 的基础包默认只暴露抽象和轻量实现，Redis、Consul、etcd、Nacos、Kafka、RabbitMQ、GORM、gRPC adapter、testcontainers 等重依赖放在子包中按需导入。
+
+### 稳定核心
+
+| 能力 | 包 |
+| --- | --- |
+| 应用生命周期 | `app` |
+| Endpoint 抽象 | `endpoint` |
+| 错误模型 | `errors`、`errors/grpcx` |
+| 编解码 | `encoding`、`encoding/json`、`encoding/proto`、`encoding/xml`、`encoding/pbjson` |
+| 配置 | `config`、`config/source/*` |
+| 服务发现抽象 | `discovery` |
+| HTTP/gRPC 服务 | `transport/httpserver`、`transport/grpcserver`、`transport/gateway` |
+| HTTP/gRPC 客户端 | `transport/httpclient`、`transport/grpcclient` |
+| 健康检查 | `transport/health` |
+| 常用中间件 | `middleware/recovery`、`logging`、`timeout`、`retry`、`ratelimit`、`circuitbreaker`、`cors` |
+| 认证 | `auth`、`auth/jwt`、`auth/apikey`、`auth/rbac` |
+| 可观测性 | `observability/logger`、`observability/metrics`、`observability/tracing` |
+| 存储抽象 | `storage/cache`、`storage/rdbms` |
+| 消息抽象 | `messaging/pubsub`、`messaging/jobqueue` |
+| 领域模式 | `domain`、`domain/cqrs`、`domain/outbox`、`domain/saga`、`domain/eventsourcing` |
+| LLM facade | `llm`、`llm/provider/*`、`llm/gateway`、`llm/mcp` |
+
+### 按需扩展
 
 | 能力 | 基础包 | 按需子包 |
 | --- | --- | --- |
@@ -28,6 +120,10 @@ servex 的基础包默认只暴露抽象和轻量实现，Redis、Consul、etcd�
 | Pub/Sub 工厂 | `messaging/pubsub/factory` | `messaging/pubsub/factory/redis`、`kafka`、`rabbitmq` |
 | 分页/排序 | `xutil/pagination`、`xutil/sorting` | `xutil/pagination/gorm`、`xutil/sorting/gorm` |
 | 测试工具 | `testx` | `testx/grpcx`、`testx/container` |
+
+### 非核心历史包
+
+`xutil/*`、`collections/*` 和 `bizx/*` 是历史扩展能力，不再作为 servex 核心 API 叙事的一部分。新代码应优先依赖稳定核心包；确实需要通用工具或业务组件时，在应用层显式选择并承担对应依赖，而不是把它们当成微服务框架基础能力。
 
 使用 Config 工厂时，provider 子包通过 blank import 注册：
 
@@ -61,7 +157,7 @@ servex 内置 [Claude Code Plugin](https://code.claude.com/docs/en/plugins.md)�
 | Skill | 说明 |
 |-------|------|
 | `servex:servex` | 主入口 -- 模块索引、代码规范、工作流，按需加载 20 个子模块参考文档 |
-| `servex:llm` | LLM 模块 -- facade、Provider、Middleware、Serving、Eino/ADK 封装 |
+| `servex:llm` | LLM 模块 -- facade、Provider、Middleware、Gateway、Eino/ADK adapter |
 
 安装后 Claude 会根据上下文自动触发，也可手动调用 `/servex:servex` 或 `/servex:llm`。子模块详细文档由主 skill 按需读取，不会污染 skill 列表。
 
@@ -92,12 +188,21 @@ servex new myproject --module github.com/example/myproject
 # 创建独立单服务项目
 servex new myservice --standalone --with-grpc --infra "mysql,redis"
 
+# 创建 AI service 项目
+servex new ai-service assistant \
+  --module github.com/example/assistant \
+  --provider openai \
+  --framework eino
+
 # 添加微服务
 servex add service order --with-grpc --with-gateway \
   --infra "mysql,redis,kafka" \
   --observe "metrics,tracing" \
   --auth "jwt" \
   --discovery "consul"
+
+# add service 会同步创建根级业务上下文目录：
+# api/order/v1、domain/order、application/order/command、application/order/query
 
 # 生成 DDD 聚合（业务语义）
 servex add aggregate order \
@@ -161,7 +266,7 @@ myproject/
 ├── application/         # 共享应用服务
 │   └── order/service.go # EventBus + DTO 返回
 ├── services/
-│   └── order-service/
+│   └── order/
 │       ├── cmd/server/main.go
 │       ├── internal/
 │       │   ├── port/         # 入站端口
@@ -172,13 +277,38 @@ myproject/
 │       │   │   ├── persistence/  # DB 仓储
 │       │   │   └── external/     # 外部服务客户端
 │       │   └── service/      # proto 服务实现
-│       └── configs/config.yaml
+│       └── configs/
+│           ├── config.dev.yaml
+│           └── config.prod.yaml
 ├── api/                 # 共享 Proto
 ├── justfile
 └── go.mod
 ```
 
 ## 包概览
+
+### AI 集成 (llm/)
+
+| 包 | 说明 |
+| --- | --- |
+| [llm](./llm/) | 统一 ChatModel / EmbeddingModel 接口抽象 |
+| [llm/provider/openai](./llm/provider/openai/) | OpenAI 适配器（兼容 DeepSeek、通义千问等 OpenAI 接口格式 provider） |
+| [llm/provider/anthropic](./llm/provider/anthropic/) | Anthropic Claude 适配器 |
+| [llm/provider/gemini](./llm/provider/gemini/) | Google Gemini 适配器 |
+| [llm/provider/ollama](./llm/provider/ollama/) | Ollama 本地模型适配器 |
+| [llm/provider/deepseek](./llm/provider/deepseek/) | DeepSeek 适配器 |
+| [llm/provider/bedrock](./llm/provider/bedrock/) | AWS Bedrock 适配器（Converse API，支持 Claude/Titan/Llama） |
+| [llm/router](./llm/router/) | Go 进程内多 Provider 路由器（按模型名路由/Fallback） |
+| [llm/middleware](./llm/middleware/) | AI 调用中间件链（日志、重试、限流、用量追踪） |
+| [llm/gateway](./llm/gateway/) | ServeX AI 网关（HTTP/SSE/鉴权/计费） |
+| [llm/gateway/apikey](./llm/gateway/apikey/) | API Key 管理（签发/验证/配额/限流） |
+| [llm/gateway/billing](./llm/gateway/billing/) | 用量计费（按 token 计费/用量报表） |
+| [llm/gateway/cache](./llm/gateway/cache/) | 语义缓存（Embedding 相似度） |
+| [llm/prompt](./llm/prompt/) | 基于 text/template 的提示词模板和版本管理 |
+| [llm/mcp](./llm/mcp/) | MCP 工具注册、策略和 `llm.Tool` 转换边界 |
+| [llm/observability](./llm/observability/) | OpenTelemetry GenAI 属性和用量记录辅助 |
+| [llm/adapter/eino](./llm/adapter/eino/) | 独立 module，CloudWeGo Eino 双向适配 |
+| [llm/adapter/adk](./llm/adapter/adk/) | 独立 module，Google ADK Agent / LLMAgent / Runner 适配 |
 
 ### 核心
 
@@ -341,27 +471,6 @@ myproject/
 | [httpx/locale](./httpx/locale/) | 语言区域设置 |
 | [httpx/referer](./httpx/referer/) | 来源页面解析、UTM 参数 |
 | [httpx/activity](./httpx/activity/) | 用户活动追踪（Redis + Kafka） |
-
-### AI 集成 (llm/)
-
-| 包 | 说明 |
-| --- | --- |
-| [llm](./llm/) | 统一 ChatModel / EmbeddingModel 接口抽象 |
-| [llm/framework/eino](./llm/framework/eino/) | 独立 module，CloudWeGo Eino 封装（消息、工具、ChatModel、EmbeddingModel 双向适配） |
-| [llm/framework/adk](./llm/framework/adk/) | 独立 module，Google ADK 封装（Agent、LLMAgent、Runner、model.LLM 适配） |
-| [llm/provider/openai](./llm/provider/openai/) | OpenAI 适配器（兼容 DeepSeek、通义千问等） |
-| [llm/provider/anthropic](./llm/provider/anthropic/) | Anthropic Claude 适配器 |
-| [llm/provider/gemini](./llm/provider/gemini/) | Google Gemini 适配器 |
-| [llm/provider/ollama](./llm/provider/ollama/) | Ollama 本地模型适配器 |
-| [llm/provider/deepseek](./llm/provider/deepseek/) | DeepSeek 适配器 |
-| [llm/provider/bedrock](./llm/provider/bedrock/) | AWS Bedrock 适配器（Converse API，支持 Claude/Titan/Llama） |
-| [llm/provider/router](./llm/provider/router/) | 多 Provider 路由器（按模型名路由） |
-| [llm/prompt](./llm/prompt/) | 基于 text/template 的提示词模板引擎 |
-| [llm/middleware](./llm/middleware/) | AI 中间件链（日志、重试、限流、用量追踪） |
-| [llm/serving/cache](./llm/serving/cache/) | 语义缓存（Embedding 相似度） |
-| [llm/serving/apikey](./llm/serving/apikey/) | API Key 管理（签发/验证/配额/限流） |
-| [llm/serving/billing](./llm/serving/billing/) | 用量计费（按 token 计费/用量报表） |
-| [llm/serving/proxy](./llm/serving/proxy/) | AI API 代理网关（OpenAI 兼容/路由/Fallback） |
 
 ### OAuth2 第三方登录
 

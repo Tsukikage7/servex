@@ -52,8 +52,8 @@ type scriptRunner func(ctx context.Context, keys []string, args ...any) (int64, 
 // 实现 middleware/ratelimit 包 Limiter 接口(Allow/AllowN/Wait/WaitN).
 type RedisTokenBucket struct {
 	client redis.UniversalClient
-	run    scriptRunner  // 注入点:生产为 realScriptRunner,测试可替换
-	nowFn  func() int64  // 注入点:当前毫秒时间戳,默认 time.Now().UnixMilli(),测试可冻结
+	run    scriptRunner // 注入点:生产为 realScriptRunner,测试可替换
+	nowFn  func() int64 // 注入点:当前毫秒时间戳,默认 time.Now().UnixMilli(),测试可冻结
 
 	keyFn func(ctx context.Context) string
 

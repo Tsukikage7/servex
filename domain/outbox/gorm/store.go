@@ -31,7 +31,7 @@ func NewStoreFromDB(db *gorm.DB) *Store {
 }
 
 // Save 保存消息.
-// 若 ctx 中注入了事务（通过 outbox.InjectTx），则在该事务中保存；否则直接保存.
+// 若 ctx 中注入了事务通过 outbox.InjectTx，则在该事务中保存；否则直接保存.
 func (s *Store) Save(ctx context.Context, msgs ...*outbox.OutboxMessage) error {
 	if len(msgs) == 0 {
 		return nil
@@ -53,7 +53,7 @@ func (s *Store) WithTx(ctx context.Context, fn outbox.TxFunc) error {
 }
 
 // FetchPending 拉取待发送消息并原子标记为 Processing.
-// 对支持行锁的数据库（MySQL/PostgreSQL）使用 SELECT FOR UPDATE SKIP LOCKED，
+// 对支持行锁的数据库MySQL/PostgreSQL使用 SELECT FOR UPDATE SKIP LOCKED，
 // SQLite 环境自动降级为普通 SELECT.
 func (s *Store) FetchPending(ctx context.Context, limit int) ([]*outbox.OutboxMessage, error) {
 	var msgs []*outbox.OutboxMessage
@@ -139,7 +139,7 @@ func (s *Store) Cleanup(ctx context.Context, before time.Time) (int64, error) {
 	return result.RowsAffected, result.Error
 }
 
-// AutoMigrate 自动迁移 outbox_messages 表.
+// AutoMigrate 自动迁移 outbox_message 表.
 func (s *Store) AutoMigrate() error {
 	return s.db.AutoMigrate(&outbox.OutboxMessage{})
 }

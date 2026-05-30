@@ -38,17 +38,17 @@ func NewTestBot() (*TestBot, *Recorder) {
 	return bot, rec
 }
 
-// Handle 注册命令处理器（委托给内部 Router）。
+// Handle 注册命令处理器委托给内部 Router。
 func (b *TestBot) Handle(pattern string, handler botserver.HandlerFunc, middlewares ...botserver.Middleware) {
 	b.router.Handle(pattern, handler, middlewares...)
 }
 
-// Use 注册全局中间件（委托给内部 Router）。
+// Use 注册全局中间件委托给内部 Router。
 func (b *TestBot) Use(middlewares ...botserver.Middleware) {
 	b.router.Use(middlewares...)
 }
 
-// Start 空实现（测试中不需要）。
+// Start 空实现测试中不需要。
 func (b *TestBot) Start(_ context.Context) error { return nil }
 
 // Stop 空实现。
@@ -63,14 +63,14 @@ type dispatchOptions struct {
 // DispatchOption Dispatch 选项函数。
 type DispatchOption func(*dispatchOptions)
 
-// WithChatID 设置会话 ID（默认 "test-chat"）。
+// WithChatID 设置会话 ID默认 "test-chat"。
 func WithChatID(id string) DispatchOption {
 	return func(o *dispatchOptions) {
 		o.chatID = id
 	}
 }
 
-// WithUserID 设置用户 ID（默认 "test-user"）。
+// WithUserID 设置用户 ID默认 "test-user"。
 func WithUserID(id string) DispatchOption {
 	return func(o *dispatchOptions) {
 		o.userID = id
@@ -162,5 +162,5 @@ func (c *testContext) Reply(text string, _ ...botserver.ReplyOption) error {
 	return nil
 }
 
-// Native 返回 nil（测试环境无平台原始对象）。
+// Native 返回 nil测试环境无平台原始对象。
 func (c *testContext) Native() any { return nil }

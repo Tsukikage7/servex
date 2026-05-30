@@ -79,7 +79,7 @@ func HTTPMiddleware(resolver Resolver, opts ...Option) func(http.Handler) http.H
 	}
 }
 
-// HTTPSkipPaths 返回跳过指定路径的 Skipper（精确匹配 + 通配前缀）.
+// HTTPSkipPaths 返回跳过指定路径的 Skipper精确匹配 + 通配前缀.
 // 示例:
 //
 //	tenant.HTTPSkipPaths("/health", "/api/public/*")
@@ -112,7 +112,7 @@ func HTTPSkipPaths(paths ...string) Skipper {
 	}
 }
 
-// writeHTTPError 写入 HTTP 错误响应（使用 json.Marshal 防止 JSON 注入）.
+// writeHTTPError 写入 HTTP 错误响应使用 json.Marshal 防止 JSON 注入.
 func writeHTTPError(w http.ResponseWriter, code int, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)

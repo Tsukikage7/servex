@@ -6,7 +6,7 @@ import (
 
 	"github.com/Tsukikage7/servex/v2/middleware/circuitbreaker"
 	"github.com/Tsukikage7/servex/v2/middleware/retry"
-	"github.com/Tsukikage7/servex/v2/transport/tls"
+	tlsx "github.com/Tsukikage7/servex/v2/transport/tls"
 )
 
 // Config 配置驱动的客户端创建.
@@ -20,7 +20,7 @@ type Config struct {
 	TLS            *tlsx.Config  `json:"tls" yaml:"tls" mapstructure:"tls"`
 }
 
-// NewFromConfig 从配置创建简单客户端（不使用服务发现）.
+// NewFromConfig 从配置创建简单客户端不使用服务发现.
 // 若 TLS 配置创建失败，返回 nil 和错误.
 func NewFromConfig(cfg *Config, additionalOpts ...Option) (*Client, error) {
 	var opts []Option

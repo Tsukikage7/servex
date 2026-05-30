@@ -3,7 +3,7 @@ package tlsx_test
 import (
 	"fmt"
 
-	"github.com/Tsukikage7/servex/v2/transport/tls"
+	tlsx "github.com/Tsukikage7/servex/v2/transport/tls"
 )
 
 func ExampleNewTLSConfig_validation() {

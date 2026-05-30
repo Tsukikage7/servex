@@ -171,14 +171,14 @@ func (u *ulidGen) NextID() (string, error) {
 	// 编码: 10 字符时间戳 + 16 字符随机部分 = 26 字符
 	var buf [26]byte
 
-	// 编码时间戳（48-bit → 10 个 Base32 字符）
+	// 编码时间戳48-bit → 10 个 Base32 字符
 	ts := uint64(ms)
 	for i := 9; i >= 0; i-- {
 		buf[i] = crockfordBase32[ts&0x1F]
 		ts >>= 5
 	}
 
-	// 编码随机部分（80-bit → 16 个 Base32 字符）
+	// 编码随机部分80-bit → 16 个 Base32 字符
 	// 将 10 字节转为位流处理
 	rnd := u.lastRnd
 	// 使用简单的逐 5-bit 提取
@@ -273,7 +273,7 @@ var (
 	defaultNanoID    Generator
 )
 
-// initDefaults 初始化默认生成器（只执行一次）.
+// initDefaults 初始化默认生成器只执行一次.
 var initDefaults = sync.OnceFunc(func() {
 	var err error
 	defaultSnowflake, err = NewSnowflake(&SnowflakeConfig{})
@@ -320,19 +320,19 @@ func UUID() string {
 	return uuid.New().String()
 }
 
-// SnowflakeE 使用默认配置生成 Snowflake ID（返回 error 而非 panic）.
+// SnowflakeE 使用默认配置生成 Snowflake ID返回 error 而非 panic.
 func SnowflakeE() (string, error) {
 	initDefaults()
 	return defaultSnowflake.NextID()
 }
 
-// ULIDE 生成 ULID（返回 error 而非 panic）.
+// ULIDE 生成 ULID返回 error 而非 panic.
 func ULIDE() (string, error) {
 	initDefaults()
 	return defaultULID.NextID()
 }
 
-// NanoIDE 生成 NanoID（返回 error 而非 panic）.
+// NanoIDE 生成 NanoID返回 error 而非 panic.
 func NanoIDE() (string, error) {
 	initDefaults()
 	return defaultNanoID.NextID()

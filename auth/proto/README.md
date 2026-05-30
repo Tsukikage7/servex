@@ -68,7 +68,10 @@ service PublicService {
 
 ```go
 srv := gateway.New(
-    gateway.WithAuth(authenticator, auth.WithAuthorizer(authorizer)),
+    gateway.WithSecurity(gateway.SecurityConfig{
+        Authenticator: authenticator,
+        AuthOptions:   []auth.Option{auth.WithAuthorizer(authorizer)},
+    }),
 )
 ```
 

@@ -11,7 +11,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/Tsukikage7/servex/v2/auth"
-	authgrpcx "github.com/Tsukikage7/servex/v2/auth/grpcx"
+	"github.com/Tsukikage7/servex/v2/auth/grpcx"
 	"github.com/Tsukikage7/servex/v2/httpx/clientip"
 	"github.com/Tsukikage7/servex/v2/middleware/cors"
 	"github.com/Tsukikage7/servex/v2/middleware/logging"
@@ -28,6 +28,31 @@ import (
 
 // Option 配置选项.
 type Option func(*options)
+
+// RuntimeConfig 是 Gateway 运行时行为配置。
+type RuntimeConfig = transport.RuntimeConfig
+
+// ObservabilityConfig 聚合 Gateway 的观测相关选项.
+type ObservabilityConfig struct {
+	TracingService   string
+	TracingSkipPaths []string
+	Metrics          *metrics.PrometheusCollector
+	Logging          bool
+	LoggingSkipPaths []string
+}
+
+// SecurityConfig 聚合 Gateway 的安全与入口治理选项.
+type SecurityConfig struct {
+	Authenticator auth.Authenticator
+	AuthOptions   []auth.Option
+	CORS          bool
+	CORSOptions   []cors.Option
+	RateLimiter   ratelimit.Limiter
+	ClientIP      bool
+	ClientIPOpts  []clientip.Option
+	Tenant        tenant.Resolver
+	TenantOptions []tenant.Option
+}
 
 type options struct {
 	name     string
@@ -59,7 +84,7 @@ type options struct {
 	healthTimeout time.Duration
 	healthOptions []health.Option
 
-	// HTTP 中间件链（按添加顺序从外到内包装）
+	// HTTP 中间件链按添加顺序从外到内包装
 	httpMiddlewares []func(http.Handler) http.Handler
 
 	// Trace
@@ -72,7 +97,7 @@ type options struct {
 	// Recovery
 	enableRecovery bool // 是否启用 panic 恢复
 
-	// CORS（仅 HTTP）
+	// CORS仅 HTTP
 	corsOpts   []cors.Option
 	enableCORS bool
 
@@ -97,7 +122,7 @@ type options struct {
 	// HTTP TLS
 	httpTLSConfig *tls.Config
 
-	// gRPC Gateway 连接 TLS（connectGateway 回连 gRPC 时使用）
+	// gRPC Gateway 连接 TLSconnectGateway 回连 gRPC 时使用
 	grpcTLSConfig *tls.Config
 
 	// Auth
@@ -156,14 +181,77 @@ func WithConfig(cfg transport.GatewayConfig) Option {
 		if cfg.Name != "" {
 			o.name = cfg.Name
 		}
-		if cfg.GRPCAddr != "" {
-			o.grpcAddr = cfg.GRPCAddr
+		if cfg.Version != "" {
+			o.version = cfg.Version
 		}
-		if cfg.HTTPAddr != "" {
-			o.httpAddr = cfg.HTTPAddr
+		if cfg.GRPC.Name != "" && cfg.Name == "" {
+			o.name = cfg.GRPC.Name
 		}
-		if cfg.KeepaliveTime > 0 {
-			o.keepaliveTime = cfg.KeepaliveTime
+		if cfg.GRPC.Addr != "" {
+			o.grpcAddr = cfg.GRPC.Addr
+		}
+		if cfg.GRPC.EnableReflection != nil {
+			o.enableReflection = *cfg.GRPC.EnableReflection
+		}
+		if cfg.GRPC.KeepaliveTime > 0 {
+			o.keepaliveTime = cfg.GRPC.KeepaliveTime
+		}
+		if cfg.GRPC.KeepaliveTimeout > 0 {
+			o.keepaliveTimeout = cfg.GRPC.KeepaliveTimeout
+		}
+		if cfg.HTTP.Name != "" && cfg.Name == "" && cfg.GRPC.Name == "" {
+			o.name = cfg.HTTP.Name
+		}
+		if cfg.HTTP.Addr != "" {
+			o.httpAddr = cfg.HTTP.Addr
+		}
+		if cfg.HTTP.ReadTimeout > 0 {
+			o.httpReadTimeout = cfg.HTTP.ReadTimeout
+		}
+		if cfg.HTTP.WriteTimeout > 0 {
+			o.httpWriteTimeout = cfg.HTTP.WriteTimeout
+		}
+		if cfg.HTTP.IdleTimeout > 0 {
+			o.httpIdleTimeout = cfg.HTTP.IdleTimeout
+		}
+		if cfg.HealthTimeout > 0 {
+			o.healthTimeout = cfg.HealthTimeout
+		}
+		if cfg.Runtime.Recovery || cfg.Runtime.Response {
+			WithRuntime(cfg.Runtime)(o)
+		}
+		if cfg.Logging.Enabled {
+			o.enableLogging = true
+			o.loggingSkipPaths = cfg.Logging.SkipPaths
+		}
+		if cfg.Tracing.Enabled {
+			service := cfg.Tracing.Service
+			if service == "" {
+				service = cfg.Name
+			}
+			if service != "" {
+				o.tracerName = service
+				o.tracingSkipPaths = cfg.Tracing.SkipPaths
+				o.unaryInterceptors = append(
+					[]grpc.UnaryServerInterceptor{tracing.UnaryServerInterceptor(service)},
+					o.unaryInterceptors...,
+				)
+				o.streamInterceptors = append(
+					[]grpc.StreamServerInterceptor{tracing.StreamServerInterceptor(service)},
+					o.streamInterceptors...,
+				)
+			}
+		}
+		if cfg.CORS.Enabled {
+			o.enableCORS = true
+			o.corsOpts = cors.MiddlewareOptions(&cors.Options{
+				AllowOrigins:     cfg.CORS.AllowOrigins,
+				AllowMethods:     cfg.CORS.AllowMethods,
+				AllowHeaders:     cfg.CORS.AllowHeaders,
+				ExposeHeaders:    cfg.CORS.ExposeHeaders,
+				AllowCredentials: cfg.CORS.AllowCredentials,
+				MaxAge:           cfg.CORS.MaxAge,
+			}, false)
 		}
 	}
 }
@@ -248,176 +336,66 @@ func WithHealthOptions(opts ...health.Option) Option {
 	}
 }
 
-// WithReadinessChecker 添加就绪检查器（便捷方法）.
-func WithReadinessChecker(checkers ...health.Checker) Option {
+// WithObservability 启用观测相关能力.
+func WithObservability(cfg ObservabilityConfig) Option {
 	return func(o *options) {
-		o.healthOptions = append(o.healthOptions, health.WithReadinessChecker(checkers...))
+		if cfg.TracingService != "" {
+			o.tracerName = cfg.TracingService
+			o.tracingSkipPaths = cfg.TracingSkipPaths
+			o.unaryInterceptors = append(
+				[]grpc.UnaryServerInterceptor{tracing.UnaryServerInterceptor(cfg.TracingService)},
+				o.unaryInterceptors...,
+			)
+			o.streamInterceptors = append(
+				[]grpc.StreamServerInterceptor{tracing.StreamServerInterceptor(cfg.TracingService)},
+				o.streamInterceptors...,
+			)
+		}
+		if cfg.Metrics != nil {
+			o.metricsCollector = cfg.Metrics
+		}
+		if cfg.Logging {
+			o.enableLogging = true
+			o.loggingSkipPaths = cfg.LoggingSkipPaths
+		}
 	}
 }
 
-// WithLivenessChecker 添加存活检查器（便捷方法）.
-func WithLivenessChecker(checkers ...health.Checker) Option {
+// WithRuntime 启用 Gateway 运行时行为。
+func WithRuntime(cfg RuntimeConfig) Option {
 	return func(o *options) {
-		o.healthOptions = append(o.healthOptions, health.WithLivenessChecker(checkers...))
+		if cfg.Response {
+			o.enableResponse = true
+			o.unaryInterceptors = append(o.unaryInterceptors, response.UnaryServerInterceptor())
+		}
+		if cfg.Recovery {
+			o.enableRecovery = true
+		}
 	}
 }
 
-// WithTrace 启用链路追踪（gRPC + HTTP 双端）.
-// skipPaths 指定不产生 trace span 的 HTTP 路径（如 /metrics、/healthz）.
-//
-// 注意: 需要先调用 tracing.NewTracer() 初始化全局 TracerProvider.
-func WithTrace(serviceName string, skipPaths ...string) Option {
+// WithSecurity 启用安全与入口治理能力.
+func WithSecurity(cfg SecurityConfig) Option {
 	return func(o *options) {
-		o.tracerName = serviceName
-		o.tracingSkipPaths = skipPaths
-		// 将 trace 拦截器添加到拦截器链最前面
-		o.unaryInterceptors = append(
-			[]grpc.UnaryServerInterceptor{tracing.UnaryServerInterceptor(serviceName)},
-			o.unaryInterceptors...,
-		)
-		o.streamInterceptors = append(
-			[]grpc.StreamServerInterceptor{tracing.StreamServerInterceptor(serviceName)},
-			o.streamInterceptors...,
-		)
-	}
-}
-
-// WithResponse 启用统一响应格式（gRPC + HTTP 双端）.
-//
-// 启用后:
-//   - HTTP 错误响应将使用统一的 JSON 格式: {"code": xxx, "message": "xxx"}
-//   - gRPC 错误将自动映射到正确的状态码
-//   - 内部错误（5xxxx）的详细信息将被隐藏
-func WithResponse() Option {
-	return func(o *options) {
-		o.enableResponse = true
-		// 将 response 拦截器添加到拦截器链末尾（在业务逻辑之后处理错误）
-		o.unaryInterceptors = append(o.unaryInterceptors, response.UnaryServerInterceptor())
-	}
-}
-
-// WithRecovery 启用 panic 恢复（gRPC + HTTP 双端）.
-//
-// 启用后，handler 中的 panic 会被捕获并记录:
-//   - gRPC: 返回 codes.Internal 错误
-//   - HTTP: 返回 500 状态码
-func WithRecovery() Option {
-	return func(o *options) {
-		o.enableRecovery = true
-	}
-}
-
-// WithAuth 启用认证（gRPC + HTTP 双端）.
-//
-// 由于 gRPC-Gateway 会将 HTTP 请求转换为 gRPC 调用，
-// 只需在 gRPC 层添加认证拦截器即可同时保护两种协议。
-//
-// 示例:
-//
-//	jwtSrv := jwt.NewJWT(jwt.WithSecretKey("secret"))
-//	authenticator := jwt.NewAuthenticator(jwtSrv)
-//
-//	server := gateway.New(
-//	    gateway.WithAuth(authenticator),
-//	)
-func WithAuth(authenticator auth.Authenticator, opts ...auth.Option) Option {
-	return func(o *options) {
-		o.authenticator = authenticator
-		o.authOptions = opts
-	}
-}
-
-// WithCORS 启用 CORS 中间件（仅 HTTP 端）.
-//
-// CORS 处理仅在 HTTP 层进行，gRPC 端不需要 CORS 支持.
-//
-// 示例:
-//
-//	gateway.WithCORS(
-//	    cors.WithAllowOrigins("https://example.com"),
-//	    cors.WithAllowCredentials(true),
-//	)
-func WithCORS(opts ...cors.Option) Option {
-	return func(o *options) {
-		o.enableCORS = true
-		o.corsOpts = opts
-	}
-}
-
-// WithRateLimit 启用限流（gRPC + HTTP 双端）.
-//
-// HTTP 端使用 ratelimit.HTTPMiddleware 返回 429 状态码；
-// gRPC 端使用一元和流拦截器返回 ResourceExhausted 错误.
-//
-// 示例:
-//
-//	limiter := ratelimit.NewTokenBucket(100, 200)
-//	gateway.WithRateLimit(limiter)
-func WithRateLimit(limiter ratelimit.Limiter) Option {
-	return func(o *options) {
-		o.rateLimiter = limiter
-	}
-}
-
-// WithMetrics 启用指标采集（gRPC + HTTP 双端）.
-//
-// HTTP 端记录请求方法、路径、状态码和耗时；
-// gRPC 端记录方法名、状态码和耗时.
-//
-// 示例:
-//
-//	collector, _ := metrics.New(metricsCfg)
-//	gateway.WithMetrics(collector)
-func WithMetrics(collector *metrics.PrometheusCollector) Option {
-	return func(o *options) {
-		o.metricsCollector = collector
-	}
-}
-
-// WithLogging 启用请求日志（gRPC + HTTP 双端）.
-//
-// HTTP 端记录方法、路径、状态码和耗时；
-// gRPC 端记录方法名、状态码和耗时.
-// 可通过 skipMethods 跳过不需要记录的 gRPC 方法或 HTTP 路径.
-//
-// 示例:
-//
-//	gateway.WithLogging("/grpc.health.v1.Health/Check")
-func WithLogging(skipMethods ...string) Option {
-	return func(o *options) {
-		o.enableLogging = true
-		o.loggingSkipPaths = skipMethods
-	}
-}
-
-// WithTenant 启用多租户解析（gRPC + HTTP 双端）.
-//
-// HTTP 端和 gRPC 端分别使用对应的租户中间件和拦截器.
-//
-// 示例:
-//
-//	gateway.WithTenant(resolver,
-//	    tenant.WithTokenExtractor(tenant.HeaderTokenExtractor("X-Tenant-ID")),
-//	)
-func WithTenant(resolver tenant.Resolver, opts ...tenant.Option) Option {
-	return func(o *options) {
-		o.tenantResolver = resolver
-		o.tenantOpts = opts
-	}
-}
-
-// WithClientIP 启用客户端 IP 提取（gRPC + HTTP 双端）.
-//
-// HTTP 端从 X-Forwarded-For / X-Real-IP / RemoteAddr 提取；
-// gRPC 端从 metadata 和 peer 地址提取.
-//
-// 示例:
-//
-//	gateway.WithClientIP(clientip.WithTrustPrivateProxies())
-func WithClientIP(opts ...clientip.Option) Option {
-	return func(o *options) {
-		o.enableClientIP = true
-		o.clientIPOpts = opts
+		if cfg.Authenticator != nil {
+			o.authenticator = cfg.Authenticator
+			o.authOptions = cfg.AuthOptions
+		}
+		if cfg.CORS {
+			o.enableCORS = true
+			o.corsOpts = cfg.CORSOptions
+		}
+		if cfg.RateLimiter != nil {
+			o.rateLimiter = cfg.RateLimiter
+		}
+		if cfg.ClientIP {
+			o.enableClientIP = true
+			o.clientIPOpts = cfg.ClientIPOpts
+		}
+		if cfg.Tenant != nil {
+			o.tenantResolver = cfg.Tenant
+			o.tenantOpts = cfg.TenantOptions
+		}
 	}
 }
 
@@ -469,7 +447,7 @@ func WithHTTPMiddleware(mws ...func(http.Handler) http.Handler) Option {
 //
 // 拦截器按追加顺序执行，因此先添加的先执行:
 // Logging → Metrics → RateLimit → ClientIP → Tenant
-// （Recovery 和 Auth 由各自的 apply 函数处理，Tracing 在 WithTrace 中直接添加）
+// Recovery 和 Auth 由各自的 apply 函数处理，Tracing 由 WithObservability 添加
 func applyNewInterceptors(o *options) {
 	// Logging
 	if o.enableLogging && o.logger != nil {
@@ -550,14 +528,14 @@ func applyAuthInterceptors(o *options) {
 		authOpts = append(authOpts, auth.WithPolicyProvider(o.discoveredPolicies))
 	}
 
-	// 添加到拦截器链（在 recovery 之后）
+	// 添加到拦截器链在 recovery 之后
 	o.unaryInterceptors = append(
 		o.unaryInterceptors,
-		authgrpcx.UnaryServerInterceptor(o.authenticator, authOpts...),
+		grpcx.UnaryServerInterceptor(o.authenticator, authOpts...),
 	)
 	o.streamInterceptors = append(
 		o.streamInterceptors,
-		authgrpcx.StreamServerInterceptor(o.authenticator, authOpts...),
+		grpcx.StreamServerInterceptor(o.authenticator, authOpts...),
 	)
 }
 

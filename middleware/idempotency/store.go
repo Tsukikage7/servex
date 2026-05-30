@@ -25,7 +25,7 @@ func WithKeyPrefix(prefix string) StoreOption {
 }
 
 // NewStore 创建幂等性存储.
-// kv: KV 存储实现（可用 CacheKV 适配 cache.Cache）
+// kv: KV 存储实现可用 CacheKV 适配 cache.Cache
 func NewStore(kv KV, opts ...StoreOption) *IdempotentStore {
 	s := &IdempotentStore{
 		kv:        kv,
@@ -74,13 +74,13 @@ func (s *IdempotentStore) Set(ctx context.Context, key string, result *Result, t
 	return nil
 }
 
-// SetNX 仅在键不存在时设置（用于获取处理锁）.
+// SetNX 仅在键不存在时设置用于获取处理锁.
 // 直接依赖 SetNX 的原子性，避免 Exists + SetNX 之间的 TOCTOU 竞态窗口.
 func (s *IdempotentStore) SetNX(ctx context.Context, key string, ttl time.Duration) (bool, error) {
 	fullKey := s.keyPrefix + key
 	lockKey := s.keyPrefix + "lock:" + key
 
-	// 先检查是否已有结果（只读检查，有结果直接返回，无需加锁）
+	// 先检查是否已有结果只读检查，有结果直接返回，无需加锁
 	data, err := s.kv.Get(ctx, fullKey)
 	if err == nil && data != "" {
 		return false, nil

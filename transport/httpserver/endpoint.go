@@ -116,7 +116,7 @@ func (h *EndpointHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 校验请求（在业务逻辑前执行）
+	// 校验请求在业务逻辑前执行
 	for _, v := range h.validators {
 		if err = v(request); err != nil {
 			h.errorEncoder(ctx, err, w)
@@ -162,7 +162,7 @@ func WithAfter(funcs ...ResponseFunc) EndpointOption {
 // 不传参时自动检查 Validatable 接口；
 // 传参时使用自定义校验函数，可叠加多个.
 //
-// 示例（接入 go-playground/validator）：
+// 示例接入 go-playground/validator：
 //
 //	var v = validator.New()
 //
@@ -199,7 +199,7 @@ func WithErrorEncoder(enc EncodeErrorFunc) EndpointOption {
 //
 // 错误将以 {"code": xxx, "message": "xxx"} 格式返回，
 // 并自动映射到正确的 HTTP 状态码.
-// 内部错误（5xxxx）的详细信息将被隐藏.
+// 内部错误5xxxx的详细信息将被隐藏.
 func WithResponse() EndpointOption {
 	return func(h *EndpointHandler) {
 		h.errorEncoder = responseErrorEncoder
@@ -217,7 +217,7 @@ func defaultErrorEncoder(ctx context.Context, err error, w http.ResponseWriter) 
 // responseErrorEncoder 统一响应格式的错误编码器.
 //
 // 自动从 context 中读取 Accept-Language 头，通过 i18n Bundle 翻译错误消息.
-// 未设置 Bundle 或未匹配语言时回退到 Code.Message（默认中文）.
+// 未设置 Bundle 或未匹配语言时回退到 Code.Message默认中文.
 func responseErrorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
 	code := response.ExtractCode(err)
 

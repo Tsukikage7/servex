@@ -7,11 +7,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	servexerrors "github.com/Tsukikage7/servex/v2/errors"
 	"github.com/Tsukikage7/servex/v2/transport/response"
 	"github.com/Tsukikage7/servex/v2/xutil/pagination"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 func TestOK(t *testing.T) {
@@ -412,6 +413,27 @@ func TestWriteLocalizedError(t *testing.T) {
 	}
 	if body.Message != "Resource not found" {
 		t.Errorf("expected localized message, got %q", body.Message)
+	}
+}
+
+func TestGatewaySuccessResponseMiddleware_LocalizesSuccessMessage(t *testing.T) {
+	handler := response.GatewaySuccessResponseMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"value":"ok"}`))
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Header.Set("Accept-Language", "en")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	var body response.Response[map[string]string]
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if body.Message != "Success" {
+		t.Fatalf("expected localized success message, got %q", body.Message)
 	}
 }
 

@@ -1,10 +1,10 @@
-// Package rbac 提供基于角色的访问控制（RBAC）模型.
+// Package rbac 提供基于角色的访问控制RBAC模型.
 //
 // 特性：
-//   - 角色管理（创建、删除、列表）
+//   - 角色管理创建、删除、列表
 //   - 用户角色分配与撤销
-//   - 权限检查（支持通配符 "*"）
-//   - 角色继承（通过 ParentID）
+//   - 权限检查支持通配符 "*"
+//   - 角色继承通过 ParentID
 //   - 超级管理员角色
 //   - 可选缓存层
 //   - HTTP 中间件
@@ -269,11 +269,11 @@ func (m *manager) HasPermission(ctx context.Context, userID string, resource, ac
 
 // matchPermission 检查权限是否匹配.
 func matchPermission(p Permission, resource, action string) bool {
-	// 资源匹配（支持通配符）
+	// 资源匹配支持通配符
 	if p.Resource != "*" && p.Resource != resource {
 		return false
 	}
-	// 动作匹配（支持通配符）
+	// 动作匹配支持通配符
 	if p.Action != "*" && p.Action != action {
 		return false
 	}

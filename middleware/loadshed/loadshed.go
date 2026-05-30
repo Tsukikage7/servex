@@ -82,7 +82,7 @@ type shedder struct {
 	// waiting 当前等待中的请求数.
 	waiting atomic.Int64
 
-	// lastLatency 最近一次请求的处理延迟（纳秒）.
+	// lastLatency 最近一次请求的处理延迟纳秒.
 	lastLatency atomic.Int64
 }
 

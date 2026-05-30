@@ -38,27 +38,27 @@ type KV interface {
 // 适用于不需要持久化状态的场景.
 type nopStore struct{}
 
-// newNopStore 创建空存储（内部使用）.
+// newNopStore 创建空存储内部使用.
 func newNopStore() *nopStore {
 	return &nopStore{}
 }
 
-// Save 保存状态（空实现）.
+// Save 保存状态空实现.
 func (s *nopStore) Save(ctx context.Context, state *State) error {
 	return nil
 }
 
-// Get 获取状态（始终返回未找到）.
+// Get 获取状态始终返回未找到.
 func (s *nopStore) Get(ctx context.Context, id string) (*State, error) {
 	return nil, ErrSagaNotFound
 }
 
-// Delete 删除状态（空实现）.
+// Delete 删除状态空实现.
 func (s *nopStore) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-// List 列出状态（返回空列表）.
+// List 列出状态返回空列表.
 func (s *nopStore) List(ctx context.Context, status SagaStatus, limit int) ([]*State, error) {
 	return []*State{}, nil
 }

@@ -273,7 +273,7 @@ func (c *OTelCollector) Gauge(name string, value float64, labels map[string]stri
 }
 
 // GetHandler 返回 metrics 的 HTTP 处理器.
-// OTel 通常由 exporter 推送，此处返回空 handler 保持接口兼容.
+// OTel 通常由 exporter 推送，此 handler 仅返回说明文本.
 func (c *OTelCollector) GetHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
@@ -289,7 +289,7 @@ func (c *OTelCollector) GetPath() string {
 	return c.config.Path
 }
 
-// getOrCreateCounter 获取或创建自定义计数器（线程安全）.
+// getOrCreateCounter 获取或创建自定义计数器线程安全.
 func (c *OTelCollector) getOrCreateCounter(name string) metric.Int64Counter {
 	c.mu.RLock()
 	counter, exists := c.counters[name]
@@ -318,7 +318,7 @@ func (c *OTelCollector) getOrCreateCounter(name string) metric.Int64Counter {
 	return counter
 }
 
-// getOrCreateHistogram 获取或创建自定义直方图（线程安全）.
+// getOrCreateHistogram 获取或创建自定义直方图线程安全.
 func (c *OTelCollector) getOrCreateHistogram(name string) metric.Float64Histogram {
 	c.mu.RLock()
 	hist, exists := c.histograms[name]
@@ -346,7 +346,7 @@ func (c *OTelCollector) getOrCreateHistogram(name string) metric.Float64Histogra
 	return hist
 }
 
-// getOrCreateGauge 获取或创建自定义仪表盘（线程安全）.
+// getOrCreateGauge 获取或创建自定义仪表盘线程安全.
 func (c *OTelCollector) getOrCreateGauge(name string) metric.Float64Gauge {
 	c.mu.RLock()
 	gauge, exists := c.gauges[name]

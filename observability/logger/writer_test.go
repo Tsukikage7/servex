@@ -57,7 +57,7 @@ func (s *RotateWriterTestSuite) TestWrite() {
 	s.NoError(err)
 	s.Equal(len(data), n)
 
-	// 验证文件创建（新结构：test/20060102/test.log）
+	// 验证文件创建新结构：test/20060102/test.log
 	dateDir := time.Now().UTC().Format("20060102")
 	logFile := filepath.Join(s.tmpDir, "test", dateDir, "test.log")
 	content, err := os.ReadFile(logFile)
@@ -137,7 +137,7 @@ func (s *RotateWriterTestSuite) TestFileNaming_Hourly() {
 	_, err := writer.Write([]byte("test\n"))
 	s.NoError(err)
 
-	// 小时轮转：目录格式 2006010215（UTC），文件名 app.log
+	// 小时轮转：目录格式 2006010215UTC，文件名 app.log
 	hourDir := time.Now().UTC().Format("2006010215")
 	expectedFile := filepath.Join(s.tmpDir, "app", hourDir, "app.log")
 	_, err = os.Stat(expectedFile)
@@ -164,7 +164,6 @@ func (s *RotateWriterTestSuite) TestConcurrentWrites() {
 	s.NotEmpty(files)
 }
 
-
 func (s *RotateWriterTestSuite) TestRotate() {
 	writer := NewRotateWriter(s.tmpDir, "rotate-test", WithMaxAge(1))
 	defer writer.Close()
@@ -187,7 +186,7 @@ func (s *RotateWriterTestSuite) TestRotate() {
 	_, err = writer.Write([]byte("day2\n"))
 	s.NoError(err)
 
-	// rotate 后 currentDay 重置为今天，文件仍写在今天目录（目录已存在）
+	// rotate 后 currentDay 重置为今天，文件仍写在今天目录目录已存在
 	_, err = os.Stat(todayDir)
 	s.NoError(err, "today dir should still exist after rotate")
 }
@@ -198,7 +197,7 @@ func (s *RotateWriterTestSuite) TestCleanupOldLogs() {
 
 	rw := writer.(*rotateWriter)
 
-	// 创建旧日期目录和日志文件（新结构：prefix/20200101/prefix.log）
+	// 创建旧日期目录和日志文件新结构：prefix/20200101/prefix.log
 	oldDateDir := filepath.Join(s.tmpDir, "cleanup-test", "20200101")
 	err := os.MkdirAll(oldDateDir, 0o755)
 	s.Require().NoError(err)
@@ -242,7 +241,7 @@ func (s *RotateWriterTestSuite) TestCleanupOldLogs_SkipNonDateDirs() {
 
 	rw := writer.(*rotateWriter)
 
-	// 创建非日期格式的子目录（应被跳过）
+	// 创建非日期格式的子目录应被跳过
 	prefixDir := filepath.Join(s.tmpDir, "skipdir-test")
 	err := os.MkdirAll(prefixDir, 0o755)
 	s.Require().NoError(err)
@@ -358,7 +357,7 @@ func (s *RotateWriterTestSuite) TestBuildFilename() {
 	filename := rw.buildFilename()
 	s.Contains(filename, filepath.Join("test", "20240115", "test.log"))
 
-	// 按小时：baseDir/test/2024011514/test.log（目录含小时，文件名统一 prefix.log）
+	// 按小时：baseDir/test/2024011514/test.log目录含小时，文件名统一 prefix.log
 	rw.currentDay = "2024011514"
 	rw.rotationMode = RotationHourly
 	filename = rw.buildFilename()
@@ -405,11 +404,11 @@ func (s *SyncWriterTestSuite) TestSyncWriter_NonSyncable() {
 	_, err := sw.Write([]byte("test"))
 	s.NoError(err)
 
-	// Sync 应该返回 nil（writer 不支持 Sync）
+	// Sync 应该返回 nilwriter 不支持 Sync
 	err = sw.Sync()
 	s.NoError(err)
 
-	// Close 应该返回 nil（writer 不支持 Close）
+	// Close 应该返回 nilwriter 不支持 Close
 	err = sw.Close()
 	s.NoError(err)
 }

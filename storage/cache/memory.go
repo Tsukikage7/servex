@@ -123,7 +123,7 @@ func (m *memoryCache) evictOne() {
 		}
 	}
 
-	// 淘汰最久未访问的项（LRU）
+	// 淘汰最久未访问的项LRU
 	var oldestKey string
 	var oldestTime time.Time
 	first := true
@@ -375,7 +375,7 @@ func (m *memoryCache) MSet(ctx context.Context, pairs map[string]any, ttl time.D
 	return nil
 }
 
-// Ping 测试连接（内存缓存始终可用）.
+// Ping 测试连接内存缓存始终可用.
 func (m *memoryCache) Ping(ctx context.Context) error {
 	return nil
 }
@@ -409,7 +409,7 @@ func (m *memoryCache) serialize(value any) (string, error) {
 	}
 }
 
-// Size 返回缓存大小（仅用于测试）.
+// Size 返回缓存大小仅用于测试.
 func (m *memoryCache) Size() int {
 	m.mu.RLock()
 	defer m.mu.RUnlock()

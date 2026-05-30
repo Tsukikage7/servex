@@ -97,11 +97,11 @@ func (s *ConcurrentPQTestSuite) TestClear() {
 	s.Equal(0, cpq.Len())
 }
 
-func (s *ConcurrentPQTestSuite) TestToSlice() {
+func (s *ConcurrentPQTestSuite) TestDrainToSlice() {
 	cpq := NewConcurrentMin[int]()
 	cpq.Push(3, 1, 2)
 
-	slice := cpq.ToSlice()
+	slice := cpq.DrainToSlice()
 	s.Equal([]int{1, 2, 3}, slice)
 	s.True(cpq.IsEmpty())
 }

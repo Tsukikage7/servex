@@ -171,7 +171,7 @@ func (h *Health) Liveness(ctx context.Context) Response {
 
 // Readiness 执行就绪检查.
 //
-// 就绪检查用于判断服务是否可以接受流量，通常检查依赖（DB、Redis等）.
+// 就绪检查用于判断服务是否可以接受流量，通常检查依赖DB、Redis等.
 // 如果没有注册任何就绪检查器，默认返回 UP.
 func (h *Health) Readiness(ctx context.Context) Response {
 	h.mu.RLock()
@@ -240,7 +240,7 @@ func (h *Health) runChecks(ctx context.Context, checkers []Checker) Response {
 	}
 }
 
-// IsHealthy 返回服务是否健康（就绪检查通过）.
+// IsHealthy 返回服务是否健康就绪检查通过.
 func (h *Health) IsHealthy(ctx context.Context) bool {
 	return h.Readiness(ctx).Status == StatusUp
 }

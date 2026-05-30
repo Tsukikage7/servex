@@ -21,13 +21,13 @@ type Config struct {
 	// Algorithm 限流算法类型
 	Algorithm string `mapstructure:"algorithm" json:"algorithm" yaml:"algorithm"`
 
-	// Rate 速率（令牌桶：每秒令牌数）
+	// Rate 速率令牌桶：每秒令牌数
 	Rate float64 `mapstructure:"rate" json:"rate" yaml:"rate"`
 
-	// Capacity 容量（令牌桶：桶容量）
+	// Capacity 容量令牌桶：桶容量
 	Capacity float64 `mapstructure:"capacity" json:"capacity" yaml:"capacity"`
 
-	// Limit 限制（窗口算法：窗口内最大请求数）
+	// Limit 限制窗口算法：窗口内最大请求数
 	Limit int `mapstructure:"limit" json:"limit" yaml:"limit"`
 
 	// Window 窗口大小
@@ -36,7 +36,7 @@ type Config struct {
 	// Prefix 分布式限流键前缀
 	Prefix string `mapstructure:"prefix" json:"prefix" yaml:"prefix"`
 
-	// Counter 计数器实例（分布式限流用）
+	// Counter 计数器实例分布式限流用
 	Counter RateCounter `mapstructure:"-" json:"-" yaml:"-"`
 }
 

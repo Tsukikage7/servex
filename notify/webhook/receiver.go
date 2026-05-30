@@ -31,7 +31,7 @@ func (rc *receiver) Handle(ctx context.Context, r *http.Request) (*Event, error)
 		return nil, ErrEmptyBody
 	}
 
-	// 限制请求体大小，防止超大 payload 导致 OOM（默认 1MB）
+	// 限制请求体大小，防止超大 payload 导致 OOM默认 1MB
 	const maxBodySize = 1 << 20
 	limitedBody := http.MaxBytesReader(nil, r.Body, maxBodySize)
 	body, err := io.ReadAll(limitedBody)

@@ -20,7 +20,7 @@ type DistributedLimiter struct {
 
 // DistributedConfig 分布式限流配置.
 type DistributedConfig struct {
-	// Counter 计数器实现（可用 CacheRateCounter 适配 cache.Cache）
+	// Counter 计数器实现可用 CacheRateCounter 适配 cache.Cache
 	Counter RateCounter
 
 	// Prefix 缓存键前缀
@@ -33,9 +33,8 @@ type DistributedConfig struct {
 	Window time.Duration
 
 	// FailOpen 当 Redis 等后端出错时是否放行请求.
-	// 默认 true（放行），保持向后兼容.
-	// 设置为 false 时，后端错误将导致请求被拒绝.
-	FailOpen *bool
+	// 默认 false，后端错误将导致请求被拒绝.
+	FailOpen bool
 }
 
 // NewDistributedLimiter 创建分布式限流器.
@@ -58,17 +57,12 @@ func NewDistributedLimiter(cfg *DistributedConfig) (*DistributedLimiter, error) 
 		prefix = "ratelimit"
 	}
 
-	failOpen := true
-	if cfg.FailOpen != nil {
-		failOpen = *cfg.FailOpen
-	}
-
 	return &DistributedLimiter{
 		counter:  cfg.Counter,
 		prefix:   prefix,
 		limit:    cfg.Limit,
 		window:   cfg.Window,
-		failOpen: failOpen,
+		failOpen: cfg.FailOpen,
 	}, nil
 }
 
@@ -170,17 +164,12 @@ func NewKeyedDistributedLimiter(cfg *DistributedConfig) (*KeyedDistributedLimite
 		prefix = "ratelimit"
 	}
 
-	failOpen := true
-	if cfg.FailOpen != nil {
-		failOpen = *cfg.FailOpen
-	}
-
 	return &KeyedDistributedLimiter{
 		counter:  cfg.Counter,
 		prefix:   prefix,
 		limit:    cfg.Limit,
 		window:   cfg.Window,
-		failOpen: failOpen,
+		failOpen: cfg.FailOpen,
 	}, nil
 }
 
@@ -282,7 +271,7 @@ func (c *cacheRateCounter) IncrByWithExpire(ctx context.Context, key string, n i
 	if err != nil {
 		return 0, err
 	}
-	// 仅首次（count == n）设置过期时间
+	// 仅首次count == n设置过期时间
 	if count == n {
 		_ = c.cache.Expire(ctx, key, ttl)
 	}

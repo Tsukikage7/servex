@@ -104,7 +104,7 @@ func NewEndpointHandler(
 //
 // 这个方法应该从你的 gRPC 服务实现中调用.
 //
-// 示例（在你的 gRPC 服务实现中）：
+// 示例在你的 gRPC 服务实现中：
 //
 //	func (s *userServer) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
 //	    _, resp, err := s.getUserHandler.ServeGRPC(ctx, req)
@@ -182,7 +182,7 @@ func WithErrorHandler(handler ErrorHandlerFunc) EndpointOption {
 // WithResponse 启用统一响应格式的错误处理.
 //
 // 错误将自动转换为正确的 gRPC 状态码，
-// 内部错误（5xxxx）的详细信息将被隐藏.
+// 内部错误5xxxx的详细信息将被隐藏.
 func WithResponse() EndpointOption {
 	return func(h *EndpointHandler) {
 		h.errorHandler = response.GRPCError

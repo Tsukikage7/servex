@@ -133,11 +133,11 @@ func (w *worker) processJob(ctx context.Context, job *Job) {
 		return
 	}
 
-	// MarkDone 带重试（最多 3 次指数退避），避免任务执行成功但状态未更新
+	// MarkDone 带重试最多 3 次指数退避，避免任务执行成功但状态未更新
 	w.markDoneWithRetry(ctx, job.ID)
 }
 
-// markDoneWithRetry 带重试的 MarkDone（最多 3 次，指数退避）.
+// markDoneWithRetry 带重试的 MarkDone最多 3 次，指数退避.
 func (w *worker) markDoneWithRetry(ctx context.Context, id string) {
 	const maxAttempts = 3
 	backoff := 100 * time.Millisecond

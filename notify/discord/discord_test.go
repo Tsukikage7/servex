@@ -18,7 +18,7 @@ type mockDiscordClient struct {
 	sentContents []string
 	// responses 按顺序返回的响应错误，nil 表示成功.
 	responses []error
-	// nextID 下一条消息自增 ID（字符串形式）.
+	// nextID 下一条消息自增 ID字符串形式.
 	nextID int
 	// callCount 已调用次数.
 	callCount int
@@ -102,7 +102,7 @@ func TestSend_MultiplePartialFailure(t *testing.T) {
 	if result == nil {
 		t.Fatal("期望 result 不为 nil")
 	}
-	// lastID 应为最后一条成功消息的 ID（非空）
+	// lastID 应为最后一条成功消息的 ID非空
 	if result.MessageID == "" {
 		t.Error("期望 MessageID 不为空（至少有一条成功）")
 	}

@@ -63,7 +63,7 @@ type Status struct {
 // Option 配置选项函数.
 type Option func(*Tracker)
 
-// WithLogger 设置日志记录器（兼容标准库 log.Logger 签名）.
+// WithLogger 设置日志记录器兼容标准库 log.Logger 签名.
 func WithLogger(printf func(format string, v ...any)) Option {
 	return func(t *Tracker) {
 		if printf != nil {
@@ -218,7 +218,7 @@ func (t *Tracker) OnBreach(fn func(status *Status)) {
 }
 
 // computeStatus 计算目标的当前状态.
-// 注意：当前使用累计值计算 SLI，尚未实现滑动窗口语义（Window 字段暂未生效）.
+// 注意：当前使用累计值计算 SLI，尚未实现滑动窗口语义Window 字段暂未生效.
 func (t *Tracker) computeStatus(ot *objectiveTracker) *Status {
 	good := ot.good.Load()
 	bad := ot.bad.Load()
