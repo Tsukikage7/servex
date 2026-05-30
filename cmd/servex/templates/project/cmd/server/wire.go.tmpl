@@ -14,6 +14,7 @@ func initApp() (*app.Application, func(), error) {
 
 var providerSet = wire.NewSet(
 	provideConfig,
+	provideObservability,
 	provideLogger,
 {{- range .AllComponents}}
 	{{.ProviderFunc}},

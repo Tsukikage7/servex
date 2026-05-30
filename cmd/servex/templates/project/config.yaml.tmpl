@@ -23,10 +23,28 @@ grpc:
     skip_paths:
       - /grpc.health.v1.Health/Check
 {{end}}
-logger:
-  level: info
-  format: console
-  output: console
+observability:
+  service:
+    name: {{.Name}}
+    version: 1.0.0
+    environment: local
+  logger:
+    level: info
+    format: console
+    output: console
+  tracing:
+    enabled: false
+    sampling_rate: 1
+    exporters: []
+  metrics:
+    enabled: false
+    interval: 60s
+    exporters: []
+  instrumentations:
+    default_enabled: true
+    overrides:
+      websocket: true
+      goim: true
 {{range .Infra}}
 {{.ConfigYAML}}
 {{end}}

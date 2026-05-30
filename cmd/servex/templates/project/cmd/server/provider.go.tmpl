@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 {{- range $imp := extraImports .AllComponents}}
 	"{{$imp}}"
 {{- end}}
@@ -16,6 +17,7 @@ import (
 	"{{.Module}}/internal/server"
 	"github.com/Tsukikage7/servex/v2/app"
 	"github.com/Tsukikage7/servex/v2/config"
+	"github.com/Tsukikage7/servex/v2/observability"
 	"github.com/Tsukikage7/servex/v2/observability/logger"
 	"github.com/Tsukikage7/servex/v2/transport"
 )
@@ -25,10 +27,20 @@ func provideConfig() (*Config, error) {
 	return config.Load[Config]("config.yaml")
 }
 
-// provideLogger 创建日志.
-func provideLogger(cfg *Config) (logger.Logger, func()) {
-	log := logger.MustNewLogger(&cfg.Logger)
-	return log, func() { log.Sync() }
+// provideObservability 创建可观测性运行时.
+func provideObservability(cfg *Config) (*observability.Runtime, func(), error) {
+	cfg.Observability.Service.Name = cfg.Name
+	cfg.Observability.Service.Version = cfg.Version
+	rt, err := observability.NewRuntime(context.Background(), cfg.Observability)
+	if err != nil {
+		return nil, nil, err
+	}
+	return rt, func() { _ = rt.Shutdown(context.Background()) }, nil
+}
+
+// provideLogger 从可观测性运行时取得日志.
+func provideLogger(rt *observability.Runtime) logger.Logger {
+	return rt.Logger()
 }
 
 {{range .AllComponents}}
